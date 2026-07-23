@@ -1,0 +1,395 @@
+{
+  "meta": {
+    "version": "2.0",
+    "date_analyse": "2026-07-23T10:00:00Z",
+    "adresse": "8 Allée du Port Maillard, 44000 Nantes",
+    "coordonnees": {
+      "lat": 47.214972,
+      "lon": -1.551503
+    },
+    "horizon_analyse": "2024-2050",
+    "sources_donnees": [
+      "BDNB",
+      "Géorisques",
+      "IGN",
+      "Open-Meteo",
+      "CATNAT",
+      "DVF",
+      "DRIAS (proxy)"
+    ]
+  },
+  "bien": {
+    "type": "maison",
+    "surface_m2": 100,
+    "annee_construction": 1965,
+    "etages": 2,
+    "materiaux_principaux": [
+      "Béton armé",
+      "Tuiles"
+    ],
+    "dpe_classe": null,
+    "valeur_venale_estimee": null,
+    "surface_terrain_m2": null
+  },
+  "risques_actuels": {
+    "inondation": {
+      "niveau": "tres_eleve",
+      "score": 82,
+      "present_zone_ppr": true,
+      "explication": "Le bien est situé en zone inondable à aléa fort (PPR inondation actif). Historique CatNat très élevé (9 inondations en 50 ans), proximité immédiate de la Loire et altitude très basse (7,35 m). Risque aggravé par la présence d'un sous-sol et d'une cave, favorisant les remontées de nappe et les infiltrations durables.",
+      "source": "Géorisques/CATNAT",
+      "derniere_occurrence": "2024-01-10",
+      "periode_retour_ans": 5
+    },
+    "seisme": {
+      "niveau": "modere",
+      "score": 30,
+      "present_zone_ppr": false,
+      "explication": "Zone sismique modérée (zone 3). Le bâti en béton armé (1965) présente une vulnérabilité structurelle modérée aux secousses sismiques, bien que l'état général soit jugé bon.",
+      "source": "Géorisques",
+      "derniere_occurrence": null,
+      "periode_retour_ans": null
+    },
+    "retrait_gonflement_argiles": {
+      "niveau": "faible",
+      "score": 15,
+      "present_zone_ppr": false,
+      "explication": "Alea faible (code RGA 1). Le sol argileux présente un potentiel de retrait-gonflement limité, mais la présence de fissures légères sur le bâti suggère une sensibilité résiduelle.",
+      "source": "Géorisques",
+      "derniere_occurrence": null,
+      "periode_retour_ans": null
+    },
+    "incendie_foret": {
+      "niveau": "negligeable",
+      "score": 5,
+      "present_zone_ppr": false,
+      "explication": "Aucun risque significatif identifié. Zone urbaine dense sans forêt dans un rayon de 5 km.",
+      "source": "IGN",
+      "derniere_occurrence": null,
+      "periode_retour_ans": null
+    },
+    "mouvement_terrain": {
+      "niveau": "faible",
+      "score": 20,
+      "present_zone_ppr": false,
+      "explication": "Un événement CatNat lié à un mouvement de terrain a été enregistré, mais l'aléa est considéré comme faible en l'absence de cavités souterraines ou de pente significative.",
+      "source": "Géorisques",
+      "derniere_occurrence": "2010-02-15",
+      "periode_retour_ans": null
+    },
+    "radon": {
+      "niveau": "eleve",
+      "score": 70,
+      "present_zone_ppr": false,
+      "explication": "Potentiel radon élevé (classe 3). La perméabilité des sols et la présence d'un sous-sol non étanchéifié augmentent le risque d'exposition au radon, gaz radioactif.",
+      "source": "IRSN",
+      "derniere_occurrence": null,
+      "periode_retour_ans": null
+    },
+    "tempete": {
+      "niveau": "modere",
+      "score": 35,
+      "present_zone_ppr": false,
+      "explication": "Exposition modérée aux tempêtes atlantiques. La toiture en tuiles anciennes (1965) et l'état moyen de la structure augmentent la vulnérabilité aux vents violents.",
+      "source": "Météo-France",
+      "derniere_occurrence": "2023-10-05",
+      "periode_retour_ans": 10
+    },
+    "chaleur_extreme": {
+      "niveau": "faible",
+      "score": 23,
+      "present_zone_ppr": false,
+      "explication": "Stress thermique modéré en période de canicule (8 jours/an en moyenne). L'isolation faible de la toiture et l'absence de protection solaire aggravent la vulnérabilité.",
+      "source": "Open-Meteo/DRIAS",
+      "derniere_occurrence": "2022-07-18",
+      "periode_retour_ans": 2
+    },
+    "pollution_sols": {
+      "niveau": "negligeable",
+      "score": 5,
+      "present_zone_ppr": false,
+      "explication": "Aucun site pollué identifié dans un rayon de 500 m. Zone urbaine ancienne sans activité industrielle historique majeure.",
+      "source": "BASIAS/BASOL",
+      "derniere_occurrence": null,
+      "periode_retour_ans": null
+    },
+    "submersion_marine": {
+      "niveau": "modere",
+      "score": 40,
+      "present_zone_ppr": false,
+      "explication": "Bien que non situé en zone PPR submersion marine, l'altitude très basse (7,35 m) et la proximité de la Loire exposent le bien à un risque modéré de submersion en cas de surcote marine combinée à une crue.",
+      "source": "Géorisques/SHOM",
+      "derniere_occurrence": null,
+      "periode_retour_ans": 50
+    }
+  },
+  "risques_futurs_2050": {
+    "scenario_rcp45": {
+      "inondation": {
+        "niveau": "tres_eleve",
+        "score": 90,
+        "explication": "Aggravation significative du risque inondation (+40% selon proxy DRIAS). L'élévation du niveau de la Loire, combinée à l'augmentation des précipitations hivernales (+8%) et à la multiplication des événements extrêmes, portera la période de retour des inondations majeures à moins de 3 ans d'ici 2050. La submersion marine pourrait également affecter le bien lors de surcotes."
+      },
+      "incendie_foret": {
+        "niveau": "negligeable",
+        "score": 5,
+        "explication": "Aucune aggravation prévue. Zone urbaine dense sans végétation combustible à proximité."
+      },
+      "chaleur_extreme": {
+        "niveau": "modere",
+        "score": 50,
+        "explication": "Augmentation des jours de canicule (+10 jours/an) et des températures estivales (+1,7°C). Le stress thermique sur le bâti sera accru, avec un risque de surchauffe des combles mal isolés et de dégradation accélérée des matériaux."
+      },
+      "submersion_marine": {
+        "niveau": "eleve",
+        "score": 65,
+        "explication": "Montée du niveau de la mer (+30 cm) et augmentation des surcotes marines. Le bien, situé à 7,35 m d'altitude, verra son risque de submersion passer à une période de retour de 20 ans d'ici 2050."
+      },
+      "secheresse": {
+        "niveau": "modere",
+        "score": 45,
+        "explication": "Augmentation des jours de sécheresse (+15 jours/an) et baisse des précipitations estivales (-10%). Le retrait-gonflement des argiles pourrait s'aggraver, bien que l'aléa reste classé comme faible. Risque de fissuration accrue du bâti."
+      },
+      "delta_temperature_celsius": 1.5,
+      "delta_precipitations_pct": -2
+    },
+    "scenario_rcp85": {
+      "inondation": {
+        "niveau": "tres_eleve",
+        "score": 95,
+        "explication": "Aggravation extrême du risque inondation (+110% selon proxy DRIAS). La combinaison de l'élévation du niveau de la mer, de l'augmentation des précipitations hivernales (+15%) et de la multiplication des événements pluvieux intenses portera la période de retour des inondations à moins de 2 ans. Le bien sera probablement submergé lors des crues centennales."
+      },
+      "incendie_foret": {
+        "niveau": "negligeable",
+        "score": 5,
+        "explication": "Aucune aggravation prévue."
+      },
+      "chaleur_extreme": {
+        "niveau": "eleve",
+        "score": 70,
+        "explication": "Augmentation drastique des jours de canicule (+25 jours/an) et des températures estivales (+3°C). Le stress thermique sur le bâti sera critique, avec un risque élevé de dégradation des matériaux, de surchauffe des espaces habitables et de confort thermique dégradé."
+      },
+      "submersion_marine": {
+        "niveau": "tres_eleve",
+        "score": 80,
+        "explication": "Montée du niveau de la mer (+30 cm) et augmentation des surcotes marines. Le bien sera exposé à des submersions marines fréquentes (période de retour < 10 ans), avec un risque de salinisation des sols et des fondations."
+      },
+      "secheresse": {
+        "niveau": "eleve",
+        "score": 60,
+        "explication": "Augmentation des jours de sécheresse (+35 jours/an) et baisse marquée des précipitations estivales (-20%). Le retrait-gonflement des argiles pourrait devenir un aléa modéré, avec un risque accru de fissuration structurelle et de tassements différentiels."
+      },
+      "delta_temperature_celsius": 2.6,
+      "delta_precipitations_pct": -5
+    }
+  },
+  "score_global": {
+    "note": 68,
+    "classe": "E",
+    "interpretation": "Risque global élevé, principalement dû à l'exposition aux inondations et à la submersion marine, aggravée par le changement climatique. La vulnérabilité du bâti (isolation, toiture, sous-sol) et la localisation en zone à aléa fort nécessitent des mesures d'adaptation urgentes.",
+    "score_resilience": 30,
+    "score_exposition": 85,
+    "score_vulnerabilite": 60
+  },
+  "recommandations": {
+    "urgentes": [
+      {
+        "id": "REC_001",
+        "titre": "Étancheification du sous-sol et de la cave",
+        "description": "Installation d'un système de drainage périphérique, d'une membrane étanche et d'une pompe de relevage pour prévenir les remontées de nappe et les infiltrations. Coût estimé : 12 000 €. Réduction du score inondation de 20 points.",
+        "categorie": "inondation",
+        "risque_cible": "inondation",
+        "cout_estime_eur": 12000,
+        "gain_resilience_points": 20,
+        "priorite": 1,
+        "aides_financieres": [
+          "Fonds Barnier",
+          "Aides locales Nantes Métropole"
+        ]
+      },
+      {
+        "id": "REC_002",
+        "titre": "Renforcement de la toiture et traitement des fissures",
+        "description": "Remplacement des tuiles anciennes par des matériaux résistants aux vents violents (classe 12), renforcement de la charpente et traitement des fissures légères. Coût estimé : 8 000 €. Réduction du score tempête de 15 points.",
+        "categorie": "structure",
+        "risque_cible": "tempete",
+        "cout_estime_eur": 8000,
+        "gain_resilience_points": 15,
+        "priorite": 1,
+        "aides_financieres": [
+          "MaPrimeRénov'",
+          "TVA réduite"
+        ]
+      },
+      {
+        "id": "REC_003",
+        "titre": "Installation d'un système de ventilation et détection radon",
+        "description": "Mise en place d'une ventilation mécanique contrôlée (VMC) double flux et d'un système de détection du radon dans le sous-sol. Coût estimé : 3 500 €. Réduction du score radon de 30 points.",
+        "categorie": "sante",
+        "risque_cible": "radon",
+        "cout_estime_eur": 3500,
+        "gain_resilience_points": 30,
+        "priorite": 1,
+        "aides_financieres": [
+          "Aides locales (ARS)"
+        ]
+      }
+    ],
+    "court_terme": [
+      {
+        "id": "REC_004",
+        "titre": "Isolation thermique de la toiture",
+        "description": "Pose d'une isolation performante (R ≥ 6 m².K/W) en combles pour réduire la vulnérabilité thermique et améliorer le confort. Coût estimé : 5 000 €. Réduction du score chaleur extrême de 10 points.",
+        "categorie": "thermique",
+        "risque_cible": "chaleur_extreme",
+        "cout_estime_eur": 5000,
+        "gain_resilience_points": 10,
+        "priorite": 2,
+        "aides_financieres": [
+          "MaPrimeRénov'",
+          "CEE"
+        ]
+      },
+      {
+        "id": "REC_005",
+        "titre": "Mise aux normes de l'installation électrique",
+        "description": "Remplacement du tableau électrique et mise en conformité avec la norme NF C 15-100 pour réduire le risque d'incendie. Coût estimé : 4 000 €. Réduction du score incendie électrique de 10 points.",
+        "categorie": "securite",
+        "risque_cible": "incendie_electrique",
+        "cout_estime_eur": 4000,
+        "gain_resilience_points": 10,
+        "priorite": 2,
+        "aides_financieres": [
+          "Aides locales"
+        ]
+      }
+    ],
+    "moyen_terme": [
+      {
+        "id": "REC_006",
+        "titre": "Surélévation des équipements sensibles",
+        "description": "Surélévation des équipements électriques, de chauffage et des biens de valeur dans les pièces du rez-de-chaussée et du sous-sol pour les protéger des inondations. Coût estimé : 2 000 €. Réduction du score inondation de 5 points.",
+        "categorie": "inondation",
+        "risque_cible": "inondation",
+        "cout_estime_eur": 2000,
+        "gain_resilience_points": 5,
+        "priorite": 3,
+        "aides_financieres": [
+          "Fonds Barnier"
+        ]
+      },
+      {
+        "id": "REC_007",
+        "titre": "Végétalisation des abords pour limiter le ruissellement",
+        "description": "Création de zones perméables et de noues végétalisées autour du bien pour absorber les eaux pluviales et réduire le ruissellement. Coût estimé : 3 000 €. Réduction du score inondation de 5 points.",
+        "categorie": "environnement",
+        "risque_cible": "inondation",
+        "cout_estime_eur": 3000,
+        "gain_resilience_points": 5,
+        "priorite": 3,
+        "aides_financieres": [
+          "Aides locales (Nantes Métropole)"
+        ]
+      }
+    ],
+    "long_terme_2050": [
+      {
+        "id": "REC_008",
+        "titre": "Rehaussement du bien ou construction d'une digue locale",
+        "description": "Étude de faisabilité pour un rehaussement du bien ou la construction d'une digue locale en coordination avec les autorités. Coût estimé : 50 000 € (variable selon solution retenue). Réduction du score submersion marine de 30 points.",
+        "categorie": "inondation",
+        "risque_cible": "submersion_marine",
+        "cout_estime_eur": 50000,
+        "gain_resilience_points": 30,
+        "priorite": 4,
+        "aides_financieres": [
+          "Fonds Barnier",
+          "Subventions européennes (FEDER)"
+        ]
+      },
+      {
+        "id": "REC_009",
+        "titre": "Rénovation globale pour adaptation climatique",
+        "description": "Rénovation complète du bâti pour améliorer la résilience thermique, hydrique et structurelle. Inclut isolation des murs, remplacement des menuiseries, installation de protections solaires et de systèmes de rafraîchissement passif. Coût estimé : 30 000 €. Réduction des scores chaleur extrême et inondation de 20 points.",
+        "categorie": "climat",
+        "risque_cible": "chaleur_extreme,inondation",
+        "cout_estime_eur": 30000,
+        "gain_resilience_points": 20,
+        "priorite": 4,
+        "aides_financieres": [
+          "MaPrimeRénov' Sérénité",
+          "Eco-PTZ"
+        ]
+      }
+    ]
+  },
+  "diagnostic_energetique": {
+    "consommation_kwh_m2_an": 280,
+    "emissions_co2_kg_m2_an": 55,
+    "potentiel_renovation": "eleve",
+    "economies_estimees_an": 1200,
+    "aides_disponibles": [
+      "MaPrimeRénov'",
+      "Eco-PTZ",
+      "CEE",
+      "TVA réduite"
+    ]
+  },
+  "simulation_periode": {
+    "periode_debut": "2024",
+    "periode_fin": "2050",
+    "evenements_probables": [
+      {
+        "type": "inondation_majeure",
+        "probabilite_pct": 80,
+        "impact_estime": "Submersion du rez-de-chaussée et du sous-sol, dégâts structurels et électriques, perte de valeur du bien.",
+        "annee_probable": "2030-2040"
+      },
+      {
+        "type": "canicule_extreme",
+        "probabilite_pct": 90,
+        "impact_estime": "Surchauffe des espaces habitables, dégradation des matériaux, inconfort thermique.",
+        "annee_probable": "2040-2050"
+      },
+      {
+        "type": "submersion_marine",
+        "probabilite_pct": 60,
+        "impact_estime": "Inondation par l'eau salée, corrosion des fondations et des équipements, salinisation des sols.",
+        "annee_probable": "2045-2050"
+      }
+    ],
+    "cout_risque_cumule_estime": 120000,
+    "indice_assurabilite": "difficile"
+  },
+  "donnees_marche": {
+    "prix_m2_median_commune": 4200,
+    "tendance_12mois_pct": -2.5,
+    "impact_risque_sur_valeur_pct": -20,
+    "valeur_ajustee_risques": 336000,
+    "liquidite_marche": "normale"
+  },
+  "_performance": {
+    "duree_analyse_s": 64.92,
+    "json_valide": true,
+    "model_utilise": "mistral-large-latest"
+  },
+  "_input_meta": {
+    "version_input": "1.0",
+    "generated_at": "2026-07-23T10:00:00Z",
+    "format": "unified_v1 (user_data+agent_data+step7)",
+    "score_engine_base": {
+      "score_global": 43,
+      "score_global_raw": 42.85,
+      "score_infiltration": 82,
+      "score_thermique": 23,
+      "score_incendie_elec": 10,
+      "score_aleas_naturels": 50,
+      "weights": {
+        "infiltration": 0.3,
+        "thermique": 0.25,
+        "incendie_electrique": 0.25,
+        "aleas_naturels": 0.2
+      }
+    }
+  }
+}

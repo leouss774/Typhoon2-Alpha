@@ -70,3 +70,4 @@ docker-compose up
 1. `POST /api/analyze` — Lancer une analyse complète (formulaire client + données brutes)
 2. `GET /api/dashboard/{session_id}` — Récupérer les données du dashboard
 3. `POST /api/chat/{session_id}` — Poser une question à l'agent conversationnel
+# Projet Jumeau Numérique
