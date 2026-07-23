@@ -1,0 +1,131 @@
+{
+  "version": "1.0",
+  "generated_at": "2026-07-23T10:00:00Z",
+  "user_data": {
+    "adresse": "8 Allée du Port Maillard 44000 Nantes",
+    "type_bien": "Maison individuelle",
+    "surface": 100,
+    "nb_etages": 2,
+    "annee_construction": 1965,
+    "annee_renovation": 2020,
+    "type_structure": "Béton armé",
+    "etat_structure": "Bon",
+    "fissures": "Légères",
+    "affaissement": "Non",
+    "type_toiture": "Tuiles",
+    "age_toiture": 1965,
+    "etat_toiture": "Moyen",
+    "infiltrations": "Non",
+    "presence_sous_sol": true,
+    "presence_cave": true,
+    "occupation": "Occupé",
+    "installation_electrique_annee": 1988
+  },
+  "agent_data": {
+    "adresse": "8 Allée du Port Maillard 44000 Nantes",
+    "coordonnees": { "latitude": 47.214972, "longitude": -1.551503 },
+    "code_insee": "44109",
+    "score_geocodage": 0.5514,
+    "georisques": {
+      "argiles_rga": [{ "codeExposition": "1", "exposition": "Exposition faible" }],
+      "zonage_sismique": [{ "zone": "3", "libelle": "MODEREE" }],
+      "radon": { "classe_potentiel": "3" },
+      "catnat": { "total_evts": 10 }
+    },
+    "bdnb": {
+      "geometry": {
+        "type": "MultiPolygon",
+        "coordinates": [[[[318045.6, 6706028.4],[318055.2, 6706025.1],[318058.3, 6706034.7],[318048.7, 6706038.0],[318046.9, 6706032.2],[318041.5, 6706034.1],[318038.4, 6706024.5],[318045.6, 6706028.4]]]]
+      }
+    },
+    "scores": {
+      "score_incendie": 12,
+      "score_degats_eaux": 52,
+      "score_structurel": 38,
+      "score_global": 36,
+      "completude_donnees": 1
+    }
+  },
+  "step7": {
+    "address": {
+      "adresse": "8 Allée du Port Maillard 44000 Nantes",
+      "code_insee": "44109"
+    },
+    "risk_context": {
+      "rga": { "present": true, "exposition": "faible", "code_exposition": "1" },
+      "zone_sismique": { "present": true, "zone_code": "3", "zone_libelle": "3 - MODEREE" },
+      "radon": { "present": true, "classe_potentiel": "3" },
+      "cavites": { "present": false, "count": 0, "disponible": false },
+      "historique_catnat": {
+        "total_evts": 10,
+        "evts_par_type": { "inondation": 9, "mouvement_terrain": 1 },
+        "nb_evt_10ans": 4
+      },
+      "donnees_topo": { "altitude_m": 7.35 },
+      "donnees_manquantes": ["drias_meteofrance", "copernicus", "sentinel"]
+    },
+    "profil_bien": {
+      "disponible": true,
+      "annee_construction": 1965,
+      "type_bien": "maison",
+      "type_toiture": "tuiles",
+      "isolation_toiture": "faible",
+      "isolation_murs": "moyenne",
+      "presence_sous_sol": true,
+      "presence_cave": true,
+      "installation_electrique_annee": 1988
+    },
+    "score": {
+      "global": 43,
+      "global_raw": 42.85,
+      "weights": {
+        "infiltration": 0.3,
+        "thermique": 0.25,
+        "incendie_electrique": 0.25,
+        "aleas_naturels": 0.2
+      },
+      "perils": {
+        "infiltration": {
+          "score": 82,
+          "triggered_rules": [
+            { "rule_id": "INONDATION_PRESENT_INFILTRATION", "points": 20, "justification": "Présence d'un risque d'inondation au droit de l'adresse, augmentant l'exposition à l'humidité." },
+            { "rule_id": "REMONTEE_NAPPE_PRESENT_INFILTRATION", "points": 18, "justification": "Présence d'un risque de remontée de nappe, facteur direct d'humidité durable en sous-sol." },
+            { "rule_id": "COMPOSE_TOITURE_AGEE_ET_HUMIDITE", "points": 12, "justification": "Toiture ancienne combinée à un contexte hydrique défavorable, augmentant le risque d'infiltration." }
+          ]
+        },
+        "thermique": {
+          "score": 23,
+          "triggered_rules": [
+            { "rule_id": "THERMIQUE_CLIMATE_ZONE_INTERMEDIAIRE", "points": 5, "justification": "Zone climatique intermédiaire, proxy modéré de stress thermique." },
+            { "rule_id": "COMPOSE_ISOLATION_FAIBLE_ET_HUMIDITE", "points": 10, "justification": "Isolation toiture absente ou faible sur bâti ancien, augmentant la vulnérabilité thermique." }
+          ]
+        },
+        "incendie_electrique": {
+          "score": 10,
+          "triggered_rules": [
+            { "rule_id": "COMPOSE_INSTALLATION_ELECTRIQUE_ANCIENNE", "points": 10, "justification": "Installation électrique ancienne (1988), facteur de surcharge et défaut d'isolement." }
+          ]
+        },
+        "aleas_naturels": {
+          "score": 50,
+          "triggered_rules": [
+            { "rule_id": "RADON_CLASSE_3", "points": 8, "justification": "Potentiel radon élevé (classe 3), facteur sanitaire et indicateur de perméabilité des sols." },
+            { "rule_id": "SEISME_ZONE_MODEREE", "points": 10, "justification": "Zone sismique modérée (zone 3), facteur de contrainte structurelle." },
+            { "rule_id": "CATNAT_MOINS_DE_2ANS", "points": 12, "justification": "Sinistre CatNat récent, proxy de vulnérabilité locale active." },
+            { "rule_id": "CATNAT_FREQUENCE_ELEVEE", "points": 10, "justification": "Fréquence CatNat élevée (10 événements dont 9 inondations), indicateur de récurrence d'aléas." }
+          ]
+        }
+      }
+    },
+    "confidence": {
+      "level": "medium",
+      "notes": [
+        { "confidence_id": "DATA_MISSING_CLIMATE", "impact": "medium", "note": "Composantes climatiques prospectives absentes; scores basés sur proxys disponibles." }
+      ]
+    },
+    "mistral": {
+      "activated_rule_ids": ["COMPOSE_TOITURE_AGEE_ET_HUMIDITE", "COMPOSE_ISOLATION_FAIBLE_ET_HUMIDITE", "COMPOSE_INSTALLATION_ELECTRIQUE_ANCIENNE"],
+      "declarative_consistency_status": "warning"
+    }
+  }
+}
