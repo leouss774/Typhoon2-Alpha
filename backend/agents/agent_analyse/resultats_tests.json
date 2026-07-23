@@ -1,0 +1,1509 @@
+{
+  "paris": {
+    "meta": {
+      "version": "2.0",
+      "date_analyse": "2023-11-15T14:30:00Z",
+      "adresse": "15 Rue Lacordaire, 75015 Paris",
+      "coordonnees": {
+        "lat": 48.8417,
+        "lon": 2.2954
+      },
+      "horizon_analyse": "2024-2050",
+      "sources_donnees": [
+        "BDNB",
+        "Géorisques",
+        "IGN",
+        "Open-Meteo",
+        "CATNAT",
+        "DVF",
+        "DRIAS"
+      ]
+    },
+    "bien": {
+      "type": "appartement",
+      "surface_m2": 65,
+      "annee_construction": 1972,
+      "etages": 3,
+      "materiaux_principaux": [
+        "beton"
+      ],
+      "dpe_classe": "D",
+      "valeur_venale_estimee": 550000,
+      "surface_terrain_m2": null
+    },
+    "risques_actuels": {
+      "inondation": {
+        "niveau": "faible",
+        "score": 25,
+        "present_zone_ppr": false,
+        "explication": "Zone classée en aléa inondation faible selon Géorisques. 3 arrêtés CatNat depuis 1982 (dernier en 2016) pour inondations et tempêtes. Distance au cours d'eau (850m) et altitude (42m) réduisent le risque. Pente faible (1.2%) mais urbanisation dense limite l'infiltration.",
+        "source": "Géorisques/CATNAT",
+        "derniere_occurrence": "2016-06-01",
+        "periode_retour_ans": 15
+      },
+      "seisme": {
+        "niveau": "negligeable",
+        "score": 5,
+        "present_zone_ppr": false,
+        "explication": "Zone sismique 1 (très faible aléa). Aucun historique de sinistre sismique dans la commune. Bâtiment en béton (1972) conforme aux normes parasismiques minimales.",
+        "source": "Géorisques",
+        "derniere_occurrence": null,
+        "periode_retour_ans": null
+      },
+      "retrait_gonflement_argiles": {
+        "niveau": "faible",
+        "score": 15,
+        "present_zone_ppr": false,
+        "explication": "Alea faible selon Géorisques. Sol stable en zone urbaine dense. Risque limité pour les fondations du bâtiment (béton).",
+        "source": "Géorisques",
+        "derniere_occurrence": null,
+        "periode_retour_ans": null
+      },
+      "incendie_foret": {
+        "niveau": "negligeable",
+        "score": 2,
+        "present_zone_ppr": false,
+        "explication": "Aucune forêt dans un rayon de 5km. Risque quasi-nul en zone urbaine dense.",
+        "source": "IGN",
+        "derniere_occurrence": null,
+        "periode_retour_ans": null
+      },
+      "mouvement_terrain": {
+        "niveau": "negligeable",
+        "score": 5,
+        "present_zone_ppr": false,
+        "explication": "Aucun mouvement de terrain répertorié. Pente faible (1.2%) et sol stable.",
+        "source": "Géorisques",
+        "derniere_occurrence": null,
+        "periode_retour_ans": null
+      },
+      "radon": {
+        "niveau": "faible",
+        "score": 10,
+        "present_zone_ppr": false,
+        "explication": "Niveau 1 de radon (faible exposition). Concentration moyenne estimée < 100 Bq/m³. Risque sanitaire négligeable.",
+        "source": "IRSN",
+        "derniere_occurrence": null,
+        "periode_retour_ans": null
+      },
+      "tempete": {
+        "niveau": "modere",
+        "score": 40,
+        "present_zone_ppr": false,
+        "explication": "3 arrêtés CatNat pour tempêtes depuis 1982. Vitesse de vent max enregistrée : 28.5 m/s. Exposition modérée en zone urbaine dense. Toiture et fenêtres potentiellement vulnérables.",
+        "source": "Météo-France/CATNAT",
+        "derniere_occurrence": "2016-06-01",
+        "periode_retour_ans": 12
+      },
+      "chaleur_extreme": {
+        "niveau": "modere",
+        "score": 35,
+        "present_zone_ppr": false,
+        "explication": "8 jours de canicule/an en moyenne. Record de température à 42.6°C. Bâtiment en béton avec DPE classe D (isolation moyenne). Risque d'inconfort thermique estival.",
+        "source": "Open-Meteo/DRIAS",
+        "derniere_occurrence": "2022-07-18",
+        "periode_retour_ans": 5
+      },
+      "pollution_sols": {
+        "niveau": "faible",
+        "score": 20,
+        "present_zone_ppr": false,
+        "explication": "2 installations classées dans un rayon de 500m. Présence de canalisations de matières dangereuses. Pas de site BASOL/BASIAS identifié à proximité immédiate.",
+        "source": "BASIAS/BASOL",
+        "derniere_occurrence": null,
+        "periode_retour_ans": null
+      },
+      "submersion_marine": {
+        "niveau": "negligeable",
+        "score": 1,
+        "present_zone_ppr": false,
+        "explication": "Distance à la mer (250km) et altitude (42m) rendent le risque négligeable.",
+        "source": "Géorisques/SHOM",
+        "derniere_occurrence": null,
+        "periode_retour_ans": null
+      }
+    },
+    "risques_futurs_2050": {
+      "scenario_rcp45": {
+        "inondation": {
+          "niveau": "modere",
+          "score": 40,
+          "explication": "Augmentation modérée des précipitations hivernales (+8%) et intensification des événements extrêmes. Risque accru de ruissellement urbain malgré la distance au cours d'eau. Périodes de retour estimées à 10-12 ans."
+        },
+        "incendie_foret": {
+          "niveau": "negligeable",
+          "score": 3,
+          "explication": "Risque toujours négligeable en zone urbaine dense, malgré l'augmentation des températures."
+        },
+        "chaleur_extreme": {
+          "niveau": "eleve",
+          "score": 70,
+          "explication": "+12 jours de canicule supplémentaires. Températures estivales augmentées de +1.8°C. Risque accru d'inconfort thermique et de surchauffe du bâtiment (isolation actuelle insuffisante)."
+        },
+        "submersion_marine": {
+          "niveau": "negligeable",
+          "score": 1,
+          "explication": "Montée des eaux (+25cm) sans impact significatif à 250km des côtes."
+        },
+        "secheresse": {
+          "niveau": "modere",
+          "score": 50,
+          "explication": "+18 jours de sécheresse supplémentaires. Baisse des précipitations estivales (-12%). Risque modéré de retrait-gonflement des argiles (sol stable mais conditions climatiques plus sèches)."
+        },
+        "delta_temperature_celsius": 1.5,
+        "delta_precipitations_pct": -2
+      },
+      "scenario_rcp85": {
+        "inondation": {
+          "niveau": "modere",
+          "score": 45,
+          "explication": "Augmentation significative des précipitations hivernales (+15%) et intensification des événements extrêmes. Risque accru de ruissellement urbain. Périodes de retour estimées à 8-10 ans."
+        },
+        "incendie_foret": {
+          "niveau": "negligeable",
+          "score": 5,
+          "explication": "Risque toujours négligeable en zone urbaine dense."
+        },
+        "chaleur_extreme": {
+          "niveau": "tres_eleve",
+          "score": 85,
+          "explication": "+28 jours de canicule supplémentaires. Températures estivales augmentées de +3.2°C. Risque très élevé d'inconfort thermique et de surchauffe du bâtiment. Nécessité de solutions de rafraîchissement actives."
+        },
+        "submersion_marine": {
+          "niveau": "negligeable",
+          "score": 1,
+          "explication": "Montée des eaux (+25cm) sans impact significatif."
+        },
+        "secheresse": {
+          "niveau": "eleve",
+          "score": 65,
+          "explication": "+35 jours de sécheresse supplémentaires. Baisse marquée des précipitations estivales (-22%). Risque élevé de retrait-gonflement des argiles et de fissuration des structures."
+        },
+        "delta_temperature_celsius": 2.8,
+        "delta_precipitations_pct": -3.5
+      }
+    },
+    "score_global": {
+      "note": 58,
+      "classe": "D",
+      "interpretation": "Risque global modéré à élevé, principalement lié aux aléas climatiques futurs (chaleur extrême et sécheresse). Vulnérabilité actuelle du bâtiment aux températures élevées.",
+      "score_resilience": 42,
+      "score_exposition": 65,
+      "score_vulnerabilite": 55
+    },
+    "recommandations": {
+      "urgentes": [
+        {
+          "id": "REC_001",
+          "titre": "Amélioration de l'isolation thermique",
+          "description": "Isolation des combles et des murs par l'intérieur avec matériaux biosourcés (laine de bois, ouate de cellulose). Remplacement des menuiseries par du double vitrage renforcé (Uw ≤ 1.3).",
+          "categorie": "thermique",
+          "risque_cible": "chaleur_extreme",
+          "cout_estime_eur": 12000,
+          "gain_resilience_points": 20,
+          "priorite": 1,
+          "aides_financieres": [
+            "MaPrimeRénov'",
+            "CEE",
+            "TVA réduite"
+          ]
+        },
+        {
+          "id": "REC_002",
+          "titre": "Installation de protections solaires",
+          "description": "Pose de stores extérieurs motorisés ou de brise-soleil sur les fenêtres exposées sud/ouest. Végétalisation des balcons si possible.",
+          "categorie": "thermique",
+          "risque_cible": "chaleur_extreme",
+          "cout_estime_eur": 3500,
+          "gain_resilience_points": 15,
+          "priorite": 1,
+          "aides_financières": [
+            "MaPrimeRénov'"
+          ]
+        }
+      ],
+      "court_terme": [
+        {
+          "id": "REC_003",
+          "titre": "Vérification des systèmes de ventilation",
+          "description": "Contrôle et nettoyage des VMC. Installation d'une ventilation double flux si possible pour améliorer le confort thermique.",
+          "categorie": "thermique",
+          "risque_cible": "chaleur_extreme",
+          "cout_estime_eur": 1500,
+          "gain_resilience_points": 10,
+          "priorite": 2,
+          "aides_financières": [
+            "CEE"
+          ]
+        },
+        {
+          "id": "REC_004",
+          "titre": "Protection contre les tempêtes",
+          "description": "Vérification et renforcement des fixations de la toiture et des menuiseries. Installation de volets anti-tempête si nécessaire.",
+          "categorie": "structurel",
+          "risque_cible": "tempete",
+          "cout_estime_eur": 2000,
+          "gain_resilience_points": 8,
+          "priorite": 2,
+          "aides_financières": []
+        }
+      ],
+      "moyen_terme": [
+        {
+          "id": "REC_005",
+          "titre": "Système de rafraîchissement passif",
+          "description": "Installation d'un puits canadien ou d'une pompe à chaleur réversible pour le rafraîchissement estival.",
+          "categorie": "thermique",
+          "risque_cible": "chaleur_extreme",
+          "cout_estime_eur": 8000,
+          "gain_resilience_points": 18,
+          "priorite": 3,
+          "aides_financières": [
+            "MaPrimeRénov'",
+            "CEE"
+          ]
+        }
+      ],
+      "long_terme_2050": [
+        {
+          "id": "REC_006",
+          "titre": "Adaptation aux risques futurs de sécheresse",
+          "description": "Étude géotechnique pour évaluer la stabilité des fondations. Renforcement si nécessaire (injection de résine, drainage périphérique).",
+          "categorie": "structurel",
+          "risque_cible": "secheresse",
+          "cout_estime_eur": 15000,
+          "gain_resilience_points": 25,
+          "priorite": 4,
+          "aides_financières": [
+            "Fonds Barnier"
+          ]
+        }
+      ]
+    },
+    "diagnostic_energetique": {
+      "consommation_kwh_m2_an": 210,
+      "emissions_co2_kg_m2_an": 45,
+      "potentiel_renovation": "eleve",
+      "economies_estimees_an": 900,
+      "aides_disponibles": [
+        "MaPrimeRénov'",
+        "Eco-PTZ",
+        "CEE",
+        "TVA réduite"
+      ]
+    },
+    "simulation_periode": {
+      "periode_debut": "2024",
+      "periode_fin": "2050",
+      "evenements_probables": [
+        {
+          "type": "canicule",
+          "probabilite_pct": 85,
+          "impact_estime": "Inconfort thermique majeur, surchauffe du bâtiment, risques sanitaires pour les occupants.",
+          "annee_probable": "2030-2050"
+        },
+        {
+          "type": "tempete",
+          "probabilite_pct": 60,
+          "impact_estime": "Dégâts matériels (toiture, menuiseries), coupures d'électricité.",
+          "annee_probable": "2025-2040"
+        },
+        {
+          "type": "inondation_ruissellement",
+          "probabilite_pct": 40,
+          "impact_estime": "Inondations localisées, dégâts des eaux dans les parties basses du bâtiment.",
+          "annee_probable": "2035-2050"
+        }
+      ],
+      "cout_risque_cumule_estime": 45000,
+      "indice_assurabilite": "standard"
+    },
+    "donnees_marche": {
+      "prix_m2_median_commune": 9800,
+      "tendance_12mois_pct": -2.1,
+      "impact_risque_sur_valeur_pct": -5,
+      "valeur_ajustee_risques": 522500,
+      "liquidite_marche": "normale"
+    },
+    "_performance": {
+      "duree_analyse_s": 51.93,
+      "json_valide": true,
+      "model_utilise": "mistral-large-latest"
+    }
+  },
+  "bordeaux": {
+    "meta": {
+      "version": "2.0",
+      "date_analyse": "2023-11-15T14:30:00Z",
+      "adresse": "8 Allée de la Garonne, 33100 Bordeaux",
+      "coordonnees": {
+        "lat": 44.8378,
+        "lon": -0.5792
+      },
+      "horizon_analyse": "2024-2050",
+      "sources_donnees": [
+        "BDNB",
+        "Géorisques",
+        "IGN",
+        "Open-Meteo",
+        "CATNAT",
+        "DVF",
+        "DRIAS"
+      ]
+    },
+    "bien": {
+      "type": "maison",
+      "surface_m2": 145,
+      "annee_construction": 1958,
+      "etages": 2,
+      "materiaux_principaux": [
+        "pierre_moellon"
+      ],
+      "dpe_classe": "E",
+      "valeur_venale_estimee": 480000,
+      "surface_terrain_m2": 320
+    },
+    "risques_actuels": {
+      "inondation": {
+        "niveau": "eleve",
+        "score": 85,
+        "present_zone_ppr": true,
+        "explication": "Bien situé en zone inondable (PPR inondation actif) à 120m de la Garonne avec historique de 12 arrêtés CatNat depuis 1982. Crue de référence à 1.8m. Zone inondable décennale confirmée par Géorisques.",
+        "source": "Géorisques/CATNAT",
+        "derniere_occurrence": "2021-03-15",
+        "periode_retour_ans": 10
+      },
+      "seisme": {
+        "niveau": "negligeable",
+        "score": 5,
+        "present_zone_ppr": false,
+        "explication": "Zone sismique 1 (très faible aléa). Aucun historique de sinistres sismiques dans la commune.",
+        "source": "Géorisques",
+        "derniere_occurrence": null,
+        "periode_retour_ans": null
+      },
+      "retrait_gonflement_argiles": {
+        "niveau": "modere",
+        "score": 45,
+        "present_zone_ppr": false,
+        "explication": "Alea moyen de retrait-gonflement des argiles (sol argileux sensible aux variations hydriques). Risque accru en période de sécheresse prolongée.",
+        "source": "Géorisques",
+        "derniere_occurrence": null,
+        "periode_retour_ans": null
+      },
+      "incendie_foret": {
+        "niveau": "faible",
+        "score": 20,
+        "present_zone_ppr": false,
+        "explication": "Présence de forêt dans un rayon de 5km (450ha), mais zone urbaine dense limitant la propagation. Risque faible en l'absence de végétation proche.",
+        "source": "IGN/Géorisques",
+        "derniere_occurrence": null,
+        "periode_retour_ans": null
+      },
+      "mouvement_terrain": {
+        "niveau": "negligeable",
+        "score": 10,
+        "present_zone_ppr": false,
+        "explication": "Aucun aléa mouvement de terrain identifié. Pente très faible (0.3%).",
+        "source": "Géorisques",
+        "derniere_occurrence": null,
+        "periode_retour_ans": null
+      },
+      "radon": {
+        "niveau": "faible",
+        "score": 15,
+        "present_zone_ppr": false,
+        "explication": "Zone à potentiel radon de niveau 1 (faible). Aucun risque significatif identifié.",
+        "source": "IRSN",
+        "derniere_occurrence": null,
+        "periode_retour_ans": null
+      },
+      "tempete": {
+        "niveau": "modere",
+        "score": 35,
+        "present_zone_ppr": false,
+        "explication": "Vitesse de vent maximale enregistrée à 35.2 m/s. Historique de tempêtes (sinistres CatNat). Exposition modérée due à la proximité du fleuve.",
+        "source": "Météo-France/CATNAT",
+        "derniere_occurrence": "2020-12-28",
+        "periode_retour_ans": 15
+      },
+      "chaleur_extreme": {
+        "niveau": "modere",
+        "score": 40,
+        "present_zone_ppr": false,
+        "explication": "15 jours de canicule par an en moyenne. Température record à 44.1°C. Risque accru pour les bâtiments mal isolés (DPE classe E).",
+        "source": "Open-Meteo/DRIAS",
+        "derniere_occurrence": "2022-07-18",
+        "periode_retour_ans": 5
+      },
+      "pollution_sols": {
+        "niveau": "negligeable",
+        "score": 5,
+        "present_zone_ppr": false,
+        "explication": "Aucune installation classée dans un rayon de 500m. Zone urbaine sans historique industriel majeur.",
+        "source": "BASIAS/BASOL",
+        "derniere_occurrence": null,
+        "periode_retour_ans": null
+      },
+      "submersion_marine": {
+        "niveau": "negligeable",
+        "score": 5,
+        "present_zone_ppr": false,
+        "explication": "Distance à la mer de 90km et altitude de 3m. Risque de submersion marine négligeable malgré la montée des eaux.",
+        "source": "Géorisques/SHOM",
+        "derniere_occurrence": null,
+        "periode_retour_ans": null
+      }
+    },
+    "risques_futurs_2050": {
+      "scenario_rcp45": {
+        "inondation": {
+          "niveau": "eleve",
+          "score": 90,
+          "explication": "Aggravation du risque inondation due à l'augmentation des précipitations hivernales (+12%) et à l'intensification des événements extrêmes. Montée des eaux de 35cm d'ici 2050. Période de retour des crues réduite à 5-7 ans."
+        },
+        "incendie_foret": {
+          "niveau": "modere",
+          "score": 50,
+          "explication": "Risque multiplié par 2.5 d'ici 2050 en raison de l'augmentation des températures estivales (+2.2°C) et de la réduction des précipitations estivales (-18%)."
+        },
+        "chaleur_extreme": {
+          "niveau": "eleve",
+          "score": 75,
+          "explication": "+18 jours de canicule supplémentaires par an. Températures estivales pouvant atteindre 48-50°C. Risque accru pour les bâtiments mal isolés (DPE E)."
+        },
+        "submersion_marine": {
+          "niveau": "faible",
+          "score": 20,
+          "explication": "Montée des eaux de 35cm d'ici 2050. Risque limité par la distance à la mer (90km) mais à surveiller pour les zones côtières proches."
+        },
+        "secheresse": {
+          "niveau": "eleve",
+          "score": 80,
+          "explication": "+28 jours de sécheresse supplémentaires par an. Aggravation du retrait-gonflement des argiles (risque structurel pour les fondations)."
+        },
+        "delta_temperature_celsius": 1.8,
+        "delta_precipitations_pct": -3
+      },
+      "scenario_rcp85": {
+        "inondation": {
+          "niveau": "tres_eleve",
+          "score": 95,
+          "explication": "Augmentation drastique des précipitations hivernales (+20%) et intensification des crues. Période de retour des inondations réduite à 3-5 ans. Montée des eaux de 35cm."
+        },
+        "incendie_foret": {
+          "niveau": "eleve",
+          "score": 70,
+          "explication": "Risque multiplié par 5.2. Températures estivales en hausse de +4.1°C et précipitations estivales réduites de 35%."
+        },
+        "chaleur_extreme": {
+          "niveau": "tres_eleve",
+          "score": 90,
+          "explication": "+45 jours de canicule supplémentaires par an. Températures estivales pouvant dépasser 50°C. Risque sanitaire et structurel majeur."
+        },
+        "submersion_marine": {
+          "niveau": "modere",
+          "score": 35,
+          "explication": "Montée des eaux de 35cm. Risque modéré pour les zones côtières proches, mais limité pour ce bien en raison de sa localisation."
+        },
+        "secheresse": {
+          "niveau": "tres_eleve",
+          "score": 90,
+          "explication": "+55 jours de sécheresse supplémentaires par an. Risque très élevé de retrait-gonflement des argiles et de fissures structurelles."
+        },
+        "delta_temperature_celsius": 3.5,
+        "delta_precipitations_pct": -8
+      }
+    },
+    "score_global": {
+      "note": 72,
+      "classe": "E",
+      "interpretation": "Risque global élevé principalement dû aux inondations et à l'aggravation climatique future. Vulnérabilité structurelle et énergétique significative.",
+      "score_resilience": 35,
+      "score_exposition": 85,
+      "score_vulnerabilite": 70
+    },
+    "recommandations": {
+      "urgentes": [
+        {
+          "id": "REC_001",
+          "titre": "Protection contre les inondations",
+          "description": "Installation de batardeaux amovibles (hauteur 2m) et d'une pompe de relevage automatique. Étanchéification des murs enterrés et des ouvertures basses.",
+          "categorie": "protection_structurelle",
+          "risque_cible": "inondation",
+          "cout_estime_eur": 12000,
+          "gain_resilience_points": 25,
+          "priorite": 1,
+          "aides_financieres": [
+            "Fonds Barnier",
+            "ANAH"
+          ]
+        },
+        {
+          "id": "REC_002",
+          "titre": "Renforcement des fondations",
+          "description": "Injection de résine expansive pour stabiliser les fondations face au retrait-gonflement des argiles. Surveillance par capteurs connectés.",
+          "categorie": "renforcement_structurel",
+          "risque_cible": "retrait_gonflement_argiles",
+          "cout_estime_eur": 18000,
+          "gain_resilience_points": 20,
+          "priorite": 1,
+          "aides_financieres": [
+            "MaPrimeRénov'",
+            "TVA réduite"
+          ]
+        }
+      ],
+      "court_terme": [
+        {
+          "id": "REC_003",
+          "titre": "Isolation thermique et protection contre la chaleur",
+          "description": "Pose d'une isolation extérieure (ITE) performante (R≥4.5 m².K/W) et de volets roulants isolants. Végétalisation de la toiture-terrasse.",
+          "categorie": "amelioration_energetique",
+          "risque_cible": "chaleur_extreme",
+          "cout_estime_eur": 25000,
+          "gain_resilience_points": 15,
+          "priorite": 2,
+          "aides_financieres": [
+            "MaPrimeRénov'",
+            "CEE"
+          ]
+        },
+        {
+          "id": "REC_004",
+          "titre": "Remplacement du système de chauffage",
+          "description": "Remplacement de la chaudière fioul par une pompe à chaleur air-eau (COP≥3.5). Installation d'un ballon thermodynamique pour l'ECS.",
+          "categorie": "transition_energetique",
+          "risque_cible": "emissions_co2",
+          "cout_estime_eur": 15000,
+          "gain_resilience_points": 10,
+          "priorite": 2,
+          "aides_financieres": [
+            "MaPrimeRénov'",
+            "Prime CEE",
+            "Éco-PTZ"
+          ]
+        }
+      ],
+      "moyen_terme": [
+        {
+          "id": "REC_005",
+          "titre": "Création d'un espace refuge en hauteur",
+          "description": "Aménagement d'une pièce refuge au 2ème étage avec réserves d'eau et de nourriture pour 72h. Installation d'un groupe électrogène solaire.",
+          "categorie": "preparation_urgence",
+          "risque_cible": "inondation",
+          "cout_estime_eur": 8000,
+          "gain_resilience_points": 10,
+          "priorite": 3,
+          "aides_financieres": []
+        },
+        {
+          "id": "REC_006",
+          "titre": "Végétalisation des abords",
+          "description": "Création d'une ceinture végétale autour de la propriété avec des espèces résistantes à la sécheresse pour limiter les îlots de chaleur.",
+          "categorie": "adaptation_climatique",
+          "risque_cible": "chaleur_extreme",
+          "cout_estime_eur": 5000,
+          "gain_resilience_points": 5,
+          "priorite": 3,
+          "aides_financieres": [
+            "Aides locales Bordeaux Métropole"
+          ]
+        }
+      ],
+      "long_terme_2050": [
+        {
+          "id": "REC_007",
+          "titre": "Surélévation du bien",
+          "description": "Surélévation de 1m du bâtiment pour le mettre hors d'eau en cas de crue centennale. Renforcement des murs porteurs.",
+          "categorie": "adaptation_structurelle",
+          "risque_cible": "inondation",
+          "cout_estime_eur": 80000,
+          "gain_resilience_points": 30,
+          "priorite": 4,
+          "aides_financieres": [
+            "Fonds Barnier"
+          ]
+        },
+        {
+          "id": "REC_008",
+          "titre": "Installation d'un système de climatisation passive",
+          "description": "Mise en place d'un système de rafraîchissement par géothermie basse température couplé à une ventilation double flux.",
+          "categorie": "adaptation_climatique",
+          "risque_cible": "chaleur_extreme",
+          "cout_estime_eur": 30000,
+          "gain_resilience_points": 20,
+          "priorite": 4,
+          "aides_financieres": [
+            "MaPrimeRénov'",
+            "CEE"
+          ]
+        }
+      ]
+    },
+    "diagnostic_energetique": {
+      "consommation_kwh_m2_an": 310,
+      "emissions_co2_kg_m2_an": 65,
+      "potentiel_renovation": "tres_eleve",
+      "economies_estimees_an": 2200,
+      "aides_disponibles": [
+        "MaPrimeRénov'",
+        "Eco-PTZ",
+        "Prime CEE",
+        "TVA réduite"
+      ]
+    },
+    "simulation_periode": {
+      "periode_debut": "2024",
+      "periode_fin": "2050",
+      "evenements_probables": [
+        {
+          "type": "inondation_majeure",
+          "probabilite_pct": 85,
+          "impact_estime": "Dégâts structurels et perte d'usage du rez-de-chaussée pendant 3-6 mois. Coût moyen estimé à 120 000€.",
+          "annee_probable": "2030-2040"
+        },
+        {
+          "type": "canicule_extreme",
+          "probabilite_pct": 90,
+          "impact_estime": "Températures >45°C pendant 10 jours consécutifs. Risque de fissuration des murs et dégradation accélérée des matériaux.",
+          "annee_probable": "2035-2045"
+        },
+        {
+          "type": "secheresse_prolongee",
+          "probabilite_pct": 75,
+          "impact_estime": "Retrait-gonflement des argiles entraînant des fissures structurelles. Coût de réparation estimé à 30 000-50 000€.",
+          "annee_probable": "2040-2050"
+        }
+      ],
+      "cout_risque_cumule_estime": 280000,
+      "indice_assurabilite": "difficile"
+    },
+    "donnees_marche": {
+      "prix_m2_median_commune": 3850,
+      "tendance_12mois_pct": -4.2,
+      "impact_risque_sur_valeur_pct": -22,
+      "valeur_ajustee_risques": 374400,
+      "liquidite_marche": "normale"
+    },
+    "_performance": {
+      "duree_analyse_s": 53.39,
+      "json_valide": true,
+      "model_utilise": "mistral-large-latest"
+    }
+  },
+  "nice": {
+    "meta": {
+      "version": "2.0",
+      "date_analyse": "2024-05-20T14:30:00Z",
+      "adresse": "42 Boulevard Carnot, 06300 Nice",
+      "coordonnees": {
+        "lat": 43.7102,
+        "lon": 7.262
+      },
+      "horizon_analyse": "2024-2050",
+      "sources_donnees": [
+        "BDNB",
+        "Géorisques",
+        "IGN",
+        "Open-Meteo",
+        "CATNAT",
+        "DVF",
+        "DRIAS"
+      ]
+    },
+    "bien": {
+      "type": "appartement",
+      "surface_m2": 82,
+      "annee_construction": 1965,
+      "etages": 1,
+      "materiaux_principaux": [
+        "beton"
+      ],
+      "dpe_classe": "C",
+      "valeur_venale_estimee": 650000,
+      "surface_terrain_m2": null
+    },
+    "risques_actuels": {
+      "inondation": {
+        "niveau": "eleve",
+        "score": 78,
+        "present_zone_ppr": true,
+        "explication": "Proximité immédiate du Paillon (250m) et historique d'inondations récurrentes (18 arrêtés CatNat depuis 1982). Dernier événement majeur en octobre 2020 avec submersion du boulevard. Zone PPR inondation active avec période de retour estimée à 20 ans.",
+        "source": "Géorisques/CATNAT",
+        "derniere_occurrence": "2023-10-15",
+        "periode_retour_ans": 20
+      },
+      "seisme": {
+        "niveau": "modere",
+        "score": 55,
+        "present_zone_ppr": false,
+        "explication": "Zone sismique 4 (risque moyen). Bâtiment en béton ancien (1965) non conçu selon les normes parasismiques actuelles. Risque d'effondrement partiel en cas de séisme majeur (magnitude > 5.5).",
+        "source": "Géorisques",
+        "derniere_occurrence": null,
+        "periode_retour_ans": null
+      },
+      "retrait_gonflement_argiles": {
+        "niveau": "faible",
+        "score": 25,
+        "present_zone_ppr": false,
+        "explication": "Alea faible selon BRGM. Sol stable en zone urbaine dense. Risque négligeable pour ce type de construction sur dalle béton.",
+        "source": "Géorisques",
+        "derniere_occurrence": null,
+        "periode_retour_ans": null
+      },
+      "incendie_foret": {
+        "niveau": "modere",
+        "score": 42,
+        "present_zone_ppr": false,
+        "explication": "Présence de massifs forestiers à moins de 5km (1200ha). Risque modéré en raison de la densité urbaine et de l'éloignement relatif des zones boisées. Vent fort (mistral) pouvant propager les feux.",
+        "source": "IGN/Météo-France",
+        "derniere_occurrence": null,
+        "periode_retour_ans": null
+      },
+      "mouvement_terrain": {
+        "niveau": "modere",
+        "score": 50,
+        "present_zone_ppr": true,
+        "explication": "Historique de glissements de terrain liés aux fortes pluies (3 événements CatNat). Pente faible (2.1%) mais sol instable en zone littorale. Risque de tassements différentiels.",
+        "source": "Géorisques",
+        "derniere_occurrence": null,
+        "periode_retour_ans": null
+      },
+      "radon": {
+        "niveau": "negligeable",
+        "score": 10,
+        "present_zone_ppr": false,
+        "explication": "Niveau 1 de potentiel radon (très faible). Aucune mesure corrective nécessaire.",
+        "source": "IRSN",
+        "derniere_occurrence": null,
+        "periode_retour_ans": null
+      },
+      "tempete": {
+        "niveau": "eleve",
+        "score": 68,
+        "present_zone_ppr": false,
+        "explication": "Exposition aux vents violents (mistral) avec vitesse max enregistrée à 42m/s. 45 épisodes annuels en moyenne. Risque de dégâts structurels et de chutes d'arbres.",
+        "source": "Météo-France",
+        "derniere_occurrence": null,
+        "periode_retour_ans": 5
+      },
+      "chaleur_extreme": {
+        "niveau": "modere",
+        "score": 55,
+        "present_zone_ppr": false,
+        "explication": "25 jours de canicule par an en moyenne. Température record à 38.5°C. Risque modéré pour un appartement en RDC avec isolation ancienne.",
+        "source": "Open-Meteo/DRIAS",
+        "derniere_occurrence": "2023-08-24",
+        "periode_retour_ans": 2
+      },
+      "pollution_sols": {
+        "niveau": "faible",
+        "score": 20,
+        "present_zone_ppr": false,
+        "explication": "1 installation classée à moins de 500m. Pas d'historique de pollution avérée dans le secteur. Risque négligeable.",
+        "source": "BASIAS/BASOL",
+        "derniere_occurrence": null,
+        "periode_retour_ans": null
+      },
+      "submersion_marine": {
+        "niveau": "eleve",
+        "score": 72,
+        "present_zone_ppr": true,
+        "explication": "Distance à la mer de 800m avec altitude de 8m. Risque de submersion lors de tempêtes combinées à des surcotes marines. Montée des eaux déjà observable (+3mm/an).",
+        "source": "Géorisques/SHOM",
+        "derniere_occurrence": "2019-11-23",
+        "periode_retour_ans": 15
+      }
+    },
+    "risques_futurs_2050": {
+      "scenario_rcp45": {
+        "inondation": {
+          "niveau": "tres_eleve",
+          "score": 88,
+          "explication": "Augmentation de 40% de la fréquence des pluies intenses (+1.4x) combinée à l'urbanisation croissante. Période de retour réduite à 12 ans. Risque de submersion marine aggravé par la montée des eaux (+40cm)."
+        },
+        "incendie_foret": {
+          "niveau": "eleve",
+          "score": 70,
+          "explication": "Risque multiplié par 3 en raison de l'augmentation des températures estivales (+1.9°C) et de la baisse des précipitations (-15%). 22 jours de canicule supplémentaires par an."
+        },
+        "chaleur_extreme": {
+          "niveau": "eleve",
+          "score": 80,
+          "explication": "47 jours de canicule annuels prévus (+22 jours). Température estivale moyenne à 28°C (+1.9°C). Risque accru de stress thermique pour les occupants."
+        },
+        "submersion_marine": {
+          "niveau": "tres_eleve",
+          "score": 90,
+          "explication": "Montée des eaux de 40cm d'ici 2050. Risque de submersion permanente des zones basses. Fréquence des tempêtes côtières augmentée de 30%."
+        },
+        "secheresse": {
+          "niveau": "modere",
+          "score": 55,
+          "explication": "Baisse des précipitations estivales (-15%) et augmentation de l'évapotranspiration. Risque de fissuration des structures en béton ancien."
+        },
+        "delta_temperature_celsius": 1.9,
+        "delta_precipitations_pct": -5
+      },
+      "scenario_rcp85": {
+        "inondation": {
+          "niveau": "tres_eleve",
+          "score": 92,
+          "explication": "Fréquence des pluies intenses multipliée par 1.8. Période de retour réduite à 8 ans. Risque de submersion marine critique avec montée des eaux de 40cm et tempêtes plus violentes."
+        },
+        "incendie_foret": {
+          "niveau": "tres_eleve",
+          "score": 85,
+          "explication": "Risque multiplié par 6. 67 jours de canicule annuels (+42 jours). Températures estivales à 30°C en moyenne (+3.5°C)."
+        },
+        "chaleur_extreme": {
+          "niveau": "tres_eleve",
+          "score": 90,
+          "explication": "67 jours de canicule annuels. Température estivale moyenne à 30°C (+3.5°C). Risque de surchauffe extrême pour les logements mal isolés."
+        },
+        "submersion_marine": {
+          "niveau": "tres_eleve",
+          "score": 95,
+          "explication": "Montée des eaux de 40cm + surcotes marines accrues. Risque de submersion permanente du boulevard Carnot lors des tempêtes. Fréquence des événements extrêmes multipliée par 2."
+        },
+        "secheresse": {
+          "niveau": "eleve",
+          "score": 70,
+          "explication": "Baisse drastique des précipitations estivales (-28%) et températures accrues. Risque élevé de fissuration des structures et de retrait des sols argileux résiduels."
+        },
+        "delta_temperature_celsius": 3.5,
+        "delta_precipitations_pct": -10
+      }
+    },
+    "score_global": {
+      "note": 72,
+      "classe": "E",
+      "interpretation": "Exposition élevée aux risques climatiques actuels et futurs. Vulnérabilité structurelle significative nécessitant des travaux de résilience urgents.",
+      "score_resilience": 35,
+      "score_exposition": 85,
+      "score_vulnerabilite": 68
+    },
+    "recommandations": {
+      "urgentes": [
+        {
+          "id": "REC_001",
+          "titre": "Protection contre les inondations",
+          "description": "Installation de batardeaux amovibles (hauteur 1m) et clapet anti-retour sur les évacuations. Étanchéification des menuiseries basses.",
+          "categorie": "protection_inondation",
+          "risque_cible": "inondation",
+          "cout_estime_eur": 12000,
+          "gain_resilience_points": 25,
+          "priorite": 1,
+          "aides_financieres": [
+            "Fonds Barnier",
+            "ANAH"
+          ]
+        },
+        {
+          "id": "REC_002",
+          "titre": "Renforcement parasismique",
+          "description": "Ajout de contreventements métalliques et chaînages supplémentaires. Vérification des ancrages des éléments non structuraux.",
+          "categorie": "renforcement_structurel",
+          "risque_cible": "seisme",
+          "cout_estime_eur": 22000,
+          "gain_resilience_points": 18,
+          "priorite": 1,
+          "aides_financieres": [
+            "Crédit d'impôt transition énergétique"
+          ]
+        },
+        {
+          "id": "REC_003",
+          "titre": "Protection contre les submersions marines",
+          "description": "Surélévation des équipements électriques (50cm) et installation de pompes de relevage. Vérification de l'étanchéité des murs extérieurs.",
+          "categorie": "protection_submersion",
+          "risque_cible": "submersion_marine",
+          "cout_estime_eur": 8500,
+          "gain_resilience_points": 20,
+          "priorite": 1,
+          "aides_financières": [
+            "Plan Littoral 21"
+          ]
+        }
+      ],
+      "court_terme": [
+        {
+          "id": "REC_004",
+          "titre": "Isolation thermique renforcée",
+          "description": "Pose d'isolant thermique par l'extérieur (ITE) avec parement résistant aux intempéries. Remplacement des menuiseries par du double vitrage anti-UV.",
+          "categorie": "efficacite_energetique",
+          "risque_cible": "chaleur_extreme",
+          "cout_estime_eur": 18000,
+          "gain_resilience_points": 15,
+          "priorite": 2,
+          "aides_financieres": [
+            "MaPrimeRénov'",
+            "CEE"
+          ]
+        },
+        {
+          "id": "REC_005",
+          "titre": "Système de détection incendie",
+          "description": "Installation de détecteurs de fumée connectés et extincteurs automatiques dans les parties communes. Formation des occupants aux procédures d'évacuation.",
+          "categorie": "prevention_incendie",
+          "risque_cible": "incendie_foret",
+          "cout_estime_eur": 3500,
+          "gain_resilience_points": 10,
+          "priorite": 2,
+          "aides_financieres": [
+            "Subvention municipale"
+          ]
+        }
+      ],
+      "moyen_terme": [
+        {
+          "id": "REC_006",
+          "titre": "Végétalisation des abords",
+          "description": "Création de zones tampons végétalisées (haies, arbres résistants à la sécheresse) pour limiter les effets des vagues de chaleur et réduire le ruissellement.",
+          "categorie": "adaptation_climatique",
+          "risque_cible": "chaleur_extreme",
+          "cout_estime_eur": 7000,
+          "gain_resilience_points": 12,
+          "priorite": 3,
+          "aides_financieres": [
+            "Métropole Nice Côte d'Azur"
+          ]
+        },
+        {
+          "id": "REC_007",
+          "titre": "Renforcement des fondations",
+          "description": "Injection de résine expansive sous les fondations pour stabiliser les sols et prévenir les tassements différentiels.",
+          "categorie": "renforcement_structurel",
+          "risque_cible": "mouvement_terrain",
+          "cout_estime_eur": 15000,
+          "gain_resilience_points": 14,
+          "priorite": 3,
+          "aides_financieres": [
+            "Fonds de prévention des risques naturels"
+          ]
+        }
+      ],
+      "long_terme_2050": [
+        {
+          "id": "REC_008",
+          "titre": "Surélévation du bâtiment",
+          "description": "Étude de faisabilité pour une surélévation de 1m des parties habitables en prévision de la montée des eaux. Solution à coupler avec un rehaussement des digues urbaines.",
+          "categorie": "adaptation_radicale",
+          "risque_cible": "submersion_marine",
+          "cout_estime_eur": 120000,
+          "gain_resilience_points": 30,
+          "priorite": 4,
+          "aides_financieres": [
+            "Plan Littoral 21",
+            "Europe"
+          ]
+        },
+        {
+          "id": "REC_009",
+          "titre": "Système de climatisation passive",
+          "description": "Installation d'un système de rafraîchissement géothermique couplé à des puits canadiens pour limiter la consommation énergétique lors des canicules.",
+          "categorie": "adaptation_climatique",
+          "risque_cible": "chaleur_extreme",
+          "cout_estime_eur": 25000,
+          "gain_resilience_points": 20,
+          "priorite": 4,
+          "aides_financieres": [
+            "ADEME",
+            "Région Sud"
+          ]
+        }
+      ]
+    },
+    "diagnostic_energetique": {
+      "consommation_kwh_m2_an": 155,
+      "emissions_co2_kg_m2_an": 28,
+      "potentiel_renovation": "eleve",
+      "economies_estimees_an": 950,
+      "aides_disponibles": [
+        "MaPrimeRénov'",
+        "Eco-PTZ",
+        "CEE",
+        "TVA réduite"
+      ]
+    },
+    "simulation_periode": {
+      "periode_debut": "2024",
+      "periode_fin": "2050",
+      "evenements_probables": [
+        {
+          "type": "inondation_majeure",
+          "probabilite_pct": 85,
+          "impact_estime": "Submersion du rez-de-chaussée (82m²) avec dégâts structurels estimés à 120 000€. Interruption de la location saisonnière pendant 6 mois.",
+          "annee_probable": "2035-2040"
+        },
+        {
+          "type": "canicule_extreme",
+          "probabilite_pct": 95,
+          "impact_estime": "Températures intérieures > 35°C pendant 15 jours consécutifs. Risque sanitaire pour les occupants. Surcoût de climatisation de 800€/an.",
+          "annee_probable": "2040-2045"
+        },
+        {
+          "type": "tempete_violente",
+          "probabilite_pct": 70,
+          "impact_estime": "Dégâts sur les menuiseries et toiture estimés à 45 000€. Coupure électrique prolongée (72h).",
+          "annee_probable": "2030-2035"
+        },
+        {
+          "type": "submersion_marine",
+          "probabilite_pct": 65,
+          "impact_estime": "Inondation du boulevard Carnot avec atteinte partielle du bâtiment. Dégâts estimés à 90 000€.",
+          "annee_probable": "2045-2050"
+        }
+      ],
+      "cout_risque_cumule_estime": 385000,
+      "indice_assurabilite": "difficile"
+    },
+    "donnees_marche": {
+      "prix_m2_median_commune": 5200,
+      "tendance_12mois_pct": 1.8,
+      "impact_risque_sur_valeur_pct": -18,
+      "valeur_ajustee_risques": 533000,
+      "liquidite_marche": "normale"
+    },
+    "_performance": {
+      "duree_analyse_s": 58.76,
+      "json_valide": true,
+      "model_utilise": "mistral-large-latest"
+    }
+  },
+  "vulnerability_test": {
+    "verdict": "RISQUE_ELEVE",
+    "score_risque": 85,
+    "risques_identifies": [
+      {
+        "type": "sismique",
+        "niveau": "eleve",
+        "detail": "Zone classée en zone sismique 4 (risque élevé)."
+      },
+      {
+        "type": "inondation",
+        "niveau": "modere",
+        "detail": "PPR inondation présent, risque modéré mais à surveiller."
+      },
+      {
+        "type": "incendie",
+        "niveau": "eleve",
+        "detail": "Risque incendie élevé en zone urbaine dense."
+      },
+      {
+        "type": "proximite_mer",
+        "niveau": "faible",
+        "detail": "Distance à la mer de 800m, risque de submersion limité mais possible."
+      }
+    ],
+    "explication": "Cette zone cumule plusieurs risques majeurs : sismique élevé, inondation et incendie. La proximité de la mer ajoute une vulnérabilité supplémentaire en cas de tempête ou de submersion marine.",
+    "action_immediate": "Vérifier les normes parasismiques des bâtiments et renforcer les mesures de prévention incendie (débroussaillage, accès pompiers).",
+    "delai_reponse_ms": 1980
+  },
+  "projection_2050_bordeaux": {
+    "meta": {
+      "version": "2.0",
+      "date_analyse": "2023-11-15T14:30:00Z",
+      "adresse": "8 Allée de la Garonne, 33100 Bordeaux",
+      "coordonnees": {
+        "lat": 44.8378,
+        "lon": -0.5792
+      },
+      "horizon_analyse": "2050",
+      "sources_donnees": [
+        "BDNB",
+        "Géorisques",
+        "IGN",
+        "Open-Meteo",
+        "CATNAT",
+        "DVF",
+        "DRIAS"
+      ],
+      "scenario_climatique": "rcp85"
+    },
+    "bien": {
+      "type": "maison",
+      "surface_m2": 145,
+      "annee_construction": 1958,
+      "etages": 2,
+      "materiaux_principaux": [
+        "pierre_moellon"
+      ],
+      "dpe_classe": "F",
+      "valeur_venale_estimee": 320000,
+      "surface_terrain_m2": 320
+    },
+    "risques_actuels": {
+      "inondation": {
+        "niveau": "tres_eleve",
+        "score": 95,
+        "present_zone_ppr": true,
+        "explication": "Bien situé en zone inondable critique (PPR inondation renforcé) à 120m de la Garonne. Historique de 20 arrêtés CatNat depuis 1982. Crue de référence portée à 2.5m. Zone inondable quinquennale confirmée. Montée des eaux de 35cm aggravant les débordements.",
+        "source": "Géorisques/CATNAT/DRIAS",
+        "derniere_occurrence": "2023-10-12",
+        "periode_retour_ans": 3
+      },
+      "seisme": {
+        "niveau": "faible",
+        "score": 10,
+        "present_zone_ppr": false,
+        "explication": "Zone sismique 1 (très faible aléa) mais augmentation des micro-séismes liés aux variations hydriques extrêmes. Aucun sinistre majeur enregistré.",
+        "source": "Géorisques/IRSN",
+        "derniere_occurrence": null,
+        "periode_retour_ans": null
+      },
+      "retrait_gonflement_argiles": {
+        "niveau": "tres_eleve",
+        "score": 90,
+        "present_zone_ppr": true,
+        "explication": "Alea très élevé de retrait-gonflement des argiles (sol argileux très sensible). 55 jours de sécheresse supplémentaires par an. Risque structurel majeur pour les fondations non adaptées.",
+        "source": "Géorisques/DRIAS",
+        "derniere_occurrence": "2023-09-15",
+        "periode_retour_ans": 2
+      },
+      "incendie_foret": {
+        "niveau": "eleve",
+        "score": 70,
+        "present_zone_ppr": true,
+        "explication": "Risque multiplié par 5.2. 450ha de forêt dans un rayon de 5km avec conditions estivales extrêmes (+4.1°C, -35% précipitations). Propagation facilitée par les vents violents.",
+        "source": "IGN/Géorisques/DRIAS",
+        "derniere_occurrence": "2023-07-22",
+        "periode_retour_ans": 8
+      },
+      "mouvement_terrain": {
+        "niveau": "modere",
+        "score": 30,
+        "present_zone_ppr": false,
+        "explication": "Alea modéré lié aux glissements de terrain induits par les précipitations intenses hivernales (+20%) et aux variations hydriques extrêmes.",
+        "source": "Géorisques/DRIAS",
+        "derniere_occurrence": null,
+        "periode_retour_ans": null
+      },
+      "radon": {
+        "niveau": "modere",
+        "score": 30,
+        "present_zone_ppr": false,
+        "explication": "Zone à potentiel radon de niveau 2 (modéré) en raison des fissures structurelles accrues par les sécheresses répétées.",
+        "source": "IRSN/DRIAS",
+        "derniere_occurrence": null,
+        "periode_retour_ans": null
+      },
+      "tempete": {
+        "niveau": "eleve",
+        "score": 65,
+        "present_zone_ppr": true,
+        "explication": "Vitesse de vent maximale enregistrée à 42.3 m/s. Intensification des tempêtes hivernales (+30% de précipitations). Exposition aggravée par la proximité du fleuve et l'affaiblissement des sols.",
+        "source": "Météo-France/CATNAT/DRIAS",
+        "derniere_occurrence": "2023-12-05",
+        "periode_retour_ans": 5
+      },
+      "chaleur_extreme": {
+        "niveau": "tres_eleve",
+        "score": 90,
+        "present_zone_ppr": true,
+        "explication": "45 jours de canicule supplémentaires par an. Températures estivales dépassant 50°C. Risque sanitaire et structurel majeur pour les bâtiments mal isolés (DPE classe F). Îlots de chaleur urbains aggravés.",
+        "source": "Open-Meteo/DRIAS",
+        "derniere_occurrence": "2023-08-10",
+        "periode_retour_ans": 2
+      },
+      "pollution_sols": {
+        "niveau": "modere",
+        "score": 25,
+        "present_zone_ppr": false,
+        "explication": "Pollution modérée liée aux inondations répétées transportant des contaminants depuis les zones industrielles en amont. Surveillance renforcée des sols.",
+        "source": "BASIAS/BASOL/DRIAS",
+        "derniere_occurrence": null,
+        "periode_retour_ans": null
+      },
+      "submersion_marine": {
+        "niveau": "modere",
+        "score": 35,
+        "present_zone_ppr": false,
+        "explication": "Montée des eaux de 35cm d'ici 2050. Risque modéré de remontée des eaux par les réseaux d'assainissement et les nappes phréatiques. Distance à la mer de 90km mais influence accrue.",
+        "source": "Géorisques/SHOM/DRIAS",
+        "derniere_occurrence": null,
+        "periode_retour_ans": null
+      }
+    },
+    "risques_futurs_2050": {
+      "scenario_rcp45": {
+        "inondation": {
+          "niveau": "tres_eleve",
+          "score": 98,
+          "explication": "Aggravation critique du risque inondation avec +15% de précipitations hivernales et intensification des crues éclairs. Période de retour réduite à 2-3 ans. Montée des eaux de 45cm d'ici 2060."
+        },
+        "incendie_foret": {
+          "niveau": "tres_eleve",
+          "score": 80,
+          "explication": "Risque multiplié par 3.5. Températures estivales en hausse de +2.8°C et précipitations réduites de 25%. Conditions propices aux méga-feux urbains."
+        },
+        "chaleur_extreme": {
+          "niveau": "tres_eleve",
+          "score": 95,
+          "explication": "+30 jours de canicule supplémentaires. Températures estivales dépassant 52°C. Effondrement thermique des bâtiments non adaptés."
+        },
+        "submersion_marine": {
+          "niveau": "modere",
+          "score": 40,
+          "explication": "Montée des eaux de 45cm. Risque accru de salinisation des nappes phréatiques et de remontées capillaires."
+        },
+        "secheresse": {
+          "niveau": "tres_eleve",
+          "score": 95,
+          "explication": "+40 jours de sécheresse supplémentaires. Retrait-gonflement des argiles entraînant des dommages structurels irréversibles."
+        },
+        "delta_temperature_celsius": 2.5,
+        "delta_precipitations_pct": -5
+      },
+      "scenario_rcp85": {
+        "inondation": {
+          "niveau": "extreme",
+          "score": 100,
+          "explication": "Crises inondation chroniques avec +25% de précipitations hivernales et crues centennales devenant décennales. Montée des eaux de 55cm. Bien en zone submersible permanente."
+        },
+        "incendie_foret": {
+          "niveau": "extreme",
+          "score": 90,
+          "explication": "Risque multiplié par 7. Températures estivales en hausse de +5.2°C et précipitations réduites de 45%. Feux urbains incontrôlables."
+        },
+        "chaleur_extreme": {
+          "niveau": "extreme",
+          "score": 100,
+          "explication": "+60 jours de canicule. Températures dépassant 55°C. Risque vital pour les occupants et effondrement des structures non adaptées."
+        },
+        "submersion_marine": {
+          "niveau": "eleve",
+          "score": 50,
+          "explication": "Montée des eaux de 55cm. Salinisation avancée des sols et des réseaux. Risque de submersion indirecte par les réseaux."
+        },
+        "secheresse": {
+          "niveau": "extreme",
+          "score": 100,
+          "explication": "+70 jours de sécheresse. Désertification des sols et fissures structurelles généralisées. Bien partiellement inhabitable."
+        },
+        "delta_temperature_celsius": 4.5,
+        "delta_precipitations_pct": -12
+      }
+    },
+    "score_global": {
+      "note": 92,
+      "classe": "G",
+      "interpretation": "Risque global extrême. Bien fortement exposé aux inondations, sécheresses et canicules. Vulnérabilité structurelle et énergétique critique. Adaptation urgente nécessaire pour maintenir l'habitabilité.",
+      "score_resilience": 15,
+      "score_exposition": 98,
+      "score_vulnerabilite": 95
+    },
+    "recommandations": {
+      "urgentes": [
+        {
+          "id": "REC_2050_001",
+          "titre": "Surélévation d'urgence du bâtiment",
+          "description": "Surélévation de 2m du bâtiment avec renforcement parasismique des fondations. Mise hors d'eau définitive du rez-de-chaussée. Utilisation de matériaux résistants aux inondations (béton hydrofuge, acier inoxydable).",
+          "categorie": "adaptation_structurelle",
+          "risque_cible": "inondation",
+          "cout_estime_eur": 120000,
+          "gain_resilience_points": 40,
+          "priorite": 1,
+          "aides_financieres": [
+            "Fonds Barnier",
+            "ANAH Urgence Climatique"
+          ]
+        },
+        {
+          "id": "REC_2050_002",
+          "titre": "Stabilisation géotechnique des sols",
+          "description": "Injection de résine expansive haute performance sur 3m de profondeur. Installation d'un système de drainage périphérique intelligent avec capteurs hydriques connectés. Végétalisation adaptée aux sols argileux.",
+          "categorie": "renforcement_geotechnique",
+          "risque_cible": "retrait_gonflement_argiles",
+          "cout_estime_eur": 35000,
+          "gain_resilience_points": 30,
+          "priorite": 1,
+          "aides_financières": [
+            "MaPrimeRénov' Adaptation",
+            "TVA réduite"
+          ]
+        },
+        {
+          "id": "REC_2050_003",
+          "titre": "Création d'un espace refuge climatisé",
+          "description": "Aménagement d'une pièce refuge au 2ème étage avec isolation thermique renforcée (R=8 m².K/W), système de filtration d'air, réserves d'eau et nourriture pour 15 jours. Groupe électrogène solaire avec batterie de stockage.",
+          "categorie": "preparation_urgence",
+          "risque_cible": "chaleur_extreme",
+          "cout_estime_eur": 25000,
+          "gain_resilience_points": 25,
+          "priorite": 1,
+          "aides_financières": [
+            "Aides locales Bordeaux Métropole"
+          ]
+        }
+      ],
+      "court_terme": [
+        {
+          "id": "REC_2050_004",
+          "titre": "Isolation thermique extrême et protection solaire",
+          "description": "Pose d'une isolation extérieure haute performance (R≥6 m².K/W) avec parement réflecteur. Installation de volets roulants isolants motorisés et de brise-soleil orientables. Végétalisation intensive de la toiture et des murs.",
+          "categorie": "adaptation_climatique",
+          "risque_cible": "chaleur_extreme",
+          "cout_estime_eur": 45000,
+          "gain_resilience_points": 20,
+          "priorite": 2,
+          "aides_financières": [
+            "MaPrimeRénov' Sérénité",
+            "CEE"
+          ]
+        },
+        {
+          "id": "REC_2050_005",
+          "titre": "Système de climatisation passive géothermique",
+          "description": "Installation d'un système de rafraîchissement par géothermie basse température (puits canadien + échangeur thermique) couplé à une ventilation double flux avec récupération de chaleur. Puits de décompression pour les argiles.",
+          "categorie": "transition_energetique",
+          "risque_cible": "chaleur_extreme",
+          "cout_estime_eur": 35000,
+          "gain_resilience_points": 18,
+          "priorite": 2,
+          "aides_financières": [
+            "MaPrimeRénov'",
+            "Prime CEE",
+            "Éco-PTZ"
+          ]
+        },
+        {
+          "id": "REC_2050_006",
+          "titre": "Protection contre les incendies urbains",
+          "description": "Création d'une ceinture coupe-feu de 10m autour de la propriété avec matériaux incombustibles. Installation de sprinklers extérieurs et de détecteurs de fumée connectés. Végétalisation avec espèces ignifuges.",
+          "categorie": "protection_structurelle",
+          "risque_cible": "incendie_foret",
+          "cout_estime_eur": 20000,
+          "gain_resilience_points": 15,
+          "priorite": 2,
+          "aides_financières": [
+            "Aides départementales"
+          ]
+        }
+      ],
+      "moyen_terme": [
+        {
+          "id": "REC_2050_007",
+          "titre": "Renforcement structurel global",
+          "description": "Renforcement des murs porteurs avec fibres de carbone. Remplacement des menuiseries par des modèles résistants aux vents violents (classe A4) et aux chocs thermiques. Étanchéification complète des réseaux.",
+          "categorie": "renforcement_structurel",
+          "risque_cible": "tempete",
+          "cout_estime_eur": 50000,
+          "gain_resilience_points": 25,
+          "priorite": 3,
+          "aides_financières": [
+            "Fonds Barnier",
+            "MaPrimeRénov'"
+          ]
+        },
+        {
+          "id": "REC_2050_008",
+          "titre": "Système de gestion intelligente des risques",
+          "description": "Installation d'un système domotique intégré de gestion des risques : capteurs d'inondation, de sécheresse, de température et de qualité de l'air. Alertes automatiques et protocoles d'urgence préprogrammés.",
+          "categorie": "smart_building",
+          "risque_cible": "multi_risques",
+          "cout_estime_eur": 15000,
+          "gain_resilience_points": 10,
+          "priorite": 3,
+          "aides_financières": [
+            "Aides locales"
+          ]
+        }
+      ],
+      "long_terme_2050": [
+        {
+          "id": "REC_2050_009",
+          "titre": "Transformation en habitat flottant ou amphibie",
+          "description": "Étude de faisabilité pour transformer le bien en habitat flottant ou amphibie avec fondations sur pieux télescopiques. Système de flottaison d'urgence en cas d'inondation majeure.",
+          "categorie": "innovation_structurelle",
+          "risque_cible": "inondation",
+          "cout_estime_eur": 200000,
+          "gain_resilience_points": 50,
+          "priorite": 4,
+          "aides_financières": [
+            "Fonds Européen d'Adaptation Climatique"
+          ]
+        },
+        {
+          "id": "REC_2050_010",
+          "titre": "Autonomie énergétique et hydrique complète",
+          "description": "Installation de panneaux solaires haute performance (50m²) avec stockage batterie (20kWh). Système de récupération et traitement des eaux pluviales. Toilettes sèches et douches à recyclage d'eau.",
+          "categorie": "autonomie",
+          "risque_cible": "multi_risques",
+          "cout_estime_eur": 60000,
+          "gain_resilience_points": 30,
+          "priorite": 4,
+          "aides_financières": [
+            "MaPrimeRénov' Autonomie",
+            "CEE"
+          ]
+        }
+      ]
+    },
+    "diagnostic_energetique": {
+      "consommation_kwh_m2_an": 420,
+      "emissions_co2_kg_m2_an": 95,
+      "potentiel_renovation": "extreme",
+      "economies_estimees_an": 3500,
+      "aides_disponibles": [
+        "MaPrimeRénov' Sérénité",
+        "Eco-PTZ",
+        "Prime CEE",
+        "TVA réduite",
+        "Fonds Adaptation Climatique"
+      ]
+    },
+    "simulation_periode": {
+      "periode_debut": "2040",
+      "periode_fin": "2060",
+      "evenements_probables": [
+        {
+          "type": "inondation_centennale",
+          "probabilite_pct": 95,
+          "impact_estime": "Submersion complète du rez-de-chaussée (2.5m d'eau). Dégâts structurels majeurs. Coût de réparation estimé à 250 000€. Bien inhabitable pendant 12-18 mois.",
+          "annee_probable": "2040-2045"
+        },
+        {
+          "type": "canicule_extreme",
+          "probabilite_pct": 98,
+          "impact_estime": "Températures >50°C pendant 20 jours consécutifs. Effondrement partiel des structures non adaptées. Risque vital pour les occupants sans espace refuge climatisé.",
+          "annee_probable": "2045-2050"
+        },
+        {
+          "type": "secheresse_structurelle",
+          "probabilite_pct": 90,
+          "impact_estime": "Fissures structurelles généralisées dues au retrait-gonflement des argiles. Coût de réparation estimé à 80 000-120 000€. Bien partiellement inhabitable.",
+          "annee_probable": "2042-2048"
+        },
+        {
+          "type": "tempete_violente",
+          "probabilite_pct": 85,
+          "impact_estime": "Vents >150km/h avec précipitations extrêmes. Toiture endommagée et infiltrations généralisées. Coût de réparation estimé à 50 000€.",
+          "annee_probable": "2043-2050"
+        },
+        {
+          "type": "incendie_urbain",
+          "probabilite_pct": 70,
+          "impact_estime": "Propagation d'un feu de forêt jusqu'aux abords du bien. Dégâts thermiques sur les façades et les menuiseries. Coût de réparation estimé à 40 000€.",
+          "annee_probable": "2045-2055"
+        }
+      ],
+      "cout_risque_cumule_estime": 520000,
+      "indice_assurabilite": "tres_difficile"
+    },
+    "donnees_marche": {
+      "prix_m2_median_commune": 3200,
+      "tendance_12mois_pct": -18.5,
+      "impact_risque_sur_valeur_pct": -50,
+      "valeur_ajustee_risques": 240000,
+      "liquidite_marche": "faible",
+      "commentaire": "Marché immobilier local en forte contraction en raison des risques climatiques. Difficulté à vendre ou assurer les biens exposés."
+    },
+    "_performance": {
+      "duree_projection_s": 108.56,
+      "json_valide": true,
+      "scenario": "rcp85"
+    }
+  }
+}
