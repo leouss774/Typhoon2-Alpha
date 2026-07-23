@@ -1,4 +1,6 @@
-import React, { useEffect, useRef } from 'react';
+import os
+
+content = r'''import React, { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 
 interface JumeauNumeriqueProps {
@@ -282,3 +284,9 @@ export const JumeauNumerique: React.FC<JumeauNumeriqueProps> = ({ zonesData, onZ
 
   return <div ref={containerRef} style={{ width: '100%', height: '100%', cursor: 'grab' }} />;
 };
+'''
+
+path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'frontend', 'src', 'components', 'DigitalTwin', 'JumeauNumerique.tsx')
+with open(path, 'w', encoding='utf-8') as f:
+    f.write(content)
+print(f"Written {len(content)} chars to {path}")

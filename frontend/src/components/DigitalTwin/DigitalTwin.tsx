@@ -1,127 +1,143 @@
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { JumeauNumerique } from "./JumeauNumerique";
-import TimelineSlider from "./TimelineSlider";
-import RenovationSlider from "./RenovationSlider";
 
 interface DigitalTwinProps {
-  payload: any; // Le JSON JumeauPayload qui vient de l'orchestrateur
+  payload: any;
 }
 
 export default function DigitalTwin({ payload }: DigitalTwinProps) {
   const [annee, setAnnee] = useState<2025 | 2050>(2025);
-  const [apresTravaux, setApresTravaux] = useState(false);
   
-  // États pour le panneau latéral (info-panel)
-  const [selectedZone, setSelectedZone] = useState<string | null>(null);
-  const [selectedZoneData, setSelectedZoneData] = useState<any>(null);
+  const [hoveredZoneName, setHoveredZoneName] = useState<string | null>(null);
+  const [pinnedZoneName, setPinnedZoneName] = useState<string | null>(null);
   
-  // États pour Mistral (Test de vulnérabilité)
   const [vulnTestResult, setVulnTestResult] = useState<any>(null);
   const [isLoadingMistral, setIsLoadingMistral] = useState(false);
 
-  // 1. Choix du dataset selon l'année
-  const baseZones = annee === 2050 && payload.projection_2050 
+  // Choix du dataset selon l'année
+  const displayZones = annee === 2050 && payload.projection_2050 
     ? payload.projection_2050.zones 
     : payload.zones;
 
-  // 2. Simulation globale "Après travaux"
-  const displayZones = useMemo(() => {
-    if (!apresTravaux) return baseZones;
-    const improvedZones = { ...baseZones };
-    Object.keys(improvedZones).forEach((key) => {
-      improvedZones[key] = {
-        ...improvedZones[key],
-        risque: Math.max(0, Math.floor(improvedZones[key].risque * 0.6)), 
-      };
-    });
-    return improvedZones;
-  }, [baseZones, apresTravaux]);
+  const activeZoneName = pinnedZoneName ?? hoveredZoneName;
+  const activeZoneData = activeZoneName ? displayZones[activeZoneName] : null;
 
-  // 3. Gestion du CLIC sur une zone 3D -> Appel Mistral
+  const handleZoneHover = (zoneName: string | null) => {
+    setHoveredZoneName(zoneName);
+  };
+
   const handleZoneClick = async (zoneName: string, zoneData: any) => {
-    setSelectedZone(zoneName);
-    setSelectedZoneData(zoneData);
-    setVulnTestResult(null); // On reset le test précédent
+    if (pinnedZoneName === zoneName) {
+      setPinnedZoneName(null);
+      setVulnTestResult(null);
+      return;
+    }
+    setPinnedZoneName(zoneName);
+    setVulnTestResult(null);
     setIsLoadingMistral(true);
 
     try {
-      // Appel à ta route FastAPI créée précédemment
       const response = await fetch(`/api/jumeau/vulnerability-test?zone_name=${zoneName}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        // On envoie les données de la zone pour que Mistral ait le contexte
         body: JSON.stringify(zoneData), 
       });
-
       if (!response.ok) throw new Error("Erreur réseau API Mistral");
-      
       const data = await response.json();
-      setVulnTestResult(data); // On stocke la réponse Pydantic
+      setVulnTestResult(data);
     } catch (error) {
       console.error("Erreur lors du test de vulnérabilité:", error);
-      // Fallback UI en cas d'erreur
       setVulnTestResult({ error: "Impossible de générer le test avec Mistral pour le moment." });
     } finally {
       setIsLoadingMistral(false);
     }
   };
 
-  // Helper pour la couleur du badge
   const getBadgeColor = (niveau: string) => {
     switch (niveau) {
-      case "critique": return "#da3633"; // Rouge
-      case "eleve": return "#db6d28";    // Orange foncé
-      case "modere": return "#d29922";   // Orange
-      case "faible": return "#3fb950";   // Vert
+      case "critique": return "#da3633";
+      case "eleve": return "#db6d28";
+      case "modere": return "#d29922";
+      case "faible": return "#3fb950";
       default: return "#4da6ff";
     }
   };
 
   return (
-    <div className="digital-twin" style={{ position: "relative", width: "100%", height: "100vh", overflow: "hidden" }}>
+    <div className="digital-twin" style={{ position: "relative", width: "100%", height: "100%", overflow: "hidden" }}>
       
-      {/* --- Rendu 3D --- */}
       <JumeauNumerique 
-        zonesData={displayZones} 
-        geometrie={payload.geometrie} 
+        zonesData={displayZones}
         onZoneClick={(zoneName) => handleZoneClick(zoneName, displayZones[zoneName])} 
+        onZoneHover={handleZoneHover}
       />
 
-      {/* --- Panneau de gauche (Contrôles) --- */}
-      <div style={{ position: "absolute", top: "20px", left: "20px", background: "rgba(6, 14, 26, 0.8)", padding: "15px", borderRadius: "10px", border: "1px solid #1c5a9c", color: "white" }}>
-        <h3 style={{ margin: "0 0 10px 0", fontSize: "12px", color: "#4da6ff", textTransform: "uppercase" }}>Projection Temporelle</h3>
-        <TimelineSlider value={annee} onChange={(val) => setAnnee(val as 2025 | 2050)} />
-        <div style={{ marginTop: "15px" }}>
-          <RenovationSlider value={apresTravaux} onChange={setApresTravaux} />
+      {/* Panneau de gauche - Boutons 2025/2050 (comme le HTML) */}
+      <div style={{ position: "absolute", top: "20px", left: "20px", background: "rgba(6, 14, 26, 0.8)", border: "1px solid #1c5a9c", borderRadius: "10px", padding: "14px 18px", color: "#cfe8ff", zIndex: 10, backdropFilter: "blur(8px)", boxShadow: "0 0 20px rgba(30, 130, 255, 0.15)" }}>
+        <h3 style={{ margin: "0 0 10px 0", fontSize: "12px", fontWeight: 600, color: "#4da6ff", textTransform: "uppercase", letterSpacing: "0.08em" }}>Projection temporelle</h3>
+        <div style={{ display: "flex", gap: "6px" }}>
+          <button
+            onClick={() => setAnnee(2025)}
+            style={{
+              background: annee === 2025 ? "#4da6ff" : "rgba(20, 40, 65, 0.8)",
+              border: "1px solid #1c5a9c",
+              color: annee === 2025 ? "#04070c" : "#cfe8ff",
+              padding: "8px 16px", borderRadius: "6px", cursor: "pointer",
+              fontSize: "13px", fontWeight: annee === 2025 ? 700 : 400,
+              transition: "all .15s"
+            }}
+          >2025</button>
+          <button
+            onClick={() => setAnnee(2050)}
+            style={{
+              background: annee === 2050 ? "#4da6ff" : "rgba(20, 40, 65, 0.8)",
+              border: "1px solid #1c5a9c",
+              color: annee === 2050 ? "#04070c" : "#cfe8ff",
+              padding: "8px 16px", borderRadius: "6px", cursor: "pointer",
+              fontSize: "13px", fontWeight: annee === 2050 ? 700 : 400,
+              transition: "all .15s"
+            }}
+          >2050</button>
         </div>
-        <div style={{ marginTop: "15px", fontSize: "14px", color: "#7fb4e8" }}>
-          Score global : <strong style={{ color: "#e8f4ff", fontSize: "24px" }}>{annee === 2050 && payload.projection_2050 ? payload.projection_2050.score_global : payload.score_global}</strong>
+        <div style={{ marginTop: "10px", fontSize: "12px", color: "#7fb4e8" }}>
+          Score global : <strong style={{ color: "#e8f4ff", fontSize: "22px", textShadow: "0 0 12px rgba(77,166,255,0.6)" }}>{annee === 2050 && payload.projection_2050 ? payload.projection_2050.score_global : payload.score_global}</strong>
         </div>
       </div>
 
-      {/* --- Panneau de droite (Informations & Mistral) --- */}
-      {selectedZone && selectedZoneData && (
+      {/* Hint text */}
+      <div style={{ position: "absolute", bottom: "16px", left: "20px", color: "#3d6a94", fontSize: "12px", zIndex: 10 }}>
+        Glisser = orbiter · Molette = zoom · Clic sur une zone = détails
+      </div>
+
+      {/* Panneau de droite (Informations & Mistral) */}
+      {activeZoneName && activeZoneData && (
         <div style={{ 
           position: "absolute", top: "20px", right: "20px", width: "320px", 
           background: "rgba(6, 14, 26, 0.9)", border: "1px solid #1c5a9c", 
-          borderRadius: "10px", padding: "18px", color: "#cfe8ff", backdropFilter: "blur(8px)"
+          borderRadius: "10px", padding: "18px", color: "#cfe8ff", backdropFilter: "blur(8px)",
+          transition: 'opacity 0.2s ease'
         }}>
-          {/* En-tête de la zone */}
-          <h2 style={{ margin: "0 0 10px 0", textTransform: "capitalize", color: "#e8f4ff" }}>
-            {selectedZone.replace("_", " ")}
-          </h2>
+          {/* En-tête de la zone + indicateur d'épinglage */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+            <h2 style={{ margin: 0, textTransform: 'capitalize', color: '#e8f4ff' }}>
+              {activeZoneName.replace("_", " ")}
+            </h2>
+            {pinnedZoneName === activeZoneName && (
+              <span style={{ fontSize: '12px', color: '#4da6ff', fontWeight: 'bold' }}>📌</span>
+            )}
+          </div>
           
           <span style={{ 
             display: "inline-block", padding: "4px 10px", borderRadius: "12px", 
-            backgroundColor: getBadgeColor(selectedZoneData.niveau), color: "#000", fontWeight: "bold", fontSize: "12px", marginBottom: "15px" 
+            backgroundColor: getBadgeColor(activeZoneData.niveau), color: "#000", fontWeight: "bold", fontSize: "12px", marginBottom: "15px" 
           }}>
-            {selectedZoneData.niveau.toUpperCase()} — {selectedZoneData.risque}/100
+            {activeZoneData.niveau.toUpperCase()} — {activeZoneData.risque}/100
           </span>
 
-          <p style={{ fontSize: "13px", lineHeight: 1.5, color: "#9fc4e8" }}>{selectedZoneData.justification}</p>
+          <p style={{ fontSize: "13px", lineHeight: 1.5, color: "#9fc4e8" }}>{activeZoneData.justification}</p>
 
           {/* Recommandations de base (RAG) */}
-          {selectedZoneData.recommandations?.map((reco: any, idx: number) => (
+          {activeZoneData.recommandations?.map((reco: any, idx: number) => (
             <div key={idx} style={{ background: "rgba(20, 40, 65, 0.8)", border: "1px solid #1c5a9c", borderRadius: "8px", padding: "10px", marginTop: "10px", fontSize: "12px" }}>
               <strong>{reco.travaux}</strong><br/>
               {reco.cout_estime} • Gain : +{reco.gain_resilience}%

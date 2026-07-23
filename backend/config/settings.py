@@ -39,7 +39,7 @@ class Settings(BaseSettings):
 
     # Sécurité
     SECRET_KEY: str = "change-me-in-production"
-    CORS_ORIGINS: str = "http://localhost:5173,http://localhost:3000"
+    CORS_ORIGINS: str = "http://localhost:5173,http://localhost:5174,http://localhost:5175,http://localhost:3000"
 
     # Feature flags
     USE_MOCK_LLM: bool = True  # True = réponses simulées sans vraie API

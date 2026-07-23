@@ -1,0 +1,578 @@
+{
+  "version": "1.0",
+  "generated_at": "2026-07-23T13:39:07.020Z",
+  "assessment_id": "ASSESS-FINAL-1784813947021",
+  "adresse": "8 Allée du Port Maillard 44000 Nantes",
+  "coordonnees": {
+    "latitude": 47.214972,
+    "longitude": -1.551503
+  },
+  "code_insee": "44109",
+  "formulaire_client": {
+    "adresse": "8 Allée du Port Maillard 44000 Nantes",
+    "type_bien": "Maison individuelle",
+    "surface": 100,
+    "nb_etages": 2,
+    "annee_construction": 1965,
+    "annee_renovation": 2020,
+    "type_structure": "Béton armé",
+    "etat_structure": "Bon",
+    "fissures": "Légères",
+    "affaissement": "Non",
+    "type_toiture": "Tuiles",
+    "age_toiture": 1965,
+    "etat_toiture": "Moyen",
+    "infiltrations": "Non",
+    "presence_sous_sol": true,
+    "presence_cave": true,
+    "occupation": "Occupé",
+    "installation_electrique_annee": 1988
+  },
+  "donnees_api": {
+    "bdnb": {
+      "geometry": {
+        "type": "MultiPolygon",
+        "coordinates": [
+          [
+            [
+              [
+                318045.6,
+                6706028.4
+              ],
+              [
+                318055.2,
+                6706025.1
+              ],
+              [
+                318058.3,
+                6706034.7
+              ],
+              [
+                318048.7,
+                6706038
+              ],
+              [
+                318046.9,
+                6706032.2
+              ],
+              [
+                318041.5,
+                6706034.1
+              ],
+              [
+                318038.4,
+                6706024.5
+              ],
+              [
+                318045.6,
+                6706028.4
+              ]
+            ]
+          ]
+        ]
+      }
+    },
+    "georisques": {
+      "argiles_rga": [
+        {
+          "codeExposition": "1",
+          "exposition": "Exposition faible"
+        }
+      ],
+      "zonage_sismique": [
+        {
+          "zone": "3",
+          "libelle": "MODEREE"
+        }
+      ],
+      "radon": {
+        "classe_potentiel": "3"
+      },
+      "catnat": {
+        "total_evts": 10
+      }
+    },
+    "scores_bruts": {
+      "score_incendie": 12,
+      "score_degats_eaux": 52,
+      "score_structurel": 38,
+      "score_global": 36,
+      "completude_donnees": 1
+    },
+    "score_geocodage": 0.5514
+  },
+  "geometrie_batiment": {
+    "type": "MultiPolygon",
+    "coordinates": [
+      [
+        [
+          [
+            318045.6,
+            6706028.4
+          ],
+          [
+            318055.2,
+            6706025.1
+          ],
+          [
+            318058.3,
+            6706034.7
+          ],
+          [
+            318048.7,
+            6706038
+          ],
+          [
+            318046.9,
+            6706032.2
+          ],
+          [
+            318041.5,
+            6706034.1
+          ],
+          [
+            318038.4,
+            6706024.5
+          ],
+          [
+            318045.6,
+            6706028.4
+          ]
+        ]
+      ]
+    ]
+  },
+  "analyse_risques": {
+    "address": {
+      "adresse": "8 Allée du Port Maillard 44000 Nantes",
+      "code_insee": "44109"
+    },
+    "risk_context": {
+      "rga": {
+        "present": true,
+        "exposition": "faible",
+        "code_exposition": "1"
+      },
+      "zone_sismique": {
+        "present": true,
+        "zone_code": "3",
+        "zone_libelle": "3 - MODEREE"
+      },
+      "radon": {
+        "present": true,
+        "classe_potentiel": "3"
+      },
+      "cavites": {
+        "present": false,
+        "count": 0,
+        "disponible": false
+      },
+      "historique_catnat": {
+        "total_evts": 10,
+        "evts_par_type": {
+          "inondation": 9,
+          "mouvement_terrain": 1
+        },
+        "nb_evt_10ans": 4
+      },
+      "donnees_topo": {
+        "altitude_m": 7.35
+      },
+      "donnees_manquantes": [
+        "drias_meteofrance",
+        "copernicus",
+        "sentinel"
+      ]
+    },
+    "profil_bien": {
+      "disponible": true,
+      "annee_construction": 1965,
+      "type_bien": "maison",
+      "type_toiture": "tuiles",
+      "isolation_toiture": "faible",
+      "isolation_murs": "moyenne",
+      "presence_sous_sol": true,
+      "presence_cave": true,
+      "installation_electrique_annee": 1988
+    },
+    "score": {
+      "global": 43,
+      "global_raw": 42.85,
+      "weights": {
+        "infiltration": 0.3,
+        "thermique": 0.25,
+        "incendie_electrique": 0.25,
+        "aléas_naturels": 0.2
+      },
+      "perils": {
+        "infiltration": {
+          "score": 82,
+          "raw_score": 82,
+          "max_score": 100,
+          "triggered_rules": [
+            {
+              "rule_id": "INONDATION_PRESENT_INFILTRATION",
+              "peril": "infiltration",
+              "priority": 100,
+              "points": 20,
+              "justification": "Présence d'un risque d'inondation au droit de l'adresse, augmentant l'exposition à l'humidité.",
+              "source_fields": [
+                "georisques.rapport_risque.risquesNaturels.inondation"
+              ],
+              "activated_by_llm": false
+            },
+            {
+              "rule_id": "REMONTEE_NAPPE_PRESENT_INFILTRATION",
+              "peril": "infiltration",
+              "priority": 95,
+              "points": 18,
+              "justification": "Présence d'un risque de remontée de nappe, facteur direct d'humidité durable en sous-sol.",
+              "source_fields": [
+                "georisques.rapport_risque.risquesNaturels.remonteeNappe"
+              ],
+              "activated_by_llm": false
+            },
+            {
+              "rule_id": "COMPOSE_TOITURE_AGEE_ET_HUMIDITE",
+              "peril": "infiltration",
+              "priority": 50,
+              "points": 12,
+              "justification": "Toiture ancienne combinée à un contexte hydrique défavorable, augmentant le risque d'infiltration.",
+              "source_fields": [
+                "profil_bien.annee_construction",
+                "profil_bien.type_toiture"
+              ],
+              "activated_by_llm": true
+            }
+          ]
+        },
+        "thermique": {
+          "score": 23,
+          "raw_score": 23,
+          "max_score": 100,
+          "triggered_rules": [
+            {
+              "rule_id": "THERMIQUE_CLIMATE_ZONE_INTERMEDIAIRE",
+              "peril": "thermique",
+              "priority": 90,
+              "points": 5,
+              "justification": "Zone climatique intermédiaire, proxy modéré de stress thermique.",
+              "source_fields": [
+                "proxy_climatique.code"
+              ],
+              "activated_by_llm": false
+            },
+            {
+              "rule_id": "COMPOSE_ISOLATION_FAIBLE_ET_HUMIDITE",
+              "peril": "thermique",
+              "priority": 50,
+              "points": 10,
+              "justification": "Isolation toiture absente ou faible sur bâti ancien, augmentant la vulnérabilité thermique.",
+              "source_fields": [
+                "profil_bien.isolation_toiture",
+                "profil_bien.annee_construction"
+              ],
+              "activated_by_llm": true
+            }
+          ]
+        },
+        "incendie_électrique": {
+          "score": 10,
+          "raw_score": 10,
+          "max_score": 100,
+          "triggered_rules": [
+            {
+              "rule_id": "COMPOSE_INSTALLATION_ELECTRIQUE_ANCIENNE",
+              "peril": "incendie_électrique",
+              "priority": 50,
+              "points": 10,
+              "justification": "Installation électrique ancienne (1988), facteur de surcharge et défaut d'isolement.",
+              "source_fields": [
+                "profil_bien.installation_electrique_annee"
+              ],
+              "activated_by_llm": true
+            }
+          ]
+        },
+        "aléas_naturels": {
+          "score": 50,
+          "raw_score": 50,
+          "max_score": 100,
+          "triggered_rules": [
+            {
+              "rule_id": "RADON_CLASSE_3",
+              "peril": "aléas_naturels",
+              "priority": 100,
+              "points": 8,
+              "justification": "Potentiel radon élevé, facteur sanitaire et indicateur de perméabilité des sols.",
+              "source_fields": [
+                "georisques.radon.classe_potentiel"
+              ],
+              "activated_by_llm": false
+            },
+            {
+              "rule_id": "SEISME_ZONE_MODEREE",
+              "peril": "aléas_naturels",
+              "priority": 100,
+              "points": 10,
+              "justification": "Zone sismique modérée, facteur de contrainte structurelle.",
+              "source_fields": [
+                "georisques.zonage_sismique.zone_code"
+              ],
+              "activated_by_llm": false
+            },
+            {
+              "rule_id": "CATNAT_MOINS_DE_2ANS",
+              "peril": "aléas_naturels",
+              "priority": 95,
+              "points": 12,
+              "justification": "Sinistre CatNat récent, proxy de vulnérabilité locale active.",
+              "source_fields": [
+                "georisques.catnat"
+              ],
+              "activated_by_llm": false
+            },
+            {
+              "rule_id": "CATNAT_FREQUENCE_ELEVEE",
+              "peril": "aléas_naturels",
+              "priority": 85,
+              "points": 10,
+              "justification": "Fréquence CatNat élevée, indicateur de récurrence d'aléas.",
+              "source_fields": [
+                "georisques.catnat"
+              ],
+              "activated_by_llm": false
+            }
+          ]
+        }
+      }
+    },
+    "confidence": {
+      "level": "medium",
+      "notes": [
+        {
+          "confidence_id": "DATA_MISSING_CLIMATE",
+          "impact": "medium",
+          "note": "Composantes climatiques prospectives absentes; scores basés sur proxys disponibles."
+        }
+      ]
+    },
+    "traceability": {
+      "score_engine": "deterministic_yaml_v1",
+      "mistral_used": true,
+      "selected_composed_rule_ids": [
+        "COMPOSE_INSTALLATION_ELECTRIQUE_ANCIENNE",
+        "COMPOSE_ISOLATION_FAIBLE_ET_HUMIDITE",
+        "COMPOSE_TOITURE_AGEE_ET_HUMIDITE"
+      ]
+    },
+    "mistral": {
+      "activated_rule_ids": [
+        "COMPOSE_TOITURE_AGEE_ET_HUMIDITE",
+        "COMPOSE_ISOLATION_FAIBLE_ET_HUMIDITE",
+        "COMPOSE_INSTALLATION_ELECTRIQUE_ANCIENNE"
+      ],
+      "declarative_consistency_status": "warning"
+    }
+  },
+  "recommandations": {
+    "zones": {
+      "fondations": {
+        "risque": 50,
+        "niveau": "moyen",
+        "alea_principal": "RGA",
+        "justification": "",
+        "recommandations": [
+          {
+            "ref": "REF_RGA_01",
+            "travaux": "Gestion étanche des eaux pluviales + gouttières éloignées à > 2 m des fondations.",
+            "cout_estime": "120€",
+            "gain_resilience": 50,
+            "priorite": 3,
+            "norme": "Loi ELAN R.132-3 / DTU 20.1",
+            "aide_financiere": "**Anah \"Habiter Sereinement\" (jusqu’à 50%)** | - **Reste à charge estimé :** **60 €** (50% de 120 €) | - **Source officielle :** | - BRGM (2026) – *Guide Prévention RGA*, p. 18-22. | - Loi ELAN R.132-3.",
+            "reste_a_charge": "60€"
+          },
+          {
+            "ref": "REF_RGA_03",
+            "travaux": "Consolidation par injection de résine expansive sous dalles et semelles.",
+            "cout_estime": "1500€",
+            "gain_resilience": 50,
+            "priorite": 5,
+            "norme": "Avis Technique CSTB / BRGM",
+            "aide_financiere": " | - **Fonds CatNat (jusqu’à 80%)** | - **Éco-PTZ** | - **Reste à charge estimé :** **300 €** (20% de 1 500 €) | - **Source officielle :**",
+            "reste_a_charge": "300€"
+          }
+        ],
+        "test_vulnerabilite": {
+          "verdict": "",
+          "explication": ""
+        }
+      },
+      "murs_nord": {
+        "risque": 30,
+        "niveau": "faible",
+        "alea_principal": "Tempête",
+        "justification": "",
+        "recommandations": [
+          {
+            "ref": "REF_RGA_02",
+            "travaux": "Trottoir périphérique étanche (largeur ≥ 1,5 m) avec géomembrane anti-évaporation.",
+            "cout_estime": "160€",
+            "gain_resilience": 50,
+            "priorite": 4,
+            "norme": "DTU 13.1 / NF P 94-500",
+            "aide_financiere": " | - **Anah (jusqu’à 50%)** | - **Éco-PTZ** | - **Reste à charge estimé :** **80 €** (50% de 160 €) | - **Source officielle :**",
+            "reste_a_charge": "80€"
+          }
+        ],
+        "test_vulnerabilite": {
+          "verdict": "",
+          "explication": ""
+        }
+      },
+      "toiture": {
+        "risque": 45,
+        "niveau": "moyen",
+        "alea_principal": "Thermique",
+        "justification": "",
+        "recommandations": [
+          {
+            "ref": "REF_ISO_01",
+            "travaux": "Isolation des combles perdus (laine de bois, ép. 350 mm, R ≥ 7, déphasage > 10 h).",
+            "cout_estime": "30€/m²",
+            "gain_resilience": 50,
+            "priorite": 7,
+            "norme": "DTU 45.1 / RE2020",
+            "aide_financiere": " | - **MaPrimeRénov’ Anah : 20 €/m² (soit 1 000 € pour 50 m²)** | - **Éco-PTZ** | - **Reste à charge estimé :** **1 500 €** | - **Source officielle :**",
+            "reste_a_charge": "1500€"
+          },
+          {
+            "ref": "REF_ISO_02",
+            "travaux": "Isolation des murs par l’extérieur (ITE) sous ATEC CSTB.",
+            "cout_estime": "110€/m²",
+            "gain_resilience": 50,
+            "priorite": 8,
+            "norme": "CPT 3035 / Cahier CSTB 3035",
+            "aide_financiere": " | - **MaPrimeRénov’ Anah : 75 €/m² (soit 7 500 € pour 100 m²)** | - **Éco-PTZ** | - **Reste à charge estimé :** **9 500 €** | - **Source officielle :**",
+            "reste_a_charge": "9500€"
+          },
+          {
+            "ref": "REF_CLI_01",
+            "travaux": "Pompe à chaleur (PAC) Air-Eau (COP ≥ 4,2, puissance 14 kW, mode rafraîchissant).",
+            "cout_estime": "13000€",
+            "gain_resilience": 50,
+            "priorite": 9,
+            "norme": "DTU 65.16 / RE2020",
+            "aide_financiere": " | - **Le reste à charge net (17 020 €) peut être étalé via l’Éco-PTZ (prêt à taux zéro).**",
+            "reste_a_charge": "8000€"
+          }
+        ],
+        "test_vulnerabilite": {
+          "verdict": "",
+          "explication": ""
+        }
+      },
+      "sous_sol": {
+        "risque": 60,
+        "niveau": "eleve",
+        "alea_principal": "Inondation",
+        "justification": "",
+        "recommandations": [
+          {
+            "ref": "REF_INO_01",
+            "travaux": "Pose de batardeaux amovibles étanches sur baies et portes.",
+            "cout_estime": "800€",
+            "gain_resilience": 50,
+            "priorite": 1,
+            "norme": "DTU 36.5 / Cahier CSTB 3724",
+            "aide_financiere": "**Fonds Barnier (80%)** | - **Reste à charge estimé :** **160 €** (20% de 800 €) | - **Source officielle :** | - CEPRI (2023) – *Guide Bâtiment Inondable*, p. 28-32. | - CSTB Cahier 3724.",
+            "reste_a_charge": "160€"
+          },
+          {
+            "ref": "REF_INO_03",
+            "travaux": "Installation d’une station de pompage sous-sol (puisard + 2 pompes vide-cave + secours batterie).",
+            "cout_estime": "2100€",
+            "gain_resilience": 50,
+            "priorite": 2,
+            "norme": "DTU 60.11 / CCTG 70",
+            "aide_financiere": "**Fonds Barnier (80%)** | - **Reste à charge estimé :** **420 €** (20% de 2 100 €) | - **Source officielle :** | - Mission Risques Naturels (MRN) – *Référentiel Inondation 2023*, p. 44.",
+            "reste_a_charge": "420€"
+          },
+          {
+            "ref": "REF_RAD_01",
+            "travaux": "Installation d’une VMC Double Flux thermodynamique avec extraction continue et filtration radon/COV.",
+            "cout_estime": "5250€",
+            "gain_resilience": 50,
+            "priorite": 6,
+            "norme": "DTU 68.3 / Avis Technique CSTB",
+            "aide_financiere": " | - **MaPrimeRénov’ Anah : 2 500 €** | - **Éco-PTZ (prêt à taux zéro)** | - **Reste à charge estimé :** **2 750 €** (5 250 € - 2 500 €) | - **Source officielle :**",
+            "reste_a_charge": "2750€"
+          }
+        ],
+        "test_vulnerabilite": {
+          "verdict": "",
+          "explication": ""
+        }
+      }
+    },
+    "projection_2050": {
+      "score_global": 60,
+      "scenario_climatique": "CMIP6 EC_Earth3P_HR (≈RCP8.5) + DRIAS ADAMONT +4°C France",
+      "zones": {
+        "fondations": {
+          "risque_projete": 65,
+          "evolution": "+15 points (aggravation climatique)"
+        },
+        "murs_nord": {
+          "risque_projete": 39,
+          "evolution": "+9 points (aggravation climatique)"
+        },
+        "toiture": {
+          "risque_projete": 59,
+          "evolution": "+14 points (aggravation climatique)"
+        },
+        "sous_sol": {
+          "risque_projete": 78,
+          "evolution": "+18 points (aggravation climatique)"
+        }
+      }
+    },
+    "synthese_financiere": {
+      "cout_brut_total": "32430€",
+      "aides_mobilisables": "15410€",
+      "reste_a_charge_net": "17020€"
+    },
+    "scores_par_alea": {
+      "inondation": 52,
+      "rga": 38,
+      "canicule": 15,
+      "tempete": 25
+    },
+    "score_global": 43,
+    "nb_recommandations": 9
+  },
+  "resume": {
+    "score_global": 43,
+    "score_global_2050": 60,
+    "cout_total_travaux": "32430€",
+    "aides_mobilisables": "15410€",
+    "reste_a_charge_net": "17020€",
+    "nb_recommandations": 9,
+    "date_evaluation": "2026-07-23"
+  },
+  "pipeline": {
+    "collecteur": "Agent Collecteur v1 (API: BDNB, Géorisques, IGN, Open-Meteo, DVF, DRIAS)",
+    "analyste": "Agent Analyste Risque v1 (deterministic_yaml_v1 + Mistral LLM)",
+    "recommandation": "Agent Recommandation Tasnime v1 (RAG: CEPRI, CSTB, BRGM, IRSN, ADEME)",
+    "sources": [
+      "BDNB — Base Nationale des Bâtiments (api.bdnb.io)",
+      "Géorisques v1+v2 (georisques.gouv.fr)",
+      "IGN Altimétrie + WFS BD TOPO + Masque Forêt (data.geopf.fr)",
+      "Open-Meteo Climate CMIP6 EC_Earth3P_HR (climate-api.open-meteo.com)",
+      "DVF — Demandes de Valeurs Foncières (data.gouv.fr)",
+      "DRIAS ADAMONT — Projections climatiques +4°C France (drias-climat.fr)",
+      "Rapport Recommandations — CEPRI, CSTB, BRGM, IRSN, ADEME"
+    ]
+  }
+}
