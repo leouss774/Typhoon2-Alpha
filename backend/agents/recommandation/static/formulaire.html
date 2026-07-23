@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Formulaire de diagnostic habitation</title>
+<style>
+  body { font-family: Arial, Helvetica, sans-serif; background:#f4f1ea; margin:0; padding:2rem; color:#222; }
+  .conteneur { max-width:720px; margin:0 auto; }
+  h1 { font-size:20px; margin-bottom:1.5rem; }
+  .section { background:#fff; border:1px solid #ddd; border-radius:10px; padding:1.25rem; margin-bottom:1rem; }
+  .section h2 { font-size:15px; margin:0 0 12px; }
+  label { font-size:13px; color:#555; display:block; margin-top:10px; }
+  input, select, textarea { width:100%; padding:8px; margin-top:4px; border:1px solid #ccc; border-radius:6px; font-size:14px; box-sizing:border-box; }
+  .ligne { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .cases { display:grid; grid-template-columns:repeat(auto-fit, minmax(130px,1fr)); gap:6px; margin-top:8px; }
+  .case-item { font-size:14px; display:flex; align-items:center; gap:6px; }
+  .case-item input { width:auto; }
+  button { width:100%; padding:12px; margin-top:1rem; border:none; border-radius:8px; background:#2c3e50; color:#fff; font-size:15px; cursor:pointer; }
+  button:hover { background:#1c2b38; }
+  #message { margin-top:1rem; font-size:14px; padding:10px; border-radius:6px; display:none; }
+  #message.succes { background:#e6f4ea; color:#1e5b34; display:block; }
+  #message.erreur { background:#fbe8e8; color:#8a1f1f; display:block; }
+</style>
+</head>
+<body>
+<div class="conteneur">
+  <h1>Formulaire de diagnostic habitation</h1>
+  <form id="form-diagnostic">
+
+    <div class="section">
+      <h2>Informations générales</h2>
+      <div class="ligne">
+        <div><label>Nom du client</label><input type="text" id="nom"></div>
+        <div><label>Adresse du bien</label><input type="text" id="adresse"></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>Construction</h2>
+      <label>Matériaux de construction</label>
+      <div class="cases" id="materiaux-group">
+        <label class="case-item"><input type="checkbox" value="Brique"> Brique</label>
+        <label class="case-item"><input type="checkbox" value="Béton"> Béton</label>
+        <label class="case-item"><input type="checkbox" value="Parpaing"> Parpaing</label>
+        <label class="case-item"><input type="checkbox" value="Pierre"> Pierre</label>
+        <label class="case-item"><input type="checkbox" value="Bois"> Bois</label>
+      </div>
+      <input type="text" id="materiaux-autre" placeholder="Autre matériau (optionnel)">
+
+      <div class="ligne">
+        <div><label>Date de construction</label><input type="date" id="date-construction"></div>
+        <div><label>Âge de la maison</label><input type="text" id="age-maison" readonly></div>
+      </div>
+      <label>Superficie (m²)</label>
+      <input type="number" id="superficie">
+    </div>
+
+    <div class="section">
+      <h2>Plomberie et détection</h2>
+      <label>État des canalisations</label>
+      <select id="etat-canalisations">
+        <option value="">Sélectionner</option>
+        <option value="Neuf">Neuf</option>
+        <option value="Bon">Bon</option>
+        <option value="Moyen">Moyen</option>
+        <option value="À rénover">À rénover</option>
+        <option value="Vétuste">Vétuste</option>
+      </select>
+      <div class="ligne">
+        <div><label>Détecteurs d'eau présents</label>
+          <select id="detecteurs-eau"><option value="Non">Non</option><option value="Oui">Oui</option></select>
+        </div>
+        <div><label>Nombre de détecteurs</label><input type="number" id="nb-detecteurs-eau" min="0"></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>Isolation et climatisation</h2>
+      <div class="ligne">
+        <div><label>Bonne isolation</label>
+          <select id="isolation"><option value="Non">Non</option><option value="Oui">Oui</option></select>
+        </div>
+        <div><label>Type d'isolation</label><input type="text" id="type-isolation" placeholder="Ex. laine de verre"></div>
+      </div>
+      <div class="ligne">
+        <div><label>Climatisation présente</label>
+          <select id="clim"><option value="Non">Non</option><option value="Oui">Oui</option></select>
+        </div>
+        <div><label>Nombre d'unités</label><input type="number" id="nb-clim" min="0"></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>Risques d'incendie</h2>
+      <label>Appareils pouvant causer un incendie</label>
+      <div class="cases" id="incendie-group">
+        <label class="case-item"><input type="checkbox" value="Cheminée"> Cheminée</label>
+        <label class="case-item"><input type="checkbox" value="Poêle à bois"> Poêle à bois</label>
+        <label class="case-item"><input type="checkbox" value="Chaudière à gaz"> Chaudière à gaz</label>
+        <label class="case-item"><input type="checkbox" value="Groupe électrogène"> Groupe électrogène</label>
+        <label class="case-item"><input type="checkbox" value="Friteuse"> Friteuse</label>
+      </div>
+      <input type="text" id="incendie-autre" placeholder="Autre appareil (optionnel)">
+      <div class="ligne">
+        <div><label>Détecteur de fumée</label>
+          <select id="detecteur-fumee"><option value="Non">Non</option><option value="Oui">Oui</option></select>
+        </div>
+        <div><label>État système électrique</label>
+          <select id="systeme-electrique">
+            <option value="">Sélectionner</option>
+            <option value="Récent / aux normes">Récent / aux normes</option>
+            <option value="Correct">Correct</option>
+            <option value="Ancien">Ancien</option>
+            <option value="À rénover">À rénover</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>Informations complémentaires</h2>
+      <div class="ligne">
+        <div><label>Type de chauffage</label><input type="text" id="chauffage"></div>
+        <div><label>Piscine présente</label>
+          <select id="piscine"><option value="Non">Non</option><option value="Oui">Oui</option></select>
+        </div>
+      </div>
+      <label>Remarques libres</label>
+      <textarea id="remarques" rows="3"></textarea>
+    </div>
+
+    <button type="submit">Envoyer le formulaire</button>
+    <div id="message"></div>
+  </form>
+</div>
+
+<script>
+const dateInput = document.getElementById('date-construction');
+const ageInput = document.getElementById('age-maison');
+dateInput.addEventListener('change', () => {
+  if (!dateInput.value) { ageInput.value = ''; return; }
+  const d = new Date(dateInput.value);
+  const now = new Date();
+  let age = now.getFullYear() - d.getFullYear();
+  const m = now.getMonth() - d.getMonth();
+  if (m < 0 || (m === 0 && now.getDate() < d.getDate())) age--;
+  ageInput.value = age + ' ans';
+});
+
+function getChecked(groupId) {
+  return Array.from(document.querySelectorAll('#' + groupId + ' input:checked')).map(i => i.value);
+}
+
+document.getElementById('form-diagnostic').addEventListener('submit', async (e) => {
+  e.preventDefault();
+
+  const materiaux = getChecked('materiaux-group');
+  const materiauxAutre = document.getElementById('materiaux-autre').value.trim();
+  if (materiauxAutre) materiaux.push(materiauxAutre);
+
+  const incendie = getChecked('incendie-group');
+  const incendieAutre = document.getElementById('incendie-autre').value.trim();
+  if (incendieAutre) incendie.push(incendieAutre);
+
+  const donnees = {
+    client: {
+      nom: document.getElementById('nom').value,
+      adresse: document.getElementById('adresse').value
+    },
+    construction: {
+      materiaux: materiaux,
+      date_construction: dateInput.value || null,
+      age_maison: ageInput.value,
+      superficie_m2: document.getElementById('superficie').value ? Number(document.getElementById('superficie').value) : null
+    },
+    plomberie: {
+      etat_canalisations: document.getElementById('etat-canalisations').value,
+      detecteurs_eau_presents: document.getElementById('detecteurs-eau').value === 'Oui',
+      nombre_detecteurs_eau: document.getElementById('nb-detecteurs-eau').value ? Number(document.getElementById('nb-detecteurs-eau').value) : 0
+    },
+    isolation_climatisation: {
+      bonne_isolation: document.getElementById('isolation').value === 'Oui',
+      type_isolation: document.getElementById('type-isolation').value,
+      climatisation_presente: document.getElementById('clim').value === 'Oui',
+      nombre_unites_clim: document.getElementById('nb-clim').value ? Number(document.getElementById('nb-clim').value) : 0
+    },
+    risques_incendie: {
+      appareils_a_risque: incendie,
+      detecteur_fumee: document.getElementById('detecteur-fumee').value === 'Oui',
+      etat_systeme_electrique: document.getElementById('systeme-electrique').value
+    },
+    complementaire: {
+      type_chauffage: document.getElementById('chauffage').value,
+      piscine_presente: document.getElementById('piscine').value === 'Oui',
+      remarques: document.getElementById('remarques').value
+    }
+  };
+
+  const messageDiv = document.getElementById('message');
+  try {
+    const reponse = await fetch('/api/formulaire', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(donnees)
+    });
+    if (!reponse.ok) throw new Error('Échec de l\'envoi');
+    messageDiv.className = 'succes';
+    messageDiv.textContent = 'Formulaire enregistré avec succès.';
+    document.getElementById('form-diagnostic').reset();
+    ageInput.value = '';
+  } catch (err) {
+    messageDiv.className = 'erreur';
+    messageDiv.textContent = 'Erreur lors de l\'envoi. Vérifiez que le serveur est lancé.';
+  }
+});
+</script>
+</body>
+</html>

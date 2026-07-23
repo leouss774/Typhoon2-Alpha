@@ -1,0 +1,23 @@
+# Environnements Python
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+
+# Fichiers générés localement
+*.log
+*.tmp
+*.bak
+.env
+
+# Sorties de pipeline
+risques_adresse.json
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+git remote add origin https://github.com/omrani-wiem/agent_collecteur.git

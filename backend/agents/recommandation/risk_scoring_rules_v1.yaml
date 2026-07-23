@@ -1,0 +1,335 @@
+version: 1.0
+name: crack_ai_risk_scoring_rules
+scoring_model:
+  per_peril_scale: 0-100
+  global_scale: 0-100
+  aggregation: additive_then_clamped
+  clamp_min: 0
+  clamp_max: 100
+  global_weights:
+    infiltration: 0.30
+    thermique: 0.25
+    incendie_electrique: 0.25
+    aléas_naturels: 0.20
+  priority_usage: ordering_only
+  notes:
+    - "Les points sont additionnés par péril à partir de règles déclenchées."
+    - "Le score global est une moyenne pondérée des scores par péril avec les poids explicités ci-dessus."
+    - "priority sert uniquement à ordonner l'évaluation et la restitution des règles; il n'intervient pas dans le calcul des points."
+    - "Aucun champ libre n'est utilisé pour le calcul; seule la grille versionnée fait foi."
+
+internal_naming:
+  convention: snake_case
+  source_label_field: libelle_source
+
+rules:
+  # --- RGA / infiltration / fissuration ---
+  - rule_id: RGA_FORT_INFILTRATION
+    peril: infiltration
+    priority: 100
+    condition: "rga.disponible == true and rga.exposition == 'fort'"
+    points: 25
+    justification: "Exposition forte au retrait-gonflement des argiles, ce qui augmente le risque de fissuration et d'infiltration."
+    source_fields:
+      - georisques.argiles_rga.exposition
+      - georisques.rapport_risque.risquesNaturels.retraitGonflementArgile
+
+  - rule_id: RGA_MODERE_INFILTRATION
+    peril: infiltration
+    priority: 90
+    condition: "rga.disponible == true and rga.exposition == 'modere'"
+    points: 15
+    justification: "Exposition modérée au retrait-gonflement des argiles, facteur de fragilisation des joints et façades."
+    source_fields:
+      - georisques.argiles_rga.exposition
+      - georisques.rapport_risque.risquesNaturels.retraitGonflementArgile
+
+  - rule_id: RGA_FAIBLE_INFILTRATION
+    peril: infiltration
+    priority: 80
+    condition: "rga.disponible == true and rga.exposition == 'faible'"
+    points: 5
+    justification: "Exposition faible au retrait-gonflement des argiles, signal faible mais non nul."
+    source_fields:
+      - georisques.argiles_rga.exposition
+      - georisques.rapport_risque.risquesNaturels.retraitGonflementArgile
+
+  # --- Inondation / remontée de nappe ---
+  - rule_id: INONDATION_PRESENT_INFILTRATION
+    peril: infiltration
+    priority: 100
+    condition: "risques_naturels.inondation.present == true"
+    points: 20
+    justification: "Présence d'un risque d'inondation au droit de l'adresse, augmentant l'exposition à l'humidité et aux infiltrations."
+    source_fields:
+      - georisques.rapport_risque.risquesNaturels.inondation
+      - georisques.azi
+      - georisques.tri
+
+  - rule_id: REMONTEE_NAPPE_PRESENT_INFILTRATION
+    peril: infiltration
+    priority: 95
+    condition: "risques_naturels.remontee_nappe.present == true"
+    points: 18
+    justification: "Présence d'un risque de remontée de nappe, facteur direct d'humidité durable en sous-sol et au niveau des fondations."
+    source_fields:
+      - georisques.rapport_risque.risquesNaturels.remonteeNappe
+      - hubeau.stations_piezometrie
+
+  - rule_id: CATNAT_INONDATION_RECURRENCE_INFILTRATION
+    peril: infiltration
+    priority: 85
+    condition: "catnat.count_by_type['inondation'] >= 3"
+    points: 15
+    justification: "Historique de CatNat inondation récurrent, proxy de sinistralité locale et de récurrence d'aléas hydriques."
+    source_fields:
+      - georisques.catnat
+
+  # --- Mouvement de terrain / cavités ---
+  - rule_id: MOUVEMENT_TERRAIN_PRESENT_INFILTRATION
+    peril: infiltration
+    priority: 100
+    condition: "risques_naturels.mouvement_terrain.present == true"
+    points: 12
+    justification: "Présence de mouvements de terrain à proximité, pouvant dégrader l'étanchéité des ouvrages et les réseaux."
+    source_fields:
+      - georisques.rapport_risque.risquesNaturels.mouvementTerrain
+      - georisques.mouvements_terrain
+
+  - rule_id: CAVITES_PRESENT_INFILTRATION
+    peril: infiltration
+    priority: 100
+    condition: "cavites.present == true"
+    points: 10
+    justification: "Présence de cavités souterraines, facteur de désordres structurels et d'infiltration indirecte."
+    source_fields:
+      - georisques.cavites
+
+  # --- Séisme ---
+  - rule_id: SEISME_ZONE_MODEREE
+    peril: aléas_naturels
+    priority: 100
+    condition: "zone_sismique.zone_code in ['3', '4', '5']"
+    points: 10
+    justification: "Zone sismique modérée à forte, facteur de contrainte structurelle à intégrer dans le score aléas naturels."
+    source_fields:
+      - georisques.zonage_sismique.zone_code
+      - georisques.rapport_risque.risquesNaturels.seisme
+
+  - rule_id: SEISME_ZONE_FAIBLE
+    peril: aléas_naturels
+    priority: 90
+    condition: "zone_sismique.zone_code == '2'"
+    points: 4
+    justification: "Zone sismique faible à modérée, signal à conserver mais impact limité."
+    source_fields:
+      - georisques.zonage_sismique.zone_code
+
+  # --- Radon ---
+  - rule_id: RADON_CLASSE_3
+    peril: aléas_naturels
+    priority: 100
+    condition: "radon.classe_potentiel == '3'"
+    points: 8
+    justification: "Potentiel radon élevé, facteur sanitaire et indicateur de perméabilité potentielle des sols."
+    source_fields:
+      - georisques.radon.classe_potentiel
+      - georisques.rapport_risque.risquesNaturels.radon
+
+  - rule_id: RADON_CLASSE_2
+    peril: aléas_naturels
+    priority: 90
+    condition: "radon.classe_potentiel == '2'"
+    points: 3
+    justification: "Potentiel radon intermédiaire, signal faible conservé à titre de traçabilité."
+    source_fields:
+      - georisques.radon.classe_potentiel
+
+  # --- ICPE / pollution ---
+  - rule_id: ICPE_PRESENT_ALAENATUREL
+    peril: aléas_naturels
+    priority: 80
+    condition: "facilites_proches.icpe_present == true"
+    points: 4
+    justification: "Présence d'ICPE à proximité, signal de nuisance/contraintes environnementales à faible poids."
+    source_fields:
+      - georisques.icpe
+      - georisques.rapport_risque.risquesTechnologiques.icpe
+
+  - rule_id: SSP_PRESENT_ALAENATUREL
+    peril: aléas_naturels
+    priority: 80
+    condition: "facilites_proches.sites_sols_pollues_present == true"
+    points: 4
+    justification: "Présence de sites et sols pollués à proximité, indicateur de contexte technologique dégradé."
+    source_fields:
+      - georisques.sites_sols_pollues
+      - georisques.rapport_risque.risquesTechnologiques.pollutionSols
+
+  - rule_id: CANALISATIONS_MATIERES_DANGEREUSES
+    peril: aléas_naturels
+    priority: 70
+    condition: "facilites_proches.canalisation_matieres_dangereuses == 'present'"
+    points: 6
+    justification: "Présence de canalisations de matières dangereuses, signal technologique à intégrer au score aléas."
+    source_fields:
+      - georisques.rapport_risque.risquesTechnologiques.canalisationsMatieresDangereuses
+
+  # --- CatNat global / récidive ---
+  - rule_id: CATNAT_MOINS_DE_2ANS
+    peril: aléas_naturels
+    priority: 95
+    condition: "catnat.most_recent_event_days <= 730"
+    points: 12
+    justification: "Sinistre CatNat récent, proxy de vulnérabilité locale active."
+    source_fields:
+      - georisques.catnat
+
+  - rule_id: CATNAT_2_A_5_ANS
+    peril: aléas_naturels
+    priority: 90
+    condition: "catnat.most_recent_event_days > 730 and catnat.most_recent_event_days <= 1825"
+    points: 8
+    justification: "Sinistre CatNat récent à l'échelle de 2 à 5 ans, signal moyen de récurrence."
+    source_fields:
+      - georisques.catnat
+
+  - rule_id: CATNAT_FREQUENCE_ELEVEE
+    peril: aléas_naturels
+    priority: 85
+    condition: "catnat.total_unique_events >= 6"
+    points: 10
+    justification: "Fréquence CatNat élevée sur l'historique disponible, indicateur de récurrence d'aléas."
+    source_fields:
+      - georisques.catnat
+
+  # --- Feu de forêt / exposition associée ---
+  - rule_id: FEU_FORET_PRESENT
+    peril: incendie_electrique
+    priority: 60
+    condition: "risques_naturels.feu_foret.present == true"
+    points: 6
+    justification: "Présence d'un risque feu de forêt, pertinent surtout pour l'exposition globale et la vulnérabilité électrique."
+    source_fields:
+      - georisques.rapport_risque.risquesNaturels.feuForet
+
+  - rule_id: THERMIQUE_CLIMATE_ZONE_CHAUDE
+    peril: thermique
+    priority: 100
+    condition: "proxy_climatique.code in ['chaud', 'tres_chaud']"
+    points: 10
+    justification: "Zone climatique chaude, proxy déterministe de stress thermique en attendant les données DRIAS/Copernicus."
+    source_fields:
+      - proxy_climatique.code
+    activated_by_llm: false
+
+  - rule_id: THERMIQUE_CLIMATE_ZONE_INTERMEDIAIRE
+    peril: thermique
+    priority: 90
+    condition: "proxy_climatique.code == 'intermediaire'"
+    points: 5
+    justification: "Zone climatique intermédiaire, proxy modéré de stress thermique."
+    source_fields:
+      - proxy_climatique.code
+    activated_by_llm: false
+
+  - rule_id: INCENDIE_ELECTRIQUE_CLIMATE_ZONE_CHAUDE
+    peril: incendie_electrique
+    priority: 100
+    condition: "proxy_climatique.code in ['chaud', 'tres_chaud']"
+    points: 6
+    justification: "Zone climatique chaude, proxy de surcharge d'usage et de tension thermique sur les équipements électriques."
+    source_fields:
+      - proxy_climatique.code
+    activated_by_llm: false
+
+  # --- Couche déclarative : règles composées à activer par Mistral ---
+  - rule_id: COMPOSE_TOITURE_AGEE_ET_HUMIDITE
+    peril: infiltration
+    priority: 50
+    condition: "profil_bien.type_toiture in ['tuiles', 'ardoises', 'zinc'] and profil_bien.annee_construction < 1980 and (risques_naturels.inondation.present == true or risques_naturels.remontee_nappe.present == true or catnat.count_by_type['inondation'] >= 1)"
+    points: 12
+    justification: "Toiture ancienne combinée à un contexte hydrique défavorable, ce qui augmente le risque d'infiltration."
+    source_fields:
+      - profil_bien.annee_construction
+      - profil_bien.type_toiture
+      - georisques.rapport_risque.risquesNaturels.inondation
+      - georisques.rapport_risque.risquesNaturels.remonteeNappe
+      - georisques.catnat
+    activated_by_llm: true
+
+  - rule_id: COMPOSE_ISOLATION_FAIBLE_ET_HUMIDITE
+    peril: thermique
+    priority: 50
+    condition: "profil_bien.isolation_toiture in ['absente', 'faible'] and profil_bien.annee_construction < 1990"
+    points: 10
+    justification: "Isolation toiture absente ou faible sur bâti ancien, augmentant la vulnérabilité thermique et le stress d'usage."
+    source_fields:
+      - profil_bien.isolation_toiture
+      - profil_bien.annee_construction
+    activated_by_llm: true
+
+  - rule_id: COMPOSE_INSTALLATION_ELECTRIQUE_ANCIENNE
+    peril: incendie_electrique
+    priority: 50
+    condition: "profil_bien.installation_electrique_annee is not null and profil_bien.installation_electrique_annee < 2000"
+    points: 10
+    justification: "Installation électrique ancienne, facteur de surcharge, échauffement et défaut d'isolement."
+    source_fields:
+      - profil_bien.installation_electrique_annee
+    activated_by_llm: true
+
+  - rule_id: COMPOSE_PRESENCE_CLIMATISATION_ET_STRESS_THERMIQUE
+    peril: thermique
+    priority: 40
+    condition: "profil_bien.climatisation == false and profil_bien.exposition_solaire in ['forte', 'moyenne']"
+    points: 8
+    justification: "Absence de climatisation avec exposition solaire notable, augmentant la sensibilité au stress thermique."
+    source_fields:
+      - profil_bien.climatisation
+      - profil_bien.exposition_solaire
+    activated_by_llm: true
+
+  - rule_id: COMPOSE_TOITURE_AGEE_ET_CHALEUR
+    peril: thermique
+    priority: 45
+    condition: "profil_bien.type_toiture in ['tuiles', 'ardoises', 'zinc'] and profil_bien.annee_construction < 1980 and proxy_climatique.code in ['chaud', 'tres_chaud']"
+    points: 10
+    justification: "Toiture ancienne dans une zone climatique chaude, ce qui accroît la vulnérabilité thermique du bâti."
+    source_fields:
+      - profil_bien.annee_construction
+      - profil_bien.type_toiture
+      - proxy_climatique.code
+    activated_by_llm: true
+
+  - rule_id: COMPOSE_INSTALLATION_ELECTRIQUE_AGEE_ET_CHALEUR
+    peril: incendie_electrique
+    priority: 45
+    condition: "profil_bien.installation_electrique_annee is not null and profil_bien.installation_electrique_annee < 2000 and proxy_climatique.code in ['chaud', 'tres_chaud']"
+    points: 8
+    justification: "Installation électrique ancienne dans une zone climatique chaude, combinaison défavorable pour le risque d'échauffement."
+    source_fields:
+      - profil_bien.installation_electrique_annee
+      - proxy_climatique.code
+    activated_by_llm: true
+
+confidence_rules:
+  - confidence_id: DATA_MISSING_CLIMATE
+    condition: "drias_meteofrance.disponible == false and copernicus.disponible == false"
+    impact: "medium"
+    note: "Les composantes climatiques prospectives sont absentes; les scores thermiques et infiltration ne reposent que sur les proxys disponibles et le déclaratif."
+
+  - confidence_id: DATA_MISSING_BUILDING
+    condition: "profil_bien.disponible == false"
+    impact: "high"
+    note: "Le déclaratif bâtiment est absent; les scores thermiques et incendie électrique s'appuient alors uniquement sur les proxys déterministes disponibles."
+
+scoring_policy:
+  catnat_double_counting: "intended"
+  catnat_note: "Un même arrêté peut couvrir plusieurs types de péril; le comptage par péril est donc volontaire pour refléter la fréquence par aléa."
+  rule_evaluation: "All matching rules fire unless explicitly marked exclusive in future versions. priority only sorts the explanation output."
+
+scoring_notes:
+  - "Les règles composées ne sont activées que si Mistral retourne des rule_id existants dans cette liste."
+  - "Le LLM n'a jamais le droit d'inventer un score ni une justification hors référentiel."
+  - "Les règles CatNat sont agrégées par type de péril, pas par code_national seul."
