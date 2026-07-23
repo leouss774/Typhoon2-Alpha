@@ -38,18 +38,33 @@ def generate_recommandations_node(state: TyphoonState) -> dict:
 
     # Construction de api_data a partir des donnees collectees
     brut = georisques.get("brut", {})
+    if not isinstance(brut, dict):
+        brut = {}
+
+    osm_proximite = georisques.get("osm_proximite", {})
+    if not isinstance(osm_proximite, dict):
+        osm_proximite = {}
+
     api_data = {
         **brut,
-        "georisques": georisques.get("georisques", {}),
-        "altitude": georisques.get("altitude", {}),
-        "coordonnees": georisques.get("coordonnees", {}),
-        "distance_eau": georisques.get("osm_proximite", {}).get("cours_eau", {}).get("distance_m"),
-        "distance_foret": georisques.get("osm_proximite", {}).get("foret", {}).get("distance_m"),
+        "georisques": georisques.get("georisques", {}) if isinstance(georisques.get("georisques"), dict) else {},
+        "altitude": georisques.get("altitude", {}) if isinstance(georisques.get("altitude"), dict) else {},
+        "coordonnees": georisques.get("coordonnees", {}) if isinstance(georisques.get("coordonnees"), dict) else {},
+        "distance_eau": osm_proximite.get("cours_eau", {}).get("distance_m") if isinstance(osm_proximite.get("cours_eau"), dict) else None,
+        "distance_foret": osm_proximite.get("foret", {}).get("distance_m") if isinstance(osm_proximite.get("foret"), dict) else None,
     }
 
     if HAS_GENERATOR:
-        recommandations = generate_zone_recommendations(api_data=api_data, form_data=form)
-        logger.info(f"Recommandations generees : {recommandations.get('nb_recommandations', 0)} travaux")
+        try:
+            recommandations = generate_zone_recommendations(api_data=api_data, form_data=form)
+            if not isinstance(recommandations, dict):
+                logger.error("generate_zone_recommendations n'a pas retourne un dict")
+                recommandations = _fallback_recommandations()
+            else:
+                logger.info(f"Recommandations generees : {recommandations.get('nb_recommandations', 0)} travaux")
+        except Exception as e:
+            logger.error(f"Erreur dans generate_zone_recommendations : {e}")
+            recommandations = _fallback_recommandations()
     else:
         # Fallback minimal
         recommandations = _fallback_recommandations()
@@ -66,19 +81,38 @@ def _fallback_recommandations() -> dict:
     zones = {}
     for name, score in [("fondations", 15), ("murs_nord", 10), ("toiture", 15), ("sous_sol", 15)]:
         level = "critique" if score >= 70 else "eleve" if score >= 55 else "modere" if score >= 35 else "faible"
-        zones[name] = {"risque": score, "niveau": level, "alea_principal": "Standard",
-                       "recommandations": [], "justification": "Donnees insuffisantes."}
+        zones[name] = {
+            "risque": score,
+            "niveau": level,
+            "alea_principal": "Standard",
+            "recommandations": [],
+            "justification": "Donnees insuffisantes.",
+            "test_vulnerabilite": {
+                "verdict": "Vulnerabilite faible - aucune action urgente requise",
+                "explication": "Donnees API insuffisantes pour un diagnostic detaille.",
+            },
+        }
 
     global_score = round(15 * 0.3 + 15 * 0.25 + 15 * 0.25 + 10 * 0.2)
 
     return {
         "zones": zones,
-        "projection_2050": {"score_global": min(100, round(global_score * 1.4)),
-                            "scenario_climatique": "CMIP6 - defaut",
-                            "zones": {n: {"risque_projete": min(100, round(z["risque"] * 1.3)),
-                                          "evolution": f"+{min(100, round(z['risque'] * 1.3)) - z['risque']} points"}
-                                      for n, z in zones.items()}},
-        "synthese_financiere": {"cout_brut_total": "0 EUR", "aides_mobilisables": "0 EUR", "reste_a_charge_net": "0 EUR"},
+        "projection_2050": {
+            "score_global": min(100, round(global_score * 1.4)),
+            "scenario_climatique": "CMIP6 - defaut",
+            "zones": {
+                n: {
+                    "risque_projete": min(100, round(z["risque"] * 1.3)),
+                    "evolution": f"+{min(100, round(z['risque'] * 1.3)) - z['risque']} points"
+                }
+                for n, z in zones.items()
+            }
+        },
+        "synthese_financiere": {
+            "cout_brut_total": "0 EUR",
+            "aides_mobilisables": "0 EUR",
+            "reste_a_charge_net": "0 EUR"
+        },
         "scores_par_alea": {"inondation": 15, "rga": 15, "canicule": 15, "tempete": 12},
         "score_global": global_score,
         "nb_recommandations": 0,

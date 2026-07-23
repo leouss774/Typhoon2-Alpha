@@ -163,12 +163,33 @@ export default function ClientForm({ onAnalyseLancee }: ClientFormProps) {
         throw new Error(`API ${res.status}: ${errText || res.statusText}`);
       }
       const data = await res.json();
+
+      // S'assurer que l'analyse a toujours la structure minimale attendue
+      // (tolérante aux données partielles : si une API a échoué, on met des valeurs par défaut)
+      const analysis = data.analysis || {};
+      analysis.recommandations = analysis.recommandations || {};
+      analysis.recommandations.zones = analysis.recommandations.zones || {};
+      analysis.analyse_risques = analysis.analyse_risques || { score: { global: 0 } };
+      analysis.resume = analysis.resume || {
+        score_global: 0,
+        niveau_risque: "non_evalue",
+        nb_recommandations: 0,
+        cout_total_travaux: "0 EUR",
+        aides_mobilisables: "0 EUR",
+        reste_a_charge_net: "0 EUR",
+      };
+      analysis.formulaire_client = analysis.formulaire_client || data.client_form || {};
+      analysis.coordonnees = analysis.coordonnees || { latitude: 0, longitude: 0 };
+      analysis.adresse = analysis.adresse || "";
+
       // Vérifier que la réponse contient bien les zones des recommandations
-      if (!data?.analysis?.recommandations?.zones) {
-        throw new Error("Réponse API incomplète — données de zones manquantes");
+      // (avec fallback : si zones est vide, on continue quand même avec les données partielles)
+      if (Object.keys(analysis.recommandations.zones).length === 0) {
+        console.warn("Aucune zone de recommandation generee - donnees API possiblement indisponibles");
       }
+
       // Stocker l'analyse dans localStorage pour que le Dashboard puisse la lire
-      localStorage.setItem("typhoon_analysis_" + sessionId, JSON.stringify(data.analysis));
+      localStorage.setItem("typhoon_analysis_" + sessionId, JSON.stringify(analysis));
       if (onAnalyseLancee) onAnalyseLancee(sessionId);
     } catch (err) {
       alert("Erreur lors du lancement de l'analyse : " + (err as Error).message);

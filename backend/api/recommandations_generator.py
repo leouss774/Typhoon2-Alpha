@@ -12,35 +12,68 @@ from typing import Any
 
 
 def generate_zone_recommendations(
-    api_data: dict[str, Any],
+    api_data: dict[str, Any] | None = None,
     form_data: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    """Génère les recommandations dynamiques par zone.
+    """Genere les recommandations dynamiques par zone.
+
+    NULL-SAFE : si api_data est vide ou None, utilise uniquement form_data.
+    Chaque champ est accede via .get() avec valeur par defaut.
 
     Args:
-        api_data: Données des API (georisques, climate, building, etc.)
-        form_data: Données du formulaire client (optionnel)
+        api_data: Donnees des API (peut etre vide/None)
+        form_data: Donnees du formulaire client (optionnel)
 
     Returns:
         Dict avec zones, projection_2050, synthese_financiere, scores
     """
-    georisques = api_data.get("georisques", {})
-    climate = api_data.get("climate", api_data.get("open_meteo", {}))
-    building = api_data.get("building", api_data.get("bdnb", {}))
-    altitude_data = api_data.get("altitude", api_data.get("ign", {}))
-    water_dist = api_data.get("waterDist", api_data.get("distance_eau"))
-    forest_dist = api_data.get("forestDist", api_data.get("distance_foret"))
+    api_data = api_data or {}
+    form_data = form_data or {}
 
-    # ─── Signaux de risque ──────────────────────────────────────────────────
-    rN = georisques.get("risquesNaturels", {})
+    georisques = api_data.get("georisques") or {}
+    if not isinstance(georisques, dict):
+        georisques = {}
+    climate = api_data.get("climate") or api_data.get("open_meteo") or {}
+    if not isinstance(climate, dict):
+        climate = {}
+    building = api_data.get("building") or api_data.get("bdnb") or {}
+    altitude_data = api_data.get("altitude") or api_data.get("ign") or {}
+    water_dist = api_data.get("waterDist") or api_data.get("distance_eau")
+    forest_dist = api_data.get("forestDist") or api_data.get("distance_foret")
+
+    # Signaux de risque depuis Georisques
+    rN = _get(georisques, "risquesNaturels", {})
     if not rN:
+        # Fallback : extraire les risques depuis la structure brute
+        zonage = _get(georisques, "zonage_sismique")
+        argiles = _get(georisques, "argiles_rga")
+        catnat = _get(georisques, "catnat")
+        radon_list = _get(georisques, "radon")
+        mvt_list = _get(georisques, "mouvements_terrain")
+
+        has_seisme = bool(zonage) and (isinstance(zonage, list) and len(zonage) > 0 and _get(zonage[0], "zone", 1) > 1)
+        has_rga = bool(argiles)
+        has_radon = bool(radon_list)
+        has_mvt = bool(mvt_list)
+
+        # Inondation via catnat
+        has_inondation = False
+        has_remontee = False
+        if isinstance(catnat, list):
+            for evt in catnat:
+                risque = _get(evt, "risque_naturel")
+                if risque and "inondation" in str(risque).lower():
+                    has_inondation = True
+                if risque and "remontee" in str(risque).lower():
+                    has_remontee = True
+
         rN = {
-            "inondation": {"present": georisques.get("alea_inondation") == "fort"},
-            "retraitGonflementArgile": {"present": bool(georisques.get("retrait_gonflement_argile"))},
-            "seisme": {"present": bool(georisques.get("zone_sismique", 0) > 1)},
-            "radon": {"present": bool(georisques.get("radon_classe", 0) > 1)},
-            "remonteeNappe": {"present": False},
-            "mouvementTerrain": {"present": georisques.get("mouvement_terrain", False)},
+            "inondation": {"present": has_inondation},
+            "retraitGonflementArgile": {"present": has_rga},
+            "seisme": {"present": has_seisme},
+            "radon": {"present": has_radon},
+            "remonteeNappe": {"present": has_remontee},
+            "mouvementTerrain": {"present": has_mvt},
         }
 
     inondation = _get(rN, "inondation", {}).get("present", False)
@@ -299,8 +332,8 @@ def generate_zone_recommendations(
     }
 
 
-def _get(d: dict, key: str, default=None):
-    """Safe dict access."""
+def _get(d: Any, key: str, default: Any = None) -> Any:
+    """Safe dict access with type check."""
     if not isinstance(d, dict):
         return default
     return d.get(key, default)
@@ -366,7 +399,7 @@ def _generate_justification(
         if not parts:
             parts.append("Vulnérabilité faible des murs extérieurs")
 
-    return ". ".join(parts) + "." if parts else f"Score {score}/100 — données insuffisantes."
+    return ". ".join(parts) + "." if parts else f"Score {score}/100 - donnees insuffisantes."
 
 
 def _generate_verdict(score: int) -> str:

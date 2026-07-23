@@ -48,10 +48,13 @@ def collect_georisques_node(state: TyphoonState) -> dict:
     """Collecte les donnees Georisques a partir de l'adresse dans le formulaire.
 
     Entree :  state.client_form["adresse"]
-    Sortie :  state.georisques_data (dict)
+    Sortie :  state.georisques_data (dict, jamais None)
               state.collect_error (str ou None)
+
+    Garanti de toujours retourner un dict georisques_data, meme vide.
     """
-    adresse = state.client_form.get("adresse", "")
+    form = state.client_form or {}
+    adresse = form.get("adresse", "") if isinstance(form, dict) else ""
 
     if not adresse:
         return {
@@ -66,18 +69,18 @@ def collect_georisques_node(state: TyphoonState) -> dict:
             data = analyser_adresse(adresse)
             logger.info("Donnees collectees avec succes")
 
-            georisques = data.get("georisques", {})
-            ign = data.get("ign", {})
-            osm = data.get("osm", {})
+            georisques = data.get("georisques", {}) if isinstance(data, dict) else {}
+            ign = data.get("ign", {}) if isinstance(data, dict) else {}
+            osm = data.get("osm", {}) if isinstance(data, dict) else {}
 
             return {
                 "georisques_data": {
-                    "brut": data,
-                    "georisques": georisques,
-                    "coordonnees": data.get("coordonnees", {}),
-                    "code_insee": data.get("code_insee", ""),
-                    "altitude": ign.get("altitude", {}),
-                    "osm_proximite": osm.get("elements_naturels_proches", {}),
+                    "brut": data if isinstance(data, dict) else {},
+                    "georisques": georisques if isinstance(georisques, dict) else {},
+                    "coordonnees": data.get("coordonnees", {}) if isinstance(data, dict) else {},
+                    "code_insee": str(data.get("code_insee", "") or "") if isinstance(data, dict) else "",
+                    "altitude": ign.get("altitude", {}) if isinstance(ign, dict) and isinstance(ign.get("altitude"), dict) else {},
+                    "osm_proximite": osm.get("elements_naturels_proches", {}) if isinstance(osm, dict) and isinstance(osm.get("elements_naturels_proches"), dict) else {},
                 },
                 "next_node": "generate_recommandations",
             }
