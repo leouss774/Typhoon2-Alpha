@@ -37,17 +37,24 @@ export default function DigitalTwin({ payload }: DigitalTwinProps) {
     setIsLoadingMistral(true);
 
     try {
-      const response = await fetch(`/api/jumeau/vulnerability-test?zone_name=${zoneName}`, {
+      // Envoyer zone_name et zone_data dans le body JSON (format attendu par le backend)
+      const response = await fetch(`/api/jumeau/vulnerability-test`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(zoneData), 
+        body: JSON.stringify({
+          zone_name: zoneName,
+          zone_data: zoneData,
+        }),
       });
-      if (!response.ok) throw new Error("Erreur réseau API Mistral");
+      if (!response.ok) {
+        const errBody = await response.text().catch(() => "");
+        throw new Error(`API ${response.status}: ${errBody || response.statusText}`);
+      }
       const data = await response.json();
       setVulnTestResult(data);
     } catch (error) {
       console.error("Erreur lors du test de vulnérabilité:", error);
-      setVulnTestResult({ error: "Impossible de générer le test avec Mistral pour le moment." });
+      setVulnTestResult({ error: "Impossible de générer le test de vulnérabilité pour le moment. Vérifiez que le backend est lancé." });
     } finally {
       setIsLoadingMistral(false);
     }

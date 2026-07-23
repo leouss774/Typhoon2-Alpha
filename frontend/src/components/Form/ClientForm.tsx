@@ -153,7 +153,8 @@ export default function ClientForm({ onAnalyseLancee }: ClientFormProps) {
         client_form: form,
         raw_data: {},
       };
-      const res = await fetch("http://localhost:8000/api/analyze", {
+      // Utiliser l'URL relative (proxy Vite : /api → localhost:8000) pour cohérence avec DigitalTwin/autres composants
+      const res = await fetch("/api/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -178,7 +179,7 @@ export default function ClientForm({ onAnalyseLancee }: ClientFormProps) {
         aides_mobilisables: "0 EUR",
         reste_a_charge_net: "0 EUR",
       };
-      analysis.formulaire_client = analysis.formulaire_client || data.client_form || {};
+      analysis.formulaire_client = analysis.formulaire_client || {};
       analysis.coordonnees = analysis.coordonnees || { latitude: 0, longitude: 0 };
       analysis.adresse = analysis.adresse || "";
 
