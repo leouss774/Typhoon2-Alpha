@@ -1,0 +1,1046 @@
+{
+  "demo_cases": [
+    {
+      "version": "1.0",
+      "analysis_id": "step7-real-nantes-no-declarative",
+      "generated_at": "2026-07-21T11:04:42Z",
+      "address": {
+        "adresse": "8 Allée du Port Maillard 44000 Nantes",
+        "code_insee": "44109",
+        "coordonnees": {
+          "latitude": 47.214972,
+          "longitude": -1.551503
+        },
+        "geocodage_score": 0.5514057142857143
+      },
+      "risk_context": {
+        "proxy_climatique": {
+          "code": "intermediaire",
+          "source": "latitude_band_v1",
+          "libelle_source": "latitude_band_v1",
+          "latitude": 47.214972,
+          "seuils": {
+            "tres_chaud_max": 43.5,
+            "chaud_max": 45.5,
+            "intermediaire_max": 48.5
+          },
+          "disponible": true
+        },
+        "rga": {
+          "present": true,
+          "exposition": "faible",
+          "code_exposition": "1",
+          "libelle_source": "argiles_rga",
+          "disponible": true
+        },
+        "zone_sismique": {
+          "present": true,
+          "zone_code": "3",
+          "zone_libelle": "3 - MODEREE",
+          "libelle_source": "zonage_sismique",
+          "disponible": true
+        },
+        "radon": {
+          "present": true,
+          "classe_potentiel": "3",
+          "libelle_source": "radon",
+          "disponible": true
+        },
+        "cavites": {
+          "present": false,
+          "count": 0,
+          "libelle_source": "cavites",
+          "disponible": false
+        },
+        "historique_catnat": {
+          "total_evts": 10,
+          "evts_par_type": {
+            "inondation": 9,
+            "mouvement_terrain": 1
+          },
+          "nb_evt_10ans": 4,
+          "evt_le_plus_recent": {
+            "code_national": "INTE2606204A",
+            "type_risque": "inondation",
+            "date_debut": "2026-02-08T00:00:00+00:00",
+            "date_fin": "2026-02-23T00:00:00+00:00",
+            "date_publication_jo": "2026-03-03T00:00:00+00:00",
+            "jours_depuis_evt": 163,
+            "jours_depuis_publi": 140
+          },
+          "disponible": true
+        },
+        "facilites_proches": {
+          "icpe_count": 10,
+          "icpe_present": true,
+          "sites_sols_pollues_count": 0,
+          "sites_sols_pollues_present": false,
+          "canalisation_matieres_dangereuses": "present",
+          "disponible": true
+        },
+        "donnees_topo": {
+          "altitude_m": 7.35,
+          "disponible": true
+        },
+        "eaux_souterraines": {
+          "stations_piezometriques_count": 5,
+          "presente": true,
+          "disponible": true
+        },
+        "donnees_manquantes": [
+          "drias_meteofrance",
+          "copernicus",
+          "sentinel",
+          "insee",
+          "brgm_geologie_avancee",
+          "onrn"
+        ]
+      },
+      "profil_bien": {
+        "disponible": false
+      },
+      "score": {
+        "global": 32,
+        "global_raw": 32.25,
+        "weights": {
+          "infiltration": 0.3,
+          "thermique": 0.25,
+          "incendie_electrique": 0.25,
+          "aléas_naturels": 0.2
+        },
+        "perils": {
+          "infiltration": {
+            "raw_score": 70,
+            "score": 70,
+            "max_score": 100,
+            "triggered_rules": [
+              {
+                "rule_id": "INONDATION_PRESENT_INFILTRATION",
+                "peril": "infiltration",
+                "priority": 100,
+                "points": 20,
+                "justification": "Présence d'un risque d'inondation au droit de l'adresse, augmentant l'exposition à l'humidité et aux infiltrations.",
+                "source_fields": [
+                  "georisques.rapport_risque.risquesNaturels.inondation",
+                  "georisques.azi",
+                  "georisques.tri"
+                ],
+                "activated_by_llm": false
+              },
+              {
+                "rule_id": "MOUVEMENT_TERRAIN_PRESENT_INFILTRATION",
+                "peril": "infiltration",
+                "priority": 100,
+                "points": 12,
+                "justification": "Présence de mouvements de terrain à proximité, pouvant dégrader l'étanchéité des ouvrages et les réseaux.",
+                "source_fields": [
+                  "georisques.rapport_risque.risquesNaturels.mouvementTerrain",
+                  "georisques.mouvements_terrain"
+                ],
+                "activated_by_llm": false
+              },
+              {
+                "rule_id": "REMONTEE_NAPPE_PRESENT_INFILTRATION",
+                "peril": "infiltration",
+                "priority": 95,
+                "points": 18,
+                "justification": "Présence d'un risque de remontée de nappe, facteur direct d'humidité durable en sous-sol et au niveau des fondations.",
+                "source_fields": [
+                  "georisques.rapport_risque.risquesNaturels.remonteeNappe",
+                  "hubeau.stations_piezometrie"
+                ],
+                "activated_by_llm": false
+              },
+              {
+                "rule_id": "CATNAT_INONDATION_RECURRENCE_INFILTRATION",
+                "peril": "infiltration",
+                "priority": 85,
+                "points": 15,
+                "justification": "Historique de CatNat inondation récurrent, proxy de sinistralité locale et de récurrence d'aléas hydriques.",
+                "source_fields": [
+                  "georisques.catnat"
+                ],
+                "activated_by_llm": false
+              },
+              {
+                "rule_id": "RGA_FAIBLE_INFILTRATION",
+                "peril": "infiltration",
+                "priority": 80,
+                "points": 5,
+                "justification": "Exposition faible au retrait-gonflement des argiles, signal faible mais non nul.",
+                "source_fields": [
+                  "georisques.argiles_rga.exposition",
+                  "georisques.rapport_risque.risquesNaturels.retraitGonflementArgile"
+                ],
+                "activated_by_llm": false
+              }
+            ]
+          },
+          "thermique": {
+            "raw_score": 5,
+            "score": 5,
+            "max_score": 100,
+            "triggered_rules": [
+              {
+                "rule_id": "THERMIQUE_CLIMATE_ZONE_INTERMEDIAIRE",
+                "peril": "thermique",
+                "priority": 90,
+                "points": 5,
+                "justification": "Zone climatique intermédiaire, proxy modéré de stress thermique.",
+                "source_fields": [
+                  "proxy_climatique.code"
+                ],
+                "activated_by_llm": false
+              }
+            ]
+          },
+          "incendie_electrique": {
+            "raw_score": 0,
+            "score": 0,
+            "max_score": 100,
+            "triggered_rules": []
+          },
+          "aléas_naturels": {
+            "raw_score": 50,
+            "score": 50,
+            "max_score": 100,
+            "triggered_rules": [
+              {
+                "rule_id": "RADON_CLASSE_3",
+                "peril": "aléas_naturels",
+                "priority": 100,
+                "points": 8,
+                "justification": "Potentiel radon élevé, facteur sanitaire et indicateur de perméabilité potentielle des sols.",
+                "source_fields": [
+                  "georisques.radon.classe_potentiel",
+                  "georisques.rapport_risque.risquesNaturels.radon"
+                ],
+                "activated_by_llm": false
+              },
+              {
+                "rule_id": "SEISME_ZONE_MODEREE",
+                "peril": "aléas_naturels",
+                "priority": 100,
+                "points": 10,
+                "justification": "Zone sismique modérée à forte, facteur de contrainte structurelle à intégrer dans le score aléas naturels.",
+                "source_fields": [
+                  "georisques.zonage_sismique.zone_code",
+                  "georisques.rapport_risque.risquesNaturels.seisme"
+                ],
+                "activated_by_llm": false
+              },
+              {
+                "rule_id": "CATNAT_MOINS_DE_2ANS",
+                "peril": "aléas_naturels",
+                "priority": 95,
+                "points": 12,
+                "justification": "Sinistre CatNat récent, proxy de vulnérabilité locale active.",
+                "source_fields": [
+                  "georisques.catnat"
+                ],
+                "activated_by_llm": false
+              },
+              {
+                "rule_id": "CATNAT_FREQUENCE_ELEVEE",
+                "peril": "aléas_naturels",
+                "priority": 85,
+                "points": 10,
+                "justification": "Fréquence CatNat élevée sur l'historique disponible, indicateur de récurrence d'aléas.",
+                "source_fields": [
+                  "georisques.catnat"
+                ],
+                "activated_by_llm": false
+              },
+              {
+                "rule_id": "ICPE_PRESENT_ALAENATUREL",
+                "peril": "aléas_naturels",
+                "priority": 80,
+                "points": 4,
+                "justification": "Présence d'ICPE à proximité, signal de nuisance/contraintes environnementales à faible poids.",
+                "source_fields": [
+                  "georisques.icpe",
+                  "georisques.rapport_risque.risquesTechnologiques.icpe"
+                ],
+                "activated_by_llm": false
+              },
+              {
+                "rule_id": "CANALISATIONS_MATIERES_DANGEREUSES",
+                "peril": "aléas_naturels",
+                "priority": 70,
+                "points": 6,
+                "justification": "Présence de canalisations de matières dangereuses, signal technologique à intégrer au score aléas.",
+                "source_fields": [
+                  "georisques.rapport_risque.risquesTechnologiques.canalisationsMatieresDangereuses"
+                ],
+                "activated_by_llm": false
+              }
+            ]
+          }
+        }
+      },
+      "rules": {
+        "version": 1.0,
+        "file": "C:\\Users\\Makrembz\\OneDrive\\Desktop\\Talan\\Projects\\agent collecteur wiem\\agent_collecteur\\risk_scoring_rules_v1.yaml",
+        "triggered": [
+          {
+            "rule_id": "INONDATION_PRESENT_INFILTRATION",
+            "peril": "infiltration",
+            "priority": 100,
+            "points": 20,
+            "justification": "Présence d'un risque d'inondation au droit de l'adresse, augmentant l'exposition à l'humidité et aux infiltrations.",
+            "source_fields": [
+              "georisques.rapport_risque.risquesNaturels.inondation",
+              "georisques.azi",
+              "georisques.tri"
+            ],
+            "activated_by_llm": false
+          },
+          {
+            "rule_id": "MOUVEMENT_TERRAIN_PRESENT_INFILTRATION",
+            "peril": "infiltration",
+            "priority": 100,
+            "points": 12,
+            "justification": "Présence de mouvements de terrain à proximité, pouvant dégrader l'étanchéité des ouvrages et les réseaux.",
+            "source_fields": [
+              "georisques.rapport_risque.risquesNaturels.mouvementTerrain",
+              "georisques.mouvements_terrain"
+            ],
+            "activated_by_llm": false
+          },
+          {
+            "rule_id": "RADON_CLASSE_3",
+            "peril": "aléas_naturels",
+            "priority": 100,
+            "points": 8,
+            "justification": "Potentiel radon élevé, facteur sanitaire et indicateur de perméabilité potentielle des sols.",
+            "source_fields": [
+              "georisques.radon.classe_potentiel",
+              "georisques.rapport_risque.risquesNaturels.radon"
+            ],
+            "activated_by_llm": false
+          },
+          {
+            "rule_id": "SEISME_ZONE_MODEREE",
+            "peril": "aléas_naturels",
+            "priority": 100,
+            "points": 10,
+            "justification": "Zone sismique modérée à forte, facteur de contrainte structurelle à intégrer dans le score aléas naturels.",
+            "source_fields": [
+              "georisques.zonage_sismique.zone_code",
+              "georisques.rapport_risque.risquesNaturels.seisme"
+            ],
+            "activated_by_llm": false
+          },
+          {
+            "rule_id": "CATNAT_MOINS_DE_2ANS",
+            "peril": "aléas_naturels",
+            "priority": 95,
+            "points": 12,
+            "justification": "Sinistre CatNat récent, proxy de vulnérabilité locale active.",
+            "source_fields": [
+              "georisques.catnat"
+            ],
+            "activated_by_llm": false
+          },
+          {
+            "rule_id": "REMONTEE_NAPPE_PRESENT_INFILTRATION",
+            "peril": "infiltration",
+            "priority": 95,
+            "points": 18,
+            "justification": "Présence d'un risque de remontée de nappe, facteur direct d'humidité durable en sous-sol et au niveau des fondations.",
+            "source_fields": [
+              "georisques.rapport_risque.risquesNaturels.remonteeNappe",
+              "hubeau.stations_piezometrie"
+            ],
+            "activated_by_llm": false
+          },
+          {
+            "rule_id": "THERMIQUE_CLIMATE_ZONE_INTERMEDIAIRE",
+            "peril": "thermique",
+            "priority": 90,
+            "points": 5,
+            "justification": "Zone climatique intermédiaire, proxy modéré de stress thermique.",
+            "source_fields": [
+              "proxy_climatique.code"
+            ],
+            "activated_by_llm": false
+          },
+          {
+            "rule_id": "CATNAT_FREQUENCE_ELEVEE",
+            "peril": "aléas_naturels",
+            "priority": 85,
+            "points": 10,
+            "justification": "Fréquence CatNat élevée sur l'historique disponible, indicateur de récurrence d'aléas.",
+            "source_fields": [
+              "georisques.catnat"
+            ],
+            "activated_by_llm": false
+          },
+          {
+            "rule_id": "CATNAT_INONDATION_RECURRENCE_INFILTRATION",
+            "peril": "infiltration",
+            "priority": 85,
+            "points": 15,
+            "justification": "Historique de CatNat inondation récurrent, proxy de sinistralité locale et de récurrence d'aléas hydriques.",
+            "source_fields": [
+              "georisques.catnat"
+            ],
+            "activated_by_llm": false
+          },
+          {
+            "rule_id": "ICPE_PRESENT_ALAENATUREL",
+            "peril": "aléas_naturels",
+            "priority": 80,
+            "points": 4,
+            "justification": "Présence d'ICPE à proximité, signal de nuisance/contraintes environnementales à faible poids.",
+            "source_fields": [
+              "georisques.icpe",
+              "georisques.rapport_risque.risquesTechnologiques.icpe"
+            ],
+            "activated_by_llm": false
+          },
+          {
+            "rule_id": "RGA_FAIBLE_INFILTRATION",
+            "peril": "infiltration",
+            "priority": 80,
+            "points": 5,
+            "justification": "Exposition faible au retrait-gonflement des argiles, signal faible mais non nul.",
+            "source_fields": [
+              "georisques.argiles_rga.exposition",
+              "georisques.rapport_risque.risquesNaturels.retraitGonflementArgile"
+            ],
+            "activated_by_llm": false
+          },
+          {
+            "rule_id": "CANALISATIONS_MATIERES_DANGEREUSES",
+            "peril": "aléas_naturels",
+            "priority": 70,
+            "points": 6,
+            "justification": "Présence de canalisations de matières dangereuses, signal technologique à intégrer au score aléas.",
+            "source_fields": [
+              "georisques.rapport_risque.risquesTechnologiques.canalisationsMatieresDangereuses"
+            ],
+            "activated_by_llm": false
+          }
+        ]
+      },
+      "confidence": {
+        "level": "low",
+        "notes": [
+          {
+            "confidence_id": "DATA_MISSING_CLIMATE",
+            "impact": "medium",
+            "note": "Les composantes climatiques prospectives sont absentes; les scores thermiques et infiltration ne reposent que sur les proxys disponibles et le déclaratif."
+          },
+          {
+            "confidence_id": "DATA_MISSING_BUILDING",
+            "impact": "high",
+            "note": "Le déclaratif bâtiment est absent; les scores thermiques et incendie électrique s'appuient alors uniquement sur les proxys déterministes disponibles."
+          }
+        ]
+      },
+      "traceability": {
+        "selected_composed_rule_ids": [],
+        "score_engine": "deterministic_yaml_v1",
+        "mistral_used": false
+      },
+      "mistral": {
+        "activated_rule_ids": [],
+        "declarative_consistency_status": "unknown",
+        "declarative_consistency_flags": []
+      }
+    },
+    {
+      "version": "1.0",
+      "analysis_id": "step7-synthetic-declarative-cross-check",
+      "generated_at": "2026-07-21T11:04:42Z",
+      "address": {
+        "adresse": "8 Allée du Port Maillard 44000 Nantes",
+        "code_insee": "44109",
+        "coordonnees": {
+          "latitude": 47.214972,
+          "longitude": -1.551503
+        },
+        "geocodage_score": 0.5514057142857143
+      },
+      "risk_context": {
+        "proxy_climatique": {
+          "code": "intermediaire",
+          "source": "latitude_band_v1",
+          "libelle_source": "latitude_band_v1",
+          "latitude": 47.214972,
+          "seuils": {
+            "tres_chaud_max": 43.5,
+            "chaud_max": 45.5,
+            "intermediaire_max": 48.5
+          },
+          "disponible": true
+        },
+        "rga": {
+          "present": true,
+          "exposition": "faible",
+          "code_exposition": "1",
+          "libelle_source": "argiles_rga",
+          "disponible": true
+        },
+        "zone_sismique": {
+          "present": true,
+          "zone_code": "3",
+          "zone_libelle": "3 - MODEREE",
+          "libelle_source": "zonage_sismique",
+          "disponible": true
+        },
+        "radon": {
+          "present": true,
+          "classe_potentiel": "3",
+          "libelle_source": "radon",
+          "disponible": true
+        },
+        "cavites": {
+          "present": false,
+          "count": 0,
+          "libelle_source": "cavites",
+          "disponible": false
+        },
+        "historique_catnat": {
+          "total_evts": 10,
+          "evts_par_type": {
+            "inondation": 9,
+            "mouvement_terrain": 1
+          },
+          "nb_evt_10ans": 4,
+          "evt_le_plus_recent": {
+            "code_national": "INTE2606204A",
+            "type_risque": "inondation",
+            "date_debut": "2026-02-08T00:00:00+00:00",
+            "date_fin": "2026-02-23T00:00:00+00:00",
+            "date_publication_jo": "2026-03-03T00:00:00+00:00",
+            "jours_depuis_evt": 163,
+            "jours_depuis_publi": 140
+          },
+          "disponible": true
+        },
+        "facilites_proches": {
+          "icpe_count": 10,
+          "icpe_present": true,
+          "sites_sols_pollues_count": 0,
+          "sites_sols_pollues_present": false,
+          "canalisation_matieres_dangereuses": "present",
+          "disponible": true
+        },
+        "donnees_topo": {
+          "altitude_m": 7.35,
+          "disponible": true
+        },
+        "eaux_souterraines": {
+          "stations_piezometriques_count": 5,
+          "presente": true,
+          "disponible": true
+        },
+        "donnees_manquantes": [
+          "drias_meteofrance",
+          "copernicus",
+          "sentinel",
+          "insee",
+          "brgm_geologie_avancee",
+          "onrn"
+        ]
+      },
+      "profil_bien": {
+        "disponible": true,
+        "source": "synthetic_demo_case",
+        "annee_construction": 1965,
+        "type_bien": "maison",
+        "usage": "habitation",
+        "surface_m2": null,
+        "nb_niveaux": null,
+        "type_toiture": "tuiles",
+        "materiau_murs": null,
+        "isolation_toiture": "faible",
+        "isolation_murs": "moyenne",
+        "isolation_sol": "absente",
+        "presence_sous_sol": true,
+        "presence_cave": true,
+        "presence_garage": null,
+        "climatisation": false,
+        "chauffage_principal": null,
+        "installation_electrique_annee": 1988,
+        "installation_electrique_renovee": null,
+        "presence_detecteurs_fumee": true,
+        "exposition_solaire": "forte",
+        "zone_mitoyennete": null,
+        "renovation_toiture_annee": null,
+        "renovation_facade_annee": null,
+        "observations": {
+          "case": "synthetic_declarative_cross_check",
+          "goal": "activate_composed_rules"
+        }
+      },
+      "score": {
+        "global": 43,
+        "global_raw": 42.85,
+        "weights": {
+          "infiltration": 0.3,
+          "thermique": 0.25,
+          "incendie_electrique": 0.25,
+          "aléas_naturels": 0.2
+        },
+        "perils": {
+          "infiltration": {
+            "raw_score": 82,
+            "score": 82,
+            "max_score": 100,
+            "triggered_rules": [
+              {
+                "rule_id": "INONDATION_PRESENT_INFILTRATION",
+                "peril": "infiltration",
+                "priority": 100,
+                "points": 20,
+                "justification": "Présence d'un risque d'inondation au droit de l'adresse, augmentant l'exposition à l'humidité et aux infiltrations.",
+                "source_fields": [
+                  "georisques.rapport_risque.risquesNaturels.inondation",
+                  "georisques.azi",
+                  "georisques.tri"
+                ],
+                "activated_by_llm": false
+              },
+              {
+                "rule_id": "MOUVEMENT_TERRAIN_PRESENT_INFILTRATION",
+                "peril": "infiltration",
+                "priority": 100,
+                "points": 12,
+                "justification": "Présence de mouvements de terrain à proximité, pouvant dégrader l'étanchéité des ouvrages et les réseaux.",
+                "source_fields": [
+                  "georisques.rapport_risque.risquesNaturels.mouvementTerrain",
+                  "georisques.mouvements_terrain"
+                ],
+                "activated_by_llm": false
+              },
+              {
+                "rule_id": "REMONTEE_NAPPE_PRESENT_INFILTRATION",
+                "peril": "infiltration",
+                "priority": 95,
+                "points": 18,
+                "justification": "Présence d'un risque de remontée de nappe, facteur direct d'humidité durable en sous-sol et au niveau des fondations.",
+                "source_fields": [
+                  "georisques.rapport_risque.risquesNaturels.remonteeNappe",
+                  "hubeau.stations_piezometrie"
+                ],
+                "activated_by_llm": false
+              },
+              {
+                "rule_id": "CATNAT_INONDATION_RECURRENCE_INFILTRATION",
+                "peril": "infiltration",
+                "priority": 85,
+                "points": 15,
+                "justification": "Historique de CatNat inondation récurrent, proxy de sinistralité locale et de récurrence d'aléas hydriques.",
+                "source_fields": [
+                  "georisques.catnat"
+                ],
+                "activated_by_llm": false
+              },
+              {
+                "rule_id": "RGA_FAIBLE_INFILTRATION",
+                "peril": "infiltration",
+                "priority": 80,
+                "points": 5,
+                "justification": "Exposition faible au retrait-gonflement des argiles, signal faible mais non nul.",
+                "source_fields": [
+                  "georisques.argiles_rga.exposition",
+                  "georisques.rapport_risque.risquesNaturels.retraitGonflementArgile"
+                ],
+                "activated_by_llm": false
+              },
+              {
+                "rule_id": "COMPOSE_TOITURE_AGEE_ET_HUMIDITE",
+                "peril": "infiltration",
+                "priority": 50,
+                "points": 12,
+                "justification": "Toiture ancienne combinée à un contexte hydrique défavorable, ce qui augmente le risque d'infiltration.",
+                "source_fields": [
+                  "profil_bien.annee_construction",
+                  "profil_bien.type_toiture",
+                  "georisques.rapport_risque.risquesNaturels.inondation",
+                  "georisques.rapport_risque.risquesNaturels.remonteeNappe",
+                  "georisques.catnat"
+                ],
+                "activated_by_llm": true
+              }
+            ]
+          },
+          "thermique": {
+            "raw_score": 23,
+            "score": 23,
+            "max_score": 100,
+            "triggered_rules": [
+              {
+                "rule_id": "THERMIQUE_CLIMATE_ZONE_INTERMEDIAIRE",
+                "peril": "thermique",
+                "priority": 90,
+                "points": 5,
+                "justification": "Zone climatique intermédiaire, proxy modéré de stress thermique.",
+                "source_fields": [
+                  "proxy_climatique.code"
+                ],
+                "activated_by_llm": false
+              },
+              {
+                "rule_id": "COMPOSE_ISOLATION_FAIBLE_ET_HUMIDITE",
+                "peril": "thermique",
+                "priority": 50,
+                "points": 10,
+                "justification": "Isolation toiture absente ou faible sur bâti ancien, augmentant la vulnérabilité thermique et le stress d'usage.",
+                "source_fields": [
+                  "profil_bien.isolation_toiture",
+                  "profil_bien.annee_construction"
+                ],
+                "activated_by_llm": true
+              },
+              {
+                "rule_id": "COMPOSE_PRESENCE_CLIMATISATION_ET_STRESS_THERMIQUE",
+                "peril": "thermique",
+                "priority": 40,
+                "points": 8,
+                "justification": "Absence de climatisation avec exposition solaire notable, augmentant la sensibilité au stress thermique.",
+                "source_fields": [
+                  "profil_bien.climatisation",
+                  "profil_bien.exposition_solaire"
+                ],
+                "activated_by_llm": true
+              }
+            ]
+          },
+          "incendie_electrique": {
+            "raw_score": 10,
+            "score": 10,
+            "max_score": 100,
+            "triggered_rules": [
+              {
+                "rule_id": "COMPOSE_INSTALLATION_ELECTRIQUE_ANCIENNE",
+                "peril": "incendie_electrique",
+                "priority": 50,
+                "points": 10,
+                "justification": "Installation électrique ancienne, facteur de surcharge, échauffement et défaut d'isolement.",
+                "source_fields": [
+                  "profil_bien.installation_electrique_annee"
+                ],
+                "activated_by_llm": true
+              }
+            ]
+          },
+          "aléas_naturels": {
+            "raw_score": 50,
+            "score": 50,
+            "max_score": 100,
+            "triggered_rules": [
+              {
+                "rule_id": "RADON_CLASSE_3",
+                "peril": "aléas_naturels",
+                "priority": 100,
+                "points": 8,
+                "justification": "Potentiel radon élevé, facteur sanitaire et indicateur de perméabilité potentielle des sols.",
+                "source_fields": [
+                  "georisques.radon.classe_potentiel",
+                  "georisques.rapport_risque.risquesNaturels.radon"
+                ],
+                "activated_by_llm": false
+              },
+              {
+                "rule_id": "SEISME_ZONE_MODEREE",
+                "peril": "aléas_naturels",
+                "priority": 100,
+                "points": 10,
+                "justification": "Zone sismique modérée à forte, facteur de contrainte structurelle à intégrer dans le score aléas naturels.",
+                "source_fields": [
+                  "georisques.zonage_sismique.zone_code",
+                  "georisques.rapport_risque.risquesNaturels.seisme"
+                ],
+                "activated_by_llm": false
+              },
+              {
+                "rule_id": "CATNAT_MOINS_DE_2ANS",
+                "peril": "aléas_naturels",
+                "priority": 95,
+                "points": 12,
+                "justification": "Sinistre CatNat récent, proxy de vulnérabilité locale active.",
+                "source_fields": [
+                  "georisques.catnat"
+                ],
+                "activated_by_llm": false
+              },
+              {
+                "rule_id": "CATNAT_FREQUENCE_ELEVEE",
+                "peril": "aléas_naturels",
+                "priority": 85,
+                "points": 10,
+                "justification": "Fréquence CatNat élevée sur l'historique disponible, indicateur de récurrence d'aléas.",
+                "source_fields": [
+                  "georisques.catnat"
+                ],
+                "activated_by_llm": false
+              },
+              {
+                "rule_id": "ICPE_PRESENT_ALAENATUREL",
+                "peril": "aléas_naturels",
+                "priority": 80,
+                "points": 4,
+                "justification": "Présence d'ICPE à proximité, signal de nuisance/contraintes environnementales à faible poids.",
+                "source_fields": [
+                  "georisques.icpe",
+                  "georisques.rapport_risque.risquesTechnologiques.icpe"
+                ],
+                "activated_by_llm": false
+              },
+              {
+                "rule_id": "CANALISATIONS_MATIERES_DANGEREUSES",
+                "peril": "aléas_naturels",
+                "priority": 70,
+                "points": 6,
+                "justification": "Présence de canalisations de matières dangereuses, signal technologique à intégrer au score aléas.",
+                "source_fields": [
+                  "georisques.rapport_risque.risquesTechnologiques.canalisationsMatieresDangereuses"
+                ],
+                "activated_by_llm": false
+              }
+            ]
+          }
+        }
+      },
+      "rules": {
+        "version": 1.0,
+        "file": "C:\\Users\\Makrembz\\OneDrive\\Desktop\\Talan\\Projects\\agent collecteur wiem\\agent_collecteur\\risk_scoring_rules_v1.yaml",
+        "triggered": [
+          {
+            "rule_id": "INONDATION_PRESENT_INFILTRATION",
+            "peril": "infiltration",
+            "priority": 100,
+            "points": 20,
+            "justification": "Présence d'un risque d'inondation au droit de l'adresse, augmentant l'exposition à l'humidité et aux infiltrations.",
+            "source_fields": [
+              "georisques.rapport_risque.risquesNaturels.inondation",
+              "georisques.azi",
+              "georisques.tri"
+            ],
+            "activated_by_llm": false
+          },
+          {
+            "rule_id": "MOUVEMENT_TERRAIN_PRESENT_INFILTRATION",
+            "peril": "infiltration",
+            "priority": 100,
+            "points": 12,
+            "justification": "Présence de mouvements de terrain à proximité, pouvant dégrader l'étanchéité des ouvrages et les réseaux.",
+            "source_fields": [
+              "georisques.rapport_risque.risquesNaturels.mouvementTerrain",
+              "georisques.mouvements_terrain"
+            ],
+            "activated_by_llm": false
+          },
+          {
+            "rule_id": "RADON_CLASSE_3",
+            "peril": "aléas_naturels",
+            "priority": 100,
+            "points": 8,
+            "justification": "Potentiel radon élevé, facteur sanitaire et indicateur de perméabilité potentielle des sols.",
+            "source_fields": [
+              "georisques.radon.classe_potentiel",
+              "georisques.rapport_risque.risquesNaturels.radon"
+            ],
+            "activated_by_llm": false
+          },
+          {
+            "rule_id": "SEISME_ZONE_MODEREE",
+            "peril": "aléas_naturels",
+            "priority": 100,
+            "points": 10,
+            "justification": "Zone sismique modérée à forte, facteur de contrainte structurelle à intégrer dans le score aléas naturels.",
+            "source_fields": [
+              "georisques.zonage_sismique.zone_code",
+              "georisques.rapport_risque.risquesNaturels.seisme"
+            ],
+            "activated_by_llm": false
+          },
+          {
+            "rule_id": "CATNAT_MOINS_DE_2ANS",
+            "peril": "aléas_naturels",
+            "priority": 95,
+            "points": 12,
+            "justification": "Sinistre CatNat récent, proxy de vulnérabilité locale active.",
+            "source_fields": [
+              "georisques.catnat"
+            ],
+            "activated_by_llm": false
+          },
+          {
+            "rule_id": "REMONTEE_NAPPE_PRESENT_INFILTRATION",
+            "peril": "infiltration",
+            "priority": 95,
+            "points": 18,
+            "justification": "Présence d'un risque de remontée de nappe, facteur direct d'humidité durable en sous-sol et au niveau des fondations.",
+            "source_fields": [
+              "georisques.rapport_risque.risquesNaturels.remonteeNappe",
+              "hubeau.stations_piezometrie"
+            ],
+            "activated_by_llm": false
+          },
+          {
+            "rule_id": "THERMIQUE_CLIMATE_ZONE_INTERMEDIAIRE",
+            "peril": "thermique",
+            "priority": 90,
+            "points": 5,
+            "justification": "Zone climatique intermédiaire, proxy modéré de stress thermique.",
+            "source_fields": [
+              "proxy_climatique.code"
+            ],
+            "activated_by_llm": false
+          },
+          {
+            "rule_id": "CATNAT_FREQUENCE_ELEVEE",
+            "peril": "aléas_naturels",
+            "priority": 85,
+            "points": 10,
+            "justification": "Fréquence CatNat élevée sur l'historique disponible, indicateur de récurrence d'aléas.",
+            "source_fields": [
+              "georisques.catnat"
+            ],
+            "activated_by_llm": false
+          },
+          {
+            "rule_id": "CATNAT_INONDATION_RECURRENCE_INFILTRATION",
+            "peril": "infiltration",
+            "priority": 85,
+            "points": 15,
+            "justification": "Historique de CatNat inondation récurrent, proxy de sinistralité locale et de récurrence d'aléas hydriques.",
+            "source_fields": [
+              "georisques.catnat"
+            ],
+            "activated_by_llm": false
+          },
+          {
+            "rule_id": "ICPE_PRESENT_ALAENATUREL",
+            "peril": "aléas_naturels",
+            "priority": 80,
+            "points": 4,
+            "justification": "Présence d'ICPE à proximité, signal de nuisance/contraintes environnementales à faible poids.",
+            "source_fields": [
+              "georisques.icpe",
+              "georisques.rapport_risque.risquesTechnologiques.icpe"
+            ],
+            "activated_by_llm": false
+          },
+          {
+            "rule_id": "RGA_FAIBLE_INFILTRATION",
+            "peril": "infiltration",
+            "priority": 80,
+            "points": 5,
+            "justification": "Exposition faible au retrait-gonflement des argiles, signal faible mais non nul.",
+            "source_fields": [
+              "georisques.argiles_rga.exposition",
+              "georisques.rapport_risque.risquesNaturels.retraitGonflementArgile"
+            ],
+            "activated_by_llm": false
+          },
+          {
+            "rule_id": "CANALISATIONS_MATIERES_DANGEREUSES",
+            "peril": "aléas_naturels",
+            "priority": 70,
+            "points": 6,
+            "justification": "Présence de canalisations de matières dangereuses, signal technologique à intégrer au score aléas.",
+            "source_fields": [
+              "georisques.rapport_risque.risquesTechnologiques.canalisationsMatieresDangereuses"
+            ],
+            "activated_by_llm": false
+          },
+          {
+            "rule_id": "COMPOSE_INSTALLATION_ELECTRIQUE_ANCIENNE",
+            "peril": "incendie_electrique",
+            "priority": 50,
+            "points": 10,
+            "justification": "Installation électrique ancienne, facteur de surcharge, échauffement et défaut d'isolement.",
+            "source_fields": [
+              "profil_bien.installation_electrique_annee"
+            ],
+            "activated_by_llm": true
+          },
+          {
+            "rule_id": "COMPOSE_ISOLATION_FAIBLE_ET_HUMIDITE",
+            "peril": "thermique",
+            "priority": 50,
+            "points": 10,
+            "justification": "Isolation toiture absente ou faible sur bâti ancien, augmentant la vulnérabilité thermique et le stress d'usage.",
+            "source_fields": [
+              "profil_bien.isolation_toiture",
+              "profil_bien.annee_construction"
+            ],
+            "activated_by_llm": true
+          },
+          {
+            "rule_id": "COMPOSE_TOITURE_AGEE_ET_HUMIDITE",
+            "peril": "infiltration",
+            "priority": 50,
+            "points": 12,
+            "justification": "Toiture ancienne combinée à un contexte hydrique défavorable, ce qui augmente le risque d'infiltration.",
+            "source_fields": [
+              "profil_bien.annee_construction",
+              "profil_bien.type_toiture",
+              "georisques.rapport_risque.risquesNaturels.inondation",
+              "georisques.rapport_risque.risquesNaturels.remonteeNappe",
+              "georisques.catnat"
+            ],
+            "activated_by_llm": true
+          },
+          {
+            "rule_id": "COMPOSE_PRESENCE_CLIMATISATION_ET_STRESS_THERMIQUE",
+            "peril": "thermique",
+            "priority": 40,
+            "points": 8,
+            "justification": "Absence de climatisation avec exposition solaire notable, augmentant la sensibilité au stress thermique.",
+            "source_fields": [
+              "profil_bien.climatisation",
+              "profil_bien.exposition_solaire"
+            ],
+            "activated_by_llm": true
+          }
+        ]
+      },
+      "confidence": {
+        "level": "medium",
+        "notes": [
+          {
+            "confidence_id": "DATA_MISSING_CLIMATE",
+            "impact": "medium",
+            "note": "Les composantes climatiques prospectives sont absentes; les scores thermiques et infiltration ne reposent que sur les proxys disponibles et le déclaratif."
+          }
+        ]
+      },
+      "traceability": {
+        "selected_composed_rule_ids": [
+          "COMPOSE_INSTALLATION_ELECTRIQUE_AGEE_ET_CHALEUR",
+          "COMPOSE_INSTALLATION_ELECTRIQUE_ANCIENNE",
+          "COMPOSE_ISOLATION_FAIBLE_ET_HUMIDITE",
+          "COMPOSE_PRESENCE_CLIMATISATION_ET_STRESS_THERMIQUE",
+          "COMPOSE_TOITURE_AGEE_ET_CHALEUR",
+          "COMPOSE_TOITURE_AGEE_ET_HUMIDITE"
+        ],
+        "score_engine": "deterministic_yaml_v1",
+        "mistral_used": true
+      },
+      "mistral": {
+        "activated_rule_ids": [
+          "COMPOSE_TOITURE_AGEE_ET_HUMIDITE",
+          "COMPOSE_ISOLATION_FAIBLE_ET_HUMIDITE",
+          "COMPOSE_PRESENCE_CLIMATISATION_ET_STRESS_THERMIQUE",
+          "COMPOSE_INSTALLATION_ELECTRIQUE_ANCIENNE",
+          "COMPOSE_TOITURE_AGEE_ET_CHALEUR",
+          "COMPOSE_INSTALLATION_ELECTRIQUE_AGEE_ET_CHALEUR"
+        ],
+        "declarative_consistency_status": "warning",
+        "declarative_consistency_flags": [
+          "roof_age_aligned",
+          "insulation_aligned",
+          "electricity_age_aligned",
+          "solar_exposure_aligned"
+        ]
+      }
+    }
+  ]
+}

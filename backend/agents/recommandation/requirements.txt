@@ -1,0 +1,13 @@
+requests>=2.31.0
+requests>=2.31.0
+PyYAML>=6.0.1
+mistralai>=1.6.0
+fastapi
+uvicorn
+
+
+# À ajouter uniquement quand vous branchez Copernicus (Climate Data Store) :
+# cdsapi>=0.7.0
+
+# À ajouter uniquement quand vous branchez Copernicus (Climate Data Store) :
+# cdsapi>=0.7.0

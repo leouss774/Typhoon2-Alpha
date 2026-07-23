@@ -1,0 +1,77 @@
+[
+  {
+    "client": {
+      "nom": "torkia rmadi",
+      "adresse": "8 Allée du Port Maillard, 44000 Nantes, France"
+    },
+    "construction": {
+      "materiaux": [
+        "Brique",
+        "Béton"
+      ],
+      "date_construction": "2006-06-15",
+      "age_maison": "20 ans",
+      "superficie_m2": 145.0
+    },
+    "plomberie": {
+      "etat_canalisations": "Moyen",
+      "detecteurs_eau_presents": true,
+      "nombre_detecteurs_eau": 1
+    },
+    "isolation_climatisation": {
+      "bonne_isolation": true,
+      "type_isolation": "laine de verre",
+      "climatisation_presente": true,
+      "nombre_unites_clim": 2
+    },
+    "risques_incendie": {
+      "appareils_a_risque": [
+        "Cheminée"
+      ],
+      "detecteur_fumee": false,
+      "etat_systeme_electrique": "Récent / aux normes"
+    },
+    "complementaire": {
+      "type_chauffage": "",
+      "piscine_presente": false,
+      "remarques": ""
+    },
+    "id": "aaa71c6e-685a-4706-8cea-c79ae4952c30",
+    "date_soumission": "2026-07-21T13:32:36.667643"
+  },
+  {
+    "client": {
+      "nom": "",
+      "adresse": ""
+    },
+    "construction": {
+      "materiaux": [],
+      "date_construction": null,
+      "age_maison": "",
+      "superficie_m2": null
+    },
+    "plomberie": {
+      "etat_canalisations": "",
+      "detecteurs_eau_presents": false,
+      "nombre_detecteurs_eau": 0
+    },
+    "isolation_climatisation": {
+      "bonne_isolation": false,
+      "type_isolation": "",
+      "climatisation_presente": false,
+      "nombre_unites_clim": 0
+    },
+    "risques_incendie": {
+      "appareils_a_risque": [],
+      "detecteur_fumee": false,
+      "etat_systeme_electrique": ""
+    },
+    "complementaire": {
+      "type_chauffage": "",
+      "piscine_presente": false,
+      "remarques": ""
+    },
+    "id": "2352bce1-3237-4139-ab85-4ede30495b76",
+    "date_soumission": "2026-07-21T13:32:38.444624"
+  }
+]
