@@ -7,22 +7,22 @@ Système multi-agents d'évaluation des risques climatiques pour l'habitat indiv
 ```
 typhoon/
 ├── backend/          # API FastAPI + agents LangGraph
-│   ├── agent_graph/  # 🕸️ Orchestration LangGraph (StateGraph)
-│   ├── agents/       # 🧠 Logique des 3 agents métier
-│   ├── api/          # 🚪 Routes REST FastAPI
-│   ├── services/     # 🧮 Scoring, DRIAS, cartographie
-│   └── models/       # 📐 Schémas Pydantic partagés
-├── frontend/         # 🎨 React + Vite + TypeScript
-└── scripts/          # 📜 Scripts utilitaires
+│   ├── agent_graph/  # Orchestration LangGraph (StateGraph)
+│   ├── agents/       # Logique des 3 agents métier
+│   ├── api/          # Routes REST FastAPI
+│   ├── services/     # Scoring, DRIAS, cartographie
+│   └── models/       # Schémas Pydantic partagés
+├── frontend/         # React + Vite + TypeScript
+└── scripts/          # Scripts utilitaires
 ```
 
 ## Agents
 
-| Agent | Technologie | Rôle |
-|-------|-------------|------|
-| **Analyste Risque** | LLM (Claude) + prompt système | Analyse qualitative des risques |
-| **Recommandation** | RAG (ChromaDB + LLM) | Propositions de travaux priorisés |
-| **Conversationnel** | LLM + contexte rapport | Chat client sur l'analyse |
+| Agent               | Technologie                   | Rôle                              |
+| ------------------- | ----------------------------- | --------------------------------- |
+| **Analyste Risque** | LLM (Claude) + prompt système | Analyse qualitative des risques   |
+| **Recommandation**  | RAG (ChromaDB + LLM)          | Propositions de travaux priorisés |
+| **Conversationnel** | LLM + contexte rapport        | Chat client sur l'analyse         |
 
 ## Prérequis
 
