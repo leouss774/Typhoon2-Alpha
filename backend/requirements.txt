@@ -1,0 +1,29 @@
+# --- Backend / orchestrateur ---
+fastapi
+uvicorn[standard]
+pydantic>=2
+pydantic-settings
+
+# --- Orchestration multi-agents (prochaine etape) ---
+langgraph
+langchain
+langchain-anthropic
+langchain-community
+
+# --- Appels API / HTTP ---
+httpx
+
+# --- Lookup local DVF ---
+pandas
+
+# --- Copernicus Climate Data Store (projections climatiques) ---
+cdsapi
+xarray
+netCDF4
+
+# --- RAG (prochaine etape) ---
+chromadb
+
+# --- Divers ---
+python-dotenv
+sqlalchemy

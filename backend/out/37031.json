@@ -1,0 +1,284 @@
+{
+  "adresse": {
+    "label": "26 Rue Victor Hugo 37140 Bourgueil",
+    "citycode": "37031",
+    "postcode": "37140",
+    "city": "Bourgueil",
+    "score_geocodage": 0.9580136363636362,
+    "lat": 47.283669,
+    "lon": 0.169251
+  },
+  "departement": "37",
+  "departement_nom": null,
+  "dans_perimetre_paca": false,
+  "altitude_m": 43.9,
+  "bdnb": null,
+  "georisques": {
+    "erreurs": [
+      {
+        "source": "georisques.zones_inondables",
+        "erreur": "Client error '404 Not Found' for url 'https://www.georisques.gouv.fr/api/v1/azi?code_insee=37031'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404"
+      }
+    ],
+    "risques_commune": {
+      "results": 1,
+      "page": 1,
+      "total_pages": 1,
+      "data": [
+        {
+          "risques_detail": [
+            {
+              "num_risque": "11",
+              "libelle_risque_long": "Inondation",
+              "zone_sismicite": null
+            },
+            {
+              "num_risque": "13",
+              "libelle_risque_long": "Séisme",
+              "zone_sismicite": null
+            },
+            {
+              "num_risque": "23",
+              "libelle_risque_long": "Rupture de barrage",
+              "zone_sismicite": null
+            }
+          ],
+          "code_insee": "37031",
+          "libelle_commune": "BOURGUEIL"
+        }
+      ],
+      "response_code": 200,
+      "message": null,
+      "next": null,
+      "previous": null
+    },
+    "catnat": {
+      "results": 8,
+      "page": 1,
+      "total_pages": 1,
+      "data": [
+        {
+          "code_national_catnat": "INTE1828404A",
+          "date_debut_evt": "10/06/2018",
+          "date_fin_evt": "10/06/2018",
+          "date_publication_arrete": "22/10/2018",
+          "date_publication_jo": "03/11/2018",
+          "libelle_risque_jo": "Inondations et/ou Coulées de Boue",
+          "code_insee": "37031",
+          "libelle_commune": "Bourgueil"
+        },
+        {
+          "code_national_catnat": "INTE9200533A",
+          "date_debut_evt": "29/06/1992",
+          "date_fin_evt": "30/06/1992",
+          "date_publication_arrete": "24/12/1992",
+          "date_publication_jo": "16/01/1993",
+          "libelle_risque_jo": "Inondations et/ou Coulées de Boue",
+          "code_insee": "37031",
+          "libelle_commune": "Bourgueil"
+        },
+        {
+          "code_national_catnat": "INTE9700269A",
+          "date_debut_evt": "01/01/1996",
+          "date_fin_evt": "31/12/1996",
+          "date_publication_arrete": "08/07/1997",
+          "date_publication_jo": "19/07/1997",
+          "libelle_risque_jo": "Sécheresse",
+          "code_insee": "37031",
+          "libelle_commune": "Bourgueil"
+        },
+        {
+          "code_national_catnat": "INTE9800067A",
+          "date_debut_evt": "10/08/1997",
+          "date_fin_evt": "10/08/1997",
+          "date_publication_arrete": "12/03/1998",
+          "date_publication_jo": "28/03/1998",
+          "libelle_risque_jo": "Inondations et/ou Coulées de Boue",
+          "code_insee": "37031",
+          "libelle_commune": "Bourgueil"
+        },
+        {
+          "code_national_catnat": "INTE9900614A",
+          "date_debut_evt": "08/08/1999",
+          "date_fin_evt": "09/08/1999",
+          "date_publication_arrete": "28/01/2000",
+          "date_publication_jo": "11/02/2000",
+          "libelle_risque_jo": "Inondations et/ou Coulées de Boue",
+          "code_insee": "37031",
+          "libelle_commune": "Bourgueil"
+        },
+        {
+          "code_national_catnat": "INTE9900627A",
+          "date_debut_evt": "25/12/1999",
+          "date_fin_evt": "29/12/1999",
+          "date_publication_arrete": "29/12/1999",
+          "date_publication_jo": "30/12/1999",
+          "libelle_risque_jo": "Inondations et/ou Coulées de Boue",
+          "code_insee": "37031",
+          "libelle_commune": "Bourgueil"
+        },
+        {
+          "code_national_catnat": "INTE9900627A",
+          "date_debut_evt": "25/12/1999",
+          "date_fin_evt": "29/12/1999",
+          "date_publication_arrete": "29/12/1999",
+          "date_publication_jo": "30/12/1999",
+          "libelle_risque_jo": "Mouvement de Terrain",
+          "code_insee": "37031",
+          "libelle_commune": "Bourgueil"
+        },
+        {
+          "code_national_catnat": "NOR19830111",
+          "date_debut_evt": "08/12/1982",
+          "date_fin_evt": "31/12/1982",
+          "date_publication_arrete": "11/01/1983",
+          "date_publication_jo": "13/01/1983",
+          "libelle_risque_jo": "Inondations et/ou Coulées de Boue",
+          "code_insee": "37031",
+          "libelle_commune": "Bourgueil"
+        }
+      ],
+      "response_code": 200,
+      "message": null,
+      "next": null,
+      "previous": null
+    },
+    "zones_inondables": null,
+    "cavites": {
+      "results": 0,
+      "page": 1,
+      "total_pages": 0,
+      "data": [],
+      "response_code": 200,
+      "message": null,
+      "next": null,
+      "previous": null
+    },
+    "zonage_sismique": {
+      "results": 1,
+      "page": 1,
+      "total_pages": 1,
+      "data": [
+        {
+          "code_insee": "37031",
+          "libelle_commune": "BOURGUEIL",
+          "code_zone": "2",
+          "zone_sismicite": "2 - FAIBLE"
+        }
+      ],
+      "response_code": 200,
+      "message": null,
+      "next": null,
+      "previous": null
+    },
+    "radon": {
+      "results": 1,
+      "page": 1,
+      "total_pages": 1,
+      "data": [
+        {
+          "classe_potentiel": "1",
+          "code_insee": "37031",
+          "libelle_commune": "BOURGUEIL"
+        }
+      ],
+      "response_code": 200,
+      "message": null,
+      "next": null,
+      "previous": null
+    },
+    "mouvements_de_terrain": {
+      "results": 2,
+      "page": 1,
+      "total_pages": 1,
+      "data": [
+        {
+          "identifiant": "10700053",
+          "type": "Chute de blocs / Eboulement",
+          "region": {
+            "code": "24",
+            "nom": "CENTRE"
+          },
+          "departement": {
+            "code": "37",
+            "nom": "INDRE-ET-LOIRE"
+          },
+          "code_insee": "37031",
+          "fiabilite": "Moyen",
+          "lieu": "Hameau de Marce",
+          "commentaire_lieu": null,
+          "date_debut": "1947-02-28",
+          "precision_date": "Mois",
+          "commentaire_mvt": "Craie Turonien",
+          "longitude": 0.16707286,
+          "latitude": 47.28064,
+          "precision_lieu": "Commune",
+          "date_maj": "1999-09-16"
+        },
+        {
+          "identifiant": "10700054",
+          "type": "Effondrement / Affaissement",
+          "region": {
+            "code": "24",
+            "nom": "CENTRE"
+          },
+          "departement": {
+            "code": "37",
+            "nom": "INDRE-ET-LOIRE"
+          },
+          "code_insee": "37031",
+          "fiabilite": "Moyen",
+          "lieu": "Propriété du Château de Pavée",
+          "commentaire_lieu": null,
+          "date_debut": "1987-11-25",
+          "precision_date": "Jour",
+          "commentaire_mvt": "Craie Turonien",
+          "longitude": 0.17832261,
+          "latitude": 47.2804,
+          "precision_lieu": "Décamètre",
+          "date_maj": "1999-09-16"
+        }
+      ],
+      "response_code": 200,
+      "message": null,
+      "next": null,
+      "previous": null
+    },
+    "lien_rapport_pdf": "https://www.georisques.gouv.fr/api/v1/rapport_pdf?latlon=0.169251,47.283669"
+  },
+  "climat_open_meteo": {
+    "modeles_utilises": [
+      "EC_Earth3P_HR",
+      "MRI_AGCM3_2_S"
+    ],
+    "reference_2015_2024": {
+      "periode": "2015-2024",
+      "temperature_max_moyenne_c": 16.6,
+      "precipitation_annuelle_moyenne_mm": 716.0,
+      "jours_chaleur_extreme_par_an": 2.7
+    },
+    "projection_2041_2050": {
+      "periode": "2041-2050",
+      "temperature_max_moyenne_c": 17.9,
+      "precipitation_annuelle_moyenne_mm": 688.0,
+      "jours_chaleur_extreme_par_an": 4.4
+    }
+  },
+  "climat_copernicus": null,
+  "dvf_local": null,
+  "erreurs": [
+    {
+      "source": "dvf_local",
+      "erreur": "DvfLookupUnavailable: Fichier DVF introuvable pour le departement 37 : D:\\Talan\\Typhoon-2\\backend\\data\\lookup\\dvf\\37.csv. Voir docs/GUIDE_ORCHESTRATEUR_API.md pour le telecharger."
+    },
+    {
+      "source": "bdnb",
+      "erreur": "BdnbAdresseIntrouvable: Geocodeur BDNB : champ 'id' absent de la reponse : {'type': 'Feature', 'geometry': {'type': 'Point', 'coordinates': [0.169251, 47.283669]}, 'properties': {'label': '26 Rue Victor Hugo 37140 Bourgueil', 'score': 0.9583318181818181, 'housenumber': '26', 'id': '37031_1591_00026', 'name': '26 Rue Victor Hugo', 'postcode': '37140', 'citycode': '37031', 'x': 486076.69, 'y': 6690874.24, 'city': 'Bourgueil', 'context': '37, Indre-et-Loire, Centre-Val de Loire', 'type': 'housenumber', 'importance': 0.54165, 'street': 'Rue Victor Hugo'}}"
+    },
+    {
+      "source": "copernicus",
+      "erreur": "ModuleNotFoundError: No module named 'cdsapi'"
+    }
+  ],
+  "genere_le": "2026-07-24T16:30:32.168353+00:00"
+}
