@@ -277,8 +277,8 @@
     },
     {
       "source": "copernicus",
-      "erreur": "ModuleNotFoundError: No module named 'cdsapi'"
+      "erreur": "PermissionError: [WinError 32] The process cannot access the file because it is being used by another process: 'c130d951e08d5438e3079c9d69a7101.zip'"
     }
   ],
-  "genere_le": "2026-07-24T16:30:32.168353+00:00"
+  "genere_le": "2026-07-26T14:45:23.316443+00:00"
 }

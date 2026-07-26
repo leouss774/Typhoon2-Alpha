@@ -1,0 +1,156 @@
+{
+  "adresse": "26 Rue Victor Hugo, 37140 Bourgueil",
+  "bien": {
+    "type": "maison individuelle",
+    "annee_construction": 1850,
+    "coordonnees": {
+      "lat": 47.283669,
+      "lon": 0.169251
+    }
+  },
+  "geometry": {
+    "footprint_shape": "rectangulaire",
+    "largeur_m": 9.83,
+    "longueur_m": 20.19,
+    "orientation_deg": 16.1,
+    "floors_count": 2,
+    "hauteur_sous_plafond_m": 2.5,
+    "roof_shape": "deux_pans",
+    "pente_toit_deg": 42.0,
+    "materiau_mur": "meuliere",
+    "materiau_toiture": "ardoises",
+    "has_basement": true,
+    "has_cellar": false,
+    "has_garage": false,
+    "has_garden": false
+  },
+  "_geometry_build_report": {
+    "champs_ok": [
+      "largeur_m",
+      "longueur_m",
+      "orientation_deg",
+      "floors_count",
+      "hauteur_sous_plafond_m",
+      "materiau_mur",
+      "materiau_toiture",
+      "roof_shape",
+      "pente_toit_deg",
+      "has_basement",
+      "has_cellar",
+      "has_garage",
+      "has_garden"
+    ],
+    "champs_manquants_bdnb": [],
+    "note": "has_basement/has_cellar/has_garage/has_garden non fournis par la BDNB pour ce bien : valeurs ci-dessus = defauts MVP documentes, pas une donnee mesuree. A remplacer par le formulaire ou l'etape de completion LLM (README next-steps §4)."
+  },
+  "score_global": 52,
+  "zones": {
+    "fondations": {
+      "risque": 55,
+      "niveau": "modere",
+      "alea_principal": "Retrait-gonflement des argiles (aléa moyen)",
+      "justification": "Aléa argile classé «moyen» par Géorisques pour cette parcelle ; un arrêté CATNAT sécheresse a été pris sur la commune de Bourgueil en 1996-1997.",
+      "recommandations": []
+    },
+    "murs_nord": {
+      "risque": 30,
+      "niveau": "faible",
+      "alea_principal": "Infiltration",
+      "justification": "Aucun signal specifique disponible pour cette facade ; valeur indicative en l'absence de scoring_agent branche.",
+      "recommandations": []
+    },
+    "murs_sud": {
+      "risque": 22,
+      "niveau": "faible",
+      "alea_principal": "Stress thermique",
+      "justification": "Aucun signal specifique disponible pour cette facade ; valeur indicative en l'absence de scoring_agent branche.",
+      "recommandations": []
+    },
+    "murs_est": {
+      "risque": 25,
+      "niveau": "faible",
+      "alea_principal": "Vent",
+      "justification": "Aucun signal specifique disponible pour cette facade ; valeur indicative en l'absence de scoring_agent branche.",
+      "recommandations": []
+    },
+    "murs_ouest": {
+      "risque": 28,
+      "niveau": "faible",
+      "alea_principal": "Intempéries",
+      "justification": "Aucun signal specifique disponible pour cette facade ; valeur indicative en l'absence de scoring_agent branche.",
+      "recommandations": []
+    },
+    "toiture": {
+      "risque": 45,
+      "niveau": "modere",
+      "alea_principal": "Canicule / stress thermique",
+      "justification": "Toiture ardoise de 1850 ; les projections Open-Meteo pour cette commune passent de 2,7 à 4,4 jours de chaleur extrême/an entre 2015-2024 et 2041-2050.",
+      "recommandations": []
+    },
+    "sous_sol": {
+      "risque": 60,
+      "niveau": "eleve",
+      "alea_principal": "Inondation / coulées de boue",
+      "justification": "8 arrêtés CATNAT recensés sur la commune de Bourgueil, dont plusieurs «Inondations et/ou coulées de boue» (1992, 1997, 1999, 2018...).",
+      "recommandations": []
+    }
+  },
+  "projection_2050": {
+    "score_global": 63,
+    "zones": {
+      "fondations": {
+        "risque": 68,
+        "niveau": "eleve",
+        "alea_principal": "RGA aggravé",
+        "justification": "Sécheresses plus fréquentes attendues, aléa argile déjà classé moyen aujourd'hui.",
+        "recommandations": []
+      },
+      "murs_nord": {
+        "risque": 38,
+        "niveau": "modere",
+        "alea_principal": "Infiltration accrue",
+        "justification": "Indicatif.",
+        "recommandations": []
+      },
+      "murs_sud": {
+        "risque": 30,
+        "niveau": "faible",
+        "alea_principal": "Stress thermique",
+        "justification": "Indicatif.",
+        "recommandations": []
+      },
+      "murs_est": {
+        "risque": 32,
+        "niveau": "modere",
+        "alea_principal": "Vent renforcé",
+        "justification": "Indicatif.",
+        "recommandations": []
+      },
+      "murs_ouest": {
+        "risque": 36,
+        "niveau": "modere",
+        "alea_principal": "Intempéries renforcées",
+        "justification": "Indicatif.",
+        "recommandations": []
+      },
+      "toiture": {
+        "risque": 62,
+        "niveau": "eleve",
+        "alea_principal": "Canicule prolongée",
+        "justification": "Jours de chaleur extrême projetés en hausse (Open-Meteo, 2041-2050).",
+        "recommandations": []
+      },
+      "sous_sol": {
+        "risque": 72,
+        "niveau": "eleve",
+        "alea_principal": "Inondation aggravée",
+        "justification": "Historique CATNAT déjà charge ; précipitations extrêmes attendues en hausse.",
+        "recommandations": []
+      }
+    }
+  },
+  "climat_2050": {
+    "temperature_max_projetee_c": 17.9,
+    "source": "Open-Meteo Climate API — moyenne des modèles EC_Earth3P_HR / MRI_AGCM3_2_S, projection 2041-2050 (référence 2015-2024 : 16,6°C)"
+  }
+}
