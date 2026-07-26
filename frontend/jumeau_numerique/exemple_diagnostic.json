@@ -1,0 +1,122 @@
+{
+  "adresse": "12 rue des Lilas, 33000 Bordeaux",
+  "bien": {
+    "type": "maison individuelle",
+    "annee_construction": 1975,
+    "coordonnees": { "lat": 44.8378, "lon": -0.5792 }
+  },
+
+  "geometry": {
+    "footprint_shape": "rectangulaire",
+    "largeur_m": 8.5,
+    "longueur_m": 10.2,
+    "orientation_deg": 15,
+    "floors_count": 2,
+    "hauteur_sous_plafond_m": 2.6,
+    "roof_shape": "deux_pans",
+    "pente_toit_deg": 35,
+    "materiau_mur": "parpaing_enduit",
+    "materiau_toiture": "tuiles_terre_cuite",
+    "has_basement": true,
+    "has_cellar": false,
+    "has_garage": true,
+    "garage_position": "ouest",
+    "has_garden": true,
+    "garden_surface_m2": 250
+  },
+
+  "score_global": 58,
+
+  "zones": {
+    "fondations": {
+      "risque": 78,
+      "niveau": "eleve",
+      "alea_principal": "Retrait-gonflement des argiles",
+      "justification": "Sol argileux identifié en zone d'aléa fort, aggravé par l'alternance sécheresse/humidité.",
+      "recommandations": [
+        { "travaux": "Renforcement des fondations par micropieux", "cout_estime": "9000-16000€", "gain_resilience": 30 },
+        { "travaux": "Drainage périphérique", "cout_estime": "3000-6000€", "gain_resilience": 15 }
+      ]
+    },
+    "murs_nord": {
+      "risque": 35,
+      "niveau": "modere",
+      "alea_principal": "Infiltration",
+      "justification": "Exposition nord avec humidité résiduelle plus fréquente.",
+      "recommandations": [
+        { "travaux": "Traitement hydrofuge de façade", "cout_estime": "1500-3000€", "gain_resilience": 12 }
+      ]
+    },
+    "murs_sud": {
+      "risque": 20,
+      "niveau": "faible",
+      "alea_principal": "Stress thermique",
+      "justification": "Exposition sud correcte, matériaux jugés stables.",
+      "recommandations": []
+    },
+    "murs_est": {
+      "risque": 28,
+      "niveau": "faible",
+      "alea_principal": "Vent",
+      "justification": "Exposition modérée aux vents dominants.",
+      "recommandations": []
+    },
+    "murs_ouest": {
+      "risque": 42,
+      "niveau": "modere",
+      "alea_principal": "Intempéries",
+      "justification": "Façade la plus exposée aux intempéries selon l'historique CATNAT local.",
+      "recommandations": [
+        { "travaux": "Renforcement bardage", "cout_estime": "2000-4000€", "gain_resilience": 10 }
+      ]
+    },
+    "toiture": {
+      "risque": 55,
+      "niveau": "modere",
+      "alea_principal": "Canicule / stress thermique",
+      "justification": "Isolation actuelle insuffisante face à l'augmentation prévue des épisodes caniculaires.",
+      "recommandations": [
+        { "travaux": "Isolation thermique renforcée", "cout_estime": "6000-11000€", "gain_resilience": 22 }
+      ]
+    },
+    "sous_sol": {
+      "risque": 65,
+      "niveau": "eleve",
+      "alea_principal": "Inondation / remontée de nappe",
+      "justification": "Proximité d'un cours d'eau avec historique d'inondation dans le secteur.",
+      "recommandations": [
+        { "travaux": "Pose de batardeaux et clapet anti-retour", "cout_estime": "2500-5000€", "gain_resilience": 20 }
+      ]
+    }
+  },
+
+  "projection_2050": {
+    "score_global": 81,
+    "zones": {
+      "fondations": { "risque": 92, "niveau": "critique", "alea_principal": "RGA aggravé", "justification": "Sécheresses prolongées prévues en 2050, risque de fissuration majeure.", "recommandations": [
+        { "travaux": "Renforcement fondations + surveillance annuelle", "cout_estime": "9000-16000€", "gain_resilience": 35 }
+      ]},
+      "murs_nord": { "risque": 48, "niveau": "modere", "alea_principal": "Infiltration accrue", "justification": "Augmentation des précipitations intenses en hiver.", "recommandations": [
+        { "travaux": "Traitement hydrofuge de façade", "cout_estime": "1500-3000€", "gain_resilience": 15 }
+      ]},
+      "murs_sud": { "risque": 40, "niveau": "modere", "alea_principal": "Stress thermique", "justification": "Canicules plus longues, exposition sud plus sensible.", "recommandations": [
+        { "travaux": "Volets isolants", "cout_estime": "1200-2500€", "gain_resilience": 10 }
+      ]},
+      "murs_est": { "risque": 38, "niveau": "modere", "alea_principal": "Vent renforcé", "justification": "Intensification des épisodes de vent fort.", "recommandations": [] },
+      "murs_ouest": { "risque": 60, "niveau": "eleve", "alea_principal": "Intempéries renforcées", "justification": "Façade la plus exposée, aggravation attendue.", "recommandations": [
+        { "travaux": "Renforcement bardage renforcé", "cout_estime": "2000-4000€", "gain_resilience": 18 }
+      ]},
+      "toiture": { "risque": 80, "niveau": "eleve", "alea_principal": "Canicule prolongée", "justification": "Périodes de canicule estimées à plusieurs mois en 2050.", "recommandations": [
+        { "travaux": "Isolation thermique renforcée + ventilation", "cout_estime": "6000-11000€", "gain_resilience": 30 }
+      ]},
+      "sous_sol": { "risque": 85, "niveau": "critique", "alea_principal": "Inondation aggravée", "justification": "Augmentation de 30% des sinistres climatiques attendue d'ici 2050.", "recommandations": [
+        { "travaux": "Batardeaux + pompe de relevage", "cout_estime": "3500-7000€", "gain_resilience": 28 }
+      ]}
+    }
+  },
+
+  "climat_2050": {
+    "temperature_max_projetee_c": 41.5,
+    "source": "Copernicus"
+  }
+}
