@@ -73,7 +73,17 @@ async def _geocode_bdnb(client: httpx.AsyncClient, address: str) -> str:
         raise BdnbAdresseIntrouvable(f"Geocodeur BDNB : aucun resultat pour {address!r}")
 
     best = results[0]
-    cle_interop_adr = best.get("id") or best.get("cle_interop_adr")
+    # Confirme par un test reel : ce geocodeur repond avec un objet GeoJSON
+    # Feature (`{"type": "Feature", "properties": {"id": "...", ...}}`), pas
+    # une liste plate avec "id" au premier niveau. On verifie donc aussi
+    # dans "properties" avant d'abandonner.
+    properties = best.get("properties") if isinstance(best.get("properties"), dict) else {}
+    cle_interop_adr = (
+        best.get("id")
+        or best.get("cle_interop_adr")
+        or properties.get("id")
+        or properties.get("cle_interop_adr")
+    )
     if not cle_interop_adr:
         raise BdnbAdresseIntrouvable(
             f"Geocodeur BDNB : champ 'id' absent de la reponse : {best!r}"
