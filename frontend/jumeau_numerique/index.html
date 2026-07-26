@@ -74,12 +74,44 @@
 
   #hint { position: absolute; bottom: 16px; right: 20px; color: #6c85a8; font-size: 11px; z-index: 10; }
   #loading-msg { position: absolute; inset: 0; display:flex; align-items:center; justify-content:center; color:#5fb2ff; font-size:14px; z-index: 20; font-family: var(--font-body); }
+
+  #address-panel { top: 16px; left: 50%; transform: translateX(-50%); width: 460px; z-index: 15; }
+  #address-panel .addr-row { display: flex; gap: 6px; }
+  #address-panel input[type=text] {
+    flex: 1; background: rgba(255,255,255,0.06); border: 1px solid rgba(93,178,255,0.35); color: #fff;
+    padding: 8px 10px; border-radius: 6px; font-size: 13px; font-family: var(--font-body);
+  }
+  #address-panel input[type=text]::placeholder { color: #6c85a8; }
+  #run-diagnostic-btn {
+    background: var(--brand); border: 1px solid var(--brand); color: #fff; padding: 8px 14px;
+    border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 700; white-space: nowrap;
+  }
+  #run-diagnostic-btn:disabled { opacity: 0.5; cursor: wait; }
+  #run-diagnostic-btn:hover:not(:disabled) { background: var(--brand-dark); }
+  #api-base-row { margin-top: 8px; font-size: 11px; color: #6c85a8; display: flex; align-items: center; gap: 6px; }
+  #api-base-row input[type=text] { flex: 1; font-size: 11px; padding: 4px 8px; background: rgba(255,255,255,0.04); border: 1px solid rgba(93,178,255,0.2); color: #9fb7d6; border-radius: 4px; }
+  #diagnostic-status { margin-top: 8px; font-size: 12px; color: #9fb7d6; min-height: 16px; }
+  #diagnostic-status.loading { color: #5fb2ff; }
+  #diagnostic-status.error { color: #ff8a75; }
 </style>
 </head>
 <body>
 
 <div id="scene-container"></div>
 <div id="loading-msg">Chargement de la scène…</div>
+
+<div class="panel" id="address-panel">
+  <h3>Diagnostic dynamique — entrer une adresse</h3>
+  <div class="addr-row">
+    <input type="text" id="address-input" placeholder="ex: 26 Rue Victor Hugo, 37140 Bourgueil" />
+    <button id="run-diagnostic-btn">Lancer le diagnostic</button>
+  </div>
+  <div id="api-base-row">
+    <span>API :</span>
+    <input type="text" id="api-base-input" value="http://localhost:8000" />
+  </div>
+  <div id="diagnostic-status"></div>
+</div>
 
 <div class="panel" id="top-left">
   <h3>Jumeau numérique — Diagnostic</h3>
@@ -808,6 +840,58 @@ document.getElementById('json-input').addEventListener('change', e => {
   };
   reader.readAsText(file);
 });
+
+// ---------- 11bis. DIAGNOSTIC DYNAMIQUE — POST /diagnostic sur une adresse ----------
+// Le backend (voir backend/app/main.py) tourne les 3 agents (collector,
+// scoring, digital_twin) et renvoie directement le contrat consomme par
+// loadDataset(). Les traces detaillees de chaque agent (collecte,
+// calcul des scores par zone, assemblage) s'affichent dans la console du
+// serveur, pas ici : ce front n'affiche qu'un statut resume.
+function setDiagnosticStatus(message, kind) {
+  const el = document.getElementById('diagnostic-status');
+  el.textContent = message;
+  el.classList.toggle('loading', kind === 'loading');
+  el.classList.toggle('error', kind === 'error');
+}
+
+async function runDiagnostic() {
+  const adresseInput = document.getElementById('address-input');
+  const adresse = adresseInput.value.trim();
+  if (!adresse) {
+    setDiagnosticStatus('Entre une adresse avant de lancer le diagnostic.', 'error');
+    adresseInput.focus();
+    return;
+  }
+  const apiBase = document.getElementById('api-base-input').value.trim() || 'http://localhost:8000';
+  const btn = document.getElementById('run-diagnostic-btn');
+  btn.disabled = true;
+  setDiagnosticStatus('Diagnostic en cours (collecte -> scoring -> jumeau numérique)… voir la console du serveur pour le détail.', 'loading');
+
+  try {
+    const response = await fetch(`${apiBase}/diagnostic`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ adresse }),
+    });
+    if (!response.ok) {
+      const bodyText = await response.text();
+      throw new Error(`${response.status} ${response.statusText} — ${bodyText.slice(0, 300)}`);
+    }
+    const contract = await response.json();
+    loadDataset(contract);
+    setDiagnosticStatus(`Diagnostic reçu pour : ${contract.adresse}`, null);
+  } catch (err) {
+    console.error('Echec du diagnostic :', err);
+    setDiagnosticStatus(
+      `Erreur : ${err.message} — vérifie que le serveur tourne (uvicorn app.main:app) sur ${apiBase} et qu'il est joignable depuis cette page.`,
+      'error'
+    );
+  } finally {
+    btn.disabled = false;
+  }
+}
+document.getElementById('run-diagnostic-btn').addEventListener('click', runDiagnostic);
+document.getElementById('address-input').addEventListener('keydown', e => { if (e.key === 'Enter') runDiagnostic(); });
 
 // ---------- 12. BOUCLE DE RENDU ----------
 let lastTime = performance.now();
