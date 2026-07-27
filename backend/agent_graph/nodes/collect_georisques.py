@@ -13,7 +13,7 @@ import logging
 import signal
 from contextlib import contextmanager
 
-from agent_graph.state import TyphoonState
+from backend.agent_graph.state import TyphoonState
 
 logger = logging.getLogger(__name__)
 

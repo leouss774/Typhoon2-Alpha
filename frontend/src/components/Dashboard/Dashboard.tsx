@@ -5,15 +5,17 @@ import PropertyMap from "./PropertyMap";
 import DigitalTwin from "../DigitalTwin/DigitalTwin";
 import RecommendationList from "../Recommendations/RecommendationList";
 import ChatInterface from "../Chat/ChatInterface";
+import BankDecisionPanel from "./BankDecisionPanel";
 
 // Fallback : le JSON statique de démo si pas d'API
 import demoData from "../../../assessment_complet.json";
 
 interface DashboardProps {
   sessionId: string;
+  isBankRoute?: boolean;
 }
 
-export default function Dashboard({ sessionId }: DashboardProps) {
+export default function Dashboard({ sessionId, isBankRoute }: DashboardProps) {
   const [apiData, setApiData] = useState<any | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -100,6 +102,27 @@ export default function Dashboard({ sessionId }: DashboardProps) {
       geometrie: { largeur_m: 8.5, profondeur_m: 6.0, orientation_deg: 15 }
     };
   }, []);
+
+  if (isBankRoute) {
+    return (
+      <div className="dashboard" style={{ padding: "30px", maxWidth: "1000px", margin: "0 auto" }}>
+        <header style={{ marginBottom: "30px", borderBottom: "2px solid #30363d", paddingBottom: "20px" }}>
+          <h2 style={{ color: "#d29922", margin: "0 0 8px 0", fontSize: "24px" }}>🏦 Espace Agent Analyse Crédit</h2>
+          <p style={{ color: "#8b949e", margin: 0, fontSize: "16px" }}>
+            Évaluation automatisée du risque pour : <strong style={{ color: "#e6edf3" }}>{data.adresse}</strong>
+          </p>
+        </header>
+
+        {data.decision_bancaire ? (
+          <BankDecisionPanel decision={data.decision_bancaire} />
+        ) : (
+          <div style={{ padding: "20px", background: "rgba(210,153,34,0.1)", border: "1px solid #d29922", borderRadius: "8px", color: "#d29922", textAlign: "center" }}>
+            Aucune décision bancaire générée pour ce dossier.
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="dashboard" style={{ padding: "20px" }}>

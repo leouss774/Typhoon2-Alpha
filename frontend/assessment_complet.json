@@ -574,5 +574,24 @@
       "DRIAS ADAMONT — Projections climatiques +4°C France (drias-climat.fr)",
       "Rapport Recommandations — CEPRI, CSTB, BRGM, IRSN, ADEME"
     ]
+  },
+  "decision_bancaire": {
+    "valeur_marche": 400000,
+    "valeur_ajustee": 360000,
+    "decote_pct": 10,
+    "taux_propose": 3.65,
+    "majoration_taux": 0.2,
+    "exigences": [
+      "Assurance multirisque renforcée obligatoire"
+    ],
+    "avis_analyste": "Avis réservé. Bien que le client ait un bon dossier, le risque inondation entraîne une forte décote de la valeur du bien. Un apport supplémentaire de 10% est exigé.",
+    "points_a_verifier": [
+      "Demander le DPE officiel pour confirmer l'isolation",
+      "Vérifier l'année de construction via l'acte de vente",
+      "Demander des photos récentes de la toiture"
+    ],
+    "indice_confiance": 85,
+    "statut_dossier": "Étude Manuelle",
+    "hard_stops": []
   }
 }

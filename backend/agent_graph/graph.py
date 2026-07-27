@@ -15,10 +15,11 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from langgraph.graph import StateGraph, END
 
-from agent_graph.state import TyphoonState
-from agent_graph.nodes.collect_georisques import collect_georisques_node
-from agent_graph.nodes.generate_recommandations import generate_recommandations_node
-from agent_graph.nodes.assemble_output import assemble_output_node
+from backend.agent_graph.state import TyphoonState
+from backend.agent_graph.nodes.collect_georisques import collect_georisques_node
+from backend.agent_graph.nodes.generate_recommandations import generate_recommandations_node
+from backend.agent_graph.nodes.bank_decision import bank_decision_node
+from backend.agent_graph.nodes.assemble_output import assemble_output_node
 
 logger = logging.getLogger(__name__)
 
@@ -33,6 +34,7 @@ def build_typhoon_graph() -> StateGraph:
     # ── Noeuds ──────────────────────────────────
     builder.add_node("collect_georisques", collect_georisques_node)
     builder.add_node("generate_recommandations", generate_recommandations_node)
+    builder.add_node("bank_decision", bank_decision_node)
     builder.add_node("assemble_output", assemble_output_node)
 
     # ── Point d'entree ─────────────────────────
@@ -40,7 +42,8 @@ def build_typhoon_graph() -> StateGraph:
 
     # ── Aretes sequentielles ────────────────────
     builder.add_edge("collect_georisques", "generate_recommandations")
-    builder.add_edge("generate_recommandations", "assemble_output")
+    builder.add_edge("generate_recommandations", "bank_decision")
+    builder.add_edge("bank_decision", "assemble_output")
     builder.add_edge("assemble_output", END)
 
     return builder

@@ -11,7 +11,7 @@ import logging
 from datetime import datetime, timezone
 from typing import Any
 
-from agent_graph.state import TyphoonState
+from backend.agent_graph.state import TyphoonState
 
 logger = logging.getLogger(__name__)
 
@@ -103,6 +103,8 @@ def assemble_output_node(state: TyphoonState) -> dict:
             "scores_par_alea": scores_alea,
             "nb_recommandations": nb_recos,
         },
+
+        "decision_bancaire": state.bank_decision or {},
 
         "resume": {
             "score_global": score_global,

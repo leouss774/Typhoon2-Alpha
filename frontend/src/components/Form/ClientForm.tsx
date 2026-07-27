@@ -36,6 +36,7 @@ const defaultForm: FormData = {
 
 interface ClientFormProps {
   onAnalyseLancee?: (sessionId: string) => void;
+  isBankRoute?: boolean;
 }
 
 const STYLE = {
@@ -136,7 +137,7 @@ function Checkbox({ label, val, set }: {
   );
 }
 
-export default function ClientForm({ onAnalyseLancee }: ClientFormProps) {
+export default function ClientForm({ onAnalyseLancee, isBankRoute }: ClientFormProps) {
   const [form, setForm] = useState<FormData>(defaultForm);
   const [submitting, setSubmitting] = useState(false);
 
@@ -153,8 +154,8 @@ export default function ClientForm({ onAnalyseLancee }: ClientFormProps) {
         client_form: form,
         raw_data: {},
       };
-      // Utiliser l'URL relative (proxy Vite : /api → localhost:8000) pour cohérence avec DigitalTwin/autres composants
-      const res = await fetch("/api/analyze", {
+      const endpoint = isBankRoute ? "/api/bank/analyze" : "/api/analyze";
+      const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),

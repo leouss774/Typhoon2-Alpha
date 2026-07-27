@@ -21,7 +21,7 @@ import os
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from agent_graph.graph import run_typhoon_graph
+from backend.agent_graph.graph import run_typhoon_graph
 
 logger = logging.getLogger(__name__)
 

@@ -15,6 +15,13 @@ from typing import Any, Optional
 from pydantic import BaseModel, Field
 
 
+class TravauxRecommandation(BaseModel):
+    """Recommandation de travaux."""
+    travaux: str = Field(description="Description des travaux recommandés")
+    cout_estime: str = Field(description="Coût estimé (ex: '9000-16000€')")
+    gain_resilience: int = Field(default=0, ge=0, le=100, description="Gain de résilience estimé (%)")
+
+
 class TyphoonState(BaseModel):
     """State unique partage par tous les noeuds du graphe LangGraph."""
 
@@ -49,6 +56,12 @@ class TyphoonState(BaseModel):
     final_json: Optional[dict[str, Any]] = Field(
         default=None,
         description="JSON final complet au format assessment_complet.json, pret pour le jumeau numerique",
+    )
+
+    # ── Module Banque ───────────────────────────
+    bank_decision: Optional[dict[str, Any]] = Field(
+        default=None,
+        description="Décision de financement générée par l'agent bancaire",
     )
 
     # ── Routage interne ─────────────────────────
