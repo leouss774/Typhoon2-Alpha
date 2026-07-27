@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Typhoon — Property ID</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ===== DESIGN TOKENS ===== */
+:root {
+  --brand: #FF6B4A; --brand-dark: #E24E2E; --brand-glow: rgba(255,107,74,0.15);
+  --ink: #1E2A33; --text: #4B5760; --text-secondary: #6B7A84; --text-muted: #8B959D;
+  --border: #E7DED6; --bg: #F8F5F1; --card-bg: #FFFFFF;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06); --card-lift: 0 6px 20px rgba(0,0,0,0.10);
+  --radius: 12px; --radius-sm: 8px;
+  --font-head: 'Source Serif 4', Georgia, serif;
+  --font-body: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  --transition: all 0.2s ease;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 16px; scroll-behavior: smooth; }
+body {
+  font-family: var(--font-body); background: var(--bg); color: var(--ink);
+  min-height: 100vh; display: flex; flex-direction: column;
+  -webkit-font-smoothing: antialiased;
+}
+h1, h2, h3, h4 { font-family: var(--font-head); font-weight: 600; }
+a { color: var(--brand); text-decoration: none; }
+
+.app-container { max-width: 1120px; margin: 0 auto; padding: 24px 20px 48px; flex: 1; width: 100%; }
+
+/* ===== STATUS BAR ===== */
+.status-bar {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 16px; background: var(--card-bg); border: 1px solid var(--border);
+  border-radius: var(--radius); margin-bottom: 20px;
+  font-size: 13px; color: var(--text-secondary); box-shadow: var(--shadow);
+}
+.status-bar .dot { width: 8px; height: 8px; border-radius: 50%; background: #3fb950; flex-shrink: 0; }
+.status-bar .dot.loading { background: var(--brand); animation: pulse-dot 1s infinite; }
+.status-bar .dot.error { background: #da3633; }
+.status-bar .status-msg { flex: 1; }
+.status-bar .status-msg.error { color: #da3633; }
+@keyframes pulse-dot { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+/* ===== GENERATE FORM ===== */
+.generate-form {
+  display: flex; gap: 8px; margin-bottom: 24px; flex-wrap: wrap;
+}
+.generate-form input[type=text] {
+  flex: 1; min-width: 200px; padding: 10px 14px; border: 1px solid var(--border);
+  border-radius: var(--radius-sm); font-size: 14px; font-family: var(--font-body);
+  background: var(--card-bg); color: var(--ink); transition: var(--transition);
+}
+.generate-form input[type=text]:focus {
+  outline: none; border-color: var(--brand); box-shadow: 0 0 0 3px var(--brand-glow);
+}
+.generate-form button {
+  padding: 10px 24px; background: var(--brand); color: #fff; border: none;
+  border-radius: var(--radius-sm); font-size: 14px; font-weight: 700; cursor: pointer;
+  font-family: var(--font-body); transition: var(--transition);
+}
+.generate-form button:hover { background: var(--brand-dark); transform: translateY(-1px); }
+.generate-form button:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+/* ===== HEADER ===== */
+.property-header {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  gap: 16px; margin-bottom: 24px; flex-wrap: wrap;
+}
+.property-header .header-left { flex: 1; min-width: 200px; }
+.property-header .pid {
+  font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.08em; color: var(--text-muted); margin-bottom: 4px;
+}
+.property-header h1 { font-size: 22px; line-height: 1.3; margin-bottom: 2px; }
+.property-header .address-line { font-size: 14px; color: var(--text-secondary); }
+.property-header .date-line { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+.property-header .header-right { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+
+/* ===== CERT PILL ===== */
+.cert-pill {
+  display: inline-flex; align-items: center; gap: 6px; padding: 5px 14px;
+  border-radius: 999px; font-size: 12px; font-weight: 700; border: 1.5px solid;
+}
+.cert-pill.bronze { background: #FFF5EB; color: #8B4513; border-color: #CD7F32; }
+.cert-pill.silver { background: #F0F4F8; color: #5A6A7A; border-color: #A8B8C8; }
+.cert-pill.gold { background: #FFF8E1; color: #8B6914; border-color: #D4A017; }
+.cert-pill.platinum { background: #F0F4FF; color: #4A5A7A; border-color: #B0C0D0; }
+
+.header-ornament { width: 32px; height: 32px; color: var(--text-muted); flex-shrink: 0; }
+
+/* ===== SECTION TITLES ===== */
+.section-title {
+  font-size: 16px; font-weight: 700; margin-bottom: 16px;
+  display: flex; align-items: center; gap: 8px;
+}
+.section-title svg { width: 20px; height: 20px; color: var(--brand); flex-shrink: 0; }
+
+/* ===== CERTIFICATION HERO ===== */
+.cert-hero {
+  display: flex; gap: 28px; align-items: center; margin-bottom: 24px;
+  background: var(--card-bg); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 28px 32px;
+  box-shadow: var(--shadow); transition: var(--transition);
+}
+.cert-hero:hover { box-shadow: var(--card-lift); }
+.cert-hero .badge-container { flex-shrink: 0; transition: transform 0.3s ease; }
+.cert-hero .badge-container:hover { transform: scale(1.03); }
+.cert-hero .badge-container svg { width: 120px; height: 140px; display: block; }
+.cert-hero .cert-info { flex: 1; }
+.cert-hero .cert-info .cert-level { font-size: 24px; font-weight: 700; margin-bottom: 4px; }
+.cert-hero .cert-info .cert-level.bronze { color: #CD7F32; }
+.cert-hero .cert-info .cert-level.silver { color: #7A8A9A; }
+.cert-hero .cert-info .cert-level.gold { color: #B8860B; }
+.cert-hero .cert-info .cert-level.platinum { color: #4A5A7A; }
+.cert-hero .cert-info .cert-desc { font-size: 13px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 6px; }
+.cert-hero .cert-info .cert-explain { font-size: 12px; color: var(--text-muted); line-height: 1.5; margin-bottom: 12px; font-style: italic; }
+.cert-hero .cert-info .cert-meta { display: flex; gap: 20px; font-size: 12px; color: var(--text-muted); flex-wrap: wrap; align-items: center; }
+.cert-hero .cert-info .cert-meta span { display: flex; align-items: center; gap: 4px; }
+.cert-hero .cert-score-big { font-size: 40px; font-weight: 700; line-height: 1; }
+.cert-hero .cert-score-big sup { font-size: 16px; font-weight: 400; color: var(--text-muted); }
+
+/* ===== SCORE GAUGES ===== */
+.score-gauges {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px;
+}
+.score-gauge-card {
+  background: var(--card-bg); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 20px; text-align: center;
+  box-shadow: var(--shadow); transition: var(--transition);
+}
+.score-gauge-card:hover { box-shadow: var(--card-lift); transform: translateY(-2px); }
+.gauge-wrapper { position: relative; width: 120px; height: 120px; margin: 0 auto 12px; }
+.gauge-wrapper svg { transform: rotate(-90deg); }
+.gauge-wrapper .gauge-bg { fill: none; stroke: #f0f0f0; stroke-width: 8; }
+.gauge-wrapper .gauge-fill { fill: none; stroke-width: 8; stroke-linecap: round; }
+.gauge-wrapper .gauge-center {
+  position: absolute; inset: 0; display: flex; align-items: center;
+  justify-content: center; font-size: 28px; font-weight: 700; transition: color 0.3s ease;
+}
+.score-gauge-card .gauge-label { font-size: 13px; font-weight: 600; color: var(--ink); margin-bottom: 2px; }
+.score-gauge-card .gauge-explain { font-size: 11px; color: var(--text-muted); font-style: italic; }
+
+/* ===== TWO-COLUMN LAYOUT ===== */
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+
+/* ===== RISK SUMMARY ===== */
+.risk-summary-card {
+  background: var(--card-bg); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow);
+}
+.risk-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 12px; border-radius: 999px; font-size: 12px; font-weight: 700; text-transform: uppercase;
+}
+.risk-badge.faible { background: linear-gradient(135deg,#E8F5E9,#C8E6C9); color: #2E7D32; }
+.risk-badge.moderé, .risk-badge.mo { background: linear-gradient(135deg,#FFF8E1,#FFECB3); color: #B8860B; }
+.risk-badge.elevé, .risk-badge.el { background: linear-gradient(135deg,#FFF3E0,#FFE0B2); color: #BF5E00; }
+.risk-badge.critique { background: linear-gradient(135deg,#FFEBEE,#FFCDD2); color: #C62828; }
+.risk-summary-card .risk-title { font-size: 14px; font-weight: 600; margin-bottom: 8px; }
+.risk-summary-card .risk-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font-size: 13px; }
+.risk-summary-card .risk-row .label { color: var(--text-secondary); }
+.risk-summary-card .risk-row .value { font-weight: 600; }
+.risk-summary-card .alert-icon { width: 20px; height: 20px; flex-shrink: 0; color: var(--brand); }
+
+/* ===== BUILDING INFO ===== */
+.building-info-card {
+  background: var(--card-bg); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow);
+}
+.building-info-card .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 16px; }
+.building-info-card .info-item { display: flex; flex-direction: column; gap: 2px; }
+.building-info-card .info-item .il {
+  font-size: 11px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.05em; color: var(--text-muted);
+}
+.building-info-card .info-item .iv { font-size: 14px; color: var(--ink); }
+.building-info-card .info-item .iv.na {
+  color: var(--text-muted); font-style: italic; cursor: help;
+  border-bottom: 1px dashed var(--border);
+}
+
+/* ===== RECOMMENDATIONS ===== */
+.reco-card {
+  background: var(--card-bg); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow);
+}
+.reco-item {
+  display: flex; gap: 12px; padding: 12px; border-radius: var(--radius-sm);
+  transition: var(--transition); cursor: default;
+}
+.reco-item:hover { background: #F5F0EB; transform: translateX(3px); }
+.reco-item + .reco-item { border-top: 1px solid var(--border); }
+.reco-item .reco-check { width: 20px; height: 20px; margin-top: 2px; flex-shrink: 0; color: var(--brand); }
+.reco-item .reco-content { flex: 1; }
+.reco-item .reco-title { font-size: 13px; font-weight: 600; margin-bottom: 2px; }
+.reco-item .reco-meta { font-size: 11px; color: var(--text-muted); display: flex; gap: 12px; }
+.reco-item .reco-zone {
+  font-size: 10px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.05em; padding: 2px 8px; border-radius: 4px;
+  background: #F0F0F0; color: var(--text-secondary); height: fit-content; white-space: nowrap;
+}
+.reco-empty {
+  text-align: center; padding: 28px 16px; color: var(--text-muted);
+}
+.reco-empty .empty-icon { width: 40px; height: 40px; color: var(--border); margin: 0 auto 10px; display: block; }
+.reco-empty p { font-size: 13px; line-height: 1.5; }
+.reco-empty .reco-empty-hint { font-size: 11px; color: var(--text-muted); margin-top: 4px; font-style: italic; }
+
+/* ===== TIMELINE ===== */
+.timeline { position: relative; padding-left: 28px; }
+.timeline::before {
+  content: ''; position: absolute; left: 10px; top: 6px; bottom: 6px;
+  width: 2px; background: var(--border); border-radius: 1px;
+}
+.timeline-item { position: relative; padding-bottom: 20px; }
+.timeline-item:last-child { padding-bottom: 0; }
+.timeline-item .tl-icon {
+  position: absolute; left: -22px; top: 0; width: 22px; height: 22px;
+  border-radius: 50%; background: var(--card-bg); border: 2px solid var(--border);
+  display: flex; align-items: center; justify-content: center; z-index: 1;
+}
+.timeline-item .tl-icon svg { width: 11px; height: 11px; color: var(--text-muted); }
+.timeline-item.certification .tl-icon { border-color: #D4A017; background: #FFF8E1; box-shadow: 0 0 0 2px rgba(212,160,23,0.15); }
+.timeline-item.certification .tl-icon svg { color: #B8860B; }
+.timeline-item .tl-date { font-size: 11px; color: var(--text-muted); margin-bottom: 2px; }
+.timeline-item .tl-event { font-size: 14px; font-weight: 600; color: var(--ink); }
+.timeline-item .tl-details { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+
+/* ===== DIGITAL TWIN ===== */
+.twin-section { margin-bottom: 24px; }
+.twin-preview {
+  background: var(--card-bg); border: 1px solid var(--border);
+  border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow);
+}
+.twin-preview .twin-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 14px 20px; border-bottom: 1px solid var(--border);
+}
+.twin-preview .twin-header .twin-title { font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 6px; }
+.twin-preview .twin-header .twin-badge {
+  font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.05em; padding: 3px 8px; border-radius: 4px;
+  background: #E8F5E9; color: #2E7D32;
+}
+.twin-chips { display: flex; flex-wrap: wrap; gap: 6px; padding: 14px 20px; }
+.twin-chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 4px 10px; border-radius: 999px; font-size: 11px; font-weight: 600;
+  border: 1px solid; transition: var(--transition);
+}
+.twin-chip:hover { transform: translateY(-1px); }
+.twin-chip .chip-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.twin-chip.faible { background: #E8F5E9; color: #2E7D32; border-color: #A5D6A7; }
+.twin-chip.faible .chip-dot { background: #2E7D32; }
+.twin-chip.moderé, .twin-chip.mo { background: #FFF8E1; color: #B8860B; border-color: #FFE082; }
+.twin-chip.moderé .chip-dot, .twin-chip.mo .chip-dot { background: #B8860B; }
+.twin-chip.elevé, .twin-chip.el { background: #FFF3E0; color: #BF5E00; border-color: #FFCC80; }
+.twin-chip.elevé .chip-dot, .twin-chip.el .chip-dot { background: #BF5E00; }
+.twin-chip.critique { background: #FFEBEE; color: #C62828; border-color: #EF9A9A; }
+.twin-chip.critique .chip-dot { background: #C62828; }
+.twin-json-toggle {
+  display: block; width: 100%; padding: 8px; border: none; border-top: 1px solid var(--border);
+  background: var(--bg); cursor: pointer; font-size: 12px; font-weight: 600;
+  color: var(--text-secondary); font-family: var(--font-body); transition: var(--transition);
+}
+.twin-json-toggle:hover { background: #F0EBE5; color: var(--ink); }
+.twin-json-block { display: none; }
+.twin-json-block.open { display: block; }
+.twin-json-block pre {
+  padding: 16px 20px; font-size: 11px; line-height: 1.6; overflow-x: auto;
+  background: #F8F5F1; color: var(--text); max-height: 300px; overflow-y: auto;
+  font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+}
+
+/* ===== LOADING SKELETONS ===== */
+.skeleton-toggle { display: none; }
+.skeleton-toggle.active { display: block; }
+.content-toggle { display: block; }
+.content-toggle.hidden { display: none; }
+.skeleton .shimmer {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e8e8e8 50%, #f0f0f0 75%);
+  background-size: 200% 100%; animation: shimmer 1.8s ease-in-out infinite;
+  border-radius: 6px;
+}
+@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+.skeleton-badge { width: 120px; height: 140px; border-radius: var(--radius); }
+.skeleton-gauge { width: 120px; height: 120px; border-radius: 50%; margin: 0 auto 12px; }
+.skeleton-text { height: 14px; margin-bottom: 8px; border-radius: 4px; }
+.skeleton-text.w60 { width: 60%; }
+.skeleton-text.w40 { width: 40%; }
+.skeleton-text.w80 { width: 80%; }
+
+/* ===== SECTION FADE-IN ===== */
+.section-fade { opacity: 0; transform: translateY(16px); transition: opacity 0.5s ease, transform 0.5s ease; }
+.section-fade.visible { opacity: 1; transform: translateY(0); }
+
+/* ===== ANIMATIONS ===== */
+@keyframes scorePop { 0% { transform: scale(1); } 50% { transform: scale(1.10); } 100% { transform: scale(1); } }
+.score-pop { animation: scorePop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+
+@keyframes sealPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.65; } }
+.verified-seal { animation: sealPulse 3s ease-in-out infinite; }
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 700px) {
+  .app-container { padding: 16px 12px 32px; }
+  .cert-hero { flex-direction: column; text-align: center; padding: 24px 20px; }
+  .cert-hero .badge-container svg { width: 90px; height: 105px; margin: 0 auto; }
+  .cert-hero .cert-info .cert-meta { justify-content: center; }
+  .score-gauges { grid-template-columns: 1fr; max-width: 320px; margin-left: auto; margin-right: auto; }
+  .two-col { grid-template-columns: 1fr; }
+  .property-header { flex-direction: column; }
+  .building-info-card .info-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 400px) {
+  .cert-hero .badge-container svg { width: 70px; height: 82px; }
+  .gauge-wrapper { width: 100px; height: 100px; }
+  .gauge-wrapper .gauge-center { font-size: 22px; }
+}
+</style>
+</head>
+<body>
+
+<div class="app-container">
+  <!-- STATUS BAR -->
+  <div class="status-bar" id="status-bar">
+    <span class="dot" id="status-dot"></span>
+    <span class="status-msg" id="status-msg">Prêt — entrez une adresse pour générer un Property ID</span>
+  </div>
+
+  <!-- GENERATE FORM -->
+  <form class="generate-form" id="generate-form" autocomplete="off">
+    <input type="text" id="address-input" placeholder="Ex : 26 Rue Victor Hugo, 37140 Bourgueil" value="26 Rue Victor Hugo, 37140 Bourgueil" />
+    <button type="submit" id="generate-btn">Générer le Property ID</button>
+  </form>
+
+  <!-- ===== HEADER ===== -->
+  <div class="property-header section-fade" id="section-header">
+    <div class="header-left">
+      <span class="pid" id="prop-id">PROPERTY ID</span>
+      <h1 id="prop-address">—</h1>
+      <div class="address-line" id="prop-address-line"></div>
+      <div class="date-line" id="prop-date"></div>
+    </div>
+    <div class="header-right">
+      <span class="cert-pill" id="cert-pill" style="display:none">—</span>
+      <svg class="header-ornament" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+        <polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/>
+        <line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
+      </svg>
+    </div>
+  </div>
+
+  <!-- ===== CERTIFICATION HERO ===== -->
+  <div class="cert-hero section-fade" id="section-cert">
+    <div class="skeleton-toggle active" id="skeleton-cert">
+      <div class="shimmer skeleton-badge" style="margin:0 auto"></div>
+    </div>
+    <div class="content-toggle" id="content-cert" style="display:flex;gap:28px;align-items:center;width:100%">
+      <div class="badge-container" id="cert-badge-container">
+        <svg id="cert-badge-svg" viewBox="0 0 120 140" width="120" height="140"></svg>
+      </div>
+      <div class="cert-info">
+        <div class="cert-level" id="cert-level">—</div>
+        <div class="cert-desc" id="cert-desc"></div>
+        <div class="cert-explain" id="cert-explain"></div>
+        <div class="cert-meta">
+          <span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            <span id="cert-issued">—</span>
+          </span>
+          <span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            <span id="cert-expiry">—</span>
+          </span>
+          <span class="verified-seal" id="cert-status-badge" style="display:inline-flex;align-items:center;gap:4px;padding:2px 10px;border-radius:999px;font-size:11px;font-weight:700;background:#E8F5E9;color:#2E7D32">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            VERIFIÉ
+          </span>
+          <span class="cert-score-big" id="cert-score-big">0<sup>/100</sup></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== SCORE GAUGES ===== -->
+  <div class="score-gauges section-fade" id="section-gauges">
+    <div class="score-gauge-card">
+      <div class="skeleton-toggle active" id="skeleton-gauge-overall"><div class="shimmer skeleton-gauge"></div></div>
+      <div class="content-toggle gauge-wrapper" id="gauge-overall-wrapper" style="position:relative;width:120px;height:120px;margin:0 auto 12px">
+        <svg width="120" height="120" viewBox="0 0 120 120"></svg>
+        <div class="gauge-center" id="gauge-overall-value">0</div>
+      </div>
+      <div class="gauge-label">Score Global</div>
+      <div class="gauge-explain">Résilience globale face aux risques climatiques et géologiques</div>
+    </div>
+    <div class="score-gauge-card">
+      <div class="skeleton-toggle active" id="skeleton-gauge-climate"><div class="shimmer skeleton-gauge"></div></div>
+      <div class="content-toggle gauge-wrapper" id="gauge-climate-wrapper" style="position:relative;width:120px;height:120px;margin:0 auto 12px">
+        <svg width="120" height="120" viewBox="0 0 120 120"></svg>
+        <div class="gauge-center" id="gauge-climate-value">0</div>
+      </div>
+      <div class="gauge-label">Climat 2050</div>
+      <div class="gauge-explain">Projection des risques climatiques à horizon 2050</div>
+    </div>
+    <div class="score-gauge-card">
+      <div class="skeleton-toggle active" id="skeleton-gauge-insurance"><div class="shimmer skeleton-gauge"></div></div>
+      <div class="content-toggle gauge-wrapper" id="gauge-insurance-wrapper" style="position:relative;width:120px;height:120px;margin:0 auto 12px">
+        <svg width="120" height="120" viewBox="0 0 120 120"></svg>
+        <div class="gauge-center" id="gauge-insurance-value">0</div>
+      </div>
+      <div class="gauge-label">Assurance</div>
+      <div class="gauge-explain">Score de risque pour le calcul de la prime d'assurance</div>
+    </div>
+  </div>
+
+  <!-- ===== RISK SUMMARY + BUILDING INFO ===== -->
+  <div class="two-col section-fade" id="section-risk-bld">
+    <div class="risk-summary-card">
+      <div class="section-title">
+        <svg class="alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        Résumé des risques
+      </div>
+      <div class="risk-row">
+        <svg class="alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <span class="label">Zone la plus risquée :</span>
+        <span class="value" id="risk-highest">—</span>
+      </div>
+      <div class="risk-row">
+        <span class="label">Niveau de risque :</span>
+        <span class="risk-badge" id="risk-level">—</span>
+      </div>
+      <div class="risk-row">
+        <svg class="alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+        <span class="label">Aléa principal :</span>
+        <span class="value" id="risk-hazard">—</span>
+      </div>
+    </div>
+    <div class="building-info-card">
+      <div class="section-title">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        Informations du bâtiment
+      </div>
+      <div class="info-grid">
+        <div class="info-item"><span class="il">Construction</span><span class="iv" id="bld-year">—</span></div>
+        <div class="info-item"><span class="il">Type</span><span class="iv" id="bld-type">—</span></div>
+        <div class="info-item"><span class="il">Matériaux</span><span class="iv" id="bld-materials">—</span></div>
+        <div class="info-item"><span class="il">Toiture</span><span class="iv" id="bld-roof">—</span></div>
+        <div class="info-item"><span class="il">Étages</span><span class="iv" id="bld-floors">—</span></div>
+        <div class="info-item"><span class="il">Adresse</span><span class="iv" id="bld-address">—</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== RECOMMENDATIONS + TIMELINE ===== -->
+  <div class="two-col section-fade" id="section-reco-timeline">
+    <div class="reco-card">
+      <div class="section-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        Recommandations
+      </div>
+      <div id="reco-list"></div>
+    </div>
+    <div class="reco-card">
+      <div class="section-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        Historique
+      </div>
+      <div class="timeline" id="timeline-container"></div>
+    </div>
+  </div>
+
+  <!-- ===== DIGITAL TWIN ===== -->
+  <div class="twin-section section-fade" id="section-twin">
+    <div class="twin-preview">
+      <div class="twin-header">
+        <span class="twin-title">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
+          Jumeau Numérique
+        </span>
+        <span class="twin-badge">3D</span>
+      </div>
+      <div class="twin-chips" id="twin-chips"></div>
+      <button class="twin-json-toggle" id="twin-json-toggle">Afficher le JSON brut</button>
+      <div class="twin-json-block" id="twin-json-block">
+        <pre id="twin-json-content"></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* =====================================================================
+   TYPHOON — Property ID Frontend (Full Version)
+   POST /property-id/generate → affiche le Property ID complet
+   ===================================================================== */
+
+const API_BASE = 'http://localhost:8000';
+const $ = id => document.getElementById(id);
+
+/* ===== STATUS ===== */
+const statusDot = $('status-dot');
+const statusMsg = $('status-msg');
+function setStatus(msg, kind) {
+  statusMsg.textContent = msg;
+  statusMsg.className = 'status-msg' + (kind ? ' ' + kind : '');
+  statusDot.className = 'dot' + (kind ? ' ' + kind : '');
+}
+
+/* ===== SKELETONS ===== */
+function showSkeletons(show) {
+  document.querySelectorAll('.skeleton-toggle').forEach(el => el.classList.toggle('active', show));
+}
+function showContentSkeletons(show) {
+  document.querySelectorAll('.content-toggle').forEach(el => {
+    el.classList.toggle('hidden', !show);
+    el.style.display = show ? '' : 'none';
+  });
+}
+
+/* ===== RISK COLORS ===== */
+function riskColor(score) {
+  if (score <= 25) return '#3fb950';
+  if (score <= 50) return '#d29922';
+  if (score <= 75) return '#db6d28';
+  return '#da3633';
+}
+
+/* ===== CERT LEVELS ===== */
+const CERT_LEVELS = {
+  Bronze: {
+    primary: '#CD7F32', secondary: '#A0652A', accent: '#E8C88A',
+    label: 'Bronze',
+    desc: 'Résilience de base. Des risques significatifs sont identifiés.',
+    explain: 'Des travaux de rénovation sont fortement recommandés pour améliorer la résilience du bâtiment face aux risques climatiques.',
+  },
+  Silver: {
+    primary: '#A8B8C8', secondary: '#7A8A9A', accent: '#D0DCE8',
+    label: 'Silver',
+    desc: 'Résilience satisfaisante. Des risques modérés existent.',
+    explain: 'Les risques restent dans des limites acceptables. Des travaux de mitigation sont recommandés pour renforcer le bâtiment.',
+  },
+  Gold: {
+    primary: '#D4A017', secondary: '#B8860B', accent: '#F5D76E',
+    label: 'Gold',
+    desc: 'Très bonne résilience. Les risques sont faibles et bien gérés.',
+    explain: 'Ce bâtiment bénéficie d\'une très bonne résilience face aux risques climatiques. Les risques sont maîtrisés.',
+  },
+  Platinum: {
+    primary: '#E5E4E2', secondary: '#B9C2D0', accent: '#FFFFFF',
+    label: 'Platinum',
+    desc: 'Résilience exceptionnelle. Risque climatique minimal.',
+    explain: 'Ce bâtiment dépasse les normes de construction actuelles. Une référence en matière de résilience et de durabilité.',
+  },
+};
+
+/* ===== BADGE RENDERER ===== */
+function renderBadge(container, cert, pid, date, size) {
+  const level = (cert && cert.level) || 'Bronze';
+  const cfg = CERT_LEVELS[level] || CERT_LEVELS.Bronze;
+  const score = (cert && cert.score != null) ? cert.score : 0;
+  const isLarge = size !== 'small';
+  const w = isLarge ? 120 : 50;
+  const h = isLarge ? 140 : 60;
+
+  const gradId = `bg-${level.toLowerCase()}-${Date.now()}`;
+  const glowId = `gl-${level.toLowerCase()}-${Date.now()}`;
+  const shineId = `sh-${level.toLowerCase()}-${Date.now()}`;
+
+  const shieldPath = isLarge
+    ? 'M60 5 L110 25 L110 70 C110 105 85 125 60 135 C35 125 10 105 10 70 L10 25 Z'
+    : 'M25 3 L47 12 L47 30 C47 44 37 52 25 56 C13 52 3 44 3 30 L3 12 Z';
+  const insetPath = isLarge
+    ? 'M60 12 L103 30 L103 68 C103 99 82 117 60 126 C38 117 17 99 17 68 L17 30 Z'
+    : 'M25 7 L43 16 L43 30 C43 42 34 49 25 53 C16 49 7 42 7 30 L7 16 Z';
+
+  let svg = `<defs>
+    <linearGradient id="${gradId}" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="${cfg.accent}"/>
+      <stop offset="40%" stop-color="${cfg.primary}"/>
+      <stop offset="100%" stop-color="${cfg.secondary}"/>
+    </linearGradient>
+    <linearGradient id="${shineId}" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="rgba(255,255,255,0.4)"/>
+      <stop offset="50%" stop-color="rgba(255,255,255,0)"/>
+      <stop offset="100%" stop-color="rgba(255,255,255,0.08)"/>
+    </linearGradient>
+    <filter id="${glowId}" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="${isLarge ? 3 : 1}" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>`;
+
+  // Outer shield
+  svg += `<path d="${shieldPath}" fill="url(#${gradId})" stroke="${cfg.secondary}" stroke-width="${isLarge ? 2 : 1.5}" filter="url(#${glowId})"/>`;
+  // Inner shield
+  svg += `<path d="${insetPath}" fill="rgba(255,255,255,0.12)" stroke="rgba(255,255,255,0.3)" stroke-width="${isLarge ? 1 : 0.5}"/>`;
+  // Shine overlay
+  if (isLarge) svg += `<path d="${shieldPath}" fill="url(#${shineId})"/>`;
+
+  // Central icon (simplified typhoon shield)
+  if (isLarge) {
+    svg += `<path d="M51 40 L69 45 L69 62 C69 76 60 84 60 88 C60 84 51 76 51 62 Z" fill="${cfg.secondary}" stroke="${cfg.primary}" stroke-width="1"/>`;
+    svg += `<text x="60" y="72" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-weight="700" font-size="17" fill="${level === 'Platinum' ? '#4A5A7A' : '#fff'}">${cfg.label}</text>`;
+    svg += `<text x="60" y="92" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-weight="700" font-size="13" fill="rgba(255,255,255,0.85)">${score}/100</text>`;
+    if (pid) svg += `<text x="60" y="115" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-weight="600" font-size="8" fill="rgba(255,255,255,0.5)">${pid}</text>`;
+    svg += `<text x="60" y="131" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-weight="700" font-size="8" fill="#3fb950" class="verified-seal">● VERIFIÉ</text>`;
+  } else {
+    svg += `<text x="25" y="38" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-weight="700" font-size="9" fill="#fff">${cfg.label}</text>`;
+    svg += `<text x="25" y="50" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-weight="600" font-size="7" fill="rgba(255,255,255,0.7)">${score}</text>`;
+  }
+
+  container.innerHTML = svg;
+  // Re-attach verified-seal class to the VERIFIED text element
+  const vt = container.querySelector('.verified-seal');
+  if (vt) vt.setAttribute('class', 'verified-seal');
+}
+
+/* ===== GAUGE RENDERER ===== */
+function renderGauge(svgEl, valueEl, score) {
+  // Remove old SVGs to prevent accumulation
+  const oldBg = svgEl.querySelector('.gauge-bg');
+  const oldFill = svgEl.querySelector('.gauge-fill');
+  if (oldBg) oldBg.remove();
+  if (oldFill) oldFill.remove();
+
+  const cx = 60, cy = 60, r = 48;
+  const circumference = 2 * Math.PI * r;
+  const targetOffset = circumference - (score / 100) * circumference;
+  const color = riskColor(score);
+
+  // Background circle
+  const bg = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+  bg.setAttribute('class', 'gauge-bg');
+  bg.setAttribute('cx', cx); bg.setAttribute('cy', cy); bg.setAttribute('r', r);
+  svgEl.prepend(bg);
+
+  // Fill circle
+  const fill = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+  fill.setAttribute('class', 'gauge-fill');
+  fill.setAttribute('cx', cx); fill.setAttribute('cy', cy); fill.setAttribute('r', r);
+  fill.setAttribute('stroke', color);
+  fill.setAttribute('stroke-dasharray', circumference);
+  fill.setAttribute('stroke-dashoffset', circumference); // start empty
+  svgEl.appendChild(fill);
+
+  // rAF animation
+  requestAnimationFrame(() => {
+    fill.style.transition = 'stroke-dashoffset 0.6s cubic-bezier(0.4, 0, 0.2, 1)';
+    fill.setAttribute('stroke-dashoffset', targetOffset);
+  });
+
+  // Value
+  valueEl.textContent = score;
+  valueEl.style.color = color;
+  valueEl.classList.remove('score-pop');
+  void valueEl.offsetWidth;
+  valueEl.classList.add('score-pop');
+}
+
+/* ===== MAIN RENDER ===== */
+function renderPropertyID(data) {
+  showSkeletons(false);
+  showContentSkeletons(true);
+
+  /* --- HEADER --- */
+  const pid = data.property_id || '—';
+  $('prop-id').textContent = 'PROPERTY ID ' + pid;
+  const addr = (data.building && data.building.address) || '—';
+  $('prop-address').textContent = addr;
+  $('prop-address-line').textContent = '';
+  const dateStr = data.generated_at
+    ? new Date(data.generated_at).toLocaleDateString('fr-FR', {
+        year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit',
+      })
+    : '—';
+  $('prop-date').textContent = 'Généré le ' + dateStr;
+
+  /* --- CERTIFICATION --- */
+  const cert = data.certification;
+  const certSvg = $('cert-badge-svg');
+  if (cert) {
+    const level = cert.level || 'Bronze';
+    const cfg = CERT_LEVELS[level] || CERT_LEVELS.Bronze;
+
+    renderBadge(certSvg, cert, data.property_id, data.generated_at, 'large');
+
+    $('cert-level').textContent = 'Typhoon ' + cfg.label;
+    $('cert-level').className = 'cert-level ' + level.toLowerCase();
+    $('cert-desc').textContent = cfg.desc;
+    $('cert-explain').textContent = cfg.explain;
+
+    $('cert-issued').textContent = cert.issued_at
+      ? new Date(cert.issued_at).toLocaleDateString('fr-FR')
+      : '—';
+    $('cert-expiry').textContent = cert.expires_at
+      ? new Date(cert.expires_at).toLocaleDateString('fr-FR')
+      : '—';
+
+    $('cert-status-badge').style.display = 'inline-flex';
+    $('cert-score-big').innerHTML = (cert.score != null ? cert.score : '—') + '<sup>/100</sup>';
+
+    $('cert-pill').style.display = 'inline-flex';
+    $('cert-pill').textContent = cfg.label;
+    $('cert-pill').className = 'cert-pill ' + level.toLowerCase();
+  } else {
+    certSvg.innerHTML = '';
+    $('cert-level').textContent = '—';
+    $('cert-desc').textContent = 'Aucune certification disponible pour ce bâtiment.';
+    $('cert-explain').textContent = '';
+    $('cert-issued').textContent = '—';
+    $('cert-expiry').textContent = '—';
+    $('cert-status-badge').style.display = 'none';
+    $('cert-score-big').textContent = '—';
+    $('cert-pill').style.display = 'none';
+  }
+
+  /* --- SCORES --- */
+  const scores = data.scores || {};
+  renderGauge($('gauge-overall-wrapper').querySelector('svg'), $('gauge-overall-value'), scores.overall || 0);
+  renderGauge($('gauge-climate-wrapper').querySelector('svg'), $('gauge-climate-value'), scores.climate || 0);
+  renderGauge($('gauge-insurance-wrapper').querySelector('svg'), $('gauge-insurance-value'), scores.insurance || 0);
+
+  /* --- RISK SUMMARY --- */
+  const rs = data.risk_summary || {};
+  $('risk-highest').textContent = rs.highest_risk || '—';
+  const rl = (rs.risk_level || '—').toLowerCase();
+  const rb = $('risk-level');
+  rb.textContent = rs.risk_level || '—';
+  rb.className = 'risk-badge ' + rl.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[èéêë]/g, 'e');
+  $('risk-hazard').textContent = rs.main_hazard || '—';
+
+  /* --- BUILDING INFO --- */
+  const bld = data.building || {};
+  function fmt(v) { return v != null ? String(v) : '—'; }
+  function cleanRoof(r) {
+    if (!r) return null;
+    const c = r.replace(/\s*\(None\)\s*/g, '').trim();
+    return c || null;
+  }
+
+  $('bld-year').textContent = bld.construction_year != null ? String(bld.construction_year) : '—';
+  $('bld-year').className = 'iv' + (bld.construction_year == null ? ' na' : '');
+  if (bld.construction_year == null) $('bld-year').setAttribute('data-tooltip', 'Donnée non disponible pour cette adresse — cela n\'affecte pas votre certification.');
+
+  $('bld-type').textContent = bld.building_type || '—';
+  $('bld-type').className = 'iv' + (!bld.building_type ? ' na' : '');
+  if (!bld.building_type) $('bld-type').setAttribute('data-tooltip', 'Donnée non disponible pour cette adresse — cela n\'affecte pas votre certification.');
+
+  $('bld-materials').textContent = bld.materials || '—';
+  $('bld-materials').className = 'iv' + (!bld.materials ? ' na' : '');
+  if (!bld.materials) $('bld-materials').setAttribute('data-tooltip', 'Donnée non disponible pour cette adresse — cela n\'affecte pas votre certification.');
+
+  $('bld-roof').textContent = cleanRoof(bld.roof) || '—';
+  $('bld-roof').className = 'iv' + (!cleanRoof(bld.roof) ? ' na' : '');
+  if (!cleanRoof(bld.roof)) $('bld-roof').setAttribute('data-tooltip', 'Donnée non disponible pour cette adresse — cela n\'affecte pas votre certification.');
+
+  $('bld-floors').textContent = bld.floors != null ? String(bld.floors) : '—';
+  $('bld-floors').className = 'iv' + (bld.floors == null ? ' na' : '');
+  if (bld.floors == null) $('bld-floors').setAttribute('data-tooltip', 'Donnée non disponible pour cette adresse — cela n\'affecte pas votre certification.');
+
+  $('bld-address').textContent = bld.address || '—';
+
+  /* --- RECOMMENDATIONS --- */
+  const recos = data.recommendations || [];
+  const recoList = $('reco-list');
+  recoList.innerHTML = '';
+  if (recos.length === 0) {
+    recoList.innerHTML = `
+      <div class="reco-empty">
+        <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        <p>Aucune recommandation disponible pour cette adresse.</p>
+        <p class="reco-empty-hint">Les recommandations de travaux apparaîtront une fois la base documentaire RAG configurée et l'index généré.</p>
+      </div>`;
+  } else {
+    recos.forEach(r => {
+      const div = document.createElement('div');
+      div.className = 'reco-item';
+      div.innerHTML = `
+        <svg class="reco-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        <div class="reco-content">
+          <div class="reco-title">${r.travaux || r.title || 'Travaux recommandés'}</div>
+          <div class="reco-meta">
+            ${r.cout_estime ? '<span>' + r.cout_estime + '</span>' : ''}
+            ${r.gain_resilience ? '<span>+ Résilience ' + r.gain_resilience + '</span>' : ''}
+          </div>
+        </div>
+        ${r.zone ? '<div class="reco-zone">' + r.zone.replace(/_/g, ' ') + '</div>' : ''}`;
+      recoList.appendChild(div);
+    });
+  }
+
+  /* --- TIMELINE --- */
+  const timeline = data.timeline || [];
+  const tl = $('timeline-container');
+  tl.innerHTML = '';
+  if (timeline.length === 0) {
+    tl.innerHTML = '<div class="reco-empty"><p style="font-size:13px">Aucun événement enregistré.</p></div>';
+  } else {
+    timeline.forEach(evt => {
+      const div = document.createElement('div');
+      const isCert = evt.event && evt.event.toLowerCase().includes('certification');
+      div.className = 'timeline-item' + (isCert ? ' certification' : '');
+      const d = evt.date ? new Date(evt.date).toLocaleDateString('fr-FR', {
+        year: 'numeric', month: 'short', day: 'numeric',
+      }) : '—';
+      let iconSvg;
+      if (isCert) {
+        iconSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>';
+      } else if (evt.event && evt.event.toLowerCase().includes('diagnostic')) {
+        iconSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
+      } else {
+        iconSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
+      }
+      let details = '';
+      if (evt.details) {
+        if (evt.details.level) details = 'Niveau : ' + evt.details.level;
+        else if (evt.details.property_id) details = 'ID : ' + evt.details.property_id;
+        else if (evt.details.score != null) details = 'Score : ' + evt.details.score;
+      }
+      div.innerHTML = `
+        <div class="tl-icon">${iconSvg}</div>
+        <div class="tl-date">${d}</div>
+        <div class="tl-event">${evt.event || 'Événement'}</div>
+        ${details ? '<div class="tl-details">' + details + '</div>' : ''}`;
+      tl.appendChild(div);
+    });
+  }
+
+  /* --- DIGITAL TWIN --- */
+  const chips = $('twin-chips');
+  chips.innerHTML = '';
+  const dt = data.digital_twin || {};
+  if (dt.zones) {
+    Object.entries(dt.zones).forEach(([name, zone]) => {
+      const risk = zone.risque || zone.score || 0;
+      const level = zone.niveau || (risk <= 25 ? 'faible' : risk <= 50 ? 'modéré' : risk <= 75 ? 'élevé' : 'critique');
+      const chip = document.createElement('span');
+      const nl = level.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[èéêë]/g, 'e');
+      chip.className = 'twin-chip ' + nl;
+      chip.innerHTML = '<span class="chip-dot"></span> ' + name.replace(/_/g, ' ') + ' · ' + risk + '/100';
+      chips.appendChild(chip);
+    });
+  } else {
+    chips.innerHTML = '<span style="font-size:12px;color:var(--text-muted)">Données du jumeau non disponibles pour cette adresse.</span>';
+  }
+
+  // JSON toggle content
+  $('twin-json-content').textContent = JSON.stringify(dt, null, 2);
+
+  /* --- SECTION FADE-INS --- */
+  document.querySelectorAll('.section-fade').forEach((el, i) => {
+    el.style.transitionDelay = (i * 60) + 'ms';
+    el.classList.add('visible');
+  });
+}
+
+/* ===== GENERATE ===== */
+async function generatePropertyID(adresse) {
+  const btn = $('generate-btn');
+  btn.disabled = true;
+  setStatus('Génération du Property ID en cours…', 'loading');
+
+  // Reset fade-ins
+  document.querySelectorAll('.section-fade').forEach(el => el.classList.remove('visible'));
+
+  // Show skeletons, hide content
+  showSkeletons(true);
+  showContentSkeletons(false);
+
+  try {
+    const resp = await fetch(API_BASE + '/property-id/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ adresse }),
+    });
+    if (!resp.ok) {
+      const txt = await resp.text();
+      throw new Error(resp.status + ' ' + resp.statusText + ' — ' + txt.slice(0, 200));
+    }
+    const data = await resp.json();
+    renderPropertyID(data);
+    setStatus('Property ID ' + (data.property_id || '') + ' généré avec succès.', null);
+  } catch (err) {
+    console.error('Erreur Property ID :', err);
+    showSkeletons(false);
+    showContentSkeletons(true);
+    setStatus('Erreur : ' + err.message + ' — vérifiez que le serveur backend tourne sur ' + API_BASE, 'error');
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+/* ===== FORM ===== */
+$('generate-form').addEventListener('submit', e => {
+  e.preventDefault();
+  const addr = $('address-input').value.trim();
+  if (!addr) { setStatus('Veuillez entrer une adresse valide.', 'error'); return; }
+  generatePropertyID(addr);
+});
+
+/* ===== JSON TOGGLE ===== */
+$('twin-json-toggle').addEventListener('click', () => {
+  const block = $('twin-json-block');
+  const btn = $('twin-json-toggle');
+  const open = block.classList.toggle('open');
+  btn.textContent = open ? 'Masquer le JSON brut' : 'Afficher le JSON brut';
+});
+
+/* ===== INIT ===== */
+setStatus('Prêt — entrez une adresse pour générer un Property ID', null);
+</script>
+</body>
+</html>
