@@ -24,6 +24,10 @@ netCDF4
 # --- RAG (prochaine etape) ---
 chromadb
 
+# --- Agent recommandations (RAG travaux, cf. app/recommandations/) ---
+mistralai>=1.5.0
+numpy>=1.26.0
+
 # --- Divers ---
 python-dotenv
 sqlalchemy

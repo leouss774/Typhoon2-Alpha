@@ -53,13 +53,19 @@
   #file-row input[type=file] { font-size: 11px; color: #9fb7d6; width: 100%; }
 
   #info-panel {
-    top: 16px; right: 16px; width: 300px; display: none;
+    top: 16px; right: 16px; width: 320px; max-height: 80vh; overflow-y: auto; display: none;
   }
   #info-panel h3.zone-title { font-size: 16px; text-transform: capitalize; color: #fff; font-family: var(--font-body); font-weight: 700; text-transform: capitalize; margin-bottom: 6px; }
   #info-panel .badge { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; margin-bottom: 10px; color: #04070c; }
   #info-panel p { font-size: 13px; line-height: 1.5; color: #b8c9df; margin: 6px 0; }
+  #info-panel .reco-count { font-size: 11px; color: #6c85a8; text-transform: uppercase; letter-spacing: 0.06em; margin: 10px 0 4px; border-top: 1px solid rgba(93,178,255,0.2); padding-top: 8px; }
   #info-panel .reco { background: rgba(93,178,255,0.08); border: 1px solid rgba(93,178,255,0.2); border-radius: 8px; padding: 8px 10px; margin-top: 6px; font-size: 12px; }
   #info-panel .reco b { color: #fff; }
+  #info-panel .reco .reco-type { display: inline-block; font-size: 9px; text-transform: uppercase; letter-spacing: 0.04em; color: #5fb2ff; background: rgba(93,178,255,0.12); border-radius: 4px; padding: 1px 5px; margin-bottom: 4px; }
+  #info-panel .reco .reco-meta { color: #9fb7d6; margin-top: 4px; }
+  #info-panel .reco .reco-aide { color: #ffcf9e; margin-top: 4px; }
+  #info-panel .reco .reco-sources { color: #6c85a8; font-size: 10px; margin-top: 5px; line-height: 1.4; }
+  #info-panel .reco-empty { color: #6c85a8; font-size: 12px; font-style: italic; margin-top: 6px; }
 
   #demo-panel { bottom: 16px; left: 16px; width: 340px; max-height: 46vh; overflow-y: auto; }
   #demo-panel .zone-slider { margin-bottom: 10px; }
@@ -792,10 +798,57 @@ function showZonePanel(zoneName) {
   document.getElementById('info-justif').textContent = data.justification;
   const recosDiv = document.getElementById('info-recos');
   recosDiv.innerHTML = '';
-  (data.recommandations || []).forEach(r => {
+  const recos = data.recommandations || [];
+
+  const countLabel = document.createElement('div');
+  countLabel.className = 'reco-count';
+  countLabel.textContent = recos.length
+    ? `Recommandations de travaux (${recos.length})`
+    : 'Recommandations de travaux';
+  recosDiv.appendChild(countLabel);
+
+  if (!recos.length) {
+    const empty = document.createElement('div');
+    empty.className = 'reco-empty';
+    empty.textContent = 'Aucune recommandation sourcée pour cette zone (risque faible, ou aucune fiche pertinente trouvée).';
+    recosDiv.appendChild(empty);
+    return;
+  }
+
+  recos.forEach(r => {
     const div = document.createElement('div');
     div.className = 'reco';
-    div.innerHTML = `<b>${r.travaux}</b><br/>${r.cout_estime} · gain résilience +${r.gain_resilience}`;
+
+    if (r.mesure !== undefined) {
+      // Schéma réel produit par l'agent recommandations (cf.
+      // backend/app/recommandations/service.py) : mesure/type/cout_estime
+      // (objet)/aide (objet)/sources[].
+      let html = '';
+      if (r.type) html += `<span class="reco-type">${r.type.replace(/_/g, ' ')}</span><br/>`;
+      html += `<b>${r.mesure || '—'}</b>`;
+
+      const cout = r.cout_estime;
+      if (cout && (cout.montant_min != null || cout.montant_max != null)) {
+        const min = cout.montant_min, max = cout.montant_max, dev = cout.devise || '€';
+        const range = (min != null && max != null && min !== max) ? `${min}–${max}` : (min ?? max);
+        html += `<div class="reco-meta">💶 ${range} ${dev}${cout.unite ? ' ' + cout.unite : ''}</div>`;
+      }
+
+      if (r.aide && (r.aide.dispositif || r.aide.conditions)) {
+        html += `<div class="reco-aide">🏛️ ${r.aide.dispositif || 'Aide potentielle'}`
+          + (r.aide.statut ? ` (${r.aide.statut.replace(/_/g, ' ')})` : '') + `</div>`;
+      }
+
+      if (Array.isArray(r.sources) && r.sources.length) {
+        const srcTxt = r.sources.map(s => s.source_id || s.fiche_id).filter(Boolean).join(', ');
+        html += `<div class="reco-sources">Sources : ${srcTxt || '—'}</div>`;
+      }
+      div.innerHTML = html;
+    } else {
+      // Schéma du jeu de données de démo (DEFAULT_DATA plus bas dans ce
+      // fichier) : travaux/cout_estime (chaîne)/gain_resilience.
+      div.innerHTML = `<b>${r.travaux}</b><br/>${r.cout_estime} · gain résilience +${r.gain_resilience}`;
+    }
     recosDiv.appendChild(div);
   });
 }

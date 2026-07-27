@@ -1,0 +1,213 @@
+{
+  "adresse": "12 rue des Lilas, 33000 Bordeaux",
+  "bien": {
+    "type": "maison individuelle",
+    "annee_construction": 1975,
+    "materiaux": {
+      "murs": "parpaing",
+      "toiture": "tuiles"
+    },
+    "coordonnees": {
+      "lat": 44.8378,
+      "lon": -0.5792
+    }
+  },
+  "zones": [
+    {
+      "zone": "fondations",
+      "risques": [
+        "retrait_gonflement_argiles"
+      ],
+      "recommandations": [
+        {
+          "mesure": "Vérifier l’état des structures portantes en béton et remédier aux éventuelles infiltrations ou stagnations d’eau. Réparer le béton dans les zones dégradées.",
+          "type": "recommandation_source",
+          "cout_estime": null,
+          "aide": {
+            "dispositif": null,
+            "conditions": null,
+            "statut": "potential_eligibility_only"
+          },
+          "sources": [
+            {
+              "fiche_id": "REF-0017",
+              "source_id": "S01",
+              "extrait_exact": "2.2 ÉLÉMENTS DE STRUCTURE EN BÉTON Vériﬁer l’état des structures portantes et remédier aux éventuelles inﬁltrations ou stagnations d’eau."
+            }
+          ]
+        },
+        {
+          "mesure": "Vérifier l’état des structures portantes en maçonnerie et remédier aux éventuelles infiltrations ou stagnations d’eau.",
+          "type": "recommandation_source",
+          "cout_estime": null,
+          "aide": {
+            "dispositif": null,
+            "conditions": null,
+            "statut": "potential_eligibility_only"
+          },
+          "sources": [
+            {
+              "fiche_id": "REF-0016",
+              "source_id": "S01",
+              "extrait_exact": "2.1 ÉLÉMENTS DE STRUCTURE EN MAÇONNERIE Vériﬁer l’état des structures portantes et remédier aux éventuelles inﬁltrations ou stagnations d’eau."
+            }
+          ]
+        },
+        {
+          "mesure": "Faire appel à un professionnel (architecte, maître d'œuvre) pour analyser l'architecture du bâtiment et concevoir le projet, indépendamment de sa complexité.",
+          "type": "recommandation_source",
+          "cout_estime": null,
+          "aide": {
+            "dispositif": null,
+            "conditions": null,
+            "statut": "potential_eligibility_only"
+          },
+          "sources": [
+            {
+              "fiche_id": "REF-0374",
+              "source_id": "S09",
+              "extrait_exact": "Indépendamment du degré de complexité de votre projet, faire appel à un professionnel (architecte, maître d’œuvre) pour analyser l’architecture du bâtiment et vous aider à concevoir votre projet."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "zone": "toiture",
+      "risques": [
+        "tempete",
+        "grele"
+      ],
+      "recommandations": [
+        {
+          "mesure": "Vérification régulière des soudures, joints, couvre-joints et fixations de la toiture.",
+          "type": "recommandation_source",
+          "cout_estime": null,
+          "aide": null,
+          "sources": [
+            {
+              "fiche_id": "REF-0069",
+              "source_id": "S01",
+              "extrait_exact": "Vériﬁcation des soudures, joints, couvre-joints et ﬁxations."
+            }
+          ]
+        },
+        {
+          "mesure": "Vérifier les fixations, principalement aux rives.",
+          "type": "recommandation_source",
+          "cout_estime": null,
+          "aide": null,
+          "sources": [
+            {
+              "fiche_id": "REF-0106",
+              "source_id": "S01",
+              "extrait_exact": "Vérification des fixations, principalement aux rives."
+            }
+          ]
+        },
+        {
+          "mesure": "Remplacer et remettre en place les éléments manquants, endommagés ou déplacés.",
+          "type": "recommandation_source",
+          "cout_estime": null,
+          "aide": null,
+          "sources": [
+            {
+              "fiche_id": "REF-0104",
+              "source_id": "S01",
+              "extrait_exact": "Remplacement et remise en place des éléments manquants, endommagés ou déplacés."
+            }
+          ]
+        },
+        {
+          "mesure": "Vérification de l’état du lestage et remise en place si nécessaire pour éviter le soulèvement des panneaux d’isolation thermique par le vent.",
+          "type": "recommandation_source",
+          "cout_estime": null,
+          "aide": null,
+          "sources": [
+            {
+              "fiche_id": "REF-0072",
+              "source_id": "S01",
+              "extrait_exact": "Après une période de vent violent, on procédera à une vériﬁcation de l’état du lestage et à sa remise en place si nécessaire."
+            }
+          ]
+        },
+        {
+          "mesure": "Isoler le toit en priorité pour réduire les déperditions de chaleur (25 à 30 % des pertes). Assurer une isolation continue pour éviter les ponts thermiques et les risques de condensation.",
+          "type": "recommandation_source",
+          "cout_estime": null,
+          "aide": {
+            "dispositif": null,
+            "conditions": null,
+            "statut": "potential_eligibility_only"
+          },
+          "sources": [
+            {
+              "fiche_id": "REF-0600",
+              "source_id": "S11",
+              "extrait_exact": "Le toit doit être isolé en priorité car c’est l’action la plus rentable ! Perte de chaleur d’une maison non isolée d’avant 1974 [...] 25 à 30 %"
+            }
+          ]
+        },
+        {
+          "mesure": "Contrôle des avaloirs, tuyaux de descente, gargouilles, solins et profils de rive au moins une fois par an (par exemple, après l’hiver).",
+          "type": "recommandation_source",
+          "cout_estime": null,
+          "aide": {
+            "dispositif": null,
+            "conditions": null,
+            "statut": "potential_eligibility_only"
+          },
+          "sources": [
+            {
+              "fiche_id": "REF-0076",
+              "source_id": "S01",
+              "extrait_exact": "Au moins une fois par an (par exemple, après l’hiver): contrôle des avaloirs, des tuyaux de descente, des gargouilles, des solins, des proﬁlés de rive, etc."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "zone": "facade",
+      "risques": [
+        "canicule"
+      ],
+      "recommandations": [
+        {
+          "mesure": "Assurer l’étanchéité à l’air de l’enveloppe du bâtiment tout en maintenant une ventilation correcte du logement.",
+          "type": "recommandation_source",
+          "cout_estime": null,
+          "aide": {
+            "dispositif": null,
+            "conditions": null,
+            "statut": "potential_eligibility_only"
+          },
+          "sources": [
+            {
+              "fiche_id": "REF-0471",
+              "source_id": "S09",
+              "extrait_exact": "• Assurez l’étanchéité à l’air de l’enveloppe tout en maintenant une ventilation correcte du logement"
+            }
+          ]
+        },
+        {
+          "mesure": "Renforcer l'isolation des murs à 1 m².K/W et prévoir une isolation périphérique pour compenser l'absence d'isolation du plancher bas.",
+          "type": "recommandation_source",
+          "cout_estime": null,
+          "aide": {
+            "dispositif": null,
+            "conditions": null,
+            "statut": "potential_eligibility_only"
+          },
+          "sources": [
+            {
+              "fiche_id": "REF-0809",
+              "source_id": "S12",
+              "extrait_exact": "Une isolation périphérique est préconisée, ainsi qu’un renforcement de l’isolation des murs de 1 m2.K/W"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
