@@ -12,6 +12,7 @@ venv/
 
 # Secrets
 .env
+recommandation_travaux-main/.env
 *.env
 
 # Node
