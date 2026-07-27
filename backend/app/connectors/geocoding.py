@@ -32,6 +32,41 @@ class GeocodingError(RuntimeError):
     pass
 
 
+async def reverse_geocode(client: httpx.AsyncClient, lat: float, lon: float) -> GeocodeResult:
+    """Reverse geocode des coordonnees -> code INSEE + infos commune.
+
+    Utilise l'API reverse de la Geoplateforme IGN :
+    https://data.geopf.fr/geocodage/reverse?lon={lon}&lat={lat}
+
+    Leve GeocodingError si les coordonnees ne peuvent pas etre resolues.
+    """
+    response = await client.get(
+        # URL reverse dérivée de l'URL de geocodage direct
+        settings.geocoding_url.replace("/search", "/reverse"),
+        params={"lon": lon, "lat": lat},
+    )
+    response.raise_for_status()
+    data = response.json()
+
+    features = data.get("features") or []
+    if not features:
+        raise GeocodingError(f"Aucun resultat de reverse geocodage pour {lat},{lon}")
+
+    feature = features[0]
+    props = feature.get("properties", {})
+    citycode = props.get("citycode") or ""
+
+    return GeocodeResult(
+        label=props.get("label", f"{lat:.5f},{lon:.5f}"),
+        citycode=citycode,
+        postcode=props.get("postcode", ""),
+        city=props.get("city", ""),
+        score=props.get("score", 0.5),
+        lat=lat,
+        lon=lon,
+    )
+
+
 async def geocode_address(client: httpx.AsyncClient, address: str) -> GeocodeResult:
     """Geocode une adresse texte en coordonnees + code INSEE.
 

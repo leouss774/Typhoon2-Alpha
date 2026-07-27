@@ -44,8 +44,10 @@ class Settings(BaseSettings):
     open_meteo_climate_url: str = "https://climate-api.open-meteo.com/v1/climate"
 
     # Copernicus Climate Data Store (compte + jeton requis, voir le guide
-    # et le docstring de app/connectors/copernicus.py). Chemin absolu ancre
-    # sur le projet (donc sous D:) plutot que relatif au repertoire courant.
+    # et le docstring de app/connectors/copernicus.py). Desactive par defaut
+    # car le premier lancement declenche un telechargement multi-gigaoctets.
+    # Activer avec COPERNICUS_ENABLED=true dans .env.
+    copernicus_enabled: bool = False
     copernicus_cache_dir: str = str(BASE_DIR / "data" / "lookup" / "copernicus")
 
     # Lookup local DVF - meme logique de chemin absolu.

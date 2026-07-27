@@ -36,7 +36,7 @@ from app.connectors import dvf_lookup
 from app.connectors import georisques as georisques_connector
 from app.connectors import ign_altitude
 from app.connectors import open_meteo
-from app.connectors.geocoding import geocode_address
+from app.connectors.geocoding import geocode_address, reverse_geocode, GeocodeResult
 from app.core.config import settings
 from app.core.paca import department_code_from_citycode, department_name, is_in_paca
 
@@ -50,13 +50,91 @@ async def _safe_call(source_name: str, coro, erreurs: list[dict]):
         return None
 
 
+_COORDS_THRESHOLD = 0.5
+
+
+def _est_coordonnees(texte: str) -> tuple[float, float] | None:
+    """Detecte si une chaine est au format 'lat,lon' et retourne (lat, lon)."""
+    try:
+        parts = texte.split(",")
+        if len(parts) == 2:
+            lat = float(parts[0].strip())
+            lon = float(parts[1].strip())
+            if -90 <= lat <= 90 and -180 <= lon <= 180:
+                return (lat, lon)
+    except (ValueError, TypeError):
+        pass
+    return None
+
+
+async def _geocode_with_fallback(
+    client: httpx.AsyncClient,
+    address: str,
+    erreurs: list[dict],
+) -> GeocodeResult | None:
+    """Tente le geocodage direct ; si c'est des coordonnees, tente le reverse.
+    En dernier recours, construit un resultat synthetique pour les coordonnees.
+    """
+    coords = _est_coordonnees(address)
+
+    # Si l'adresse n'est pas des coordonnées, on tente le geocodage normal
+    if coords is None:
+        return await geocode_address(client, address)
+
+    # C'est des coordonnées : tente le geocodage direct d'abord
+    try:
+        geocode = await geocode_address(client, address)
+        if geocode and geocode.score >= _COORDS_THRESHOLD:
+            return geocode
+    except Exception as exc:
+        erreurs.append({"source": "geocode_direct", "erreur": str(exc)})
+
+    # Fallback : reverse geocode des coordonnées
+    if coords:
+        try:
+            geocode = await reverse_geocode(client, coords[0], coords[1])
+            if geocode:
+                return geocode
+        except Exception as exc:
+            erreurs.append({"source": "reverse_geocode", "erreur": str(exc)})
+
+        # Dernier recours : géocodage synthétique (les APIs externes peuvent
+        # être bloquées par la politique réseau du sandbox)
+        lat, lon = coords
+        erreurs.append({
+            "source": "geocode_synthetique",
+            "erreur": f"Géocodage synthétique pour coordonnées {lat},{lon}"
+        })
+        return GeocodeResult(
+            label=f"{lat:.5f},{lon:.5f}",
+            citycode="",  # citycode inconnu — DVF/Georisques communal indisponibles
+            postcode="",
+            city="",
+            score=0.5,
+            lat=lat,
+            lon=lon,
+        )
+
+    return None
+
+
 async def collect(address: str) -> dict:
-    """Point d'entree principal : lance la collecte complete pour une adresse."""
+    """Point d'entree principal : lance la collecte complete pour une adresse.
+
+    Si l'adresse ressemble a des coordonnees ("lat,lon"), tente d'abord
+    le geocodage normal ; en cas d'echec, utilise le reverse geocode.
+    """
     erreurs: list[dict] = []
 
     async with httpx.AsyncClient(timeout=settings.http_timeout_seconds) as client:
         # Etape 1 - geocodage BAN (bloquant, requis par Georisques/IGN/Copernicus)
-        geocode = await geocode_address(client, address)
+        geocode = await _geocode_with_fallback(client, address, erreurs)
+
+        if geocode is None:
+            raise RuntimeError(
+                f"Impossible de geocoder l'adresse : {address!r} "
+                "(geocodage direct et reverse echoues)"
+            )
 
         department_code = department_code_from_citycode(geocode.citycode)
 
@@ -80,15 +158,23 @@ async def collect(address: str) -> dict:
             erreurs,
         )
 
-        # Copernicus (CDS) et DVF sont des lectures potentiellement longues
-        # (premier telechargement CDS) ou synchrones (fichier local) : on
-        # les passe par asyncio.to_thread pour ne pas bloquer la boucle
-        # asyncio tout en restant dans le meme fan-out.
-        copernicus_task = _safe_call(
-            "copernicus",
-            asyncio.to_thread(copernicus.read_indicators_at_point, geocode.lat, geocode.lon),
-            erreurs,
-        )
+        # Copernicus (CDS) : desactive par defaut car le premier lancement
+        # declenche un telechargement multi-gigaoctets via l'API CDS.
+        # Activer avec COPERNICUS_ENABLED=true dans .env, puis telecharger
+        # les donnees une fois avec le script dedie.
+        if settings.copernicus_enabled:
+            copernicus_task = _safe_call(
+                "copernicus",
+                asyncio.to_thread(copernicus.read_indicators_at_point, geocode.lat, geocode.lon),
+                erreurs,
+            )
+        else:
+            # Tâche factice : retourne None sans rien faire, pour garder
+            # l'ordre d'unpacking constant sans condition fragile.
+            copernicus_task = _safe_call("copernicus", asyncio.sleep(0, result=None), erreurs)
+
+        # DVF est une lecture synchrone (fichier local) : on le passe par
+        # asyncio.to_thread pour ne pas bloquer la boucle asyncio.
         dvf_task = _safe_call(
             "dvf_local",
             asyncio.to_thread(dvf_lookup.lookup_dvf, geocode.citycode),
