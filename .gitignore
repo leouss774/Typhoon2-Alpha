@@ -4,6 +4,7 @@ backend/data/lookup/copernicus/
 backend/out/
 backend/recommendation_travaux-main/data
 .tmp/
+.pip-cache
 # Python
 __pycache__/
 *.pyc
@@ -12,7 +13,7 @@ venv/
 
 # Secrets
 .env
-recommandation_travaux-main/.env
+backend/.env
 *.env
 
 # Node
@@ -21,11 +22,3 @@ node_modules/
 # OS / éditeurs
 .DS_Store
 Thumbs.db
-
-__pycache__/
-*.pyc
-
-backend/.env
-
-__pycache__/
-*.pyc

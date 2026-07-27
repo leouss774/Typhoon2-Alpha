@@ -29,15 +29,14 @@
   #scene-container { width: 100vw; height: 100vh; display: block; cursor: grab; }
   #scene-container:active { cursor: grabbing; }
 
-  /* ---- Panneaux du jumeau numérique (écran 3) ---- */
+  /* ---- UI de test (Personne 3 remplacera tout ça par la vraie UI) ---- */
   #toggle-panel {
     position: absolute; top: 20px; left: 20px;
     background: rgba(255, 255, 255, 0.96); border: 1px solid #E7DED6; border-radius: 10px;
     padding: 14px 18px; color: #3E4850; z-index: 10; backdrop-filter: blur(8px);
-    box-shadow: 0 0 20px rgba(255, 107, 74, 0.15); width: 280px;
+    box-shadow: 0 0 20px rgba(255, 107, 74, 0.15);
   }
-  #toggle-panel h3 { margin: 0 0 8px 0; font-size: 12px; font-weight: 600; color: #FF6B4A; text-transform: uppercase; letter-spacing: 0.08em; }
-  #toggle-panel .addr-line { font-size: 12.5px; color: #7C8791; margin: 0 0 10px 0; line-height: 1.4; }
+  #toggle-panel h3 { margin: 0 0 10px 0; font-size: 12px; font-weight: 600; color: #FF6B4A; text-transform: uppercase; letter-spacing: 0.08em; }
   #toggle-buttons button {
     background: rgba(250, 246, 242, 0.8); border: 1px solid #E7DED6; color: #3E4850; padding: 8px 16px;
     border-radius: 6px; cursor: pointer; font-size: 13px; margin-right: 6px; transition: all .15s;
@@ -45,34 +44,17 @@
   #toggle-buttons button.active { background: #FF6B4A; border-color: #FF6B4A; color: #FFFFFF; font-weight: 700; }
   #global-score { margin-top: 10px; font-size: 12px; color: #7C8791; }
   #global-score strong { color: #1E2A33; font-size: 22px; text-shadow: 0 0 12px rgba(255,107,74,0.6); }
-  #temp-2050 { display: none; margin-top: 10px; padding-top: 10px; border-top: 1px solid #E7DED6; font-size: 12px; color: #7C8791; line-height: 1.5; }
-  #temp-2050.visible { display: block; }
-  #temp-2050 strong { color: #DC4B39; font-size: 15px; }
-  #temp-2050 .src { color: #A7ADB2; font-size: 10.5px; }
 
   #info-panel {
-    position: absolute; top: 20px; right: 20px; width: 320px; max-height: 78vh; overflow-y: auto;
+    position: absolute; top: 20px; right: 20px; width: 300px;
     background: rgba(255, 255, 255, 0.97); border: 1px solid #E7DED6; border-radius: 10px;
     padding: 18px; color: #3E4850; z-index: 10; display: none; backdrop-filter: blur(8px);
     box-shadow: 0 0 20px rgba(255, 107, 74, 0.15);
   }
-  #info-panel::-webkit-scrollbar { width: 5px; }
-  #info-panel::-webkit-scrollbar-thumb { background: #FFC9B3; border-radius: 999px; }
   #info-panel h3 { margin: 0 0 4px 0; font-size: 16px; text-transform: capitalize; color: #1E2A33; }
-  #info-panel .badge { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; margin-bottom: 10px; color: #FFFFFF; }
-  #info-panel p { font-size: 13px; line-height: 1.5; color: #4B5760; margin: 6px 0; }
-  #info-panel p#info-alea { color: #1E2A33; }
-  #info-panel .reco { background: rgba(250, 246, 242, 0.8); border: 1px solid #E7DED6; border-radius: 8px; padding: 10px 12px; margin-top: 8px; font-size: 12px; }
-  #info-panel .reco b { color: #1E2A33; }
-  #info-panel .reco-count { font-size: 11px; color: #8B959D; text-transform: uppercase; letter-spacing: 0.06em; margin: 12px 0 6px; border-top: 1px solid #E7DED6; padding-top: 10px; font-weight: 700; }
-  #info-panel .reco-type { display: inline-block; font-size: 9px; text-transform: uppercase; letter-spacing: 0.04em; color: #FF6B4A; background: #FFE4DA; border-radius: 4px; padding: 1px 6px; margin-bottom: 5px; font-weight: 700; }
-  #info-panel .reco-explication { color: #4B5760; margin-top: 5px; line-height: 1.5; font-size: 12px; }
-  #info-panel .reco-meta { color: #3E4850; margin-top: 8px; line-height: 1.4; }
-  #info-panel .reco-meta-sub { color: #8B959D; font-size: 11px; margin-top: 2px; }
-  #info-panel .reco-aide { color: #B96A18; margin-top: 8px; background: #FBEED9; border-radius: 6px; padding: 6px 8px; }
-  #info-panel .reco-sources { color: #A7ADB2; font-size: 10px; margin-top: 8px; line-height: 1.4; border-top: 1px solid #E7DED6; padding-top: 6px; }
-  #info-panel .reco-empty { color: #A7ADB2; font-size: 12px; font-style: italic; margin-top: 6px; }
-
+  #info-panel .badge { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; margin-bottom: 10px; }
+  #info-panel p { font-size: 13px; line-height: 1.5; color: #8B959D; margin: 6px 0; }
+  #info-panel .reco { background: rgba(250, 246, 242, 0.8); border: 1px solid #E7DED6; border-radius: 8px; padding: 8px 10px; margin-top: 6px; font-size: 12px; }
   #hint { position: absolute; bottom: 16px; left: 20px; color: #A7ADB2; font-size: 12px; z-index: 10; }
 
   /* ==================== ECRAN 0 : SITE VITRINE / ACCUEIL ==================== */
@@ -310,7 +292,7 @@
   }
   .mode-kicker-b { background: rgba(93,178,255,0.16); color: #8fd0ff; border: 1px solid rgba(93,178,255,0.4); }
 
-  .mode-card.mode-a { background: #1E2A33 url('photo_famille.jpg') center/cover no-repeat; }
+  .mode-card.mode-a { background: #1E2A33 url('photo-famille.jpg') center/cover no-repeat; }
   .mode-card.mode-a::before {
     content: ''; position: absolute; inset: 0; z-index: 1;
     background: linear-gradient(180deg, rgba(30,42,51,0.15) 0%, rgba(30,42,51,0.55) 55%, rgba(20,15,12,0.88) 100%);
@@ -394,9 +376,15 @@
     padding: 36px 40px 30px; box-shadow: 0 0 40px rgba(255, 107, 74, 0.15);
     backdrop-filter: blur(8px);
   }
-  #form-card form { max-height: 66vh; overflow-y: auto; padding-right: 6px; margin-right: -6px; }
+  #form-card form { max-height: 62vh; overflow-y: auto; padding-right: 6px; margin-right: -6px; }
   #form-card form::-webkit-scrollbar { width: 6px; }
   #form-card form::-webkit-scrollbar-thumb { background: #FFC9B3; border-radius: 999px; }
+  .section-title {
+    grid-column: 1 / -1; color: #FF6B4A; font-size: 11.5px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.1em; margin: 18px 0 -2px 0;
+    padding-top: 14px; border-top: 1px solid rgba(231, 222, 214, 0.5);
+  }
+  .form-grid > .section-title:first-child { margin-top: 0; padding-top: 0; border-top: none; }
   #form-card .eyebrow {
     color: #FF6B4A; font-size: 12px; font-weight: 700; text-transform: uppercase;
     letter-spacing: 0.12em; margin-bottom: 8px;
@@ -422,28 +410,15 @@
   .form-field input::placeholder { color: #B7BEC3; }
   .form-grid-simple { grid-template-columns: 1fr; }
   .field-hint { color: #A7ADB2; font-size: 11.5px; }
+  #form-card form.form-grid-simple-wrap { max-height: none; }
   #form-submit {
-    margin-top: 20px; width: 100%; background: #FF6B4A; border: none; color: #FFFFFF;
+    margin-top: 28px; width: 100%; background: #FF6B4A; border: none; color: #FFFFFF;
     font-weight: 700; font-size: 14.5px; padding: 14px 20px; border-radius: 10px;
     cursor: pointer; letter-spacing: 0.02em; transition: background .15s, transform .1s;
   }
   #form-submit:hover { background: #FF8563; }
   #form-submit:active { transform: scale(0.99); }
   #form-disclaimer { margin-top: 14px; color: #A7ADB2; font-size: 11px; text-align: center; }
-
-  /* ---- Options avancées (dev) sur l'écran formulaire ---- */
-  #form-advanced { margin-top: 16px; }
-  #form-advanced summary { cursor: pointer; color: #A7ADB2; font-size: 11.5px; font-weight: 600; list-style: none; user-select: none; }
-  #form-advanced summary::-webkit-details-marker { display: none; }
-  #form-advanced summary::before { content: '⚙ '; }
-  #form-advanced[open] summary { color: #7C8791; margin-bottom: 10px; }
-  #form-advanced-body { display: flex; flex-direction: column; gap: 10px; padding: 12px; margin-top: 4px; background: rgba(250,246,242,0.6); border: 1px dashed #E7DED6; border-radius: 10px; }
-  #form-advanced-body .adv-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-  #form-advanced-body label { color: #8B959D; font-size: 11px; font-weight: 600; white-space: nowrap; text-transform: none; letter-spacing: 0; }
-  #form-advanced-body input[type=text] { flex: 1; min-width: 160px; font-size: 12px; padding: 6px 9px; background: #FFFFFF; border: 1px solid #E7DED6; border-radius: 6px; color: #3E4850; }
-  #form-advanced-body input[type=file] { font-size: 11px; color: #8B959D; flex: 1; min-width: 160px; }
-  #form-advanced-body .btn-ghost { padding: 7px 12px; font-size: 12px; }
-  #form-advanced-body .adv-hint { color: #A7ADB2; font-size: 11px; margin: 0; }
 
   /* ==================== ECRAN 2 : TRAITEMENT / ORCHESTRATION ==================== */
   #loading-screen {
@@ -485,9 +460,6 @@
     height: 100%; width: 0%; background: linear-gradient(90deg, #FFD6C2, #FF6B4A);
     border-radius: 999px; transition: width .4s ease;
   }
-  #loading-error { display: none; margin-top: 24px; background: #FDE7E2; border: 1px solid #DC4B39; border-radius: 10px; padding: 14px 16px; color: #8A2E22; font-size: 12.5px; line-height: 1.5; }
-  #loading-error.show { display: block; }
-  #loading-error button { margin-top: 10px; }
 
   #app-ui { opacity: 0; transition: opacity .8s ease; }
   #app-ui.visible { opacity: 1; }
@@ -579,12 +551,11 @@
 
   #brand-watermark {
     position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
-    z-index: 10; display: flex; align-items: center; gap: 8px; cursor: pointer;
+    z-index: 10; display: flex; align-items: center; gap: 8px;
     color: #3E4850; font-size: 13px; font-weight: 800; letter-spacing: 0.06em;
     background: rgba(255, 255, 255, 0.7); border: 1px solid #E7DED6; border-radius: 999px;
-    padding: 7px 16px 7px 10px; backdrop-filter: blur(8px); transition: border-color .15s;
+    padding: 7px 16px 7px 10px; backdrop-filter: blur(8px);
   }
-  #brand-watermark:hover { border-color: #FF6B4A; color: #FF6B4A; }
   #brand-watermark .mark {
     width: 22px; height: 22px; border-radius: 6px;
     background: linear-gradient(135deg, #FF9269, #FF6B4A);
@@ -719,7 +690,7 @@
       </div>
     </div>
     <nav id="home-nav">
-      <a href="#home-features">Nos solutions</a>
+      <a href="#solutions">Nos solutions</a>
       <a href="#modes">Comment ça marche</a>
       <a href="#">Nous contacter</a>
     </nav>
@@ -812,6 +783,7 @@
     </div>
   </section>
 
+
   <section id="home-features">
     <div class="section-eyebrow">Comment ça marche</div>
     <h2>Le moteur derrière les deux modes</h2>
@@ -871,7 +843,7 @@
   </section>
 
   <footer id="home-footer">
-    <div class="footer-note">© 2026 Typhoon — Diagnostics et devis indicatifs non contractuels.</div>
+    <div class="footer-note">© 2026 Typhoon — Démo Summercamp Talan. Diagnostics et devis indicatifs non contractuels.</div>
     <div class="footer-links">
       <a href="#">Mentions légales</a>
       <a href="#">Confidentialité</a>
@@ -880,7 +852,7 @@
   </footer>
 </div>
 
-<!-- ==================== MODALE EXPLORATION DE ZONE (front seul — backend à venir) ==================== -->
+<!-- ==================== MODALE EXPLORATION DE ZONE ==================== -->
 <div id="zone-overlay" aria-hidden="true">
   <div id="zone-modal" role="dialog" aria-modal="true" aria-labelledby="zone-modal-title">
     <button id="zone-close-btn" type="button" aria-label="Fermer la fenêtre">✕</button>
@@ -888,7 +860,7 @@
     <section id="zone-explorer" aria-label="Explorer une zone">
       <div class="section-eyebrow">Mode prospection</div>
       <h2 id="zone-modal-title">Explorez un secteur entier en un coup d'œil</h2>
-      <p class="section-lead">Recherchez une ville, un code postal ou un quartier : Typhoon superpose instantanément le score de résilience climatique de chaque bien et parcelle sur la carte, pour repérer en un regard les zones à privilégier. (Aperçu front — le calcul en direct par ville/zone arrive prochainement.)</p>
+      <p class="section-lead">Recherchez une ville, un code postal ou un quartier : Typhoon superpose instantanément le score de résilience climatique de chaque bien et parcelle sur la carte, pour repérer en un regard les zones à privilégier.</p>
 
       <form id="zone-search-form">
         <div class="zone-form-field">
@@ -910,14 +882,28 @@
             </div>
           </div>
           <div id="zone-map-viewport">
-            <img id="zone-map-img" src="carte-paris.jpg" alt="Carte de Paris" />
-            <div id="zone-map-overlay" aria-hidden="true">
-              <div class="risk-zone low" style="left:6%; top:8%; width:34%; height:46%;"></div>
-              <div class="risk-zone mod" style="left:34%; top:6%; width:30%; height:40%;"></div>
-              <div class="risk-zone high" style="left:58%; top:14%; width:26%; height:38%;"></div>
-              <div class="risk-zone mod" style="left:24%; top:48%; width:34%; height:44%;"></div>
-              <div class="risk-zone low" style="left:54%; top:50%; width:34%; height:42%;"></div>
-            </div>
+  <img id="zone-map-img" src="carte-paris.jpg" alt="Carte de Paris" />
+  
+  <div id="zone-map-overlay" aria-hidden="true">
+    <div class="risk-zone low" style="left:6%; top:8%; width:34%; height:46%;"></div>
+    <div class="risk-zone mod" style="left:34%; top:6%; width:30%; height:40%;"></div>
+    <div class="risk-zone high" style="left:58%; top:14%; width:26%; height:38%;"></div>
+    <div class="risk-zone mod" style="left:24%; top:48%; width:34%; height:44%;"></div>
+    <div class="risk-zone low" style="left:54%; top:50%; width:34%; height:42%;"></div>
+  </div>
+
+  <button class="zone-pin" style="left:31%; top:26%;" aria-label="Bien à risque faible"></button>
+  <button class="zone-pin risk-b" style="left:47%; top:22%;" aria-label="Bien à risque modéré"></button>
+  <button class="zone-pin risk-c" style="left:66%; top:30%;" aria-label="Bien à risque élevé"></button>
+  <button class="zone-pin" style="left:64%; top:66%;" aria-label="Bien à risque faible"></button>
+  <button class="zone-pin risk-b" style="left:38%; top:70%;" aria-label="Bien à risque modéré"></button>
+  
+  <div class="zone-popup">
+    <div class="zp-head"><span>12 rue de Turenne, 75003</span><span class="zp-badge risk-mod">Modéré</span></div>
+    <div class="zp-score">64<span>/100</span></div>
+    <div class="zp-detail">Aléa dominant : retrait-gonflement des argiles</div>
+  </div>
+</div
             <button class="zone-pin" style="left:31%; top:26%;" aria-label="Bien à risque faible"></button>
             <button class="zone-pin risk-b" style="left:47%; top:22%;" aria-label="Bien à risque modéré"></button>
             <button class="zone-pin risk-c" style="left:66%; top:30%;" aria-label="Bien à risque élevé"></button>
@@ -940,7 +926,8 @@
   </div>
 </div>
 
-<!-- ==================== ECRAN 1 : FORMULAIRE (diagnostic du bien) ==================== -->
+
+<!-- ==================== ECRAN 1 : FORMULAIRE ==================== -->
 <div id="form-screen">
   <div id="form-card">
     <div class="typhoon-logo">
@@ -960,26 +947,8 @@
           <span class="field-hint">Numéro, voie, code postal, ville</span>
         </div>
       </div>
-
-      <details id="form-advanced">
-        <summary>Options avancées (dev)</summary>
-        <div id="form-advanced-body">
-          <div class="adv-row">
-            <label for="api-base-input">API</label>
-            <input id="api-base-input" type="text" value="http://localhost:8000" autocomplete="off">
-          </div>
-          <p class="adv-hint">Charger directement un diagnostic déjà généré (.json), sans appeler le serveur :</p>
-          <div class="adv-row">
-            <input id="json-input" type="file" accept="application/json">
-          </div>
-          <div class="adv-row">
-            <button type="button" class="btn-ghost" id="demo-data-btn">Essayer avec un exemple (sans backend)</button>
-          </div>
-        </div>
-      </details>
-
       <button type="submit" id="form-submit">Lancer le diagnostic climatique</button>
-      <div id="form-disclaimer">Seule l'adresse est nécessaire : structure, toiture, sous-sol et exposition aux risques sont déterminés automatiquement via la BDNB, Géorisques et Copernicus. Diagnostic et recommandations fournis à titre indicatif, non contractuels.</div>
+      <div id="form-disclaimer">Démo — les données saisies ne sont pas transmises. L'adresse suffit : structure, toiture, sous-sol et exposition aux risques sont déterminés automatiquement via la BDNB, Géorisques et Copernicus.</div>
     </form>
   </div>
 </div>
@@ -1001,45 +970,37 @@
       <div class="step" data-step="1"><div class="icon"></div><span>Croisement avec Géorisques (aléas retrait-gonflement, inondation)</span></div>
       <div class="step" data-step="2"><div class="icon"></div><span>Interrogation Copernicus (projections climatiques 2050)</span></div>
       <div class="step" data-step="3"><div class="icon"></div><span>Consultation BDNB (caractéristiques du bâti)</span></div>
-      <div class="step" data-step="4"><div class="icon"></div><span>Fusion des données de risque et calcul des scores</span></div>
+      <div class="step" data-step="4"><div class="icon"></div><span>Fusion des données de risque et du formulaire</span></div>
       <div class="step" data-step="5"><div class="icon"></div><span>Génération des recommandations par l'agent IA</span></div>
       <div class="step" data-step="6"><div class="icon"></div><span>Rendu du jumeau numérique 3D</span></div>
     </div>
     <div id="loading-bar-track"><div id="loading-bar-fill"></div></div>
-    <div id="loading-error">
-      <div id="loading-error-msg"></div>
-      <button type="button" class="btn-ghost" id="loading-retry-btn">← Modifier l'adresse et réessayer</button>
-    </div>
   </div>
 </div>
 
-<!-- ==================== ECRAN 3 : JUMEAU NUMERIQUE 3D (moteur réel) ==================== -->
+<!-- ==================== ECRAN 3 : JUMEAU NUMERIQUE 3D (existant) ==================== -->
 <div id="app-ui">
 <div id="scene-container"></div>
-<div id="loading-msg" style="position:absolute;inset:0;display:none;align-items:center;justify-content:center;color:#FF6B4A;font-size:14px;z-index:20;"></div>
 
 <div id="toggle-panel">
-  <h3>Jumeau numérique — Diagnostic</h3>
-  <div class="addr-line" id="addr-line">—</div>
+  <h3>Projection temporelle</h3>
   <div id="toggle-buttons">
     <button id="btn-2025" class="active">2025</button>
     <button id="btn-2050">2050</button>
   </div>
-  <div id="global-score">Score global : <strong id="score-value">--</strong> / 100</div>
-  <div id="temp-2050">Temp. max projetée 2050 : <strong id="temp-value">—</strong><br/><span class="src" id="temp-source">source —</span></div>
+  <div id="global-score">Score global : <strong id="score-value">--</strong></div>
 </div>
 
 <div id="info-panel">
   <h3 id="info-title">Zone</h3>
   <div class="badge" id="info-badge">Risque</div>
-  <p id="info-alea"></p>
   <p id="info-justif"></p>
   <div id="info-recos"></div>
 </div>
 
 <div id="hint">Glisser = orbiter · Molette = zoom · Clic sur une zone = détails</div>
 
-<div id="brand-watermark" title="Retour à l'accueil">
+<div id="brand-watermark">
   <div class="mark"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5 3.5 9 8 11 4.5-2 8-6 8-11V5z"/><path d="m9 12 2 2 4-4"/></svg></div>
   <span>TYPHOON</span>
 </div>
@@ -1094,7 +1055,7 @@
         <div id="cert-shield"><svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="#1F9D6C" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5 3.5 9 8 11 4.5-2 8-6 8-11V5z"/><path d="m9 12 2 2 4-4"/></svg></div>
         <div id="cert-title">Certification Typhoon</div>
         <h2 id="cert-heading">Bien Climato-Résilient</h2>
-        <p id="cert-property">—</p>
+        <p id="cert-property">8 Allée du Port Maillard, 44000 Nantes</p>
 
         <div id="cert-scores">
           <div class="cert-score-box">
@@ -1123,7 +1084,7 @@
           <button id="cert-back-btn">← Modifier ma sélection</button>
           <button id="cert-download-btn">Télécharger le devis</button>
         </div>
-        <div id="cert-footnote">Typhoon — devis indicatif non contractuel, généré automatiquement par l'agent IA de diagnostic climatique.</div>
+        <div id="cert-footnote">Démo Typhoon · Summercamp Talan — devis indicatif non contractuel, généré automatiquement par l'agent IA de diagnostic climatique.</div>
       </div>
     </div>
   </div>
@@ -1160,7 +1121,7 @@
 </div><!-- /#app-ui -->
 
 <!-- Uniquement le coeur de Three.js. Pas de THREE.OrbitControls (peu fiable
-     sur les CDN) : contrôle caméra personnalisé plus bas. -->
+     sur les CDN) : on utilise notre propre petit contrôle caméra plus bas. -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
 if (typeof THREE === 'undefined') {
@@ -1172,206 +1133,135 @@ if (typeof THREE === 'undefined') {
 </script>
 <script>
 /* =========================================================================
-   TYPHOON — JUMEAU NUMÉRIQUE 3D — moteur réel (diagnostic du bien)
-   Consomme le contrat JSON produit par digital_twin_agent :
-   { adresse, bien, geometry, score_global, zones{7}, projection_2050, climat_2050 }
-   Rendu : effet scan holographique (remplissage translucide + wireframe bleu),
-   couleur des zones = niveau de risque, effets visuels (fissures / montée des
-   eaux / auréoles d'humidité) pilotés par une fonction de mapping pure
-   risque -> paramètres visuels. Cet écran est affiché uniquement une fois
-   qu'un diagnostic (réel ou exemple) a été chargé — voir le script
-   d'orchestration plus bas.
+   JUMEAU NUMÉRIQUE — MAISON 3D (style holographique / blueprint)
+   -------------------------------------------------------------------------
+   CONTRAT JSON (inchangé, voir doc d'équipe) :
+   {
+     score_global: number,
+     zones: {
+       fondations, murs_nord, murs_sud, murs_est, murs_ouest, toiture, sous_sol:
+         { risque, niveau, alea_principal, justification, recommandations: [...] }
+     },
+     projection_2050: { score_global, zones: { ...même structure... } }
+   }
+   Le rendu est en 2 couches par zone :
+   - un remplissage translucide coloré selon le risque (vert/orange/rouge)
+   - un contour ("wireframe") bleu toujours constant, façon scan BIM
+   Les éléments décoratifs (fenêtres, porte, garage) restent bleus fixes :
+   ils ne font pas partie du contrat JSON et ne sont pas cliquables.
    ========================================================================= */
 
-// ---------- 0. DONNÉES D'EXEMPLE (utilisées par le bouton "essayer sans backend") ----------
-const DEFAULT_DATA = {
-  "adresse": "12 rue des Lilas, 33000 Bordeaux",
-  "bien": { "type": "maison individuelle", "annee_construction": 1975, "coordonnees": { "lat": 44.8378, "lon": -0.5792 } },
-  "geometry": {
-    "footprint_shape": "rectangulaire",
-    "largeur_m": 8.5, "longueur_m": 10.2, "orientation_deg": 15,
-    "floors_count": 2, "hauteur_sous_plafond_m": 2.6,
-    "roof_shape": "deux_pans", "pente_toit_deg": 35,
-    "materiau_mur": "parpaing_enduit", "materiau_toiture": "tuiles_terre_cuite",
-    "has_basement": true, "has_cellar": false,
-    "has_garage": true, "garage_position": "ouest",
-    "has_garden": true, "garden_surface_m2": 250
-  },
-  "score_global": 58,
-  "zones": {
-    "fondations": { "risque": 78, "niveau": "eleve", "alea_principal": "Retrait-gonflement des argiles", "justification": "Sol argileux identifié en zone d'aléa fort, aggravé par l'alternance sécheresse/humidité.", "recommandations": [
-      { "travaux": "Renforcement des fondations par micropieux", "cout_estime": "9000-16000€", "gain_resilience": 30 },
-      { "travaux": "Drainage périphérique", "cout_estime": "3000-6000€", "gain_resilience": 15 }
+const MOCK_DATA = {
+  score_global: 58,
+  zones: {
+    fondations: { risque: 78, niveau: "eleve", alea_principal: "Retrait-gonflement des argiles", justification: "Sol argileux identifié en zone d'aléa fort, aggravé par l'alternance sécheresse/humidité.", recommandations: [
+      { travaux: "Renforcement des fondations par micropieux", cout_estime: "9000-16000€", gain_resilience: 30 },
+      { travaux: "Drainage périphérique", cout_estime: "3000-6000€", gain_resilience: 15 }
     ]},
-    "murs_nord": { "risque": 35, "niveau": "modere", "alea_principal": "Infiltration", "justification": "Exposition nord avec humidité résiduelle plus fréquente.", "recommandations": [
-      { "travaux": "Traitement hydrofuge de façade", "cout_estime": "1500-3000€", "gain_resilience": 12 }
+    murs_nord: { risque: 35, niveau: "modere", alea_principal: "Infiltration", justification: "Exposition nord avec humidité résiduelle plus fréquente.", recommandations: [
+      { travaux: "Traitement hydrofuge de façade", cout_estime: "1500-3000€", gain_resilience: 12 }
     ]},
-    "murs_sud": { "risque": 20, "niveau": "faible", "alea_principal": "Stress thermique", "justification": "Exposition sud correcte, matériaux jugés stables.", "recommandations": [] },
-    "murs_est": { "risque": 28, "niveau": "faible", "alea_principal": "Vent", "justification": "Exposition modérée aux vents dominants.", "recommandations": [] },
-    "murs_ouest": { "risque": 42, "niveau": "modere", "alea_principal": "Intempéries", "justification": "Façade la plus exposée aux intempéries selon l'historique CATNAT local.", "recommandations": [
-      { "travaux": "Renforcement bardage", "cout_estime": "2000-4000€", "gain_resilience": 10 }
+    murs_sud: { risque: 20, niveau: "faible", alea_principal: "Stress thermique", justification: "Exposition sud correcte, matériaux jugés stables.", recommandations: [] },
+    murs_est: { risque: 28, niveau: "faible", alea_principal: "Vent", justification: "Exposition modérée aux vents dominants.", recommandations: [] },
+    murs_ouest: { risque: 42, niveau: "modere", alea_principal: "Intempéries", justification: "Façade la plus exposée aux intempéries selon l'historique CATNAT local.", recommandations: [
+      { travaux: "Renforcement bardage", cout_estime: "2000-4000€", gain_resilience: 10 }
     ]},
-    "toiture": { "risque": 55, "niveau": "modere", "alea_principal": "Canicule / stress thermique", "justification": "Isolation actuelle insuffisante face à l'augmentation prévue des épisodes caniculaires.", "recommandations": [
-      { "travaux": "Isolation thermique renforcée", "cout_estime": "6000-11000€", "gain_resilience": 22 }
+    toiture: { risque: 55, niveau: "modere", alea_principal: "Canicule / stress thermique", justification: "Isolation actuelle insuffisante face à l'augmentation prévue des épisodes caniculaires.", recommandations: [
+      { travaux: "Isolation thermique renforcée", cout_estime: "6000-11000€", gain_resilience: 22 }
     ]},
-    "sous_sol": { "risque": 65, "niveau": "eleve", "alea_principal": "Inondation / remontée de nappe", "justification": "Proximité d'un cours d'eau avec historique d'inondation dans le secteur.", "recommandations": [
-      { "travaux": "Pose de batardeaux et clapet anti-retour", "cout_estime": "2500-5000€", "gain_resilience": 20 }
+    sous_sol: { risque: 65, niveau: "eleve", alea_principal: "Inondation / remontée de nappe", justification: "Proximité d'un cours d'eau avec historique d'inondation dans le secteur.", recommandations: [
+      { travaux: "Pose de batardeaux et clapet anti-retour", cout_estime: "2500-5000€", gain_resilience: 20 }
     ]}
   },
-  "projection_2050": {
-    "score_global": 81,
-    "zones": {
-      "fondations": { "risque": 92, "niveau": "critique", "alea_principal": "RGA aggravé", "justification": "Sécheresses prolongées prévues en 2050, risque de fissuration majeure.", "recommandations": [{ "travaux": "Renforcement fondations + surveillance annuelle", "cout_estime": "9000-16000€", "gain_resilience": 35 }] },
-      "murs_nord":  { "risque": 48, "niveau": "modere", "alea_principal": "Infiltration accrue", "justification": "Augmentation des précipitations intenses en hiver.", "recommandations": [{ "travaux": "Traitement hydrofuge de façade", "cout_estime": "1500-3000€", "gain_resilience": 15 }] },
-      "murs_sud":   { "risque": 40, "niveau": "modere", "alea_principal": "Stress thermique", "justification": "Canicules plus longues, exposition sud plus sensible.", "recommandations": [{ "travaux": "Volets isolants", "cout_estime": "1200-2500€", "gain_resilience": 10 }] },
-      "murs_est":   { "risque": 38, "niveau": "modere", "alea_principal": "Vent renforcé", "justification": "Intensification des épisodes de vent fort.", "recommandations": [] },
-      "murs_ouest": { "risque": 60, "niveau": "eleve", "alea_principal": "Intempéries renforcées", "justification": "Façade la plus exposée, aggravation attendue.", "recommandations": [{ "travaux": "Renforcement bardage renforcé", "cout_estime": "2000-4000€", "gain_resilience": 18 }] },
-      "toiture":    { "risque": 80, "niveau": "eleve", "alea_principal": "Canicule prolongée", "justification": "Périodes de canicule estimées à plusieurs mois en 2050.", "recommandations": [{ "travaux": "Isolation thermique renforcée + ventilation", "cout_estime": "6000-11000€", "gain_resilience": 30 }] },
-      "sous_sol":   { "risque": 85, "niveau": "critique", "alea_principal": "Inondation aggravée", "justification": "Augmentation de 30% des sinistres climatiques attendue d'ici 2050.", "recommandations": [{ "travaux": "Batardeaux + pompe de relevage", "cout_estime": "3500-7000€", "gain_resilience": 28 }] }
+  projection_2050: {
+    score_global: 81,
+    zones: {
+      fondations: { risque: 92, niveau: "critique", alea_principal: "RGA aggravé", justification: "Sécheresses prolongées prévues en 2050, risque de fissuration majeure.", recommandations: [{ travaux: "Renforcement fondations + surveillance annuelle", cout_estime: "9000-16000€", gain_resilience: 35 }] },
+      murs_nord:  { risque: 48, niveau: "modere", alea_principal: "Infiltration accrue", justification: "Augmentation des précipitations intenses en hiver.", recommandations: [{ travaux: "Traitement hydrofuge de façade", cout_estime: "1500-3000€", gain_resilience: 15 }] },
+      murs_sud:   { risque: 40, niveau: "modere", alea_principal: "Stress thermique", justification: "Canicules plus longues, exposition sud plus sensible.", recommandations: [{ travaux: "Volets isolants", cout_estime: "1200-2500€", gain_resilience: 10 }] },
+      murs_est:   { risque: 38, niveau: "modere", alea_principal: "Vent renforcé", justification: "Intensification des épisodes de vent fort.", recommandations: [] },
+      murs_ouest: { risque: 60, niveau: "eleve", alea_principal: "Intempéries renforcées", justification: "Façade la plus exposée, aggravation attendue.", recommandations: [{ travaux: "Renforcement bardage renforcé", cout_estime: "2000-4000€", gain_resilience: 18 }] },
+      toiture:    { risque: 80, niveau: "eleve", alea_principal: "Canicule prolongée", justification: "Périodes de canicule estimées à plusieurs mois en 2050.", recommandations: [{ travaux: "Isolation thermique renforcée + ventilation", cout_estime: "6000-11000€", gain_resilience: 30 }] },
+      sous_sol:   { risque: 85, niveau: "critique", alea_principal: "Inondation aggravée", justification: "Augmentation de 30% des sinistres climatiques attendue d'ici 2050.", recommandations: [{ travaux: "Batardeaux + pompe de relevage", cout_estime: "3500-7000€", gain_resilience: 28 }] }
     }
-  },
-  "climat_2050": { "temperature_max_projetee_c": 41.5, "source": "Copernicus" }
+  }
 };
 
-const ZONE_NAMES = ["fondations", "murs_nord", "murs_sud", "murs_est", "murs_ouest", "toiture", "sous_sol"];
-
-// ---------- 1. FONCTION DE MAPPING RISQUE -> EFFET VISUEL (pure, déterministe) ----------
-function mapRiskToEffect(zoneName, score) {
-  const s = Math.max(0, Math.min(100, score));
-  if (zoneName === "fondations") {
-    let opacity = 0, layers = 0;
-    if (s >= 60) { opacity = 0.55 + (s - 60) / 40 * 0.40; layers = s >= 85 ? 3 : 2; }
-    else if (s >= 30) { opacity = 0.12 + (s - 30) / 30 * 0.35; layers = 1; }
-    return { crackOpacity: Math.min(opacity, 0.95), crackLayers: layers };
-  }
-  if (zoneName === "sous_sol") {
-    let ratio = 0;
-    if (s >= 60) ratio = 0.5 + (s - 60) / 40 * 0.5;
-    else if (s >= 30) ratio = (s - 30) / 30 * 0.5;
-    return { waterHeightRatio: Math.min(ratio, 1) };
-  }
-  if (zoneName === "toiture") {
-    let wear = 0;
-    if (s >= 60) wear = 0.4 + (s - 60) / 40 * 0.6;
-    else if (s >= 30) wear = (s - 30) / 30 * 0.4;
-    return { tileWear: Math.min(wear, 1) };
-  }
-  if (zoneName.startsWith("murs_")) {
-    let stain = 0;
-    if (s >= 70) stain = 0.3 + (s - 70) / 30 * 0.5;
-    else if (s >= 40) stain = (s - 40) / 30 * 0.3;
-    return { humidityOpacity: Math.min(stain, 0.85) };
-  }
-  return {};
-}
-
-// ---------- 2. SCÈNE THREE.JS ----------
+// ---------- 1. SCÈNE ----------
 const container = document.getElementById('scene-container');
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x04070c);
-scene.fog = new THREE.Fog(0x04070c, 20, 55);
+scene.fog = new THREE.Fog(0x04070c, 18, 45);
 
 const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-const renderer = new THREE.WebGLRenderer({ antialias: true });
+
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(window.devicePixelRatio);
 container.appendChild(renderer.domElement);
 
+// ---------- 2. LUMIÈRES (froides, façon scan technique) ----------
 scene.add(new THREE.HemisphereLight(0x3a7bd5, 0x04070c, 0.7));
-const rim = new THREE.DirectionalLight(0x4da6ff, 0.5); rim.position.set(-8, 10, -6); scene.add(rim);
-const key = new THREE.DirectionalLight(0xbfe0ff, 0.4); key.position.set(8, 12, 8); scene.add(key);
+const rim = new THREE.DirectionalLight(0x4da6ff, 0.5);
+rim.position.set(-8, 10, -6);
+scene.add(rim);
+const key = new THREE.DirectionalLight(0xbfe0ff, 0.4);
+key.position.set(8, 12, 8);
+scene.add(key);
 
-const grid = new THREE.GridHelper(60, 60, 0x1560ff, 0x0d2647);
-grid.material.transparent = true; grid.material.opacity = 0.32;
+// ---------- 3. SOL — grille bleue façon blueprint + anneau de scan ----------
+const grid = new THREE.GridHelper(50, 50, 0x1560ff, 0x0d2647);
+grid.material.transparent = true;
+grid.material.opacity = 0.35;
 scene.add(grid);
 
-const ringGeo = new THREE.RingGeometry(6.5, 6.7, 64);
+const ringGeo = new THREE.RingGeometry(5.6, 5.75, 64);
 const ringMat = new THREE.MeshBasicMaterial({ color: 0x4da6ff, transparent: true, opacity: 0.5, side: THREE.DoubleSide });
 const scanRing = new THREE.Mesh(ringGeo, ringMat);
-scanRing.rotation.x = -Math.PI / 2; scanRing.position.y = 0.01;
+scanRing.rotation.x = -Math.PI / 2;
+scanRing.position.y = 0.01;
 scene.add(scanRing);
 
+// ---------- 4. MATÉRIAUX RÉUTILISABLES ----------
 const WIRE_COLOR = 0x5fb2ff;
 function makeWireMat() { return new THREE.LineBasicMaterial({ color: WIRE_COLOR, transparent: true, opacity: 0.85 }); }
 function makeFillMat(color, opacity) {
-  return new THREE.MeshBasicMaterial({ color, transparent: true, opacity: opacity ?? 0.16, side: THREE.DoubleSide, blending: THREE.AdditiveBlending, depthWrite: false });
+  return new THREE.MeshBasicMaterial({
+    color, transparent: true, opacity: opacity ?? 0.16,
+    side: THREE.DoubleSide, blending: THREE.AdditiveBlending, depthWrite: false
+  });
 }
+
+/** Ajoute un mesh (fill translucide + contour bleu) à un groupe. Retourne le mesh de remplissage. */
 function addPart(group, geometry, position, fillColor, opacity) {
   const fill = new THREE.Mesh(geometry, makeFillMat(fillColor, opacity));
   if (position) fill.position.copy(position);
   group.add(fill);
-  const wire = new THREE.LineSegments(new THREE.EdgesGeometry(geometry), makeWireMat());
+
+  const edges = new THREE.EdgesGeometry(geometry);
+  const wire = new THREE.LineSegments(edges, makeWireMat());
   if (position) wire.position.copy(position);
   group.add(wire);
-  return fill;
-}
-function addRawPart(group, bufferGeometry, fillColor, opacity) {
-  bufferGeometry.computeVertexNormals();
-  const fill = new THREE.Mesh(bufferGeometry, makeFillMat(fillColor, opacity));
-  group.add(fill);
-  const wire = new THREE.LineSegments(new THREE.EdgesGeometry(bufferGeometry), makeWireMat());
-  group.add(wire);
+
   return fill;
 }
 
-// ---------- 3. CANEVAS PROCÉDURAUX (fissures / auréoles) ----------
-function makeCrackTexture(layers) {
-  const c = document.createElement('canvas'); c.width = 512; c.height = 512;
-  const ctx = c.getContext('2d');
-  ctx.clearRect(0, 0, 512, 512);
-  ctx.strokeStyle = 'rgba(255,255,255,0.95)';
-  ctx.shadowColor = 'rgba(255,80,60,0.9)'; ctx.shadowBlur = 4;
-  const rand = mulberry32(42);
-  for (let l = 0; l < Math.max(1, layers); l++) {
-    let x = 80 + rand() * 350, y = 40;
-    ctx.lineWidth = 2 + rand() * 2;
-    ctx.beginPath(); ctx.moveTo(x, y);
-    for (let i = 0; i < 14; i++) {
-      x += (rand() - 0.5) * 70;
-      y += 30 + rand() * 20;
-      ctx.lineTo(x, Math.min(y, 500));
-      if (rand() > 0.6) {
-        const bx = x + (rand() - 0.5) * 60, by = y + rand() * 40;
-        ctx.moveTo(x, y); ctx.lineTo(bx, Math.min(by, 500)); ctx.moveTo(x, y);
-      }
-    }
-    ctx.stroke();
-  }
-  return new THREE.CanvasTexture(c);
-}
-function makeStainTexture() {
-  const c = document.createElement('canvas'); c.width = 512; c.height = 512;
-  const ctx = c.getContext('2d');
-  const grd = ctx.createRadialGradient(256, 380, 10, 256, 380, 260);
-  grd.addColorStop(0, 'rgba(140,180,255,0.85)');
-  grd.addColorStop(0.5, 'rgba(100,140,220,0.35)');
-  grd.addColorStop(1, 'rgba(100,140,220,0)');
-  ctx.fillStyle = grd; ctx.fillRect(0, 0, 512, 512);
-  return new THREE.CanvasTexture(c);
-}
-function mulberry32(seed) {
-  return function () {
-    seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
-    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-const crackTextures = { 1: makeCrackTexture(1), 2: makeCrackTexture(2), 3: makeCrackTexture(3) };
-const stainTexture = makeStainTexture();
+// ---------- 5. GÉOMÉTRIE DE LA MAISON (R+1, toit 2 pans, garage, sous-sol visible) ----------
+const house = new THREE.Group();
+scene.add(house);
 
-// ---------- 4. CONSTRUCTION PARAMÉTRIQUE DE LA MAISON ----------
-let house = null, zoneGroups = {}, zoneFillMeshes = {}, interactiveMeshes = [];
-let crackMesh = null, waterMesh = null, stainMeshes = {};
-let houseDims = {};
-let labelSprites = {}, leaderLines = {};
+const ZONE_NAMES = ["fondations", "murs_nord", "murs_sud", "murs_est", "murs_ouest", "toiture", "sous_sol"];
+const zoneGroups = {};      // name -> THREE.Group
+const zoneFillMeshes = {};  // name -> [Mesh, Mesh, ...]  (peut y avoir plusieurs volumes par zone : rez + étage)
+const interactiveMeshes = []; // liste plate pour le raycasting
 
-function disposeHouse() {
-  if (house) scene.remove(house);
-  house = null; zoneGroups = {}; zoneFillMeshes = {}; interactiveMeshes = [];
-  crackMesh = null; waterMesh = null; stainMeshes = {};
-  labelSprites = {}; leaderLines = {};
-}
+ZONE_NAMES.forEach(name => {
+  const g = new THREE.Group();
+  g.name = name;
+  house.add(g);
+  zoneGroups[name] = g;
+  zoneFillMeshes[name] = [];
+});
 
 function registerFill(zoneName, fillMesh) {
   fillMesh.userData.zoneName = zoneName;
@@ -1379,548 +1269,421 @@ function registerFill(zoneName, fillMesh) {
   interactiveMeshes.push(fillMesh);
 }
 
-function buildHouse(geometry) {
-  disposeHouse();
-  const g = geometry || {};
-  const W = clamp(g.largeur_m ?? 8, 3, 35);
-  const D = clamp(g.longueur_m ?? 8, 3, 35);
-  const floors = Math.max(1, Math.min(6, Math.round(g.floors_count ?? 1)));
-  const levelH = clamp(g.hauteur_sous_plafond_m ?? 2.6, 2.0, 3.5);
-  const roofShape = (g.roof_shape || 'deux_pans').toLowerCase();
-  const penteDeg = clamp(g.pente_toit_deg ?? 35, 12, 55);
-  const hasBasement = g.has_basement !== false;
-  const hasGarage = !!g.has_garage;
-  const garagePos = g.garage_position || 'ouest';
-  const hasGarden = !!g.has_garden;
-  const orientationDeg = g.orientation_deg ?? 0;
+// Emprise du bâtiment principal
+const W = 6.0, D = 5.0;         // largeur (X) x profondeur (Z)
+const floorH = 1.35;             // demi-hauteur d'un niveau
+const basementTopY = 0.4;
+const fondY = basementTopY + 0.15;      // centre du bandeau de fondation
+const rezY = 0.7 + floorH;               // centre des murs du rez-de-chaussée
+const etageY = 0.7 + 2 * floorH + floorH; // centre des murs de l'étage
+const eavesY = 0.7 + 4 * floorH;         // hauteur de l'égout de toit
+const ridgeY = eavesY + 1.7;             // faîtage
 
-  house = new THREE.Group();
-  scene.add(house);
+// -- sous-sol (partiellement visible au-dessus du sol) --
+registerFill("sous_sol", addPart(
+  zoneGroups.sous_sol,
+  new THREE.BoxGeometry(W + 0.3, 1.6, D + 0.3),
+  new THREE.Vector3(0, -0.4, 0),
+  0x3fb950, 0.18
+));
 
-  ZONE_NAMES.forEach(name => {
-    const grp = new THREE.Group(); grp.name = name;
-    house.add(grp); zoneGroups[name] = grp; zoneFillMeshes[name] = [];
-  });
+// -- fondations (bandeau visible entre sous-sol et rez-de-chaussée) --
+registerFill("fondations", addPart(
+  zoneGroups.fondations,
+  new THREE.BoxGeometry(W + 0.4, 0.3, D + 0.4),
+  new THREE.Vector3(0, fondY, 0),
+  0x3fb950, 0.18
+));
 
-  const basementTopY = 0.4;
-  const basementH = hasBasement ? 1.6 : 0.35;
-  const basementCenterY = basementTopY - basementH / 2;
-  const fondY = basementTopY + 0.15;
-  const wallsStartY = basementTopY + 0.3;
-  const eavesY = wallsStartY + floors * levelH;
+// -- murs : chaque façade = 1 volume rez + 1 volume étage empilés --
+const wallThickness = 0.2;
 
-  registerFill("sous_sol", addPart(zoneGroups.sous_sol,
-    new THREE.BoxGeometry(W + 0.3, basementH, D + 0.3),
-    new THREE.Vector3(0, basementCenterY, 0), 0x3fb950, 0.18));
-
-  registerFill("fondations", addPart(zoneGroups.fondations,
-    new THREE.BoxGeometry(W + 0.4, 0.3, D + 0.4),
-    new THREE.Vector3(0, fondY, 0), 0x3fb950, 0.18));
-
-  const wallThickness = 0.2;
-  function buildWallLevels(zoneName, sizeFn, posFn) {
-    for (let i = 0; i < floors; i++) {
-      const y = wallsStartY + i * levelH + levelH / 2;
-      registerFill(zoneName, addPart(zoneGroups[zoneName], sizeFn(), posFn(y), 0x3fb950, 0.16));
-    }
-  }
-  buildWallLevels("murs_nord", () => new THREE.BoxGeometry(W, levelH, wallThickness), y => new THREE.Vector3(0, y, -D / 2));
-  buildWallLevels("murs_sud",  () => new THREE.BoxGeometry(W, levelH, wallThickness), y => new THREE.Vector3(0, y, D / 2));
-  buildWallLevels("murs_est",  () => new THREE.BoxGeometry(wallThickness, levelH, D), y => new THREE.Vector3(W / 2, y, 0));
-  buildWallLevels("murs_ouest",() => new THREE.BoxGeometry(wallThickness, levelH, D), y => new THREE.Vector3(-W / 2, y, 0));
-
-  for (let i = 1; i < floors; i++) {
-    const bandY = wallsStartY + i * levelH;
-    const bandGeo = new THREE.BoxGeometry(W + 0.15, 0.06, D + 0.15);
-    const bandFill = new THREE.Mesh(bandGeo, makeFillMat(0x5fb2ff, 0.25));
-    bandFill.position.set(0, bandY, 0); house.add(bandFill);
-    const bandWire = new THREE.LineSegments(new THREE.EdgesGeometry(bandGeo), makeWireMat());
-    bandWire.position.copy(bandFill.position); house.add(bandWire);
-  }
-
-  const roofOverhang = 0.35;
-  const roofHalfSpan = D / 2 + roofOverhang;
-  let ridgeY = eavesY;
-
-  if (roofShape === 'plat' || roofShape === 'toit_plat') {
-    const slabGeo = new THREE.BoxGeometry(W + 0.6, 0.25, D + 0.6);
-    registerFill("toiture", addPart(zoneGroups.toiture, slabGeo, new THREE.Vector3(0, eavesY + 0.15, 0), 0x3fb950, 0.16));
-    ridgeY = eavesY + 0.25;
-  } else if (roofShape === 'quatre_pans' || roofShape === 'croupe') {
-    const penteRad = penteDeg * Math.PI / 180;
-    const rise = roofHalfSpan * Math.tan(penteRad);
-    ridgeY = eavesY + rise;
-    const ridgeLen = Math.max(0.6, W - D);
-    const ov = roofOverhang;
-    const NW = [-(W / 2 + ov), eavesY, -(D / 2 + ov)], NE = [(W / 2 + ov), eavesY, -(D / 2 + ov)];
-    const SW = [-(W / 2 + ov), eavesY, (D / 2 + ov)], SE = [(W / 2 + ov), eavesY, (D / 2 + ov)];
-    const Rw = [-ridgeLen / 2, ridgeY, 0], Re = [ridgeLen / 2, ridgeY, 0];
-    registerFill("toiture", addRawPart(zoneGroups.toiture, quadGeo(NW, NE, Re, Rw), 0x3fb950, 0.16));
-    registerFill("toiture", addRawPart(zoneGroups.toiture, quadGeo(SE, SW, Rw, Re), 0x3fb950, 0.16));
-    registerFill("toiture", addRawPart(zoneGroups.toiture, triGeo(NW, SW, Rw), 0x3fb950, 0.16));
-    registerFill("toiture", addRawPart(zoneGroups.toiture, triGeo(SE, NE, Re), 0x3fb950, 0.16));
-  } else {
-    const penteRad = penteDeg * Math.PI / 180;
-    const rise = roofHalfSpan * Math.tan(penteRad);
-    ridgeY = eavesY + rise;
-    const roofSlopeLength = Math.sqrt(roofHalfSpan * roofHalfSpan + rise * rise);
-    const roofAngle = Math.atan2(rise, roofHalfSpan);
-    function makeSlope(sign) {
-      const geo = new THREE.BoxGeometry(W + 0.7, 0.12, roofSlopeLength);
-      const mesh = new THREE.Mesh(geo, makeFillMat(0x3fb950, 0.16));
-      mesh.rotation.x = sign * roofAngle;
-      mesh.position.set(0, (eavesY + ridgeY) / 2, sign * (roofHalfSpan / 2));
-      zoneGroups.toiture.add(mesh);
-      const wire = new THREE.LineSegments(new THREE.EdgesGeometry(geo), makeWireMat());
-      wire.rotation.copy(mesh.rotation); wire.position.copy(mesh.position);
-      zoneGroups.toiture.add(wire);
-      return mesh;
-    }
-    registerFill("toiture", makeSlope(1));
-    registerFill("toiture", makeSlope(-1));
-    function makeGable(zSide) {
-      const halfW = W / 2;
-      const geo = triGeo([-halfW, eavesY, zSide], [halfW, eavesY, zSide], [0, ridgeY, zSide]);
-      registerFill("toiture", addRawPart(zoneGroups.toiture, geo, 0x3fb950, 0.16));
-    }
-    makeGable(-D / 2); makeGable(D / 2);
-  }
-
-  const decor = new THREE.Group(); house.add(decor);
-  function addDecorPanel(geometry, position, rotationY) {
-    const fill = new THREE.Mesh(geometry, makeFillMat(0x5fb2ff, 0.22));
-    fill.position.copy(position); if (rotationY) fill.rotation.y = rotationY;
-    decor.add(fill);
-    const wire = new THREE.LineSegments(new THREE.EdgesGeometry(geometry), makeWireMat());
-    wire.position.copy(position); if (rotationY) wire.rotation.y = rotationY;
-    decor.add(wire);
-  }
-  for (let i = 0; i < floors; i++) {
-    const y = wallsStartY + i * levelH + levelH / 2;
-    [-W * 0.22, W * 0.22].forEach(x => addDecorPanel(new THREE.BoxGeometry(0.9, levelH * 0.42, 0.06), new THREE.Vector3(x, y, D / 2 + 0.02)));
-  }
-  addDecorPanel(new THREE.BoxGeometry(0.9, 1.9, 0.06), new THREE.Vector3(0, wallsStartY - 0.3 + 1.0, D / 2 + 0.02));
-  if (hasBasement) {
-    [-W * 0.28, W * 0.28].forEach(x => addDecorPanel(new THREE.BoxGeometry(0.6, 0.35, 0.06), new THREE.Vector3(x, basementTopY - 0.25, D / 2 + 0.16)));
-  }
-  if (hasGarage) {
-    const garageW = 3.0, garageD = 4.2, garageH = 2.4;
-    let gx = 0, gz = 0;
-    if (garagePos === 'ouest') { gx = -W / 2 - garageW / 2 - 0.05; }
-    else if (garagePos === 'est') { gx = W / 2 + garageW / 2 + 0.05; }
-    else if (garagePos === 'nord') { gz = -D / 2 - garageD / 2 - 0.05; }
-    else { gz = D / 2 + garageD / 2 + 0.05; }
-    addDecorPanel(new THREE.BoxGeometry(garageW, garageH, garageD), new THREE.Vector3(gx, wallsStartY - 0.3 + garageH / 2, gz));
-    addDecorPanel(new THREE.BoxGeometry(garageW + 0.3, 0.1, garageD + 0.3), new THREE.Vector3(gx, wallsStartY - 0.3 + garageH + 0.05, gz));
-  }
-  if (hasGarden) {
-    const side = hasGarage && (garagePos === 'ouest') ? 1 : -1;
-    const size = Math.sqrt(clamp(g.garden_surface_m2 ?? 100, 20, 2000));
-    const gardenGeo = new THREE.PlaneGeometry(size, size);
-    const gardenMat = new THREE.MeshBasicMaterial({ color: 0x3fb950, transparent: true, opacity: 0.08, side: THREE.DoubleSide });
-    const gardenMesh = new THREE.Mesh(gardenGeo, gardenMat);
-    gardenMesh.rotation.x = -Math.PI / 2;
-    gardenMesh.position.set(side * (W / 2 + size / 2 + 1.2), 0.02, 0);
-    house.add(gardenMesh);
-  }
-
-  house.rotation.y = orientationDeg * Math.PI / 180;
-
-  houseDims = { W, D, floors, levelH, wallsStartY, eavesY, ridgeY, basementCenterY, fondY };
-  buildLabels();
-  buildEffectMeshes();
+function buildWallZone(zoneName, sizeRez, sizeEtage, posRez, posEtage) {
+  registerFill(zoneName, addPart(zoneGroups[zoneName], sizeRez, posRez, 0x3fb950, 0.16));
+  registerFill(zoneName, addPart(zoneGroups[zoneName], sizeEtage, posEtage, 0x3fb950, 0.16));
 }
 
-function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
-function quadGeo(a, b, c, d) {
+buildWallZone("murs_nord",
+  new THREE.BoxGeometry(W, 2 * floorH, wallThickness), new THREE.BoxGeometry(W, 2 * floorH, wallThickness),
+  new THREE.Vector3(0, rezY, -D / 2), new THREE.Vector3(0, etageY, -D / 2)
+);
+buildWallZone("murs_sud",
+  new THREE.BoxGeometry(W, 2 * floorH, wallThickness), new THREE.BoxGeometry(W, 2 * floorH, wallThickness),
+  new THREE.Vector3(0, rezY, D / 2), new THREE.Vector3(0, etageY, D / 2)
+);
+buildWallZone("murs_est",
+  new THREE.BoxGeometry(wallThickness, 2 * floorH, D), new THREE.BoxGeometry(wallThickness, 2 * floorH, D),
+  new THREE.Vector3(W / 2, rezY, 0), new THREE.Vector3(W / 2, etageY, 0)
+);
+buildWallZone("murs_ouest",
+  new THREE.BoxGeometry(wallThickness, 2 * floorH, D), new THREE.BoxGeometry(wallThickness, 2 * floorH, D),
+  new THREE.Vector3(-W / 2, rezY, 0), new THREE.Vector3(-W / 2, etageY, 0)
+);
+
+// -- liseré de séparation rez/étage (décoratif, non cliquable) --
+const bandGeo = new THREE.BoxGeometry(W + 0.15, 0.08, D + 0.15);
+const bandFill = new THREE.Mesh(bandGeo, makeFillMat(0x5fb2ff, 0.25));
+bandFill.position.set(0, 0.7 + 2 * floorH, 0);
+house.add(bandFill);
+house.add(new THREE.LineSegments(new THREE.EdgesGeometry(bandGeo), makeWireMat()).translateY ? (() => {
+  const l = new THREE.LineSegments(new THREE.EdgesGeometry(bandGeo), makeWireMat());
+  l.position.copy(bandFill.position);
+  return l;
+})() : null);
+
+// -- toit à 2 pans (le plus courant), avec pignons triangulaires --
+const roofHalfSpan = D / 2 + 0.35;                 // débord de toit
+const roofSlopeLength = Math.sqrt(roofHalfSpan * roofHalfSpan + 1.7 * 1.7);
+const roofAngle = Math.atan2(1.7, roofHalfSpan);
+
+function makeRoofSlope(sign) {
+  const geo = new THREE.BoxGeometry(W + 0.7, 0.12, roofSlopeLength);
+  const mesh = new THREE.Mesh(geo, makeFillMat(0x3fb950, 0.16));
+  mesh.rotation.x = sign * roofAngle;
+  mesh.position.set(0, eavesY + 0.85, sign * (roofHalfSpan / 2) * Math.cos(roofAngle) * 0 + sign * (D / 4));
+  // repositionne précisément : le pan va de l'égout (bord) au faîtage (centre)
+  mesh.position.y = (eavesY + ridgeY) / 2;
+  mesh.position.z = sign * (roofHalfSpan / 2) * Math.cos(0); // approximation suffisante visuellement
+  zoneGroups.toiture.add(mesh);
+  const wire = new THREE.LineSegments(new THREE.EdgesGeometry(geo), makeWireMat());
+  wire.rotation.copy(mesh.rotation);
+  wire.position.copy(mesh.position);
+  zoneGroups.toiture.add(wire);
+  return mesh;
+}
+registerFill("toiture", makeRoofSlope(1));
+registerFill("toiture", makeRoofSlope(-1));
+
+// -- pignons triangulaires (nord/sud) --
+function makeGableTriangle(zSide) {
   const geo = new THREE.BufferGeometry();
-  const verts = new Float32Array([...a, ...b, ...c, ...a, ...c, ...d]);
-  geo.setAttribute('position', new THREE.BufferAttribute(verts, 3));
-  return geo;
+  const halfW = W / 2;
+  const vertices = new Float32Array([
+    -halfW, eavesY, zSide,
+     halfW, eavesY, zSide,
+     0,     ridgeY, zSide
+  ]);
+  geo.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+  geo.computeVertexNormals();
+  const mesh = new THREE.Mesh(geo, makeFillMat(0x3fb950, 0.16));
+  zoneGroups.toiture.add(mesh);
+  const wire = new THREE.LineSegments(new THREE.EdgesGeometry(geo), makeWireMat());
+  zoneGroups.toiture.add(wire);
+  return mesh;
 }
-function triGeo(a, b, c) {
-  const geo = new THREE.BufferGeometry();
-  const verts = new Float32Array([...a, ...b, ...c]);
-  geo.setAttribute('position', new THREE.BufferAttribute(verts, 3));
-  return geo;
-}
+registerFill("toiture", makeGableTriangle(-D / 2));
+registerFill("toiture", makeGableTriangle(D / 2));
 
-// ---------- 5. EFFETS VISUELS PILOTÉS PAR LE RISQUE ----------
-function buildEffectMeshes() {
-  const { W, D, fondY, basementCenterY } = houseDims;
+// -- éléments décoratifs (bleus fixes, non cliquables) : fenêtres, porte, garage --
+const decor = new THREE.Group();
+house.add(decor);
 
-  const crackGeo = new THREE.PlaneGeometry(W * 0.8, 0.5);
-  const crackMat = new THREE.MeshBasicMaterial({ map: crackTextures[1], transparent: true, opacity: 0, depthWrite: false });
-  crackMesh = new THREE.Mesh(crackGeo, crackMat);
-  crackMesh.position.set(0, fondY, D / 2 + 0.22);
-  house.add(crackMesh);
-
-  const waterGeo = new THREE.CircleGeometry(Math.max(W, D) * 0.9, 48);
-  const waterMat = new THREE.MeshBasicMaterial({ color: 0x2fa9ff, transparent: true, opacity: 0.32, side: THREE.DoubleSide, depthWrite: false });
-  waterMesh = new THREE.Mesh(waterGeo, waterMat);
-  waterMesh.rotation.x = -Math.PI / 2;
-  waterMesh.position.y = basementCenterY - 5;
-  waterMesh.userData.baseY = basementCenterY;
-  waterMesh.userData.targetRatio = 0;
-  house.add(waterMesh);
-
-  stainMeshes = {};
-  const stainDefs = {
-    murs_nord: { pos: new THREE.Vector3(0, houseDims.wallsStartY + houseDims.levelH / 2, -D / 2 - 0.03), rot: 0 },
-    murs_sud:  { pos: new THREE.Vector3(0, houseDims.wallsStartY + houseDims.levelH / 2, D / 2 + 0.03), rot: 0 },
-    murs_est:  { pos: new THREE.Vector3(W / 2 + 0.03, houseDims.wallsStartY + houseDims.levelH / 2, 0), rot: Math.PI / 2 },
-    murs_ouest:{ pos: new THREE.Vector3(-W / 2 - 0.03, houseDims.wallsStartY + houseDims.levelH / 2, 0), rot: Math.PI / 2 }
-  };
-  Object.entries(stainDefs).forEach(([zone, def]) => {
-    const geo = new THREE.PlaneGeometry(1.6, 1.6);
-    const mat = new THREE.MeshBasicMaterial({ map: stainTexture, transparent: true, opacity: 0, depthWrite: false });
-    const mesh = new THREE.Mesh(geo, mat);
-    mesh.position.copy(def.pos); mesh.rotation.y = def.rot;
-    house.add(mesh);
-    stainMeshes[zone] = mesh;
-  });
+function addDecorPanel(geometry, position, rotationY) {
+  const fill = new THREE.Mesh(geometry, makeFillMat(0x5fb2ff, 0.22));
+  fill.position.copy(position);
+  if (rotationY) fill.rotation.y = rotationY;
+  decor.add(fill);
+  const wire = new THREE.LineSegments(new THREE.EdgesGeometry(geometry), makeWireMat());
+  wire.position.copy(position);
+  if (rotationY) wire.rotation.y = rotationY;
+  decor.add(wire);
+  return fill;
 }
 
-function applyZoneEffect(zoneName, score) {
-  const effect = mapRiskToEffect(zoneName, score);
-  if (zoneName === "fondations" && crackMesh) {
-    crackMesh.material.opacity = effect.crackOpacity || 0;
-    crackMesh.material.map = crackTextures[Math.max(1, effect.crackLayers || 1)];
-    crackMesh.material.needsUpdate = true;
-  }
-  if (zoneName === "sous_sol" && waterMesh) {
-    waterMesh.userData.targetRatio = effect.waterHeightRatio || 0;
-  }
-  if (zoneName.startsWith("murs_") && stainMeshes[zoneName]) {
-    stainMeshes[zoneName].material.opacity = effect.humidityOpacity || 0;
-  }
-}
+// fenêtres rez-de-chaussée (façade sud, la plus visible)
+[-1.6, 1.6].forEach(x => {
+  addDecorPanel(new THREE.BoxGeometry(0.9, 1.1, 0.06), new THREE.Vector3(x, rezY - 0.1, D / 2 + 0.02));
+});
+// fenêtres étage
+[-1.6, 1.6].forEach(x => {
+  addDecorPanel(new THREE.BoxGeometry(0.9, 1.0, 0.06), new THREE.Vector3(x, etageY, D / 2 + 0.02));
+});
+// porte d'entrée
+addDecorPanel(new THREE.BoxGeometry(0.9, 1.9, 0.06), new THREE.Vector3(0, 0.7 + 0.95, D / 2 + 0.02));
+// petites fenêtres du sous-sol (visible)
+[-2.0, 2.0].forEach(x => {
+  addDecorPanel(new THREE.BoxGeometry(0.6, 0.35, 0.06), new THREE.Vector3(x, 0.15, D / 2 + 0.16));
+});
 
-const maxWaterRise = 2.4;
-function animateEffects(dt, elapsed) {
-  if (waterMesh) {
-    const target = waterMesh.userData.baseY + waterMesh.userData.targetRatio * maxWaterRise;
-    const bob = waterMesh.userData.targetRatio > 0.01 ? Math.sin(elapsed * 1.4) * 0.04 : 0;
-    const hiddenY = waterMesh.userData.baseY - 5;
-    const wantedY = waterMesh.userData.targetRatio > 0.01 ? target + bob : hiddenY;
-    waterMesh.position.y += (wantedY - waterMesh.position.y) * 0.08;
-  }
-}
+// -- garage accolé (côté ouest), décoratif --
+const garageW = 3.0, garageD = 4.2, garageH = 2.4;
+const garageX = -W / 2 - garageW / 2 - 0.05;
+addDecorPanel(new THREE.BoxGeometry(garageW, garageH, garageD), new THREE.Vector3(garageX, 0.7 + garageH / 2, 0));
+// toit mono-pente du garage
+const garageRoofGeo = new THREE.BoxGeometry(garageW + 0.3, 0.1, garageD + 0.3);
+const garageRoof = addDecorPanel(garageRoofGeo, new THREE.Vector3(garageX, 0.7 + garageH + 0.05, 0));
+// porte de garage
+addDecorPanel(new THREE.BoxGeometry(2.4, 1.9, 0.05), new THREE.Vector3(garageX, 0.7 + 0.95, D / 2));
 
-// ---------- 6. SCORE -> COULEUR + LABELS ----------
+// ---------- 6. MAPPING SCORE → COULEUR ----------
 function scoreToColor(score) {
   if (score < 30) return 0x3fb950;
   if (score < 60) return 0xd29922;
   if (score < 80) return 0xdb6d28;
   return 0xda3633;
 }
-const ROOF_WEAR_COLOR = new THREE.Color(0x8a5a2b);
-function animateColor(mesh, targetHex, duration = 500) {
+
+function animateColor(mesh, targetHex, duration = 600) {
   const mat = mesh.material;
   const startColor = mat.color.clone();
   const targetColor = new THREE.Color(targetHex);
   const startTime = performance.now();
   function step(now) {
     const t = Math.min((now - startTime) / duration, 1);
-    mat.color.lerpColors(startColor, targetColor, t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t);
+    const eased = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+    mat.color.lerpColors(startColor, targetColor, eased);
     if (t < 1) requestAnimationFrame(step);
   }
   requestAnimationFrame(step);
 }
+
 function updateZoneColor(zoneName, score, animated = true) {
   const meshes = zoneFillMeshes[zoneName];
-  if (!meshes || !meshes.length) return;
-  let color = new THREE.Color(scoreToColor(score));
-  if (zoneName === 'toiture') {
-    const wear = mapRiskToEffect('toiture', score).tileWear || 0;
-    color = color.clone().lerp(ROOF_WEAR_COLOR, wear * 0.7);
-  }
-  const targetHex = color.getHex();
-  meshes.forEach(m => animated ? animateColor(m, targetHex) : m.material.color.set(targetHex));
+  if (!meshes || !meshes.length) { console.warn(`Zone inconnue: ${zoneName}`); return; }
+  const color = scoreToColor(score);
+  meshes.forEach(m => animated ? animateColor(m, color) : m.material.color.set(color));
   updateZoneLabel(zoneName, score);
-  applyZoneEffect(zoneName, score);
 }
 
-function buildLabels() {
-  const { W, D, wallsStartY, levelH, floors, ridgeY, basementCenterY } = houseDims;
-  const topY = wallsStartY + floors * levelH;
-  const anchors = {
-    fondations: new THREE.Vector3(W / 2 + 0.3, houseDims.fondY, D / 2 + 0.3),
-    murs_nord:  new THREE.Vector3(0, topY - levelH / 2, -D / 2),
-    murs_sud:   new THREE.Vector3(0, topY - levelH / 2, D / 2),
-    murs_est:   new THREE.Vector3(W / 2, wallsStartY + levelH / 2, 0),
-    murs_ouest: new THREE.Vector3(-W / 2, wallsStartY + levelH / 2, 0),
-    toiture:    new THREE.Vector3(0, ridgeY, 0),
-    sous_sol:   new THREE.Vector3(-W / 2 - 0.3, basementCenterY, D / 2 + 0.3)
-  };
-  const offsets = {
-    fondations: new THREE.Vector3(1.8, 0.6, 1.8), murs_nord: new THREE.Vector3(0, 1.6, -1.4),
-    murs_sud: new THREE.Vector3(0, 1.6, 1.4), murs_est: new THREE.Vector3(2.4, 1.2, 0),
-    murs_ouest: new THREE.Vector3(-2.4, 1.2, 0), toiture: new THREE.Vector3(0, 1.6, 0),
-    sous_sol: new THREE.Vector3(-1.8, 0.3, 1.8)
-  };
+function setZonesFromData(zonesObj) {
+  if (!zonesObj) return;
   ZONE_NAMES.forEach(name => {
-    const texture = makeLabelCanvasTexture(name, 0);
-    const material = new THREE.SpriteMaterial({ map: texture, transparent: true, depthTest: false });
-    const sprite = new THREE.Sprite(material);
-    const anchor = anchors[name].clone().add(offsets[name]);
-    sprite.position.copy(anchor); sprite.scale.set(1.8, 0.55, 1);
-    house.add(sprite); labelSprites[name] = sprite;
-    const lineGeo = new THREE.BufferGeometry().setFromPoints([anchors[name], anchor]);
-    const line = new THREE.Line(lineGeo, new THREE.LineBasicMaterial({ color: WIRE_COLOR, transparent: true, opacity: 0.5 }));
-    house.add(line); leaderLines[name] = line;
+    if (zonesObj[name] && typeof zonesObj[name].risque === 'number') {
+      updateZoneColor(name, zonesObj[name].risque);
+    }
   });
 }
+
+// ---------- 7. ÉTIQUETTES FLOTTANTES (façon scan BIM) ----------
+const labelAnchors = {
+  fondations: new THREE.Vector3(W / 2 + 0.3, fondY, D / 2 + 0.3),
+  murs_nord:  new THREE.Vector3(0, etageY, -D / 2),
+  murs_sud:   new THREE.Vector3(0, etageY, D / 2),
+  murs_est:   new THREE.Vector3(W / 2, rezY, 0),
+  murs_ouest: new THREE.Vector3(-W / 2, rezY, 0),
+  toiture:    new THREE.Vector3(0, ridgeY, 0),
+  sous_sol:   new THREE.Vector3(-W / 2 - 0.3, -0.2, D / 2 + 0.3)
+};
+const labelOffsets = {
+  fondations: new THREE.Vector3(1.8, 0.6, 1.8),
+  murs_nord:  new THREE.Vector3(0, 1.6, -1.4),
+  murs_sud:   new THREE.Vector3(0, 1.6, 1.4),
+  murs_est:   new THREE.Vector3(2.4, 1.2, 0),
+  murs_ouest: new THREE.Vector3(-2.4, 1.2, 0),
+  toiture:    new THREE.Vector3(0, 1.6, 0),
+  sous_sol:   new THREE.Vector3(-1.8, 0.3, 1.8)
+};
+
+const labelSprites = {};
+const leaderLines = {};
+
 function makeLabelCanvasTexture(title, score) {
-  const canvas = document.createElement('canvas'); canvas.width = 300; canvas.height = 90;
+  const canvas = document.createElement('canvas');
+  canvas.width = 300; canvas.height = 90;
   const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
   const color = '#' + scoreToColor(score).toString(16).padStart(6, '0');
-  ctx.fillStyle = 'rgba(10,16,26,0.9)'; ctx.strokeStyle = color; ctx.lineWidth = 3;
-  roundRect(ctx, 4, 4, canvas.width - 8, canvas.height - 8, 12); ctx.fill(); ctx.stroke();
-  ctx.fillStyle = '#cfe4ff'; ctx.font = '600 22px Segoe UI, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.85)';
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 3;
+  roundRect(ctx, 4, 4, canvas.width - 8, canvas.height - 8, 12);
+  ctx.fill(); ctx.stroke();
+  ctx.fillStyle = '#3E4850';
+  ctx.font = '600 22px Segoe UI, sans-serif';
   ctx.fillText(title.replace('_', ' '), 20, 36);
-  ctx.fillStyle = color; ctx.font = '700 26px Segoe UI, sans-serif';
+  ctx.fillStyle = color;
+  ctx.font = '700 26px Segoe UI, sans-serif';
   ctx.fillText(score + ' / 100', 20, 70);
   return new THREE.CanvasTexture(canvas);
 }
 function roundRect(ctx, x, y, w, h, r) {
-  ctx.beginPath(); ctx.moveTo(x + r, y);
-  ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
-  ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
 }
+
+ZONE_NAMES.forEach(name => {
+  const texture = makeLabelCanvasTexture(name, 0);
+  const material = new THREE.SpriteMaterial({ map: texture, transparent: true, depthTest: false });
+  const sprite = new THREE.Sprite(material);
+  const anchor = labelAnchors[name].clone().add(labelOffsets[name]);
+  sprite.position.copy(anchor);
+  sprite.scale.set(1.8, 0.55, 1);
+  house.add(sprite);
+  labelSprites[name] = sprite;
+
+  const lineGeo = new THREE.BufferGeometry().setFromPoints([labelAnchors[name], anchor]);
+  const line = new THREE.Line(lineGeo, new THREE.LineBasicMaterial({ color: WIRE_COLOR, transparent: true, opacity: 0.5 }));
+  house.add(line);
+  leaderLines[name] = line;
+});
+
 function updateZoneLabel(zoneName, score) {
-  const sprite = labelSprites[zoneName]; if (!sprite) return;
+  const sprite = labelSprites[zoneName];
+  if (!sprite) return;
   sprite.material.map = makeLabelCanvasTexture(zoneName, score);
   sprite.material.needsUpdate = true;
 }
 
-// ---------- 7. CONTRÔLE CAMÉRA (glisser = tourner, molette = zoom) ----------
+// ---------- 8. CONTRÔLE CAMÉRA MAISON (glisser = tourner, molette = zoom) ----------
 const cameraTarget = new THREE.Vector3(0, 2.2, 0);
-let radius = 17, theta = Math.PI / 4, phi = Math.PI / 3;
+let radius = 15, theta = Math.PI / 4, phi = Math.PI / 3;
 let targetTheta = theta, targetPhi = phi, targetRadius = radius;
 let isDragging = false, lastX = 0, lastY = 0, idleTime = 0;
 
 function updateCameraPosition(dt) {
-  if (!isDragging) { idleTime += dt; if (idleTime > 2) targetTheta += dt * 0.05; }
-  theta += (targetTheta - theta) * 0.1; phi += (targetPhi - phi) * 0.1; radius += (targetRadius - radius) * 0.1;
+  if (!isDragging) {
+    idleTime += dt;
+    if (idleTime > 2) targetTheta += dt * 0.06; // légère rotation auto quand on ne touche à rien
+  }
+  theta += (targetTheta - theta) * 0.1;
+  phi += (targetPhi - phi) * 0.1;
+  radius += (targetRadius - radius) * 0.1;
   camera.position.x = cameraTarget.x + radius * Math.sin(phi) * Math.sin(theta);
   camera.position.y = cameraTarget.y + radius * Math.cos(phi);
   camera.position.z = cameraTarget.z + radius * Math.sin(phi) * Math.cos(theta);
   camera.lookAt(cameraTarget);
 }
-renderer.domElement.addEventListener('mousedown', e => { isDragging = true; idleTime = 0; lastX = e.clientX; lastY = e.clientY; });
-window.addEventListener('mouseup', () => { isDragging = false; idleTime = 0; });
-window.addEventListener('mousemove', e => {
-  if (!isDragging) return;
-  const dx = e.clientX - lastX, dy = e.clientY - lastY; lastX = e.clientX; lastY = e.clientY;
-  targetTheta -= dx * 0.006; targetPhi = Math.max(0.35, Math.min(Math.PI / 2.1, targetPhi - dy * 0.006));
-});
-renderer.domElement.addEventListener('wheel', e => { e.preventDefault(); targetRadius = Math.max(6, Math.min(60, targetRadius + e.deltaY * 0.01)); }, { passive: false });
-function fitCameraToHouse() {
-  const span = Math.max(houseDims.W || 8, houseDims.D || 8);
-  const fit = clamp(span * 1.9, 12, 55);
-  radius = fit; targetRadius = fit;
-}
 
-// ---------- 8. RAYCASTING (survol + clic) ----------
+renderer.domElement.addEventListener('mousedown', (e) => { isDragging = true; idleTime = 0; lastX = e.clientX; lastY = e.clientY; });
+window.addEventListener('mouseup', () => { isDragging = false; idleTime = 0; });
+window.addEventListener('mousemove', (e) => {
+  if (!isDragging) return;
+  const dx = e.clientX - lastX, dy = e.clientY - lastY;
+  lastX = e.clientX; lastY = e.clientY;
+  targetTheta -= dx * 0.006;
+  targetPhi = Math.max(0.4, Math.min(Math.PI / 2.1, targetPhi - dy * 0.006));
+});
+renderer.domElement.addEventListener('wheel', (e) => {
+  e.preventDefault();
+  targetRadius = Math.max(6, Math.min(28, targetRadius + e.deltaY * 0.01));
+}, { passive: false });
+
+// ---------- 9. RAYCASTING (survol + clic) ----------
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
 let hoveredGroup = null;
+
 function getIntersects(event) {
   mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
   mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
   raycaster.setFromCamera(mouse, camera);
   return raycaster.intersectObjects(interactiveMeshes);
 }
-renderer.domElement.addEventListener('mousemove', event => {
+
+renderer.domElement.addEventListener('mousemove', (event) => {
   if (isDragging) return;
   const intersects = getIntersects(event);
   const newGroup = intersects.length ? intersects[0].object.parent : null;
-  if (hoveredGroup && hoveredGroup !== newGroup) { hoveredGroup.scale.set(1, 1, 1); hoveredGroup = null; renderer.domElement.style.cursor = 'grab'; }
-  if (newGroup && newGroup !== hoveredGroup) { hoveredGroup = newGroup; hoveredGroup.scale.set(1.02, 1.02, 1.02); renderer.domElement.style.cursor = 'pointer'; }
+  if (hoveredGroup && hoveredGroup !== newGroup) {
+    hoveredGroup.scale.set(1, 1, 1);
+    hoveredGroup = null;
+    renderer.domElement.style.cursor = 'grab';
+  }
+  if (newGroup && newGroup !== hoveredGroup) {
+    hoveredGroup = newGroup;
+    hoveredGroup.scale.set(1.02, 1.02, 1.02);
+    renderer.domElement.style.cursor = 'pointer';
+  }
 });
-renderer.domElement.addEventListener('click', event => {
+
+renderer.domElement.addEventListener('click', (event) => {
   const intersects = getIntersects(event);
-  if (intersects.length) showZonePanel(intersects[0].object.userData.zoneName);
+  if (intersects.length) handleZoneClick(intersects[0].object.userData.zoneName);
 });
 
-// ---------- 9. ÉTAT APPLICATIF ----------
-let rawData = null;
-let currentZones = null;
-let currentYear = 2025;
+window.MaisonAPI = {};
+let currentDataset = MOCK_DATA.zones;
 
-function loadDataset(data) {
-  rawData = data;
-  buildHouse(data.geometry);
-  fitCameraToHouse();
-  document.getElementById('addr-line').textContent = data.adresse || '—';
-  const temp = data.climat_2050;
-  const tempPanel = document.getElementById('temp-2050');
-  if (temp && typeof temp.temperature_max_projetee_c === 'number') {
-    document.getElementById('temp-value').textContent = temp.temperature_max_projetee_c.toFixed(1) + ' °C';
-    document.getElementById('temp-source').textContent = 'source : ' + (temp.source || '—');
-    tempPanel.classList.add('visible');
-  } else {
-    tempPanel.classList.remove('visible');
+function handleZoneClick(zoneName) {
+  if (typeof window.MaisonAPI.onZoneClick === 'function') {
+    window.MaisonAPI.onZoneClick(zoneName, currentDataset[zoneName]);
   }
-  document.getElementById('info-panel').style.display = 'none';
-  setYear(2025, true);
+  showTestPanel(zoneName, currentDataset[zoneName]);
 }
 
-function setYear(year, force) {
-  if (year === currentYear && !force) return;
-  currentYear = year;
-  document.getElementById('btn-2025').classList.toggle('active', year === 2025);
-  document.getElementById('btn-2050').classList.toggle('active', year === 2050);
-  const source = year === 2050 ? rawData.projection_2050.zones : rawData.zones;
-  const scoreGlobal = year === 2050 ? rawData.projection_2050.score_global : rawData.score_global;
-  currentZones = JSON.parse(JSON.stringify(source));
-  document.getElementById('score-value').textContent = scoreGlobal;
-  window.currentGlobalScore = scoreGlobal;
-  ZONE_NAMES.forEach(name => { if (currentZones[name]) updateZoneColor(name, currentZones[name].risque, !force); });
-  const infoPanel = document.getElementById('info-panel');
-  if (infoPanel.style.display === 'block' && infoPanel.dataset.zone) showZonePanel(infoPanel.dataset.zone);
-}
-document.getElementById('btn-2025').addEventListener('click', () => setYear(2025));
-document.getElementById('btn-2050').addEventListener('click', () => setYear(2050));
-
-// Echappe le texte libre produit par le LLM avant insertion via innerHTML.
-function escapeHtml(str) {
-  if (str === null || str === undefined) return '';
-  return String(str)
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-}
-
-// Construit la phrase "coût estimé" complète à partir de l'objet
-// cout_estime produit par l'agent recommandations : montant_min/max/devise/unite
-// + infos de contexte (date_estimation, zone_geo, hypotheses).
-function formatCoutEstime(cout) {
-  if (!cout || (cout.montant_min == null && cout.montant_max == null)) return null;
-  const min = cout.montant_min, max = cout.montant_max, dev = cout.devise || '€';
-  const range = (min != null && max != null && min !== max) ? `entre ${min} et ${max}` : `environ ${min ?? max}`;
-  let txt = `💶 <b>Coût estimé : ${range} ${escapeHtml(dev)}</b>${cout.unite ? ' ' + escapeHtml(cout.unite) : ''}`;
-  const contexte = [];
-  if (cout.zone_geo) contexte.push(escapeHtml(cout.zone_geo));
-  if (cout.date_estimation) contexte.push(`estimation ${escapeHtml(cout.date_estimation)}`);
-  if (contexte.length) txt += ` <span class="reco-meta-sub">(${contexte.join(', ')})</span>`;
-  if (cout.hypotheses) txt += `<div class="reco-meta-sub">Hypothèses : ${escapeHtml(cout.hypotheses)}</div>`;
-  return txt;
-}
-
-// Helpers partagés (chat + devis) pour lire indifféremment le schéma réel
-// (mesure/cout_estime objet/aide/sources) et le schéma d'exemple
-// (travaux/cout_estime chaîne/gain_resilience).
-function recoLabel(r) { return r.mesure || r.travaux || 'Travaux recommandés'; }
-function recoCostRange(r) {
-  const c = r.cout_estime;
-  if (c && typeof c === 'object') {
-    const min = c.montant_min, max = c.montant_max;
-    if (min == null && max == null) return { min: 0, max: 0, label: '—' };
-    const dev = c.devise || '€';
-    const label = (min != null && max != null && min !== max) ? `${min}–${max} ${dev}` : `environ ${min ?? max} ${dev}`;
-    return { min: min ?? max ?? 0, max: max ?? min ?? 0, label };
-  }
-  if (typeof c === 'string') {
-    const parts = c.replace(/€/g, '').split('-').map(n => parseInt(n, 10));
-    if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) return { min: parts[0], max: parts[1], label: c };
-    return { min: 0, max: 0, label: c || '—' };
-  }
-  return { min: 0, max: 0, label: '—' };
-}
-function recoGain(r) { return typeof r.gain_resilience === 'number' ? r.gain_resilience : 10; }
-
-function showZonePanel(zoneName) {
-  const data = currentZones[zoneName]; if (!data) return;
+// ---------- 10. PANNEAU DE TEST (placeholder — Personne 3 fera la vraie UI) ----------
+function showTestPanel(zoneName, data) {
+  if (!data) return;
   const panel = document.getElementById('info-panel');
-  panel.style.display = 'block'; panel.dataset.zone = zoneName;
   document.getElementById('info-title').textContent = zoneName.replace('_', ' ');
   const badge = document.getElementById('info-badge');
   badge.textContent = `${data.niveau.toUpperCase()} — ${data.risque}/100`;
   badge.style.background = '#' + scoreToColor(data.risque).toString(16).padStart(6, '0');
-  document.getElementById('info-alea').innerHTML = `<b>Aléa principal :</b> ${escapeHtml(data.alea_principal)}`;
+  badge.style.color = '#FFFFFF';
   document.getElementById('info-justif').textContent = data.justification;
   const recosDiv = document.getElementById('info-recos');
   recosDiv.innerHTML = '';
-  const recos = data.recommandations || [];
-
-  const countLabel = document.createElement('div');
-  countLabel.className = 'reco-count';
-  countLabel.textContent = recos.length
-    ? `Recommandations de travaux (${recos.length})`
-    : 'Recommandations de travaux';
-  recosDiv.appendChild(countLabel);
-
-  if (!recos.length) {
-    const empty = document.createElement('div');
-    empty.className = 'reco-empty';
-    empty.textContent = 'Aucune recommandation sourcée pour cette zone (risque faible, ou aucune fiche pertinente trouvée).';
-    recosDiv.appendChild(empty);
-    return;
-  }
-
-  recos.forEach(r => {
-    const div = document.createElement('div');
-    div.className = 'reco';
-
-    if (r.mesure !== undefined) {
-      let html = '';
-      if (r.type) html += `<span class="reco-type">${escapeHtml(r.type.replace(/_/g, ' '))}</span><br/>`;
-      html += `<b>${escapeHtml(r.mesure) || '—'}</b>`;
-
-      if (r.explication) {
-        html += `<div class="reco-explication">${escapeHtml(r.explication)}</div>`;
-      }
-
-      const coutHtml = formatCoutEstime(r.cout_estime);
-      if (coutHtml) html += `<div class="reco-meta">${coutHtml}</div>`;
-
-      if (r.aide && (r.aide.dispositif || r.aide.conditions)) {
-        html += `<div class="reco-aide">🏛️ <b>${escapeHtml(r.aide.dispositif) || 'Aide potentielle'}</b>`
-          + (r.aide.conditions ? `<div class="reco-meta-sub">${escapeHtml(r.aide.conditions)}</div>` : '')
-          + (r.aide.statut ? `<div class="reco-meta-sub">Statut : ${escapeHtml(r.aide.statut.replace(/_/g, ' '))} — à vérifier auprès de l'organisme, pas une éligibilité garantie.</div>` : '')
-          + `</div>`;
-      }
-
-      if (Array.isArray(r.sources) && r.sources.length) {
-        const srcTxt = r.sources.map(s => s.source_id || s.fiche_id).filter(Boolean).join(', ');
-        html += `<div class="reco-sources">Sources documentaires : ${escapeHtml(srcTxt) || '—'}</div>`;
-      }
-      div.innerHTML = html;
-    } else {
-      div.innerHTML = `<b>${escapeHtml(r.travaux)}</b><br/>${escapeHtml(r.cout_estime)} · gain résilience +${r.gain_resilience}`;
-    }
-    recosDiv.appendChild(div);
+  (data.recommandations || []).forEach(r => {
+    const el = document.createElement('div');
+    el.className = 'reco';
+    el.innerHTML = `<strong>${r.travaux}</strong><br>${r.cout_estime} · +${r.gain_resilience}% résilience`;
+    recosDiv.appendChild(el);
   });
+  panel.style.display = 'block';
 }
 
-// ---------- 10. BOUCLE DE RENDU ----------
-let lastTime = performance.now();
-function animate(now) {
-  requestAnimationFrame(animate);
-  const dt = Math.min((now - lastTime) / 1000, 0.1); lastTime = now;
-  const elapsed = now / 1000;
-  updateCameraPosition(dt);
-  animateEffects(dt, elapsed);
-  renderer.render(scene, camera);
+// ---------- 11. TOGGLE 2025 / 2050 ----------
+const btn2025 = document.getElementById('btn-2025');
+const btn2050 = document.getElementById('btn-2050');
+function applyDataset(dataset, scoreGlobal) {
+  currentDataset = dataset;
+  setZonesFromData(dataset);
+  document.getElementById('score-value').textContent = scoreGlobal ?? '--';
+  window.currentGlobalScore = scoreGlobal;
 }
-requestAnimationFrame(animate);
+btn2025.addEventListener('click', () => {
+  btn2025.classList.add('active'); btn2050.classList.remove('active');
+  applyDataset(MOCK_DATA.zones, MOCK_DATA.score_global);
+});
+btn2050.addEventListener('click', () => {
+  btn2050.classList.add('active'); btn2025.classList.remove('active');
+  applyDataset(MOCK_DATA.projection_2050.zones, MOCK_DATA.projection_2050.score_global);
+});
+applyDataset(MOCK_DATA.zones, MOCK_DATA.score_global);
 
+// ---------- 12. API PUBLIQUE ----------
+Object.assign(window.MaisonAPI, {
+  updateZoneColor,
+  setZonesFromData,
+  onZoneClick: null,
+  loadFullDataset(json) {
+    if (!json || !json.zones) { console.error('MaisonAPI.loadFullDataset: JSON invalide', json); return; }
+    currentDataset = json.zones;
+    setZonesFromData(json.zones);
+    document.getElementById('score-value').textContent = json.score_global ?? '--';
+    window.MaisonAPI._dataset2050 = json.projection_2050;
+  }
+});
+
+// ---------- 13. RESIZE ----------
 window.addEventListener('resize', () => {
-  camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix();
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
 });
 
-// ---------- 11. DÉMARRAGE ----------
-loadDataset(DEFAULT_DATA);
+// ---------- 14. BOUCLE DE RENDU ----------
+let lastFrame = performance.now();
+function animate(now) {
+  requestAnimationFrame(animate);
+  const dt = Math.min((now - lastFrame) / 1000, 0.1);
+  lastFrame = now;
+  updateCameraPosition(dt);
+  scanRing.material.opacity = 0.35 + Math.sin(now * 0.0015) * 0.15; // pulsation douce
+  renderer.render(scene, camera);
+}
+requestAnimationFrame(animate);
 </script>
 
 <script>
 /* =========================================================================
-   ORCHESTRATION — accueil -> formulaire -> traitement (appel réel au
-   backend /diagnostic) -> jumeau 3D. Le mode "prospection par zone/ville"
-   reste ici un aperçu front (voir commentaire sur #zone-overlay) : son
-   backend sera branché plus tard par un autre développeur.
+   ORCHESTRATION DE LA DEMO — formulaire -> écran de traitement -> jumeau 3D
+   (100% simulé côté front : aucun appel réseau réel, juste des timers)
    ========================================================================= */
 (function () {
   const homeScreen = document.getElementById('home-screen');
@@ -1930,20 +1693,12 @@ loadDataset(DEFAULT_DATA);
   const form = document.getElementById('property-form');
   const steps = Array.from(document.querySelectorAll('#loading-steps .step'));
   const barFill = document.getElementById('loading-bar-fill');
-  const loadingError = document.getElementById('loading-error');
-  const loadingErrorMsg = document.getElementById('loading-error-msg');
-  const loadingRetryBtn = document.getElementById('loading-retry-btn');
   const zoneOverlay = document.getElementById('zone-overlay');
   const zoneCloseBtn = document.getElementById('zone-close-btn');
   const zoneForm = document.getElementById('zone-search-form');
   const zoneInput = document.getElementById('zone-search-input');
   const zoneResults = document.getElementById('zone-results');
   const zoneMapSearch = document.getElementById('zone-map-search');
-  const jsonInput = document.getElementById('json-input');
-  const demoDataBtn = document.getElementById('demo-data-btn');
-  const brandWatermark = document.getElementById('brand-watermark');
-
-  let stepTimers = [];
 
   function openDiagnosticForm() {
     homeScreen.style.display = 'none';
@@ -1964,6 +1719,11 @@ loadDataset(DEFAULT_DATA);
     zoneOverlay.classList.remove('open');
     zoneOverlay.setAttribute('aria-hidden', 'true');
   }
+
+  ['home-cta-hero', 'home-cta-nav', 'nav-search-link'].forEach(function (id) {
+    const btn = document.getElementById(id);
+    if (btn) btn.addEventListener('click', openDiagnosticForm);
+  });
 
   const verifyAddrBtn = document.getElementById('home-cta-mode-a');
   if (verifyAddrBtn) verifyAddrBtn.addEventListener('click', openDiagnosticForm);
@@ -1987,140 +1747,42 @@ loadDataset(DEFAULT_DATA);
     zoneResults.scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
 
-  if (brandWatermark) {
-    brandWatermark.addEventListener('click', function () { location.reload(); });
-  }
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    formScreen.style.display = 'none';
+    loadingScreen.style.display = 'flex';
+    runOrchestrationSequence();
+  });
 
-  function clearStepTimers() {
-    stepTimers.forEach(id => clearTimeout(id));
-    stepTimers = [];
-  }
-
-  function resetSteps() {
+  function runOrchestrationSequence() {
+    const delayPerStep = 650; // ms
     steps.forEach(s => s.classList.remove('active', 'done'));
     barFill.style.width = '0%';
-    loadingError.classList.remove('show');
-  }
 
-  // Anime les étapes jusqu'à l'avant-dernière, puis laisse la dernière
-  // "active" (en rotation) jusqu'à ce que finishSteps() soit appelé : la
-  // durée réelle de l'appel réseau est inconnue, donc l'animation ne doit
-  // pas se terminer avant que la réponse soit arrivée.
-  function startStepAnimation() {
-    resetSteps();
-    const delayPerStep = 550;
-    const last = steps.length - 1;
     steps.forEach((step, i) => {
-      if (i === last) return;
-      stepTimers.push(setTimeout(() => {
+      // début de l'étape i
+      setTimeout(() => {
         steps.forEach(s => s.classList.remove('active'));
         step.classList.add('active');
         barFill.style.width = Math.round(((i + 0.5) / steps.length) * 100) + '%';
-      }, i * delayPerStep));
-      stepTimers.push(setTimeout(() => {
+      }, i * delayPerStep);
+
+      // fin de l'étape i (marquée comme terminée)
+      setTimeout(() => {
         step.classList.remove('active');
         step.classList.add('done');
         barFill.style.width = Math.round(((i + 1) / steps.length) * 100) + '%';
-      }, i * delayPerStep + delayPerStep - 120));
+      }, i * delayPerStep + delayPerStep - 150);
     });
-    stepTimers.push(setTimeout(() => {
-      steps[last].classList.add('active');
-      barFill.style.width = '92%';
-    }, last * delayPerStep));
-  }
 
-  function finishSteps(cb) {
-    clearStepTimers();
-    steps.forEach(s => { s.classList.remove('active'); s.classList.add('done'); });
-    barFill.style.width = '100%';
-    setTimeout(cb, 350);
-  }
-
-  function showLoadingError(message) {
-    clearStepTimers();
-    loadingErrorMsg.textContent = message;
-    loadingError.classList.add('show');
-  }
-
-  function showAppUI() {
-    loadingScreen.style.display = 'none';
-    appUI.classList.add('visible');
-    window.dispatchEvent(new Event('resize'));
-  }
-
-  function goStraightToTwin(data) {
-    // Utilisé par le chargeur de JSON et le bouton "exemple sans backend" :
-    // on saute l'appel réseau mais on garde une transition cohérente.
-    homeScreen.style.display = 'none';
-    formScreen.style.display = 'none';
-    loadingScreen.style.display = 'flex';
-    resetSteps();
-    steps.forEach(s => s.classList.add('done'));
-    barFill.style.width = '100%';
+    const totalDuration = steps.length * delayPerStep + 500;
     setTimeout(() => {
-      loadDataset(data);
-      showAppUI();
-    }, 500);
-  }
-
-  form.addEventListener('submit', function (e) {
-    e.preventDefault();
-    const adresse = document.getElementById('f-adresse').value.trim();
-    if (!adresse) return;
-    const apiBase = (document.getElementById('api-base-input').value || 'http://localhost:8000').trim();
-
-    formScreen.style.display = 'none';
-    loadingScreen.style.display = 'flex';
-    startStepAnimation();
-
-    fetch(apiBase + '/diagnostic', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ adresse }),
-    })
-      .then(async response => {
-        if (!response.ok) {
-          const bodyText = await response.text();
-          throw new Error(`${response.status} ${response.statusText} — ${bodyText.slice(0, 300)}`);
-        }
-        return response.json();
-      })
-      .then(contract => {
-        finishSteps(() => {
-          loadDataset(contract);
-          showAppUI();
-        });
-      })
-      .catch(err => {
-        console.error('Échec du diagnostic :', err);
-        showLoadingError(`Erreur : ${err.message} — vérifie que le serveur tourne (uvicorn app.main:app) sur ${apiBase} et qu'il est joignable depuis cette page.`);
-      });
-  });
-
-  loadingRetryBtn.addEventListener('click', function () {
-    loadingScreen.style.display = 'none';
-    loadingError.classList.remove('show');
-    formScreen.style.display = 'flex';
-  });
-
-  if (jsonInput) {
-    jsonInput.addEventListener('change', function (e) {
-      const file = e.target.files[0]; if (!file) return;
-      const reader = new FileReader();
-      reader.onload = evt => {
-        try {
-          const data = JSON.parse(evt.target.result);
-          goStraightToTwin(data);
-        } catch (err) {
-          alert('JSON invalide : ' + err.message);
-        }
-      };
-      reader.readAsText(file);
-    });
-  }
-
-  if (demoDataBtn) {
-    demoDataBtn.addEventListener('click', function () { goStraightToTwin(DEFAULT_DATA); });
+      loadingScreen.style.display = 'none';
+      appUI.classList.add('visible');
+      // on redéclenche un resize pour que le renderer Three.js
+      // récupère bien les dimensions désormais visibles
+      window.dispatchEvent(new Event('resize'));
+    }, totalDuration);
   }
 })();
 </script>
@@ -2176,8 +1838,9 @@ loadDataset(DEFAULT_DATA);
     }, delay);
   }
 
+  // ---------- Génération des réponses à partir du dataset affiché (2025 / 2050) ----------
   function getDataset() {
-    return (typeof currentZones !== 'undefined' && currentZones) ? currentZones : DEFAULT_DATA.zones;
+    return (typeof currentDataset !== 'undefined' && currentDataset) ? currentDataset : MOCK_DATA.zones;
   }
 
   function zoneLabel(name) {
@@ -2195,13 +1858,13 @@ loadDataset(DEFAULT_DATA);
     if (!lignes.length) {
       return "D'après le diagnostic actuel, aucun travaux urgent n'est identifié sur ce bien.";
     }
-    lignes.sort((a, b) => recoGain(b) - recoGain(a));
-    let out = "Voici la synthèse des travaux recommandés, classés par gain de résilience estimé :\n\n";
+    lignes.sort((a, b) => b.gain_resilience - a.gain_resilience);
+    let out = "Voici la synthèse des travaux recommandés, classés par gain de résilience :\n\n";
     lignes.forEach((r, i) => {
-      out += (i + 1) + ". " + recoLabel(r) + " — " + zoneLabel(r.zone) + "\n";
-      out += "   " + recoCostRange(r).label + " · +" + recoGain(r) + "% résilience\n";
+      out += (i + 1) + ". " + r.travaux + " — " + zoneLabel(r.zone) + "\n";
+      out += "   " + r.cout_estime + " · +" + r.gain_resilience + "% résilience\n";
     });
-    const totalGain = lignes.reduce((s, r) => s + recoGain(r), 0);
+    const totalGain = lignes.reduce((s, r) => s + r.gain_resilience, 0);
     out += "\nEn cumulant ces travaux, le gain de résilience estimé avoisine " + totalGain + "%, ce qui réduirait significativement l'exposition du bien aux sinistres climatiques.";
     return out;
   }
@@ -2217,8 +1880,7 @@ loadDataset(DEFAULT_DATA);
     let out = "La zone la plus critique est : " + zoneLabel(pire.name) + " (" + pire.risque + "/100 — niveau " + pire.niveau + ").\n\n";
     out += "Aléa principal : " + pire.alea_principal + ".\n" + pire.justification;
     if (pire.recommandations && pire.recommandations.length) {
-      const top = pire.recommandations[0];
-      out += "\n\nRecommandation prioritaire : " + recoLabel(top) + " (" + recoCostRange(top).label + "), soit +" + recoGain(top) + "% de résilience.";
+      out += "\n\nRecommandation prioritaire : " + pire.recommandations[0].travaux + " (" + pire.recommandations[0].cout_estime + "), soit +" + pire.recommandations[0].gain_resilience + "% de résilience.";
     }
     return out;
   }
@@ -2228,8 +1890,10 @@ loadDataset(DEFAULT_DATA);
     let min = 0, max = 0, count = 0;
     Object.keys(zones).forEach(name => {
       (zones[name].recommandations || []).forEach(r => {
-        const cost = recoCostRange(r);
-        if (cost.min || cost.max) { min += cost.min; max += cost.max; count++; }
+        const parts = r.cout_estime.replace(/€/g, '').split('-').map(function (n) { return parseInt(n, 10); });
+        if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+          min += parts[0]; max += parts[1]; count++;
+        }
       });
     });
     if (!count) return "Aucun budget travaux n'est nécessaire pour le moment sur ce bien.";
@@ -2287,8 +1951,7 @@ loadDataset(DEFAULT_DATA);
     if (panel.classList.contains('open') && !hasGreeted) {
       hasGreeted = true;
       setTimeout(function () {
-        const addr = (typeof rawData !== 'undefined' && rawData && rawData.adresse) ? ' pour le bien situé au ' + rawData.adresse : '';
-        addMessage("Bonjour, je suis l'assistant du jumeau numérique" + addr + ". Je peux vous aider à comprendre les risques identifiés sur ce bien et les travaux recommandés. Que souhaitez-vous savoir ?", 'bot');
+        addMessage("Bonjour, je suis l'assistant du jumeau numérique. Je peux vous aider à comprendre les risques identifiés sur ce bien et les travaux recommandés. Que souhaitez-vous savoir ?", 'bot');
       }, 400);
     }
   });
@@ -2299,10 +1962,7 @@ loadDataset(DEFAULT_DATA);
 <script>
 /* =========================================================================
    DEVIS PERSONNALISÉ & CERTIFICATION CLIMATO-RÉSILIENTE
-   (100% simulé côté front — calculs indicatifs à partir du dataset affiché ;
-   le schéma réel des recommandations n'ayant pas de "gain_resilience"
-   numérique par poste de travaux, une valeur par défaut raisonnable est
-   utilisée via recoGain() pour garder ce simulateur utilisable.)
+   (100% simulé côté front — calculs indicatifs à partir du dataset affiché)
    ========================================================================= */
 (function () {
   const cta          = document.getElementById('devis-cta');
@@ -2320,23 +1980,28 @@ loadDataset(DEFAULT_DATA);
   const sumGain  = document.getElementById('sum-gain');
   const sumPrime = document.getElementById('sum-prime');
 
-  let items = [];
+  let items = []; // { zone, travaux, cout_estime, gain_resilience, min, max, checked }
+
+  function parseCost(str) {
+    const parts = String(str).replace(/€/g, '').split('-').map(n => parseInt(n, 10));
+    if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) return { min: parts[0], max: parts[1] };
+    return { min: 0, max: 0 };
+  }
 
   function zoneLabel(name) { return name.replace(/_/g, ' '); }
 
   function buildItems() {
-    const zones = (typeof currentZones !== 'undefined' && currentZones) ? currentZones : DEFAULT_DATA.zones;
+    const zones = (typeof currentDataset !== 'undefined' && currentDataset) ? currentDataset : MOCK_DATA.zones;
     const out = [];
     Object.keys(zones).forEach(zoneName => {
-      (zones[zoneName].recommandations || []).forEach((r, idx) => {
-        const cost = recoCostRange(r);
-        const label = recoLabel(r);
+      (zones[zoneName].recommandations || []).forEach(r => {
+        const cost = parseCost(r.cout_estime);
         out.push({
-          id: zoneName + '__' + idx + '__' + label.replace(/[^a-zA-Z0-9]/g, '_'),
+          id: zoneName + '__' + r.travaux.replace(/[^a-zA-Z0-9]/g, '_'),
           zone: zoneName,
-          travaux: label,
-          cout_estime: cost.label,
-          gain_resilience: recoGain(r),
+          travaux: r.travaux,
+          cout_estime: r.cout_estime,
+          gain_resilience: r.gain_resilience,
           min: cost.min, max: cost.max,
           checked: true
         });
@@ -2388,7 +2053,7 @@ loadDataset(DEFAULT_DATA);
 
   function updateSummary() {
     const { selected, min, max, gain } = computeSelection();
-    const baseScore = window.currentGlobalScore ?? DEFAULT_DATA.score_global;
+    const baseScore = window.currentGlobalScore ?? MOCK_DATA.score_global;
     const { primePercent } = computePrime(baseScore, gain);
     sumCount.textContent = selected.length;
     sumCost.textContent = selected.length ? (min.toLocaleString('fr-FR') + '€ – ' + max.toLocaleString('fr-FR') + '€') : '0€';
@@ -2410,7 +2075,7 @@ loadDataset(DEFAULT_DATA);
 
   function generateCertificate() {
     const { selected, min, max, gain } = computeSelection();
-    const baseScore = window.currentGlobalScore ?? DEFAULT_DATA.score_global;
+    const baseScore = window.currentGlobalScore ?? MOCK_DATA.score_global;
     const { newScore, primePercent } = computePrime(baseScore, gain);
     const fullyCertified = newScore <= 45;
 
@@ -2418,10 +2083,8 @@ loadDataset(DEFAULT_DATA);
     document.getElementById('cert-score-after').textContent = newScore;
     document.getElementById('cert-prime-value').textContent = primePercent + '%';
 
-    const addr = (typeof rawData !== 'undefined' && rawData && rawData.adresse)
-      ? rawData.adresse
-      : (document.getElementById('f-adresse') ? document.getElementById('f-adresse').value : '—');
-    document.getElementById('cert-property').textContent = addr || '—';
+    const addrInput = document.getElementById('f-adresse');
+    document.getElementById('cert-property').textContent = addrInput && addrInput.value ? addrInput.value : '8 Allée du Port Maillard, 44000 Nantes';
 
     const titleEl = document.getElementById('cert-title');
     const headingEl = document.getElementById('cert-heading');
