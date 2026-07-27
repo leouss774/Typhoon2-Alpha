@@ -98,4 +98,4 @@ def embed_texts(texts: list[str], max_retries: int = 5) -> list[list[float]]:
             print(f"    [retry embeddings {attempt + 1}/{max_retries}] erreur Mistral: {e}")
             print(f"    -> attente {wait:.0f}s avant nouvelle tentative")
             time.sleep(wait)
-    raise RuntimeError(f"Echec appel Mistral (embeddings) a
+    raise RuntimeError(f"Echec appel Mistral (embeddings) apres {max_retries} tentatives: {last_err}")

@@ -62,9 +62,11 @@
   #info-panel .reco { background: rgba(93,178,255,0.08); border: 1px solid rgba(93,178,255,0.2); border-radius: 8px; padding: 8px 10px; margin-top: 6px; font-size: 12px; }
   #info-panel .reco b { color: #fff; }
   #info-panel .reco .reco-type { display: inline-block; font-size: 9px; text-transform: uppercase; letter-spacing: 0.04em; color: #5fb2ff; background: rgba(93,178,255,0.12); border-radius: 4px; padding: 1px 5px; margin-bottom: 4px; }
-  #info-panel .reco .reco-meta { color: #9fb7d6; margin-top: 4px; }
-  #info-panel .reco .reco-aide { color: #ffcf9e; margin-top: 4px; }
-  #info-panel .reco .reco-sources { color: #6c85a8; font-size: 10px; margin-top: 5px; line-height: 1.4; }
+  #info-panel .reco .reco-explication { color: #cfe0f5; margin-top: 5px; line-height: 1.5; font-size: 12px; }
+  #info-panel .reco .reco-meta { color: #9fb7d6; margin-top: 6px; line-height: 1.4; }
+  #info-panel .reco .reco-meta-sub { color: #7d95b3; font-size: 11px; margin-top: 2px; }
+  #info-panel .reco .reco-aide { color: #ffcf9e; margin-top: 6px; }
+  #info-panel .reco .reco-sources { color: #6c85a8; font-size: 10px; margin-top: 6px; line-height: 1.4; border-top: 1px solid rgba(93,178,255,0.12); padding-top: 5px; }
   #info-panel .reco-empty { color: #6c85a8; font-size: 12px; font-style: italic; margin-top: 6px; }
 
   #demo-panel { bottom: 16px; left: 16px; width: 340px; max-height: 46vh; overflow-y: auto; }
@@ -786,6 +788,34 @@ function setYear(year, force) {
 document.getElementById('btn-2025').addEventListener('click', () => setYear(2025));
 document.getElementById('btn-2050').addEventListener('click', () => setYear(2050));
 
+// Echappe le texte libre produit par le LLM (mesure/explication/aide/...)
+// avant insertion via innerHTML (le reste du panneau utilise des valeurs
+// controlées par le code, pas besoin de l'appliquer partout).
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+// Construit la phrase "coût estimé" complète à partir de l'objet
+// cout_estime produit par l'agent recommandations (cf.
+// backend/app/recommandations/service.py) : montant_min/max/devise/unite
+// + les infos de contexte (date_estimation, zone_geo, hypotheses) que la
+// fiche source peut fournir, plutôt qu'un simple "min–max €" opaque.
+function formatCoutEstime(cout) {
+  if (!cout || (cout.montant_min == null && cout.montant_max == null)) return null;
+  const min = cout.montant_min, max = cout.montant_max, dev = cout.devise || '€';
+  const range = (min != null && max != null && min !== max) ? `entre ${min} et ${max}` : `environ ${min ?? max}`;
+  let txt = `💶 <b>Coût estimé : ${range} ${escapeHtml(dev)}</b>${cout.unite ? ' ' + escapeHtml(cout.unite) : ''}`;
+  const contexte = [];
+  if (cout.zone_geo) contexte.push(escapeHtml(cout.zone_geo));
+  if (cout.date_estimation) contexte.push(`estimation ${escapeHtml(cout.date_estimation)}`);
+  if (contexte.length) txt += ` <span class="reco-meta-sub">(${contexte.join(', ')})</span>`;
+  if (cout.hypotheses) txt += `<div class="reco-meta-sub">Hypothèses : ${escapeHtml(cout.hypotheses)}</div>`;
+  return txt;
+}
+
 function showZonePanel(zoneName) {
   const data = currentZones[zoneName]; if (!data) return;
   const panel = document.getElementById('info-panel');
@@ -821,27 +851,29 @@ function showZonePanel(zoneName) {
 
     if (r.mesure !== undefined) {
       // Schéma réel produit par l'agent recommandations (cf.
-      // backend/app/recommandations/service.py) : mesure/type/cout_estime
-      // (objet)/aide (objet)/sources[].
+      // backend/app/recommandations/service.py) : mesure (titre)/
+      // explication (détaillée)/type/cout_estime (objet)/aide (objet)/sources[].
       let html = '';
-      if (r.type) html += `<span class="reco-type">${r.type.replace(/_/g, ' ')}</span><br/>`;
-      html += `<b>${r.mesure || '—'}</b>`;
+      if (r.type) html += `<span class="reco-type">${escapeHtml(r.type.replace(/_/g, ' '))}</span><br/>`;
+      html += `<b>${escapeHtml(r.mesure) || '—'}</b>`;
 
-      const cout = r.cout_estime;
-      if (cout && (cout.montant_min != null || cout.montant_max != null)) {
-        const min = cout.montant_min, max = cout.montant_max, dev = cout.devise || '€';
-        const range = (min != null && max != null && min !== max) ? `${min}–${max}` : (min ?? max);
-        html += `<div class="reco-meta">💶 ${range} ${dev}${cout.unite ? ' ' + cout.unite : ''}</div>`;
+      if (r.explication) {
+        html += `<div class="reco-explication">${escapeHtml(r.explication)}</div>`;
       }
 
+      const coutHtml = formatCoutEstime(r.cout_estime);
+      if (coutHtml) html += `<div class="reco-meta">${coutHtml}</div>`;
+
       if (r.aide && (r.aide.dispositif || r.aide.conditions)) {
-        html += `<div class="reco-aide">🏛️ ${r.aide.dispositif || 'Aide potentielle'}`
-          + (r.aide.statut ? ` (${r.aide.statut.replace(/_/g, ' ')})` : '') + `</div>`;
+        html += `<div class="reco-aide">🏛️ <b>${escapeHtml(r.aide.dispositif) || 'Aide potentielle'}</b>`
+          + (r.aide.conditions ? `<div class="reco-meta-sub">${escapeHtml(r.aide.conditions)}</div>` : '')
+          + (r.aide.statut ? `<div class="reco-meta-sub">Statut : ${escapeHtml(r.aide.statut.replace(/_/g, ' '))} — à vérifier auprès de l'organisme, pas une éligibilité garantie.</div>` : '')
+          + `</div>`;
       }
 
       if (Array.isArray(r.sources) && r.sources.length) {
         const srcTxt = r.sources.map(s => s.source_id || s.fiche_id).filter(Boolean).join(', ');
-        html += `<div class="reco-sources">Sources : ${srcTxt || '—'}</div>`;
+        html += `<div class="reco-sources">Sources documentaires : ${escapeHtml(srcTxt) || '—'}</div>`;
       }
       div.innerHTML = html;
     } else {

@@ -108,6 +108,7 @@ def _fake_chat_json(system_prompt, user_prompt):
         "recommandations": [
             {
                 "mesure": "[TEST] mesure de reduction de vulnerabilite",
+                "explication": "[TEST] explication detaillee de la mesure et de son lien avec le risque.",
                 "type": "recommandation_source",
                 "cout_estime": None,
                 "aide": None,
