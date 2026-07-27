@@ -1,10 +1,14 @@
 """
-StateGraph LangGraph : collector_agent -> scoring_agent -> digital_twin_agent
-(cf. README racine, section "Architecture multi-agents").
+StateGraph LangGraph :
+  collector_agent -> scoring_agent -> recommandations_agent -> digital_twin_agent
 
-rag_agent n'est pas encore branche (base documentaire/RAG non implementee,
-voir README Roadmap) : le graphe s'arrete a digital_twin_agent, et
-`zones[*].recommandations` reste une liste vide en attendant ce noeud.
+Le noeud `recommandations_agent` est insere entre scoring_agent et
+digital_twin_agent : il lit state.risk_scores (produit par scoring_agent),
+interroge la base RAG Mistral, et ecrit les recommandations directement dans
+risk_scores.zones[*].recommandations avant que digital_twin_agent n'assemble le
+contrat final. Si l'index RAG n'est pas charge (MISTRAL_API_KEY absente ou
+build_index.py pas encore lance), le noeud est un no-op : le graphe continue
+normalement et les recommandations restent vides.
 
 Checkpointer : `MemorySaver` (en memoire, perdu au redemarrage du process)
 pour cette etape MVP. Le README prevoit un checkpointer SQLite en local
@@ -19,7 +23,7 @@ import time
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, START, StateGraph
 
-from app.agents import digital_twin_agent, scoring_agent
+from app.agents import digital_twin_agent, recommandations_agent, scoring_agent
 from app.agents.collector_agent import collect
 from app.agents.state import TyphoonState
 from app.core.logging import get_logger
@@ -38,6 +42,10 @@ def _scoring_node(state: TyphoonState) -> dict:
     return scoring_agent.run(state)
 
 
+def _recommandations_node(state: TyphoonState) -> dict:
+    return recommandations_agent.run(state)
+
+
 def _digital_twin_node(state: TyphoonState) -> dict:
     return digital_twin_agent.run(state)
 
@@ -46,11 +54,13 @@ def build_graph():
     graph = StateGraph(TyphoonState)
     graph.add_node("collector_agent", _collector_node)
     graph.add_node("scoring_agent", _scoring_node)
+    graph.add_node("recommandations_agent", _recommandations_node)
     graph.add_node("digital_twin_agent", _digital_twin_node)
 
     graph.add_edge(START, "collector_agent")
     graph.add_edge("collector_agent", "scoring_agent")
-    graph.add_edge("scoring_agent", "digital_twin_agent")
+    graph.add_edge("scoring_agent", "recommandations_agent")
+    graph.add_edge("recommandations_agent", "digital_twin_agent")
     graph.add_edge("digital_twin_agent", END)
 
     return graph.compile(checkpointer=MemorySaver())

@@ -19,8 +19,9 @@ from __future__ import annotations
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.routes import diagnostic, health
+from app.api.routes import diagnostic, health, property_id as property_id_router
 from app.core.logging import configure_logging, get_logger
+from app.property_id.service import init_service as init_property_id_service
 
 configure_logging()
 logger = get_logger(__name__)
@@ -36,8 +37,10 @@ app.add_middleware(
 
 app.include_router(health.router)
 app.include_router(diagnostic.router)
+app.include_router(property_id_router.router)
 
 
 @app.on_event("startup")
 async def on_startup() -> None:
-    logger.info("Typhoon API demarree — routes : POST /diagnostic, GET /health")
+    init_property_id_service()
+    logger.info("Typhoon API demarree — routes : POST /diagnostic, POST /property-id/generate, GET /property-id/{id}, GET /health")

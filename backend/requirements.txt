@@ -27,3 +27,4 @@ chromadb
 # --- Divers ---
 python-dotenv
 sqlalchemy
+mistralai

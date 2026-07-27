@@ -15,7 +15,7 @@ from __future__ import annotations
 import json
 import time
 
-from mistralai import Mistral
+from mistralai.client import Mistral
 
 from . import config
 
