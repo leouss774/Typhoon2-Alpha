@@ -1,0 +1,14 @@
+{
+  "adresse": "12 rue des Lilas, 33000 Bordeaux",
+  "bien": {
+    "type": "maison individuelle",
+    "annee_construction": 1975,
+    "materiaux": {"murs": "parpaing", "toiture": "tuiles"},
+    "coordonnees": {"lat": 44.8378, "lon": -0.5792}
+  },
+  "zones": [
+    {"zone": "fondations", "risques": ["retrait_gonflement_argiles"]},
+    {"zone": "toiture", "risques": ["tempete", "grele"]},
+    {"zone": "facade", "risques": ["canicule"]}
+  ]
+}
