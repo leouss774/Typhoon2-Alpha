@@ -1,17 +1,12 @@
-import React, { useMemo, useEffect, useState } from "react";
-import ScoreGauge from "./ScoreGauge";
-import RiskCards from "./RiskCards";
-import PropertyMap from "./PropertyMap";
+import { useMemo, useEffect, useState, useCallback, useRef } from "react";
 import DigitalTwin from "../DigitalTwin/DigitalTwin";
-import RecommendationList from "../Recommendations/RecommendationList";
-import ChatInterface from "../Chat/ChatInterface";
 import BankDecisionPanel from "./BankDecisionPanel";
 
-// Fallback : le JSON statique de démo si pas d'API
+// Fallback : le JSON statique de démo (UNIQUEMENT pour la route publique)
 import demoData from "../../../assessment_complet.json";
 
 interface DashboardProps {
-  sessionId: string;
+  sessionId: string | null;
   isBankRoute?: boolean;
 }
 
@@ -19,44 +14,156 @@ export default function Dashboard({ sessionId, isBankRoute }: DashboardProps) {
   const [apiData, setApiData] = useState<any | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const pollingRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const retryCountRef = useRef(0);
+  const MAX_POLLING_RETRIES = 40; // ~2 minutes (40 × 3s)
 
-  // Tentative de chargement depuis l'API ou localStorage
-  useEffect(() => {
-    const stored = localStorage.getItem("typhoon_analysis_" + sessionId);
-    if (stored) {
+  // Nettoie le polling au démontage ou changement de session
+  const stopPolling = useCallback(() => {
+    if (pollingRef.current !== null) {
+      clearTimeout(pollingRef.current);
+      pollingRef.current = null;
+    }
+    retryCountRef.current = 0;
+  }, []);
+
+  // Fonction de chargement (utilisée au montage et pour le retry)
+  const loadAnalysis = useCallback(() => {
+    // Nettoyer tout polling en cours
+    if (pollingRef.current !== null) {
+      clearTimeout(pollingRef.current);
+      pollingRef.current = null;
+    }
+
+    if (!sessionId || sessionId === "demo-session-001") {
+      setLoading(false);
+      setError(null);
+      setApiData(null);
+      return;
+    }
+
+    // 1. Essayer le sessionStorage (cache rapide, vidé à la fermeture de l'onglet)
+    const bankCacheKey = "typhoon_bank_" + sessionId;
+    const cachedSession = sessionStorage.getItem(bankCacheKey);
+    if (cachedSession) {
       try {
-        setApiData(JSON.parse(stored));
-        return;
-      } catch {}
+        const parsed = JSON.parse(cachedSession);
+        // Ignorer les caches "processing" (ne pas afficher de vieilles données périmées)
+        if (parsed && parsed.status !== "processing") {
+          setApiData(parsed);
+          setError(null);
+          setLoading(false);
+          retryCountRef.current = 0;
+          return;
+        }
+      } catch { sessionStorage.removeItem(bankCacheKey); }
     }
 
-    // Si sessionId est une session API (commence par "session-"), on appelle le backend
-    if (sessionId.startsWith("session-") && sessionId !== "demo-session-001") {
-      setLoading(true);
-      fetch(`http://localhost:8000/api/analysis/${sessionId}`)
-        .then(res => res.ok ? res.json() : null)
-        .then(data => { if (data) { setApiData(data); localStorage.setItem("typhoon_analysis_" + sessionId, JSON.stringify(data)); } })
-        .catch(err => { console.warn("Fallback vers données démo :", err); })
-        .finally(() => setLoading(false));
+    // 2. Essayer le localStorage (persistant — stocké par le formulaire)
+    const localCacheKey = "typhoon_analysis_" + sessionId;
+    const cachedLocal = localStorage.getItem(localCacheKey);
+    if (cachedLocal) {
+      try {
+        const parsed = JSON.parse(cachedLocal);
+        if (parsed && parsed.status !== "processing") {
+          setApiData(parsed);
+          sessionStorage.setItem(bankCacheKey, cachedLocal);
+          setError(null);
+          setLoading(false);
+          retryCountRef.current = 0;
+          return;
+        }
+      } catch { localStorage.removeItem(localCacheKey); }
     }
-  }, [sessionId]);
 
-  // Données effectives : API > Demo
-  const data = apiData || demoData;
-  if (loading) {
-    return (
-      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "80vh", color: "#4da6ff", fontSize: 18 }}>
-        <span>⏳ Analyse en cours...</span>
-      </div>
-    );
-  }
+    // 3. Appel API si le préfixe est valide
+    if (!sessionId.startsWith("session-")) return;
 
-  // 2. L'ADAPTATEUR : On transforme le JSON métier en JSON compatible 3D
+    setLoading(true);
+    setError(null);
+    fetch(`http://localhost:8000/api/analysis/${sessionId}`)
+      .then(async res => {
+        if (!res.ok) {
+          if (res.status === 404) {
+            // 404 au premier appel = analyse pas encore créée ou backend redémarré
+            // On garde le statut "processing" du sessionStorage si présent
+            throw new Error("Analyse introuvable sur le serveur (404).");
+          }
+          throw new Error(`Erreur serveur ${res.status}`);
+        }
+        return res.json();
+      })
+      .then(data => {
+        if (data.status === "processing") {
+          // Analyse encore en cours → programmer un polling dans 3 secondes
+          retryCountRef.current += 1;
+          if (retryCountRef.current > MAX_POLLING_RETRIES) {
+            setError("L'analyse a dépassé le temps d'attente maximal. Veuillez réessayer.");
+            setLoading(false);
+            return;
+          }
+          setError(null);
+          pollingRef.current = setTimeout(() => {
+            loadAnalysis();
+          }, 3000);
+          return;
+        }
+
+        if (data.status === "error") {
+          setError(data.error || "Erreur lors de l'analyse.");
+          setApiData(null);
+          setLoading(false);
+          retryCountRef.current = 0;
+          return;
+        }
+
+        // Analyse terminée avec données complètes
+        setApiData(data);
+        sessionStorage.setItem(bankCacheKey, JSON.stringify(data));
+        localStorage.setItem(localCacheKey, JSON.stringify(data));
+        setError(null);
+        setLoading(false);
+        retryCountRef.current = 0;
+      })
+      .catch(err => {
+        console.warn("Erreur chargement session :", err.message);
+        retryCountRef.current += 1;
+        if (retryCountRef.current > MAX_POLLING_RETRIES) {
+          setError("Impossible de charger l'analyse après plusieurs tentatives. Le serveur est peut-être indisponible.");
+          setLoading(false);
+          return;
+        }
+        // Si erreur : réessayer dans 5s
+        pollingRef.current = setTimeout(() => {
+          loadAnalysis();
+        }, 5000);
+      });
+  }, [sessionId]); // stopPolling retiré des deps — appelé directement dans la fonction
+
+  useEffect(() => {
+    setApiData(null);
+    setError(null);
+    setLoading(true);
+    retryCountRef.current = 0;
+    loadAnalysis();
+
+    // Nettoyage au démontage
+    return () => {
+      stopPolling();
+    };
+  }, [loadAnalysis]); // stopPolling retiré des deps — stable, pas besoin de le déclencher
+
+  // Données effectives
+  // - Mode Banque : UNIQUEMENT les données de l'API (pas de fallback démo)
+  // - Mode Public : résultat API > JSON démo statique
+  const data = isBankRoute ? apiData : (apiData || demoData);
+
+  // Hook useMemo placé AVANT tout early return (Règles des Hooks React)
   const jumeauPayload = useMemo(() => {
-    const zonesBackend = data.recommandations.zones;
-    const projectionsBackend = data.recommandations.projection_2050.zones;
+    if (!data) return null;
+    const zonesBackend = data.recommandations?.zones || {};
+    const projectionsBackend = data.recommandations?.projection_2050?.zones || {};
 
-    // Zone par défaut (pour les murs manquants comme Sud, Est, Ouest)
     const defaultZone = { 
       risque: 20, 
       niveau: "faible", 
@@ -65,7 +172,6 @@ export default function Dashboard({ sessionId, isBankRoute }: DashboardProps) {
       recommandations: [] 
     };
 
-    // On s'assure que la 3D a bien ses 7 zones pour 2025
     const zones2025 = {
       fondations: zonesBackend.fondations || defaultZone,
       murs_nord: zonesBackend.murs_nord || defaultZone,
@@ -76,15 +182,12 @@ export default function Dashboard({ sessionId, isBankRoute }: DashboardProps) {
       sous_sol: zonesBackend.sous_sol || defaultZone,
     };
 
-    // On construit la vue 2050 en fusionnant la base 2025 et les aggravations 2050
     const zones2050: Record<string, any> = {};
     Object.keys(zones2025).forEach((key) => {
       const base = zones2025[key as keyof typeof zones2025];
       const proj = projectionsBackend[key as keyof typeof projectionsBackend];
-      
       zones2050[key] = {
         ...base,
-        // Si le backend a une projection, on l'utilise, sinon on garde le score 2025
         risque: proj ? proj.risque_projete : base.risque,
         justification: proj ? proj.evolution : base.justification,
         niveau: proj ? (proj.risque_projete >= 60 ? "eleve" : "modere") : base.niveau,
@@ -92,16 +195,91 @@ export default function Dashboard({ sessionId, isBankRoute }: DashboardProps) {
     });
 
     return {
-      score_global: data.analyse_risques.score.global,
+      score_global: data.analyse_risques?.score?.global || 0,
       zones: zones2025,
       projection_2050: {
-        score_global: data.recommandations.projection_2050.score_global,
+        score_global: data.recommandations?.projection_2050?.score_global || 0,
         zones: zones2050
       },
-      // Dimensions de la maison par défaut pour le frontend (en attendant le module Python)
       geometrie: { largeur_m: 8.5, profondeur_m: 6.0, orientation_deg: 15 }
     };
-  }, []);
+  }, [data]);
+
+  // Écran de chargement
+  if (loading) {
+    return (
+      <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", height: "80vh", color: "#4da6ff", gap: 16 }}>
+        <div style={{ fontSize: 40 }}>⏳</div>
+        <div style={{ fontSize: 20, fontWeight: 700 }}>Analyse en cours...</div>
+        <div style={{ fontSize: 14, color: "#7fb4e8" }}>Consultation Géorisques, DVF, ADEME et génération de la décision bancaire...</div>
+      </div>
+    );
+  }
+
+  // Écran d'erreur (avec bouton de retry)
+  if (error) {
+    return (
+      <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", height: "70vh", gap: 20, color: "#8b949e", padding: "0 20px" }}>
+        <div style={{ fontSize: 60 }}>⚠️</div>
+        <h2 style={{ color: "#ff4d4f", margin: 0 }}>Erreur de chargement</h2>
+        <p style={{ fontSize: 15, color: "#f0b2b2", textAlign: "center", maxWidth: 500, lineHeight: 1.5 }}>{error}</p>
+        <div style={{ display: "flex", gap: 12 }}>
+          <button
+            onClick={() => {
+              retryCountRef.current = 0;
+              loadAnalysis();
+            }}
+            style={{
+              padding: "10px 24px", borderRadius: 8, border: "none",
+              background: "#4da6ff", color: "#04070c", fontSize: 14, fontWeight: 700,
+              cursor: "pointer",
+            }}
+          >
+            🔄 Réessayer
+          </button>
+          {isBankRoute && (
+            <button
+              onClick={() => window.location.href = "/bank"}
+              style={{
+                padding: "10px 24px", borderRadius: 8, border: "1px solid #30363d",
+                background: "transparent", color: "#cfe8ff", fontSize: 14,
+                cursor: "pointer",
+              }}
+            >
+              Nouvelle analyse
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Mode Banque : pas de données disponibles (pas de sessionId)
+  if (isBankRoute && !data) {
+    return (
+      <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", height: "70vh", gap: 20, color: "#8b949e" }}>
+        <div style={{ fontSize: 60 }}>🏦</div>
+        <h2 style={{ color: "#d29922", margin: 0 }}>Portail Bancaire — Analyse Crédit</h2>
+        <p style={{ fontSize: 16, color: "#8b949e", textAlign: "center", maxWidth: 420 }}>
+          Aucun dossier chargé. Lancez une nouvelle analyse via le formulaire pour générer une décision bancaire certifiée.
+        </p>
+        <button
+          onClick={() => window.location.href = "/bank"}
+          style={{
+            padding: "12px 28px", borderRadius: 8, border: "1px solid #d29922",
+            background: "rgba(210,153,34,0.15)", color: "#d29922",
+            fontSize: 15, fontWeight: 700, cursor: "pointer",
+          }}
+        >
+          📝 Nouvelle analyse
+        </button>
+        <div style={{ display: "flex", gap: 12 }}>
+          <div style={{ padding: "8px 16px", borderRadius: 6, background: "rgba(210,153,34,0.1)", border: "1px solid #d29922", color: "#d29922", fontSize: 13 }}>✅ Données gouvernementales (BAN, ADEME, DVF)</div>
+          <div style={{ padding: "8px 16px", borderRadius: 6, background: "rgba(77,166,255,0.1)", border: "1px solid #4da6ff", color: "#4da6ff", fontSize: 13 }}>✅ Score Climatique (Géorisques)</div>
+        </div>
+      </div>
+    );
+  }
 
   if (isBankRoute) {
     return (

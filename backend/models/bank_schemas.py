@@ -10,6 +10,8 @@ class BankDecision(BaseModel):
     points_a_verifier: list[str] = Field(default_factory=list, description="Liste des points déclaratifs à vérifier physiquement ou sur document")
     indice_confiance: int = Field(ge=0, le=100, description="Niveau de confiance dans les données déclaratives (0-100)")
     statut_dossier: str = Field(..., description="Statut global : Fast-Track, Étude Manuelle, ou Refus Automatique")
+    score_climatique: int = Field(ge=0, le=100, description="Score de risque climatique global calculé par Géorisques (0-100)")
+    score_risque_bancaire: int = Field(default=0, ge=0, le=100, description="Score de risque global bancaire sur 100")
     niveau_risque_global: str = Field(..., description="Niveau de risque évalué : Faible, Modéré, ou Élevé")
     impact_esg: str = Field(..., description="Impact environnemental du financement (ex: Passoire thermique, Éligible Prêt Vert)")
     points_forts: list[str] = Field(default_factory=list, description="Arguments favorables au dossier (max 3)")

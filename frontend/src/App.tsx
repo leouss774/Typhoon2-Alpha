@@ -1,35 +1,53 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Dashboard from "./components/Dashboard/Dashboard";
 import ClientForm from "./components/Form/ClientForm";
 
 type Page = "form" | "dashboard";
 
 function App() {
-  // 1. Initialiser le state depuis l'URL (Deep Linking / Rafraichissement)
-  const [page, setPage] = useState<Page>(() => {
-    const params = new URLSearchParams(window.location.search);
-    return (params.get("page") as Page) || "dashboard";
-  });
-  
-  const [sessionId, setSessionId] = useState(() => {
-    const params = new URLSearchParams(window.location.search);
-    return params.get("sessionId") || "demo-session-001";
-  });
-
   const isBankRoute = window.location.pathname.startsWith("/bank");
 
-  // 2. Synchroniser l'URL avec le state à chaque changement (History API)
+  // On lit les params URL au premier rendu (permet le refresh / le deep-linking)
+  const [page, setPage] = useState<Page>(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (isBankRoute) {
+      // Route banque : par défaut le formulaire, mais on respecte le param ?page=
+      return (params.get("page") as Page) || "form";
+    }
+    return (params.get("page") as Page) || "dashboard";
+  });
+
+  const [sessionId, setSessionId] = useState<string | null>(() => {
+    const params = new URLSearchParams(window.location.search);
+    const sid = params.get("sessionId");
+    if (sid) return sid;
+    return isBankRoute ? null : "demo-session-001";
+  });
+
+  // Compteur de clés pour forcer le remount du Dashboard à chaque nouvelle analyse
+  const [dashboardKey, setDashboardKey] = useState(0);
+
+  // Synchroniser l'URL avec le state (History API)
   useEffect(() => {
     const currentUrl = new URL(window.location.href);
     currentUrl.searchParams.set("page", page);
-    currentUrl.searchParams.set("sessionId", sessionId);
+    if (sessionId) {
+      currentUrl.searchParams.set("sessionId", sessionId);
+    } else {
+      currentUrl.searchParams.delete("sessionId");
+    }
     window.history.replaceState({}, "", currentUrl.toString());
   }, [page, sessionId]);
 
-  const handleAnalyseLancee = (newSessionId: string) => {
+  const handleAnalyseLancee = useCallback((newSessionId: string) => {
+    // Nettoie l'ancienne analyse du sessionStorage avant de charger la nouvelle
+    if (sessionId && isBankRoute) {
+      sessionStorage.removeItem("typhoon_bank_" + sessionId);
+    }
     setSessionId(newSessionId);
+    setDashboardKey(k => k + 1); // force Dashboard à se remonter à zéro
     setPage("dashboard");
-  };
+  }, [sessionId, isBankRoute]);
 
   return (
     <div className="app" style={{ minHeight: "100vh", background: "#04070c" }}>
@@ -57,7 +75,10 @@ function App() {
           >Dashboard</button>
           {isBankRoute && (
             <button
-              onClick={() => setPage("form")}
+              onClick={() => {
+                setSessionId(null);
+                setPage("form");
+              }}
               style={{
                 padding: "8px 16px", borderRadius: 6, border: "1px solid #1c5a9c",
                 background: page === "form" ? "#4da6ff" : "rgba(20,40,65,0.8)",
@@ -83,7 +104,7 @@ function App() {
       </header>
 
       <main style={{ paddingTop: 24 }}>
-        {page === "dashboard" && <Dashboard sessionId={sessionId} isBankRoute={isBankRoute} />}
+        {page === "dashboard" && <Dashboard key={dashboardKey} sessionId={sessionId} isBankRoute={isBankRoute} />}
         {page === "form" && <ClientForm onAnalyseLancee={handleAnalyseLancee} isBankRoute={isBankRoute} />}
       </main>
     </div>

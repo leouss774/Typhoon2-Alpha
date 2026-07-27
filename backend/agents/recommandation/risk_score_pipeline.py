@@ -33,10 +33,20 @@ from __future__ import annotations
 import json
 import math
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from typing import Any
 
 import requests
+
+# ---------------------------------------------------------------------------
+# CONSTANTES GLOBALES
+# ---------------------------------------------------------------------------
+
+# Timeout ultra-court : 1 seconde suffit pour qu'une API réponde ou échoue.
+# Évite les blocages longs quand les API sont injoignables (getaddrinfo fail,
+# connexion reset, timeout réseau, etc.)
+API_TIMEOUT_SECONDS = 1
 
 
 # ---------------------------------------------------------------------------
@@ -55,9 +65,10 @@ class GeocodedAddress:
     score: float
 
 
+
 def geocoder_adresse(adresse: str) -> GeocodedAddress:
     """Transforme une adresse texte en coordonnées + code INSEE de la commune."""
-    resp = requests.get(ADRESSE_API_URL, params={"q": adresse, "limit": 1}, timeout=3)
+    resp = requests.get(ADRESSE_API_URL, params={"q": adresse, "limit": 1}, timeout=API_TIMEOUT_SECONDS)
     resp.raise_for_status()
     data = resp.json()
 
@@ -109,7 +120,7 @@ def _get_georisques(endpoint: str, params: dict[str, Any]) -> list[dict]:
     _throttle("default", 1 / 5)
     url = f"{GEORISQUES_BASE_URL}/{endpoint}"
     try:
-        resp = requests.get(url, params=params, headers={"Accept": "application/json"}, timeout=3)
+        resp = requests.get(url, params=params, headers={"Accept": "application/json"}, timeout=API_TIMEOUT_SECONDS)
         resp.raise_for_status()
         payload = resp.json()
     except (requests.RequestException, ValueError) as exc:
@@ -127,11 +138,7 @@ def _get_georisques(endpoint: str, params: dict[str, Any]) -> list[dict]:
 
 
 def get_resultats_rapport_risque(lat: float, lon: float) -> dict[str, Any]:
-    """Rapport consolidé des risques Géorisques (remplace l'ancien PPR obsolète).
-
-    L'endpoint v1 officiel couvre les risques réglementaires et les éléments
-    d'aléa de façon plus robuste que l'ancien endpoint PPR.
-    """
+    """Rapport consolidé des risques Géorisques."""
     _throttle("resultats_rapport_risque", 1 / 1)
     url = "https://www.georisques.gouv.fr/api/v1/resultats_rapport_risque"
     try:
@@ -139,7 +146,7 @@ def get_resultats_rapport_risque(lat: float, lon: float) -> dict[str, Any]:
             url,
             params={"latlon": f"{lon},{lat}"},
             headers={"Accept": "application/json"},
-            timeout=3,
+            timeout=API_TIMEOUT_SECONDS,
         )
         resp.raise_for_status()
         return resp.json()
@@ -149,55 +156,59 @@ def get_resultats_rapport_risque(lat: float, lon: float) -> dict[str, Any]:
 
 
 def get_risques_georisques(lat: float, lon: float, code_insee: str) -> dict[str, Any]:
-    """Interroge les couches Géorisques et renvoie les données BRUTES par thématique.
-
-    NB : les noms de routes ci-dessous datent de la doc publique au moment de
-    l'écriture. Si un endpoint renvoie 404 de façon persistante, vérifiez le
-    nom exact et les paramètres attendus sur https://www.georisques.gouv.fr/doc-api
-    (Swagger interactif), l'API évoluant régulièrement.
+    """Interroge les couches Géorisques en PARALLÈLE.
+    
+    Les 10+ endpoints sont exécutés dans un ThreadPoolExecutor (max 6 workers)
+    pour réduire le temps total de ~10s (séquentiel) à ~1.5s même si le réseau
+    est injoignable (timeout 1s par appel).
     """
     latlon = f"{lon},{lat}"
-
-    return {
-        # Sismicité — zonage réglementaire par commune (1 à 5)
-        "zonage_sismique": _get_georisques("zonage_sismique", {"code_insee": code_insee}),
-
-        # Retrait-gonflement des argiles (RGA) -> objet unique
-        # {"codeExposition": "0-3", "exposition": "..."}
-        "argiles_rga": _get_georisques("rga", {"latlon": latlon, "rayon": RAYON_DEFAUT_M}),
-
-        # Inondation : atlas des zones inondables + arrêtés catastrophe naturelle
-        # + territoires à risque important d'inondation
-        "azi": _get_georisques("gaspar/azi", {"latlon": latlon, "rayon": RAYON_DEFAUT_M}),
-        "catnat": _get_georisques("gaspar/catnat", {"latlon": latlon, "rayon": RAYON_DEFAUT_M}),
-        "tri": _get_georisques("gaspar/tri", {"latlon": latlon, "rayon": RAYON_DEFAUT_M}),
-
-        # Rapport consolidé de risques (remplace l'ancien endpoint PPR obsolète
-        # qui n'est plus disponible sur l'API v1).
-        "rapport_risque": get_resultats_rapport_risque(lat, lon),
-
-        # Mouvements de terrain (BDMvT)
-        "mouvements_terrain": _get_georisques("mvt", {"latlon": latlon, "rayon": RAYON_DEFAUT_M}),
-
-        # Cavités souterraines
-        "cavites": _get_georisques("cavites", {"latlon": latlon, "rayon": RAYON_DEFAUT_M}),
-
-        # Potentiel radon (classe 1 à 3, par commune)
-        "radon": _get_georisques("radon", {"code_insee": code_insee}),
-
-        # Installations classées à proximité (ICPE)
-        "icpe": _get_georisques("installations_classees", {"latlon": latlon, "rayon": RAYON_DEFAUT_M}),
-
-        # Sites et sols pollués (SSP)
-        "sites_sols_pollues": _get_georisques("ssp", {"latlon": latlon, "rayon": RAYON_DEFAUT_M}),
-
-        # TODO équipe : "feux de forêt" (aléa dédié) et "OLD" (obligation légale
-        # de débroussaillement) ne correspondent à aucun endpoint confirmé dans
-        # la doc Géorisques v1 au moment de l'écriture. Le risque incendie de
-        # forêt apparaît en partie dans "ppr" ci-dessus (type de PPR). Pour l'OLD,
-        # vérifier la disponibilité d'une couche dédiée sur georisques.gouv.fr
-        # ou data.gouv.fr avant de l'ajouter ici.
-    }
+    
+    endpoints: list[tuple[str, str, dict]] = [
+        ("zonage_sismique", "zonage_sismique", {"code_insee": code_insee}),
+        ("argiles_rga", "rga", {"latlon": latlon, "rayon": RAYON_DEFAUT_M}),
+        ("azi", "gaspar/azi", {"latlon": latlon, "rayon": RAYON_DEFAUT_M}),
+        ("catnat", "gaspar/catnat", {"latlon": latlon, "rayon": RAYON_DEFAUT_M}),
+        ("tri", "gaspar/tri", {"latlon": latlon, "rayon": RAYON_DEFAUT_M}),
+        ("mouvements_terrain", "mvt", {"latlon": latlon, "rayon": RAYON_DEFAUT_M}),
+        ("cavites", "cavites", {"latlon": latlon, "rayon": RAYON_DEFAUT_M}),
+        ("radon", "radon", {"code_insee": code_insee}),
+        ("icpe", "installations_classees", {"latlon": latlon, "rayon": RAYON_DEFAUT_M}),
+        ("sites_sols_pollues", "ssp", {"latlon": latlon, "rayon": RAYON_DEFAUT_M}),
+    ]
+    
+    resultats: dict[str, Any] = {}
+    
+    with ThreadPoolExecutor(max_workers=6) as executor:
+        futures: dict[Any, str] = {}
+        for cle, endpoint, params in endpoints:
+            futures[executor.submit(_get_georisques, endpoint, params)] = cle
+        futures[executor.submit(get_resultats_rapport_risque, lat, lon)] = "rapport_risque"
+        
+        try:
+            for future in as_completed(futures, timeout=API_TIMEOUT_SECONDS + 2):
+                cle = futures[future]
+                try:
+                    resultats[cle] = future.result()
+                except Exception as exc:
+                    print(f"[georisques] Erreur sur '{cle}' : {exc}")
+                    resultats[cle] = [] if cle != "rapport_risque" else {}
+        except TimeoutError:
+            print("[georisques] Timeout groupe — collecte des résultats déjà obtenus")
+            for future, cle in futures.items():
+                if future.done() and cle not in resultats:
+                    try:
+                        resultats[cle] = future.result()
+                    except Exception:
+                        resultats[cle] = [] if cle != "rapport_risque" else {}
+    
+    # Compléter les clés manquantes
+    toutes_cles = [e[0] for e in endpoints] + ["rapport_risque"]
+    for cle in toutes_cles:
+        if cle not in resultats:
+            resultats[cle] = [] if cle != "rapport_risque" else {}
+    
+    return resultats
 
 
 # ---------------------------------------------------------------------------
@@ -207,14 +218,9 @@ def get_risques_georisques(lat: float, lon: float, code_insee: str) -> dict[str,
 IGN_ALTI_URL = "https://data.geopf.fr/altimetrie/1.0/calcul/alti/rest/elevation.json"
 
 
-def get_ign_altitude(lat: float, lon: float) -> dict[str, Any]:
-    """Altitude au point donné via l'API Altimétrie IGN (gratuite, sans clé).
 
-    NB : cette API ne donne que l'altitude ponctuelle. Le calcul de pente
-    et d'exposition nécessite un traitement de MNT (raster) et n'est pas
-    disponible via un simple appel REST -> voir TODO plus bas
-    (get_ign_pente_exposition).
-    """
+def get_ign_altitude(lat: float, lon: float) -> dict[str, Any]:
+    """Altitude au point donné via l'API Altimétrie IGN (gratuite, sans clé)."""
     params = {
         "lon": lon,
         "lat": lat,
@@ -222,7 +228,7 @@ def get_ign_altitude(lat: float, lon: float) -> dict[str, Any]:
         "indent": "false",
     }
     try:
-        resp = requests.get(IGN_ALTI_URL, params=params, timeout=3)
+        resp = requests.get(IGN_ALTI_URL, params=params, timeout=API_TIMEOUT_SECONDS)
         resp.raise_for_status()
         return resp.json()
     except (requests.RequestException, ValueError) as exc:
@@ -259,7 +265,7 @@ def _get_hubeau(path: str, params: dict[str, Any]) -> list[dict]:
     """
     url = f"{HUBEAU_BASE_URL}/{path}"
     try:
-        resp = requests.get(url, params=params, headers={"Accept": "application/json"}, timeout=3)
+        resp = requests.get(url, params=params, headers={"Accept": "application/json"}, timeout=API_TIMEOUT_SECONDS)
         resp.raise_for_status()
         payload = resp.json()
     except (requests.RequestException, ValueError) as exc:
@@ -338,7 +344,7 @@ def get_osm_proximite(lat: float, lon: float, rayon_m: int = 3000) -> dict[str, 
             OVERPASS_URL,
             data={"data": query},
             headers={"User-Agent": "talan-risque-adresse/1.0"},
-            timeout=5,
+            timeout=API_TIMEOUT_SECONDS,
         )
         resp.raise_for_status()
         elements = resp.json().get("elements", [])

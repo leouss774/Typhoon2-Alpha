@@ -1,4 +1,4 @@
-import type { DashboardData, Recommandation, ChatMessage } from "./models";
+import type { DashboardData, Recommandation } from "./models";
 
 export interface ApiError {
   detail: string;
