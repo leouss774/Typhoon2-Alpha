@@ -22,7 +22,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 
 
-from app.scoring.risk_model import score_address, ScoresAdresse
+from app.scoring.risk_model import compute_risk_scores
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +38,7 @@ class PointEchantillon:
     lat: float
     lon: float
     adresse_approx: str | None = None
-    score: ScoresAdresse | None = None
+    score: dict | None = None  # Résultat de compute_risk_scores()
     erreur: str | None = None
 
 
@@ -127,63 +127,88 @@ def _niveau_alerte(score: float) -> str:
 
 
 def _simuler_georisques(lat: float, lon: float) -> dict:
-    """Simule les données Géorisques à partir des coordonnées.
+    """Simule les données Géorisques dans le format attendu par compute_risk_scores.
 
-    Produit des résultats déterministes mais géographiquement plausibles
-    pour la région PACA (coastal vs inland, est vs ouest).
+    Les clés correspondent exactement à ce que les sous-scores de risk_model.py
+    attendent (libelle_risque_jo, risques_commune.data[].risques_detail[], etc.).
+    Le bruit déterministe assure que 2 points proches ont des profils différents.
     """
-    # --- Inondation : plus fort près des côtes (lat < 43.5), avec bruit ---
-    inondation_score = 15.0
-    if lat < 43.8:
-        inondation_score += max(0, (43.8 - lat) / 0.8) * 50
-    inondation_score += (_noise(lat, lon, 1) - 0.5) * 28
+    # --- Scores de base géographiques (pour toute la France) ---
+    # Inondation : plus fort près des côtes basses
+    inondation_base = 15.0
+    if abs(lat) < 46:  # sud de la France
+        inondation_base += max(0, (46 - abs(lat)) / 3) * 35
+    elif abs(lat) < 49:
+        inondation_base += max(0, (49 - abs(lat)) / 4) * 20
+    inondation_score = inondation_base + (_noise(lat, lon, 1) - 0.5) * 55
     inondation_score = max(5, min(100, inondation_score))
 
-    # --- RGA : plus fort dans l'arrière-pays (lat plus élevée) ---
-    rga_score = 15.0
-    if lat > 43.0:
-        rga_score += min(1.0, (lat - 43.0) / 0.8) * 40
-    rga_score += (_noise(lat, lon, 2) - 0.5) * 35
-    rga_score = max(5, min(100, rga_score))
+    # RGA : plus fort dans les sols argileux (variable selon région)
+    rga_base = 20.0 + (_noise(lat, lon, 2) - 0.5) * 60
+    rga_score = max(5, min(100, rga_base))
 
-    # --- Incendie : plus fort dans les terres sèches ---
-    incendie_score = 8.0
-    if lat > 43.2:
-        incendie_score += min(1.0, (lat - 43.2) / 0.6) * 40
-    incendie_score += (_noise(lat, lon, 3) - 0.5) * 25
+    # Feu de forêt : plus fort dans le sud
+    incendie_base = 8.0
+    if abs(lat) < 45:
+        incendie_base += min(1.0, (45 - abs(lat)) / 2) * 45
+    incendie_score = incendie_base + (_noise(lat, lon, 3) - 0.5) * 50
     incendie_score = max(3, min(100, incendie_score))
 
-    # --- CATNAT historique simulé ---
-    catnat_data: list[dict] = []
-    if lat < 43.6:
-        n_flood = int(2 + _noise(lat, lon, 4) * 5)
-        n_storm = int(2 + _noise(lat, lon, 5) * 4)
-    else:
-        n_flood = int(1 + _noise(lat, lon, 4) * 3)
-        n_storm = int(0 + _noise(lat, lon, 5) * 2)
-    for _ in range(n_flood):
-        catnat_data.append({"libelle_catnat": "Inondation et coulées de boue"})
-    for _ in range(n_storm):
-        catnat_data.append({"libelle_catnat": "Tempête"})
+    # Mouvement de terrain : aléatoire, lié à la géologie locale
+    mvt_count = int(round(_noise(lat, lon, 9) * 4))
 
-    # --- Zonage sismique : plus fort à l'est (Alpes) ---
+    # Radon : classe 1-3 selon la région
+    radon_classe = 1 + int(_noise(lat, lon, 10) * 3)
+
+    # --- CATNAT dans le FORMAT attendu par _count_catnat ---
+    # La clé DOIT être "libelle_risque_jo" (pas libelle_catnat)
+    catnat_data: list[dict] = []
+    n_flood = int(1 + _noise(lat, lon, 4) * 6)
+    for _ in range(n_flood):
+        catnat_data.append({"libelle_risque_jo": "Inondation"})
+    n_drought = int(0 + _noise(lat, lon, 11) * 5)
+    for _ in range(n_drought):
+        catnat_data.append({"libelle_risque_jo": "Sécheresse"})
+    n_mvt = int(0 + _noise(lat, lon, 12) * 3)
+    for _ in range(n_mvt):
+        catnat_data.append({"libelle_risque_jo": "Mouvement de terrain"})
+
+    # --- Risques commune dans le FORMAT attendu par _has_hazard ---
+    risques_detail = []
+    if inondation_score > 25:
+        risques_detail.append({"libelle_risque_long": "Inondation", "type_risque": "Inondation"})
+    if incendie_score > 25:
+        risques_detail.append({"libelle_risque_long": "Feu de forêt", "type_risque": "Feu de forêt"})
+    if rga_score > 30:
+        risques_detail.append({"libelle_risque_long": "Retrait-gonflement des argiles", "type_risque": "Argiles"})
+
+    # --- Zonage sismique dans le FORMAT attendu par _sismique_subscore ---
+    # Doit être une liste de dicts avec "zone_sismicite"
     if lon > 7.0:
         zone_sismique = "4"      # Nice, Alpes-Maritimes
     elif lon > 6.5:
         zone_sismique = "3"      # Var est
     elif lon > 5.5:
         zone_sismique = "2"      # Bouches-du-Rhône
+    elif lon > 4.0:
+        zone_sismique = "2"      # Sud-Est
+    elif lon > 2.0:
+        zone_sismique = "1"      # Sud-Ouest / Centre
     else:
-        zone_sismique = "1"      # Gard, Vaucluse
+        zone_sismique = "1"
 
     return {
         "risques_commune": {
-            "gazella": {"alerte": _niveau_alerte(inondation_score)},
-            "argiles": {"alerte": _niveau_alerte(rga_score)},
-            "feu_foret": {"alerte": _niveau_alerte(incendie_score)},
+            "data": [{
+                "risques_detail": risques_detail
+            }]
         },
         "catnat": {"data": catnat_data},
-        "zonage_sismique": {"zone_sismique": zone_sismique},
+        "zonage_sismique": [{"zone_sismicite": zone_sismique}],
+        "cavites": [{"type": "cavité"}] * (1 if _noise(lat, lon, 13) > 0.45 else 0),
+        "mouvements_de_terrain": [{"type": "glissement"}] * mvt_count,
+        "zones_inondables": inondation_score > 35,
+        "radon": [{"classe_potentiel": radon_classe}],
     }
 
 
@@ -299,7 +324,7 @@ async def _collecter_point(
                 # Fallback : simulation géographique sans réseau
                 building_data = _building_data_minimal(lat, lon)
 
-            scores = score_address(building_data, land_only=land_only)
+            scores = compute_risk_scores(building_data)
             return PointEchantillon(
                 index=idx,
                 lat=lat,
@@ -385,7 +410,7 @@ async def run_zone_risk_assessment(
         scores_peril = []
         for p in points_valides:
             if p.score:
-                scores_peril.append(getattr(p.score, nom).score)
+                scores_peril.append(_peril_score_from_zones(p.score, nom))
 
         if not scores_peril:
             continue
@@ -422,7 +447,7 @@ async def run_zone_risk_assessment(
             worst_overall = worst
             worst_peril_name = nom
 
-    scores_globaux = [p.score.score_global for p in points_valides]
+    scores_globaux = [p.score.get("score_global", 0) for p in points_valides]
     score_moyen = sum(scores_globaux) / len(scores_globaux)
 
     msg = (
@@ -457,13 +482,49 @@ def _rating_from_mean(mean_score: float, worst_case: float) -> str:
     return "Faible"
 
 
+def _peril_score_from_zones(result: dict, peril: str) -> float:
+    """Extrait un score de péril (0-100) depuis les zones du resultat compute_risk_scores."""
+    zones = result.get("zones", {}) if result else {}
+    if peril == "inondation":
+        return float(zones.get("sous_sol", {}).get("risque", 0) or 0)
+    if peril == "rga":
+        return float(zones.get("fondations", {}).get("risque", 0) or 0)
+    if peril == "tempete":
+        murs = [zones.get(z, {}).get("risque", 0) or 0
+                for z in ["murs_nord", "murs_sud", "murs_est", "murs_ouest"]]
+        return sum(murs) / len(murs) if murs else 0.0
+    if peril == "incendie":
+        return float(zones.get("toiture", {}).get("risque", 0) or 0)
+    if peril == "seisme":
+        fondations = float(zones.get("fondations", {}).get("risque", 0) or 0)
+        murs = [zones.get(z, {}).get("risque", 0) or 0
+                for z in ["murs_nord", "murs_sud", "murs_est", "murs_ouest"]]
+        mur_moyen = sum(murs) / len(murs) if murs else 0.0
+        return (fondations + mur_moyen) / 2.0
+    return 0.0
+
+
+def _result_to_point_dict(result: dict) -> dict | None:
+    """Convertit le dict compute_risk_scores en format compatible avec le frontend."""
+    if not result:
+        return None
+    return {
+        "score_global": result.get("score_global", 0),
+        "inondation": {"score": _peril_score_from_zones(result, "inondation")},
+        "rga": {"score": _peril_score_from_zones(result, "rga")},
+        "tempete": {"score": _peril_score_from_zones(result, "tempete")},
+        "incendie": {"score": _peril_score_from_zones(result, "incendie")},
+        "seisme": {"score": _peril_score_from_zones(result, "seisme")},
+    }
+
+
 def _point_to_dict(p: PointEchantillon) -> dict:
     return {
         "index": p.index,
         "lat": p.lat,
         "lon": p.lon,
         "adresse_approx": p.adresse_approx,
-        "score": p.score.to_dict() if p.score else None,
+        "score": _result_to_point_dict(p.score) if p.score else None,
         "erreur": p.erreur,
     }
 
