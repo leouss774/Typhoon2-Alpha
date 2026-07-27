@@ -51,6 +51,10 @@ class Settings(BaseSettings):
     # Lookup local DVF - meme logique de chemin absolu.
     dvf_lookup_dir: str = str(BASE_DIR / "data" / "lookup" / "dvf")
 
+    # Mistral (agent recommandations — RAG travaux, cf.
+    # app/recommandations/ et backend/recommendation_travaux-main/)
+    mistral_api_key: str | None = None
+
     # Divers
     http_timeout_seconds: float = 15.0
 

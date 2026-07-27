@@ -2,7 +2,8 @@
 *.zip
 backend/data/lookup/copernicus/
 backend/out/
-
+backend/recommendation_travaux-main/data
+.tmp/
 # Python
 __pycache__/
 *.pyc

@@ -21,6 +21,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes import diagnostic, health
 from app.core.logging import configure_logging, get_logger
+from app.recommandations.service import load_index
 
 configure_logging()
 logger = get_logger(__name__)
@@ -40,4 +41,8 @@ app.include_router(diagnostic.router)
 
 @app.on_event("startup")
 async def on_startup() -> None:
+    # Index de l'agent recommandations (~19 Mo, ~900 fiches) : charge une
+    # seule fois ici plutot qu'a chaque requete /diagnostic, cf.
+    # app/recommandations/service.py et PROMPT_INTEGRATION_ouss.md section 2.
+    load_index()
     logger.info("Typhoon API demarree — routes : POST /diagnostic, GET /health")
