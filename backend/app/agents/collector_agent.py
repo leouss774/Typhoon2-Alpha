@@ -58,9 +58,19 @@ async def _safe_call(source_name: str, coro, erreurs: list[dict]):
         return None
 
 
-async def collect(address: str) -> dict:
-    """Point d'entree principal : lance la collecte complete pour une adresse."""
-    logger.info("collector_agent -- debut collecte pour %r", address)
+async def collect(address: str, enable_copernicus: bool = True) -> dict:
+    """Point d'entree principal : lance la collecte complete pour une adresse.
+
+    Parameters
+    ----------
+    address : str
+        Adresse postale complete du bien.
+    enable_copernicus : bool
+        Si True (defaut), interroge Copernicus CDS.
+        Si False, climat_copernicus sera None dans le building_data,
+        sans ajouter d'erreur dans la liste des erreurs.
+    """
+    logger.info("collector_agent -- debut collecte pour %r (enable_copernicus=%s)", address, enable_copernicus)
     t0 = time.perf_counter()
     erreurs: list[dict] = []
 
@@ -100,20 +110,30 @@ async def collect(address: str) -> dict:
         # (premier telechargement CDS) ou synchrones (fichier local) : on
         # les passe par asyncio.to_thread pour ne pas bloquer la boucle
         # asyncio tout en restant dans le meme fan-out.
-        copernicus_task = _safe_call(
-            "copernicus",
-            asyncio.to_thread(copernicus.read_indicators_at_point, geocode.lat, geocode.lon),
-            erreurs,
-        )
         dvf_task = _safe_call(
             "dvf_local",
             asyncio.to_thread(dvf_lookup.lookup_dvf, geocode.citycode),
             erreurs,
         )
 
-        bdnb_data, georisques_data, altitude_m, climat, climat_copernicus, dvf_data = await asyncio.gather(
-            bdnb_task, georisques_task, altitude_task, climat_task, copernicus_task, dvf_task
-        )
+        if enable_copernicus:
+            copernicus_task = _safe_call(
+                "copernicus",
+                asyncio.to_thread(copernicus.read_indicators_at_point, geocode.lat, geocode.lon),
+                erreurs,
+            )
+            climat_task_list = [bdnb_task, georisques_task, altitude_task, climat_task, copernicus_task, dvf_task]
+        else:
+            logger.info("  copernicus desactive (flag=False) -> climat_copernicus = None")
+            climat_task_list = [bdnb_task, georisques_task, altitude_task, climat_task, dvf_task]
+
+        results = await asyncio.gather(*climat_task_list)
+
+        if enable_copernicus:
+            bdnb_data, georisques_data, altitude_m, climat, climat_copernicus, dvf_data = results
+        else:
+            bdnb_data, georisques_data, altitude_m, climat, dvf_data = results
+            climat_copernicus = None
 
     # Etape 3 - fan-in : assemblage du building_data final
     logger.info("etape 3/3 -- assemblage building_data (%d erreur(s) de source)", len(erreurs))

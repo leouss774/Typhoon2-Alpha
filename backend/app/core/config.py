@@ -46,7 +46,8 @@ class Settings(BaseSettings):
     # Copernicus Climate Data Store (compte + jeton requis, voir le guide
     # et le docstring de app/connectors/copernicus.py). Desactive par defaut
     # car le premier lancement declenche un telechargement multi-gigaoctets.
-    # Activer avec COPERNICUS_ENABLED=true dans .env.
+    # --- CHANGEZ ICI --- passez a True pour activer Copernicus dans le workflow.
+    # Vous pouvez aussi le definir via COPERNICUS_ENABLED=true dans .env.
     copernicus_enabled: bool = False
     copernicus_cache_dir: str = str(BASE_DIR / "data" / "lookup" / "copernicus")
 

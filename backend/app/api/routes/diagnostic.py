@@ -20,6 +20,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
 from app.agents.graph import diagnostic_graph
+from app.core.config import settings
 from app.core.logging import get_logger
 
 logger = get_logger(__name__)
@@ -33,6 +34,13 @@ class DiagnosticRequest(BaseModel):
         description="Champs geometry saisis explicitement (priorite sur l'inference BDNB) : "
         "has_basement, has_garage, garage_position, has_garden, garden_surface_m2, roof_shape...",
     )
+    # La valeur par defaut est pilotee par settings.copernicus_enabled
+    # (backend/app/core/config.py). Changez-la la pour basculer le defaut.
+    copernicus: bool = Field(
+        default=settings.copernicus_enabled,
+        description="Activer/desactiver Copernicus (CDS) dans la collecte. "
+        "Si false, climat_copernicus sera null dans le building_data sans erreur.",
+    )
 
 
 @router.post("/diagnostic")
@@ -44,7 +52,11 @@ async def run_diagnostic(payload: DiagnosticRequest) -> dict:
 
     try:
         final_state = await diagnostic_graph.ainvoke(
-            {"adresse": payload.adresse, "formulaire": payload.formulaire},
+            {
+                "adresse": payload.adresse,
+                "formulaire": payload.formulaire,
+                "copernicus": payload.copernicus,
+            },
             config={"configurable": {"thread_id": thread_id}},
         )
     except Exception as exc:
