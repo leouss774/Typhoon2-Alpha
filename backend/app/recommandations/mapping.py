@@ -1,33 +1,4 @@
 """
-<<<<<<< HEAD
-Alignement du vocabulaire entre scoring_agent (app/scoring/risk_model.py) et
-le referentiel documentaire du RAG recommandations — cf.
-recommendation_travaux/PROMPT_INTEGRATION_ouss.md, section 4
-"Aligner les noms de champs (contrat JSON exact attendu)".
-
-Probleme concret : risk_model.py ne calcule pas un "alea" au sens du
-referentiel (retrait_gonflement_argiles, inondation, tempete, canicule...)
-par zone — il combine plusieurs sous-scores (argile, sismique, precipitations,
-canicule...) et n'expose qu'un `alea_principal` en francais libre, pense pour
-l'affichage humain (ex: "Infiltration (exposition nord)"), pas comme
-identifiant machine.
-
-ZONE_RISQUES fixe donc, zone par zone, la liste de risques normalises (meme
-vocabulaire que data/referentiel.json : inondation, ruissellement, canicule,
-tempete, feu_vegetation, secheresse, retrait_gonflement_argiles) a envoyer a
-l'agent RAG. C'est une heuristique documentee (pas une mesure) qui reprend la
-logique deja utilisee dans risk_model.py pour construire chaque zone :
-  - fondations       : domine par le risque argile (cf. _argile_subscore)
-  - murs_*           : domine par precipitations/sismique/canicule, avec un
-                        risque distinct par orientation pour varier les fiches
-                        remontees (nord = ruissellement, sud = canicule,
-                        est/ouest = tempete, cf. _EXPOSITION_MURS_DELTA)
-  - toiture          : canicule + tempete (cf. _compute_zones_for_period)
-  - sous_sol         : inondation + ruissellement (cf. _inondation_subscore)
-
-A ajuster si le referentiel s'enrichit (ex: ajout de fiches
-"retrait_gonflement_argiles" hors fondations, ou de "grele"/"submersion").
-=======
 Alignement des noms de champs entre `scoring_agent` (app.scoring.risk_model)
 et l'agent recommandations (app.recommandations.service) — cf.
 PROMPT_INTEGRATION_ouss.md section 4, "C'est le point critique".
@@ -54,43 +25,12 @@ Limite assumee (a ecrire au dossier si un vrai mapping BDNB->materiaux ou
 un score par-alea distinct est ajoute plus tard cote scoring_agent) : ce
 mapping est une heuristique texte, pas une re-derivation des sous-scores
 (argile_score, inondation_score, ...) qui restent internes a risk_model.
->>>>>>> agent/recommandation-RAG
 """
 
 from __future__ import annotations
 
 from typing import Any
 
-<<<<<<< HEAD
-ZONE_RISQUES: dict[str, list[str]] = {
-    "fondations": ["retrait_gonflement_argiles"],
-    "murs_nord": ["ruissellement"],
-    "murs_sud": ["canicule"],
-    "murs_est": ["tempete"],
-    "murs_ouest": ["tempete"],
-    "toiture": ["canicule", "tempete"],
-    "sous_sol": ["inondation", "ruissellement"],
-}
-
-
-def build_house_payload(building_data: dict[str, Any], risk_result: dict[str, Any]) -> dict[str, Any]:
-    """Construit le JSON "maison" attendu par l'agent RAG (cf. maison_exemple.json
-    dans recommendation_travaux/), a partir de building_data (collector_agent)
-    et risk_result (scoring_agent) — sans transformation manuelle cote agent RAG.
-    """
-    adresse_info = (building_data or {}).get("adresse") or {}
-    bdnb = (building_data or {}).get("bdnb") or {}
-    batiment = bdnb.get("batiment") if isinstance(bdnb, dict) else None
-    batiment = batiment or {}
-
-    zones_in = risk_result.get("zones") or {}
-    zones_payload = []
-    for zone_name in zones_in:
-        risques = ZONE_RISQUES.get(zone_name)
-        if not risques:
-            continue
-        zones_payload.append({"zone": zone_name, "risques": risques})
-=======
 # ---------------------------------------------------------------------------
 # 1. Zones
 # ---------------------------------------------------------------------------
@@ -229,19 +169,10 @@ def build_house_payload(building_data: dict[str, Any], risk_scores: dict[str, An
         for reco_zone, risques in risques_par_reco_zone.items()
         if risques
     ]
->>>>>>> agent/recommandation-RAG
 
     return {
         "adresse": adresse_info.get("label", ""),
         "bien": {
-<<<<<<< HEAD
-            "type": "maison individuelle",
-            "annee_construction": batiment.get("annee_construction"),
-            "coordonnees": {"lat": adresse_info.get("lat"), "lon": adresse_info.get("lon")},
-        },
-        "zones": zones_payload,
-    }
-=======
             "type": _bien_type(bdnb),
             "annee_construction": batiment.get("annee_construction"),
             "materiaux": _materiaux(bdnb),
@@ -266,4 +197,3 @@ def merge_recommendations(risk_scores: dict[str, Any], reco_result: dict[str, An
     for zone_name, zone_data in zones_dst.items():
         reco_zone = ZONE_TO_RECO.get(zone_name)
         zone_data["recommandations"] = recos_par_reco_zone.get(reco_zone, [])
->>>>>>> agent/recommandation-RAG
