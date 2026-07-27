@@ -100,30 +100,49 @@ def generate_zone_recommendations(
     has_dpe = bool(bdnb.get("classe_bilan_dpe"))
     dpe_bad = has_dpe and bdnb.get("classe_bilan_dpe") in ("F", "G")
 
+    # ─── Signaux du formulaire client (utilisés même si les API externes sont hors-ligne) ──
+    fissures_importantes = form_data.get("fissures") in ("Importantes",)
+    fissures_moyennes = form_data.get("fissures") in ("Moyennes",)
+    affaissement_oui = form_data.get("affaissement") == "Oui"
+    etat_mauvais = form_data.get("etat_structure") == "Mauvais"
+    toiture_mauvaise = form_data.get("etat_toiture") == "Mauvais"
+    toiture_moyenne = form_data.get("etat_toiture") == "Moyen"
+    infiltration_oui = form_data.get("infiltrations") in ("Oui", "Majeures")
+    pres_sous_sol = bool(form_data.get("presence_sous_sol") or form_data.get("presence_cave"))
+    isolation_toiture_faible = form_data.get("isolation_toiture") == "faible"
+    isolation_murs_faible = form_data.get("isolation_murs") == "faible"
+
     # ─── Altitude / eau ─────────────────────────────────────────────────────
     alt = altitude_data.get("altitude", 50) if isinstance(altitude_data, dict) else 50
     low_altitude = alt < 20
     near_water = water_dist is not None and water_dist < 200
 
-    # ─── Calcul des scores par zone ──────────────────────────────────────────
+    # ─── Calcul des scores par zone (inclut les signaux formulaire + API) ────
     score_sous_sol = _calc_score(
         [(inondation, 35), (remontee_nappe, 20), (radon, 15),
-         (near_water, 15), (low_altitude, 10)],
+         (near_water, 15), (low_altitude, 10),
+         (infiltration_oui, 25), (pres_sous_sol, 10)],
         default=15
     )
     score_fondations = _calc_score(
         [(rga, 40), (seisme, 20), (mouvement_terrain, 15),
-         (soil_dry, 10), (is_very_old, 10)],
+         (soil_dry, 10), (is_very_old, 10),
+         (fissures_importantes, 25), (fissures_moyennes, 15),
+         (affaissement_oui, 20), (etat_mauvais, 15)],
         default=15
     )
     score_toiture = _calc_score(
         [(heatwave, 30), (dpe_bad, 25), (strong_wind, 15),
-         (is_old, 15), (heavy_rain, 10)],
+         (is_old, 15), (heavy_rain, 10),
+         (toiture_mauvaise, 25), (toiture_moyenne, 10),
+         (isolation_toiture_faible, 15)],
         default=15
     )
     score_murs = _calc_score(
         [(freeze, 20), (dpe_bad, 20), (strong_wind, 15),
-         (is_old, 15), (heatwave, 10)],
+         (is_old, 15), (heatwave, 10),
+         (isolation_murs_faible, 15), (etat_mauvais, 15),
+         (fissures_importantes, 10)],
         default=10
     )
 
@@ -348,58 +367,79 @@ def _calc_score(conditions: list[tuple[bool, int]], default: int = 0) -> int:
 def _generate_justification(
     zone: str, score: int, api_data: dict, form_data: dict | None = None
 ) -> str:
-    """Génère une justification textuelle pour le score d'une zone."""
+    """Génère une justification textuelle pour le score d'une zone.
+    Utilise les données API ET les données formulaire.
+    """
     if not isinstance(api_data, dict):
-        return f"Score {score}/100 basé sur les données disponibles."
+        api_data = {}
+    if not isinstance(form_data, dict):
+        form_data = {}
 
     rN = api_data.get("georisques", {}).get("risquesNaturels", {})
     climate = api_data.get("climate", api_data.get("open_meteo", {}))
     building = api_data.get("building", api_data.get("bdnb", {}))
+    c = climate if isinstance(climate, dict) else {}
     parts = []
 
     if zone == "sous_sol":
         if _get(rN, "inondation", {}).get("present"):
-            parts.append("Risque inondation présent au droit de l'adresse")
+            parts.append("Risque inondation présent (Géorisques)")
         if _get(rN, "remonteeNappe", {}).get("present"):
-            parts.append("Remontée de nappe identifiée")
+            parts.append("Remontée de nappe (Géorisques)")
         if _get(rN, "radon", {}).get("present"):
-            parts.append(f"Potentiel radon présent")
+            parts.append("Potentiel radon (Géorisques)")
         wd = api_data.get("waterDist", api_data.get("distance_eau"))
         if wd is not None and wd < 200:
-            parts.append(f"Proximité d'un cours d'eau ({wd}m)")
+            parts.append(f"Proximité cours d'eau {wd}m (OSM)")
+        if form_data.get("infiltrations") in ("Oui", "Majeures"):
+            parts.append(f"Infiltrations déclarées : {form_data['infiltrations']}")
         if not parts:
-            parts.append("Exposition modérée aux risques hydriques")
+            parts.append("Aucun risque hydrique particulier détecté")
     elif zone == "fondations":
         if _get(rN, "retraitGonflementArgile", {}).get("present"):
-            parts.append("Présence d'aléa retrait-gonflement des argiles")
+            parts.append("Aléa retrait-gonflement argiles (Géorisques)")
         if _get(rN, "seisme", {}).get("present"):
-            parts.append("Zone sismique active")
+            parts.append("Zone sismique (Géorisques)")
         if isinstance(building, dict) and building.get("annee_construction", 2000) < 1950:
-            parts.append("Bâti ancien (antérieur à 1950)")
+            parts.append("Bâti antérieur à 1950")
+        if form_data.get("fissures") in ("Importantes", "Moyennes"):
+            parts.append(f"Fissures déclarées : {form_data['fissures']}")
+        if form_data.get("affaissement") == "Oui":
+            parts.append("Affaissement déclaré")
+        if form_data.get("etat_structure") == "Mauvais":
+            parts.append("État structurel déclaré mauvais")
         if not parts:
-            parts.append("Risque structurel faible à moyen")
+            parts.append("Aucun signe de fragilité structurelle")
     elif zone == "toiture":
-        c = climate if isinstance(climate, dict) else {}
         if (c.get("heatwaveDaysPerYear", 0) or 0) > 10:
-            parts.append(f"{c['heatwaveDaysPerYear']} jours de canicule par an")
+            parts.append(f"{c['heatwaveDaysPerYear']}j canicule/an")
         if (c.get("stormFrequency", 0) or 0) >= 3:
-            parts.append("Zone venteuse (fréquence de tempêtes modérée)")
+            parts.append("Zone venteuse modérée")
         if isinstance(building, dict) and building.get("annee_construction", 2000) < 1980:
-            parts.append("Bâti antérieur aux premières réglementations thermiques")
+            parts.append("Bâti pré-1980 (avant RT)")
+        if form_data.get("etat_toiture") in ("Mauvais", "Moyen"):
+            parts.append(f"Toiture déclarée : {form_data['etat_toiture']}")
+        if form_data.get("isolation_toiture") == "faible":
+            parts.append("Isolation toiture déclarée faible")
         if not parts:
             parts.append("Exposition thermique standard")
     elif zone == "murs_nord":
-        c = climate if isinstance(climate, dict) else {}
         if (c.get("freezeDaysPerYear", 0) or 0) > 20:
-            parts.append(f"{c['freezeDaysPerYear']} jours de gel par an")
+            parts.append(f"{c['freezeDaysPerYear']}j gel/an")
         if (c.get("stormFrequency", 0) or 0) >= 3:
-            parts.append("Exposition au vent dominants")
+            parts.append("Exposition au vent dominant")
         if isinstance(building, dict) and building.get("mat_mur_txt"):
             parts.append(f"Mur en {building['mat_mur_txt']}")
+        if form_data.get("isolation_murs") == "faible":
+            parts.append("Isolation murs déclarée faible")
+        if form_data.get("fissures") in ("Importantes",):
+            parts.append("Fissures importantes déclarées")
+        if form_data.get("etat_structure") == "Mauvais":
+            parts.append("État général déclaré mauvais")
         if not parts:
             parts.append("Vulnérabilité faible des murs extérieurs")
 
-    return ". ".join(parts) + "." if parts else f"Score {score}/100 - donnees insuffisantes."
+    return ". ".join(parts) + "." if parts else f"Score {score}/100 - données insuffisantes."
 
 
 def _generate_verdict(score: int) -> str:
@@ -425,27 +465,30 @@ def _generate_explication(zone: str, score: int, api_data: dict) -> str:
             causes.append("la remontée de nappe")
         if _get(rN, "radon", {}).get("present"):
             causes.append("le radon")
-        liés = f"liés à {', '.join(causes)}" if causes else "liés à l'humidité"
+        liee = f"liée à {', '.join(causes)}" if causes else "basé sur les déclarations et données disponibles"
         conseil = "Des travaux d'étanchéité et de protection sont conseillés." if score >= 35 else "La situation actuelle est acceptable."
-        return f"Le score {score}/100 est {liés}. {conseil}"
+        return f"Le score {score}/100 est {liee}. {conseil}"
     elif zone == "fondations":
         causes = []
         if _get(rN, "retraitGonflementArgile", {}).get("present"):
             causes.append("l'exposition au retrait-gonflement des argiles")
         if _get(rN, "seisme", {}).get("present"):
             causes.append("le risque sismique")
-        if c.get("soilMoisture") is not None and c["soilMoisture"] < 0.25:
-            causes.append("la sécheresse des sols")
         conseil = "Une étude géotechnique et des travaux de drainage sont recommandés." if score >= 35 else "Les fondations ne présentent pas de signe de fragilité majeur."
-        default_cause = "l'etat general des fondations"
-        causes_str = ', '.join(causes) if causes else default_cause
-        return f"Le score {score}/100 tient compte de {causes_str}. {conseil}"
+        source = ', '.join(causes) if causes else "l'état général et les déclarations du propriétaire"
+        return f"Le score {score}/100 tient compte de {source}. {conseil}"
     elif zone == "toiture":
-        toiture_conseil = "L'isolation et la resistance aux intemperies sont a ameliorer." if score >= 35 else "La toiture est en etat correct."
-        return f"Le score {score}/100 est base sur les donnees climatiques ({c.get('heatwaveDaysPerYear', '?')} jours canicule, {c.get('annualPrecipitation', '?')}mm pluie/an) et les caracteristiques du bati. {toiture_conseil}"
+        conseil = "L'isolation et la résistance aux intempéries sont à améliorer." if score >= 35 else "La toiture est en état correct."
+        climats = []
+        if (c.get("heatwaveDaysPerYear", 0) or 0) > 10:
+            climats.append(f"{c['heatwaveDaysPerYear']}j canicule")
+        if (c.get("annualPrecipitation", 0) or 0) > 800:
+            climats.append(f"{c['annualPrecipitation']}mm pluie")
+        climat_str = ', '.join(climats) if climats else "données climatiques limitées"
+        return f"Score {score}/100 basé sur ({climat_str}) et caractéristiques déclarées du bien. {conseil}"
     elif zone == "murs_nord":
-        murs_conseil = "Un renforcement de l'isolation exterieure est conseille." if score >= 35 else "Les murs sont en etat satisfaisant."
-        return f"Le score {score}/100 integre les contraintes climatiques ({c.get('freezeDaysPerYear', '?')} jours gel, vents dominants) et l'etat du bati. {murs_conseil}"
+        conseil = "Un renforcement de l'isolation extérieure est conseillé." if score >= 35 else "Les murs sont en état satisfaisant."
+        return f"Score {score}/100 intégrant contraintes climatiques et état déclaré du bâti. {conseil}"
     return ""
 
 

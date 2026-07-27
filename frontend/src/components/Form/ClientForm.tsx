@@ -78,7 +78,7 @@ const STYLE = {
   },
 };
 
-const typesBien = ["Maison individuelle", "Appartement", "Immeuble", "Commerce", "Autre"];
+const typesBien = ["Maison individuelle", "Appartement", "Immeuble", "Usine / Entrepôt", "Commerce", "Terrain nu", "Autre"];
 const typesStructure = ["Béton armé", "Bois", "Acier", "Parpaing", "Pierre", "Brique", "Autre"];
 const etats = ["Bon", "Moyen", "Mauvais"];
 const fissuresOpts = ["Non", "Légères", "Moyennes", "Importantes"];
@@ -140,12 +140,21 @@ function Checkbox({ label, val, set }: {
 export default function ClientForm({ onAnalyseLancee, isBankRoute }: ClientFormProps) {
   const [form, setForm] = useState<FormData>(defaultForm);
   const [submitting, setSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const update = <K extends keyof FormData>(key: K, val: FormData[K]) =>
     setForm(prev => ({ ...prev, [key]: val }));
 
-    const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMessage(null);
+
+    // Validation basique côté client
+    if (!form.adresse.trim()) {
+      setErrorMessage("Veuillez renseigner l'adresse du bien.");
+      return;
+    }
+
     setSubmitting(true);
     try {
       const sessionId = "session-" + Date.now();
@@ -160,14 +169,30 @@ export default function ClientForm({ onAnalyseLancee, isBankRoute }: ClientFormP
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
+
       if (!res.ok) {
         const errText = await res.text().catch(() => "");
         throw new Error(`API ${res.status}: ${errText || res.statusText}`);
       }
+
       const data = await res.json();
 
-      // S'assurer que l'analyse a toujours la structure minimale attendue
-      // (tolérante aux données partielles : si une API a échoué, on met des valeurs par défaut)
+      // ─── ROUTE BANQUE : navigation immédiate (analyse async en arrière-plan) ───
+      if (isBankRoute) {
+        // Stocker un enregistrement minimal dans sessionStorage pour éviter
+        // le polling zombie si le backend redémarre (stockage mémoire perdu)
+        sessionStorage.setItem("typhoon_bank_" + sessionId, JSON.stringify({
+          status: "processing",
+          session_id: sessionId,
+          adresse: form.adresse,
+          timestamp: Date.now(),
+          form_data: form,
+        }));
+        if (onAnalyseLancee) onAnalyseLancee(sessionId);
+        return;
+      }
+
+      // ─── ROUTE PUBLIQUE : on attend l'analyse synchrone complète ───
       const analysis = data.analysis || {};
       analysis.recommandations = analysis.recommandations || {};
       analysis.recommandations.zones = analysis.recommandations.zones || {};
@@ -184,17 +209,19 @@ export default function ClientForm({ onAnalyseLancee, isBankRoute }: ClientFormP
       analysis.coordonnees = analysis.coordonnees || { latitude: 0, longitude: 0 };
       analysis.adresse = analysis.adresse || "";
 
-      // Vérifier que la réponse contient bien les zones des recommandations
-      // (avec fallback : si zones est vide, on continue quand même avec les données partielles)
       if (Object.keys(analysis.recommandations.zones).length === 0) {
         console.warn("Aucune zone de recommandation generee - donnees API possiblement indisponibles");
       }
 
-      // Stocker l'analyse dans localStorage pour que le Dashboard puisse la lire
-      localStorage.setItem("typhoon_analysis_" + sessionId, JSON.stringify(analysis));
+      const jsonData = JSON.stringify(analysis);
+      localStorage.setItem("typhoon_analysis_" + sessionId, jsonData);
+      sessionStorage.setItem("typhoon_bank_" + sessionId, jsonData);
+
       if (onAnalyseLancee) onAnalyseLancee(sessionId);
     } catch (err) {
-      alert("Erreur lors du lancement de l'analyse : " + (err as Error).message);
+      const msg = (err as Error).message;
+      setErrorMessage(msg);
+      console.error("Erreur analyse :", msg);
     } finally {
       setSubmitting(false);
     }
@@ -218,56 +245,105 @@ export default function ClientForm({ onAnalyseLancee, isBankRoute }: ClientFormP
 
       {/* CARACTERISTIQUES GENERALES */}
       <div style={STYLE.section}>
-        <h3 style={STYLE.sectionTitle}>Caracteristiques generales</h3>
+        <h3 style={STYLE.sectionTitle}>Caractéristiques générales</h3>
         <div style={STYLE.row}>
           <Select label="Type de bien" val={form.type_bien} set={v => update("type_bien", v)} options={typesBien} />
-          <Input label="Surface (m2)" val={form.surface} set={v => update("surface", v)} type="number" min={10} max={10000} />
-          <Input label="Nombre d'etages" val={form.nb_etages} set={v => update("nb_etages", v)} type="number" min={1} max={20} />
+          <Input label="Surface (m2)" val={form.surface} set={v => update("surface", v)} type="number" min={0} max={100000} />
+          {form.type_bien !== "Terrain nu" && (
+            <Input label="Nombre d'étages" val={form.nb_etages} set={v => update("nb_etages", v)} type="number" min={1} max={20} />
+          )}
         </div>
-        <div style={STYLE.row}>
-          <Input label="Annee de construction" val={form.annee_construction} set={v => update("annee_construction", v)} type="number" min={1800} max={2030} />
-          <Input label="Annee de renovation" val={form.annee_renovation} set={v => update("annee_renovation", v)} type="number" min={1800} max={2030} />
-          <Select label="Occupation" val={form.occupation} set={v => update("occupation", v)} options={occupations} />
-        </div>
+        {form.type_bien !== "Terrain nu" && (
+          <div style={STYLE.row}>
+            <Input label="Année de construction" val={form.annee_construction} set={v => update("annee_construction", v)} type="number" min={1800} max={2030} />
+            <Input label="Année de rénovation" val={form.annee_renovation} set={v => update("annee_renovation", v)} type="number" min={1800} max={2030} />
+            <Select label="Occupation" val={form.occupation} set={v => update("occupation", v)} options={occupations} />
+          </div>
+        )}
       </div>
 
-      {/* STRUCTURE */}
-      <div style={STYLE.section}>
-        <h3 style={STYLE.sectionTitle}>Structure et materiaux</h3>
-        <div style={STYLE.row}>
-          <Select label="Type de structure" val={form.type_structure} set={v => update("type_structure", v)} options={typesStructure} />
-          <Select label="Etat de la structure" val={form.etat_structure} set={v => update("etat_structure", v)} options={etats} />
-        </div>
-        <div style={STYLE.row}>
-          <Select label="Fissures" val={form.fissures} set={v => update("fissures", v)} options={fissuresOpts} />
-          <Select label="Affaissement" val={form.affaissement} set={v => update("affaissement", v)} options={["Non", "Oui"]} />
-        </div>
-      </div>
+      {form.type_bien !== "Terrain nu" && (
+        <>
+          {/* STRUCTURE */}
+          <div style={STYLE.section}>
+            <h3 style={STYLE.sectionTitle}>Structure et matériaux</h3>
+            <div style={STYLE.row}>
+              <Select label="Type de structure" val={form.type_structure} set={v => update("type_structure", v)} options={typesStructure} />
+              <Select label="État de la structure" val={form.etat_structure} set={v => update("etat_structure", v)} options={etats} />
+            </div>
+            <div style={STYLE.row}>
+              <Select label="Fissures" val={form.fissures} set={v => update("fissures", v)} options={fissuresOpts} />
+              <Select label="Affaissement" val={form.affaissement} set={v => update("affaissement", v)} options={["Non", "Oui"]} />
+            </div>
+          </div>
 
-      {/* TOITURE */}
-      <div style={STYLE.section}>
-        <h3 style={STYLE.sectionTitle}>Toiture</h3>
-        <div style={STYLE.row}>
-          <Select label="Type de toiture" val={form.type_toiture} set={v => update("type_toiture", v)} options={toitures} />
-          <Input label="Age de la toiture (annee)" val={form.age_toiture} set={v => update("age_toiture", v)} type="number" min={1800} max={2030} />
-          <Select label="Etat de la toiture" val={form.etat_toiture} set={v => update("etat_toiture", v)} options={etats} />
-        </div>
-        <div style={STYLE.row}>
-          <Select label="Isolation toiture" val={form.isolation_toiture} set={v => update("isolation_toiture", v)} options={isolationNiveaux} />
-          <Select label="Isolation murs" val={form.isolation_murs} set={v => update("isolation_murs", v)} options={isolationNiveaux} />
-          <Select label="Infiltrations" val={form.infiltrations} set={v => update("infiltrations", v)} options={["Non", "Oui"]} />
-        </div>
-      </div>
+          {/* TOITURE */}
+          <div style={STYLE.section}>
+            <h3 style={STYLE.sectionTitle}>Toiture</h3>
+            <div style={STYLE.row}>
+              <Select label="Type de toiture" val={form.type_toiture} set={v => update("type_toiture", v)} options={toitures} />
+              <Input label="Âge de la toiture (année)" val={form.age_toiture} set={v => update("age_toiture", v)} type="number" min={1800} max={2030} />
+              <Select label="État de la toiture" val={form.etat_toiture} set={v => update("etat_toiture", v)} options={etats} />
+            </div>
+            <div style={STYLE.row}>
+              <Select label="Isolation toiture" val={form.isolation_toiture} set={v => update("isolation_toiture", v)} options={isolationNiveaux} />
+              <Select label="Isolation murs" val={form.isolation_murs} set={v => update("isolation_murs", v)} options={isolationNiveaux} />
+              <Select label="Infiltrations" val={form.infiltrations} set={v => update("infiltrations", v)} options={["Non", "Oui"]} />
+            </div>
+          </div>
 
-      {/* SOUS-SOL */}
-      <div style={STYLE.section}>
-        <h3 style={STYLE.sectionTitle}>Sous-sol et electricite</h3>
-        <div style={{ ...STYLE.row, alignItems: "center" }}>
-          <Checkbox label="Presence d'un sous-sol" val={form.presence_sous_sol} set={v => update("presence_sous_sol", v)} />
-          <Checkbox label="Presence d'une cave" val={form.presence_cave} set={v => update("presence_cave", v)} />
-          <Input label="Annee installation electrique" val={form.installation_electrique_annee} set={v => update("installation_electrique_annee", v)} type="number" min={1900} max={2030} />
+          {/* SOUS-SOL */}
+          <div style={STYLE.section}>
+            <h3 style={STYLE.sectionTitle}>Sous-sol et électricité</h3>
+            <div style={{ ...STYLE.row, alignItems: "center" }}>
+              <Checkbox label="Présence d'un sous-sol" val={form.presence_sous_sol} set={v => update("presence_sous_sol", v)} />
+              <Checkbox label="Présence d'une cave" val={form.presence_cave} set={v => update("presence_cave", v)} />
+              <Input label="Année installation électrique" val={form.installation_electrique_annee} set={v => update("installation_electrique_annee", v)} type="number" min={1900} max={2030} />
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Message d'erreur (remplace l'ancien alert() navigateur) */}
+      {errorMessage && (
+        <div style={{
+          background: "rgba(255, 77, 79, 0.12)",
+          border: "1px solid #ff4d4f",
+          borderLeft: "4px solid #ff4d4f",
+          borderRadius: "8px",
+          padding: "14px 18px",
+          marginBottom: "16px",
+          display: "flex",
+          alignItems: "flex-start",
+          gap: "12px",
+        }}>
+          <span style={{ fontSize: "18px", flexShrink: 0 }}>❌</span>
+          <div style={{ flex: 1 }}>
+            <strong style={{ color: "#ff4d4f", fontSize: "14px", display: "block", marginBottom: "4px" }}>
+              Erreur lors de l'analyse
+            </strong>
+            <span style={{ color: "#ffb3b3", fontSize: "13px", lineHeight: 1.5 }}>
+              {errorMessage}
+            </span>
+            <button
+              type="button"
+              onClick={() => setErrorMessage(null)}
+              style={{
+                marginTop: "8px",
+                padding: "4px 12px",
+                borderRadius: "4px",
+                border: "1px solid rgba(255,77,79,0.4)",
+                background: "transparent",
+                color: "#ffb3b3",
+                fontSize: "12px",
+                cursor: "pointer",
+              }}
+            >
+              Fermer
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* ACTIONS */}
       <div style={STYLE.actions}>

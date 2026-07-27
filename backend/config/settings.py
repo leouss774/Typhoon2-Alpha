@@ -49,8 +49,8 @@ class Settings(BaseSettings):
     MISTRAL_API_KEY: str = ""
     MISTRAL_MODEL: str = "mistral-large-latest"
     MISTRAL_API_URL: str = "https://api.mistral.ai/v1/chat/completions"
-    MISTRAL_TIMEOUT_SECONDS: int = 30
-    MISTRAL_MAX_RETRIES: int = 3
+    MISTRAL_TIMEOUT_SECONDS: int = 3
+    MISTRAL_MAX_RETRIES: int = 0
     USE_MOCK_MISTRAL: bool = True
 
 

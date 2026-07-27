@@ -14,6 +14,7 @@ Lancement :
 from __future__ import annotations
 
 import asyncio
+import logging
 import uuid
 from datetime import datetime, timezone
 from typing import Any
@@ -24,6 +25,8 @@ from pydantic import BaseModel
 
 # Imports de l'orchestrateur
 from backend.api.orchestrator import run_analysis
+
+logger = logging.getLogger(__name__)
 
 app = FastAPI(
     title="Typhoon API — Analyse multi-agents de résilience climatique",
@@ -107,40 +110,72 @@ async def lancer_analyse(req: AnalyseRequest):
 
 @app.post("/api/bank/analyze")
 async def lancer_analyse_banque(req: AnalyseRequest):
-    """Route dédiée aux acteurs bancaires (nouveau module d'analyse crédit)."""
+    """Route dédiée aux acteurs bancaires — version ASYNC.
+    
+    Lance l'analyse en arrière-plan et retourne immédiatement.
+    Le Dashboard frontend fait du polling via GET /api/analysis/{session_id}
+    jusqu'à ce que le statut passe à "completed".
+    """
     session_id = req.session_id or f"bank-session-{uuid.uuid4().hex[:12]}"
     form_data = req.client_form
 
     if not form_data.get("adresse"):
         raise HTTPException(status_code=400, detail="L'adresse est obligatoire")
 
-    try:
-        result = await asyncio.wait_for(
-            asyncio.to_thread(run_analysis, form_data=form_data, session_id=session_id),
-            timeout=120.0
-        )
+    # 1. Stocker immédiatement un statut "processing"
+    analyses_store[session_id] = {"status": "processing", "session_id": session_id}
 
-        analyses_store[session_id] = result
+    # 2. Lancer l'analyse en arrière-plan (ne pas attendre)
+    async def background_task():
+        try:
+            result = await asyncio.wait_for(
+                asyncio.to_thread(run_analysis, form_data=form_data, session_id=session_id),
+                timeout=120.0
+            )
+            result["status"] = "completed"
+            analyses_store[session_id] = result
+        except asyncio.TimeoutError:
+            analyses_store[session_id] = {
+                "status": "error",
+                "session_id": session_id,
+                "error": "L'analyse a dépassé le temps limite (120s).",
+            }
+        except Exception as e:
+            logger.exception("Erreur analyse bancaire")
+            analyses_store[session_id] = {
+                "status": "error",
+                "session_id": session_id,
+                "error": f"Erreur lors de l'analyse : {str(e)}",
+            }
 
-        return {
-            "status": "ok",
-            "session_id": session_id,
-            "bank_decision": result.get("decision_bancaire", {}),
-            "analysis": result,
-        }
+    asyncio.create_task(background_task())
 
-    except asyncio.TimeoutError:
-        raise HTTPException(status_code=504, detail="L'analyse a dépassé le temps limite (120s).")
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Erreur lors de l'analyse bancaire : {str(e)}")
+    # 3. Retourner immédiatement (l'analyse tourne en tâche de fond)
+    return {
+        "status": "ok",
+        "session_id": session_id,
+        "status_analysis": "processing",
+    }
 
 
 @app.get("/api/analysis/{session_id}")
 async def get_analysis(session_id: str):
-    """Récupère une analyse existante par son ID de session."""
+    """Récupère une analyse existante par son ID de session.
+    
+    Retours possibles :
+    - {"status": "processing"}              → analyse en cours
+    - {"status": "error", "error": "..."}  → erreur
+    - {données complètes + "status": "completed"} → terminé
+    """
     analysis = analyses_store.get(session_id)
     if not analysis:
         raise HTTPException(status_code=404, detail="Analyse introuvable")
+    
+    # Si l'analyse est encore en cours ou en erreur, retourner tel quel
+    if analysis.get("status") in ("processing", "error"):
+        return analysis
+    
+    # Analyse terminée : retourner les données complètes
     return analysis
 
 

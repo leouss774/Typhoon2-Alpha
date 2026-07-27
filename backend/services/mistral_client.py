@@ -64,7 +64,15 @@ def _mock_completion(system_prompt: str, user_prompt: str) -> str:
   "exigences": ["Audit énergétique", "Assurance multirisque renforcée"],
   "points_a_verifier": ["Vérifier le DPE de la maison", "Confirmer l'année de construction"],
   "indice_confiance": 85,
+  "score_climatique": 30,
+  "score_risque_bancaire": 40,
   "statut_dossier": "Étude Manuelle",
+  "niveau_risque_global": "Faible",
+  "impact_esg": "Éligible au Prêt Vert",
+  "points_forts": ["Bon DPE", "Construction récente"],
+  "points_faibles": ["Absence de données DVF"],
+  "recommandation_garantie": "Caution bancaire",
+  "conditions_suspensives": ["Remise du DPE sous 30 jours"],
   "hard_stops": [],
   "avis_analyste": "Le risque climatique est modéré mais nécessite une décote préventive sur la valeur de garantie. L'indice de confiance est bon, mais la vérification des points déclaratifs reste requise."
 }"""

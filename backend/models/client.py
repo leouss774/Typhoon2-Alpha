@@ -14,7 +14,7 @@ class FormulaireClient(BaseModel):
     adresse: str = Field(description="Adresse complète du bien")
     code_postal: str = Field(default="", description="Code postal")
     ville: str = Field(default="", description="Ville")
-    type_bien: str = Field(description="maison | appartement")
+    type_bien: str = Field(description="maison | appartement | immeuble | usine | commerce | terrain | autre")
     surface_m2: float = Field(gt=0, description="Surface en m²")
     annee_construction: int = Field(description="Année de construction")
     materiau_principal: str = Field(description="brique | parpaing | bois | pierre")

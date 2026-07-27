@@ -104,31 +104,64 @@ def run_typhoon_graph(
 def _fallback_error(session_id: str, client_form: dict, error_msg: str) -> dict:
     """Genere un JSON d'erreur si le graphe echoue.
 
-    GARANTI de produire des zones par defaut (non vides) pour que le frontend
-    ne recoive jamais "recommandations.zones = {}".
+    Utilise les donnees du formulaire pour produire des scores DIFFERENCIES
+    meme en l'absence des API externes.
+    GARANTIT de produire des zones non vides pour le frontend.
     """
     from datetime import datetime, timezone
     logger.error(f"Fallback error: {error_msg}")
 
     adresse = client_form.get("adresse", "") if isinstance(client_form, dict) else ""
+    form = client_form if isinstance(client_form, dict) else {}
 
-    # Zones par defaut (non vides) pour eviter l'erreur frontend "zones manquantes"
+    # Extraction des signaux formulaire pour des scores differencies
+    fissures_importantes = form.get("fissures") in ("Importantes",)
+    fissures_moyennes = form.get("fissures") in ("Moyennes",)
+    affaissement = form.get("affaissement") == "Oui"
+    etat_mauvais = form.get("etat_structure") == "Mauvais"
+    toiture_mauvaise = form.get("etat_toiture") == "Mauvais"
+    toiture_moyenne = form.get("etat_toiture") == "Moyen"
+    infiltration = form.get("infiltrations") in ("Oui", "Majeures")
+    iso_toit_faible = form.get("isolation_toiture") == "faible"
+    iso_murs_faible = form.get("isolation_murs") == "faible"
+    annee = form.get("annee_construction", 2000)
+    is_old = annee < 1980
+    is_very_old = annee < 1950
+
+    # Calcul des scores (identique a generate_zone_recommendations)
+    def calc(conds, default):
+        s = sum(p for c, p in conds if c)
+        return min(100, max(0, s)) if s > 0 else default
+    def level(s):
+        return "critique" if s >= 70 else "eleve" if s >= 55 else "modere" if s >= 35 else "faible"
+
+    score_sous_sol = calc([(infiltration, 25)], 15)
+    score_fondations = calc([
+        (fissures_importantes, 25), (fissures_moyennes, 15),
+        (affaissement, 20), (etat_mauvais, 15), (is_very_old, 10)], 15)
+    score_toiture = calc([
+        (toiture_mauvaise, 25), (toiture_moyenne, 10),
+        (iso_toit_faible, 15), (is_old, 15)], 15)
+    score_murs = calc([
+        (iso_murs_faible, 15), (etat_mauvais, 15),
+        (fissures_importantes, 10)], 10)
+
     zones_default = {}
-    for name, score in [("fondations", 15), ("murs_nord", 10), ("toiture", 15), ("sous_sol", 15)]:
-        level = "critique" if score >= 70 else "eleve" if score >= 55 else "modere" if score >= 35 else "faible"
+    for name, score in [("fondations", score_fondations), ("murs_nord", score_murs),
+                         ("toiture", score_toiture), ("sous_sol", score_sous_sol)]:
         zones_default[name] = {
             "risque": score,
-            "niveau": level,
+            "niveau": level(score),
             "alea_principal": "Non determine (API indisponible)",
             "recommandations": [],
-            "justification": "Les donnees API etaient indisponibles au moment de l'analyse. Reessayez plus tard.",
+            "justification": "Analyse basee sur les declarations client (API externes indisponibles).",
             "test_vulnerabilite": {
                 "verdict": "Vulnerabilite non evaluee - API indisponible",
                 "explication": "Les API externes (Georisques, IGN, OSM) n'ont pas repondu.",
             },
         }
 
-    score_global = round(15 * 0.3 + 15 * 0.25 + 15 * 0.25 + 10 * 0.2)  # = 13, aligné avec _fallback_recommandations
+    score_global = round(score_sous_sol * 0.3 + score_fondations * 0.25 + score_toiture * 0.25 + score_murs * 0.2)
 
     return {
         "session_id": session_id,

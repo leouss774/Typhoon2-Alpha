@@ -9,6 +9,8 @@ interface BankDecisionProps {
     exigences: string[];
     points_a_verifier: string[];
     indice_confiance: number;
+    score_climatique: number;
+    score_risque_bancaire: number;
     statut_dossier: string;
     niveau_risque_global?: string;
     impact_esg?: string;
@@ -99,8 +101,12 @@ export default function BankDecisionPanel({ decision }: BankDecisionProps) {
           
           <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
             <div style={{ background: "rgba(0,0,0,0.2)", borderRadius: "8px", border: `1px solid ${riskLevelColor}50`, padding: "16px", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", flex: 1 }}>
-              <span style={{ fontSize: "12px", color: "#8b949e", textTransform: "uppercase", letterSpacing: "1px", marginBottom: "4px" }}>Profil de Risque</span>
-              <strong style={{ fontSize: "24px", color: riskLevelColor, textShadow: `0 0 10px ${riskLevelColor}80` }}>{decision.niveau_risque_global}</strong>
+              <span style={{ fontSize: "12px", color: "#8b949e", textTransform: "uppercase", letterSpacing: "1px", marginBottom: "4px" }}>Score de Risque Bancaire</span>
+              <div style={{ display: "flex", alignItems: "baseline", gap: "4px", marginBottom: "4px" }}>
+                <strong style={{ fontSize: "28px", color: riskLevelColor, textShadow: `0 0 10px ${riskLevelColor}80` }}>{decision.score_risque_bancaire}</strong>
+                <span style={{ fontSize: "14px", color: "#8b949e" }}>/ 100</span>
+              </div>
+              <strong style={{ fontSize: "14px", color: riskLevelColor }}>({decision.niveau_risque_global})</strong>
             </div>
             
             {decision.impact_esg && (
@@ -138,6 +144,12 @@ export default function BankDecisionPanel({ decision }: BankDecisionProps) {
           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "12px" }}>
             <span style={{ color: "#8b949e" }}>Valeur DVF (OpenData)</span>
             <strong style={{ fontSize: "16px" }}>{formatEur(decision.valeur_marche)}</strong>
+          </div>
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "12px" }}>
+            <span style={{ color: "#8b949e" }}>Score Climatique (Géorisques)</span>
+            <strong style={{ fontSize: "16px", color: decision.score_climatique > 60 ? "#ff4d4f" : decision.score_climatique > 30 ? "#faad14" : "#3fb950" }}>
+              {decision.score_climatique} / 100
+            </strong>
           </div>
           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "12px" }}>
             <span style={{ color: "#ff4d4f" }}>Décote Risque Climatique</span>
