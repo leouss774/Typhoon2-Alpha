@@ -22,3 +22,5 @@ node_modules/
 # OS / éditeurs
 .DS_Store
 Thumbs.db
+
+.freebuff/
