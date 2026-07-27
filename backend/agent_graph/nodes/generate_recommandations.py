@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import logging
 
-from agent_graph.state import TyphoonState
+from backend.agent_graph.state import TyphoonState
 
 logger = logging.getLogger(__name__)
 

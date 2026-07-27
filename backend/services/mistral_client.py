@@ -18,7 +18,8 @@ from typing import TypeVar
 import httpx
 from pydantic import BaseModel, ValidationError
 
-from backend.config import settings
+from backend.config.settings import get_settings
+settings = get_settings()
 from backend.services.json_validator import (
     JsonExtractionError,
     build_retry_prompt,
@@ -52,6 +53,22 @@ def _mock_completion(system_prompt: str, user_prompt: str) -> str:
   "resume": "Sans travaux, la toiture accumule un stress thermique important qui accélère sa dégradation. Une isolation renforcée limite nettement ce risque.",
   "points_de_vigilance": ["Vérifier l'état de la sous-toiture après chaque épisode caniculaire", "Prévoir une ventilation de toiture adaptée"]
 }"""
+    
+    if "Analyste Crédit IA" in system_prompt:
+        return """{
+  "valeur_marche": 400000,
+  "valeur_ajustee": 380000,
+  "decote_pct": 5,
+  "taux_propose": 3.85,
+  "majoration_taux": 0.15,
+  "exigences": ["Audit énergétique", "Assurance multirisque renforcée"],
+  "points_a_verifier": ["Vérifier le DPE de la maison", "Confirmer l'année de construction"],
+  "indice_confiance": 85,
+  "statut_dossier": "Étude Manuelle",
+  "hard_stops": [],
+  "avis_analyste": "Le risque climatique est modéré mais nécessite une décote préventive sur la valeur de garantie. L'indice de confiance est bon, mais la vérification des points déclaratifs reste requise."
+}"""
+
     return """{
   "score_global": 62,
   "zones": {
@@ -68,13 +85,13 @@ def _mock_completion(system_prompt: str, user_prompt: str) -> str:
 
 def _call_mistral_api(system_prompt: str, user_prompt: str) -> str:
     """Appel HTTP réel à l'API Mistral. Renvoie le texte brut de la réponse."""
-    if not settings.mistral_api_key:
+    if not settings.MISTRAL_API_KEY:
         raise MistralCallError(
             "MISTRAL_API_KEY absente : renseignez .env ou activez USE_MOCK_MISTRAL=true pour tester."
         )
 
     payload = {
-        "model": settings.mistral_model,
+        "model": settings.MISTRAL_MODEL,
         "messages": [
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt},
@@ -83,13 +100,13 @@ def _call_mistral_api(system_prompt: str, user_prompt: str) -> str:
         "response_format": {"type": "json_object"},
     }
     headers = {
-        "Authorization": f"Bearer {settings.mistral_api_key}",
+        "Authorization": f"Bearer {settings.MISTRAL_API_KEY}",
         "Content-Type": "application/json",
     }
 
     try:
-        with httpx.Client(timeout=settings.mistral_timeout_seconds) as client:
-            response = client.post(settings.mistral_api_url, json=payload, headers=headers)
+        with httpx.Client(timeout=settings.MISTRAL_TIMEOUT_SECONDS) as client:
+            response = client.post(settings.MISTRAL_API_URL, json=payload, headers=headers)
             response.raise_for_status()
             data = response.json()
     except httpx.HTTPStatusError as exc:
@@ -114,25 +131,25 @@ def call_mistral_and_validate(
     Mistral pour qu'il corrige sa réponse, jusqu'à `settings.mistral_max_retries`
     tentatives. Lève MistralCallError si tout échoue.
     """
-    completion_fn = _mock_completion if settings.use_mock_mistral or not settings.mistral_api_key else _call_mistral_api
+    completion_fn = _mock_completion if settings.USE_MOCK_MISTRAL or not settings.MISTRAL_API_KEY else _call_mistral_api
 
     raw_text = completion_fn(system_prompt, user_prompt)
     attempt = 0
     last_error: Exception | None = None
 
-    while attempt <= settings.mistral_max_retries:
+    while attempt <= settings.MISTRAL_MAX_RETRIES:
         try:
             return parse_and_validate(raw_text, schema)
         except (JsonExtractionError, ValidationError) as exc:
             last_error = exc
             logger.warning("Sortie Mistral invalide (tentative %s/%s) : %s",
-                            attempt + 1, settings.mistral_max_retries + 1, exc)
+                            attempt + 1, settings.MISTRAL_MAX_RETRIES + 1, exc)
             attempt += 1
-            if attempt > settings.mistral_max_retries:
+            if attempt > settings.MISTRAL_MAX_RETRIES:
                 break
             retry_prompt = build_retry_prompt(exc, raw_text)
             raw_text = completion_fn(system_prompt, f"{user_prompt}\n\n---\n{retry_prompt}")
 
     raise MistralCallError(
-        f"Impossible d'obtenir une sortie Mistral valide après {settings.mistral_max_retries + 1} tentative(s) : {last_error}"
+        f"Impossible d'obtenir une sortie Mistral valide après {settings.MISTRAL_MAX_RETRIES + 1} tentative(s) : {last_error}"
     )

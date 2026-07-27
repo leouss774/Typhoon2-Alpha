@@ -57,7 +57,7 @@ class GeocodedAddress:
 
 def geocoder_adresse(adresse: str) -> GeocodedAddress:
     """Transforme une adresse texte en coordonnées + code INSEE de la commune."""
-    resp = requests.get(ADRESSE_API_URL, params={"q": adresse, "limit": 1}, timeout=10)
+    resp = requests.get(ADRESSE_API_URL, params={"q": adresse, "limit": 1}, timeout=3)
     resp.raise_for_status()
     data = resp.json()
 
@@ -109,7 +109,7 @@ def _get_georisques(endpoint: str, params: dict[str, Any]) -> list[dict]:
     _throttle("default", 1 / 5)
     url = f"{GEORISQUES_BASE_URL}/{endpoint}"
     try:
-        resp = requests.get(url, params=params, headers={"Accept": "application/json"}, timeout=10)
+        resp = requests.get(url, params=params, headers={"Accept": "application/json"}, timeout=3)
         resp.raise_for_status()
         payload = resp.json()
     except (requests.RequestException, ValueError) as exc:
@@ -139,7 +139,7 @@ def get_resultats_rapport_risque(lat: float, lon: float) -> dict[str, Any]:
             url,
             params={"latlon": f"{lon},{lat}"},
             headers={"Accept": "application/json"},
-            timeout=10,
+            timeout=3,
         )
         resp.raise_for_status()
         return resp.json()
@@ -222,7 +222,7 @@ def get_ign_altitude(lat: float, lon: float) -> dict[str, Any]:
         "indent": "false",
     }
     try:
-        resp = requests.get(IGN_ALTI_URL, params=params, timeout=10)
+        resp = requests.get(IGN_ALTI_URL, params=params, timeout=3)
         resp.raise_for_status()
         return resp.json()
     except (requests.RequestException, ValueError) as exc:
@@ -259,7 +259,7 @@ def _get_hubeau(path: str, params: dict[str, Any]) -> list[dict]:
     """
     url = f"{HUBEAU_BASE_URL}/{path}"
     try:
-        resp = requests.get(url, params=params, headers={"Accept": "application/json"}, timeout=10)
+        resp = requests.get(url, params=params, headers={"Accept": "application/json"}, timeout=3)
         resp.raise_for_status()
         payload = resp.json()
     except (requests.RequestException, ValueError) as exc:
@@ -338,7 +338,7 @@ def get_osm_proximite(lat: float, lon: float, rayon_m: int = 3000) -> dict[str, 
             OVERPASS_URL,
             data={"data": query},
             headers={"User-Agent": "talan-risque-adresse/1.0"},
-            timeout=25,
+            timeout=5,
         )
         resp.raise_for_status()
         elements = resp.json().get("elements", [])

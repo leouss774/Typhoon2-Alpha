@@ -1,0 +1,20 @@
+from pydantic import BaseModel, Field
+
+class BankDecision(BaseModel):
+    valeur_marche: float = Field(..., description="Valeur estimée du bien sur le marché (en euros)")
+    valeur_ajustee: float = Field(..., description="Valeur du bien après décote de risque (en euros)")
+    decote_pct: int = Field(..., description="Pourcentage de décote appliqué")
+    taux_propose: float = Field(..., description="Taux d'intérêt proposé (%)")
+    majoration_taux: float = Field(..., description="Majoration ou bonification du taux liée au risque (%)")
+    exigences: list[str] = Field(default_factory=list, description="Conditions exigées par la banque")
+    points_a_verifier: list[str] = Field(default_factory=list, description="Liste des points déclaratifs à vérifier physiquement ou sur document")
+    indice_confiance: int = Field(ge=0, le=100, description="Niveau de confiance dans les données déclaratives (0-100)")
+    statut_dossier: str = Field(..., description="Statut global : Fast-Track, Étude Manuelle, ou Refus Automatique")
+    niveau_risque_global: str = Field(..., description="Niveau de risque évalué : Faible, Modéré, ou Élevé")
+    impact_esg: str = Field(..., description="Impact environnemental du financement (ex: Passoire thermique, Éligible Prêt Vert)")
+    points_forts: list[str] = Field(default_factory=list, description="Arguments favorables au dossier (max 3)")
+    points_faibles: list[str] = Field(default_factory=list, description="Arguments défavorables au dossier (max 3)")
+    recommandation_garantie: str = Field(..., description="Type de garantie recommandée (ex: IPPD, Hypothèque, Caution)")
+    conditions_suspensives: list[str] = Field(default_factory=list, description="Clauses à intégrer au contrat de prêt (ex: Preuve de travaux DPE sous 12 mois)")
+    hard_stops: list[str] = Field(default_factory=list, description="Règles métier bloquantes détectées (ex: Zone PPRI Rouge)")
+    avis_analyste: str = Field(..., description="Avis synthétique rédigé par l'IA pour le comité de crédit")

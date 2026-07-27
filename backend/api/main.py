@@ -23,7 +23,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 # Imports de l'orchestrateur
-from api.orchestrator import run_analysis
+from backend.api.orchestrator import run_analysis
 
 app = FastAPI(
     title="Typhoon API — Analyse multi-agents de résilience climatique",
@@ -103,6 +103,36 @@ async def lancer_analyse(req: AnalyseRequest):
             status_code=500,
             detail=f"Erreur lors de l'analyse : {str(e)}",
         )
+
+
+@app.post("/api/bank/analyze")
+async def lancer_analyse_banque(req: AnalyseRequest):
+    """Route dédiée aux acteurs bancaires (nouveau module d'analyse crédit)."""
+    session_id = req.session_id or f"bank-session-{uuid.uuid4().hex[:12]}"
+    form_data = req.client_form
+
+    if not form_data.get("adresse"):
+        raise HTTPException(status_code=400, detail="L'adresse est obligatoire")
+
+    try:
+        result = await asyncio.wait_for(
+            asyncio.to_thread(run_analysis, form_data=form_data, session_id=session_id),
+            timeout=120.0
+        )
+
+        analyses_store[session_id] = result
+
+        return {
+            "status": "ok",
+            "session_id": session_id,
+            "bank_decision": result.get("decision_bancaire", {}),
+            "analysis": result,
+        }
+
+    except asyncio.TimeoutError:
+        raise HTTPException(status_code=504, detail="L'analyse a dépassé le temps limite (120s).")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erreur lors de l'analyse bancaire : {str(e)}")
 
 
 @app.get("/api/analysis/{session_id}")

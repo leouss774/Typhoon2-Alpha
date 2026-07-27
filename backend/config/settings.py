@@ -40,9 +40,18 @@ class Settings(BaseSettings):
     # Sécurité
     SECRET_KEY: str = "change-me-in-production"
     CORS_ORIGINS: str = "http://localhost:5173,http://localhost:5174,http://localhost:5175,http://localhost:3000"
+    BDNB_API_KEY: str = ""
 
     # Feature flags
     USE_MOCK_LLM: bool = True  # True = réponses simulées sans vraie API
+    
+    # Mistral
+    MISTRAL_API_KEY: str = ""
+    MISTRAL_MODEL: str = "mistral-large-latest"
+    MISTRAL_API_URL: str = "https://api.mistral.ai/v1/chat/completions"
+    MISTRAL_TIMEOUT_SECONDS: int = 30
+    MISTRAL_MAX_RETRIES: int = 3
+    USE_MOCK_MISTRAL: bool = True
 
 
 @lru_cache()
