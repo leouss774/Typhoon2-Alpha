@@ -54,5 +54,9 @@ class Settings(BaseSettings):
     # Divers
     http_timeout_seconds: float = 15.0
 
+    # Mistral (optionnel : le rapport utilise le fallback deterministe sans cle)
+    mistral_api_key: str | None = None
+    mistral_model: str = "mistral-small-latest"
+
 
 settings = Settings()

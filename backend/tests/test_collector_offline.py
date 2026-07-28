@@ -84,6 +84,16 @@ GEORISQUES_CATNAT_RESPONSE = {"data": []}
 # Format observe pour le geocodeur BDNB : une liste de resultats, chacun
 # avec un champ "id" = cle_interop_adr.
 BDNB_GEOCODAGE_RESPONSE = [{"id": "06088_1234_00010", "label": "10 Promenade des Anglais 06000 Nice"}]
+BDNB_GEOCODAGE_FEATURE_RESPONSE = {
+    "type": "FeatureCollection",
+    "features": [
+        {
+            "type": "Feature",
+            "geometry": {"type": "Point", "coordinates": [7.234074, 43.683537]},
+            "properties": {"id": "06088_0240", "label": "Promenade des Anglais 06000 Nice"},
+        }
+    ],
+}
 BDNB_BATIMENT_RESPONSE = [
     {
         "cle_interop_adr": "06088_1234_00010",
@@ -166,6 +176,25 @@ async def test_bdnb_deux_etapes():
     assert result["cle_interop_adr"] == "06088_1234_00010"
     assert result["batiment"]["materiau_structure"] == "beton"
     print("test_bdnb_deux_etapes OK ->", result)
+
+
+async def test_bdnb_geocodage_geojson_properties_id():
+    """L'API BDNB peut renvoyer une Feature GeoJSON avec l'id dans properties."""
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        path = request.url.path
+        if path.endswith("/v1/bdnb/geocodage"):
+            return httpx.Response(200, json=BDNB_GEOCODAGE_FEATURE_RESPONSE)
+        if path.endswith("/v1/bdnb/donnees/batiment_groupe_complet/adresse"):
+            assert request.url.params["cle_interop_adr"] == "eq.06088_0240"
+            return httpx.Response(200, json=BDNB_BATIMENT_RESPONSE)
+        raise AssertionError(f"URL non geree par le mock : {request.url}")
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        result = await bdnb_connector.fetch_bdnb(client, "Promenade des Anglais, 06000 Nice")
+
+    assert result["cle_interop_adr"] == "06088_0240"
+    print("test_bdnb_geocodage_geojson_properties_id OK ->", result["cle_interop_adr"])
 
 
 def test_copernicus_refuse_sans_configuration():
@@ -275,6 +304,7 @@ async def _run_all():
     await test_climate_open_meteo()
     await test_georisques_partial_failure()
     await test_bdnb_deux_etapes()
+    await test_bdnb_geocodage_geojson_properties_id()
     test_copernicus_refuse_sans_configuration()
     test_copernicus_request_est_bien_celle_fournie()
     test_copernicus_extraction_point_fichier_unique()
