@@ -10,9 +10,12 @@
 <style>
 /* ===== DESIGN TOKENS ===== */
 :root {
-  --brand: #3B82F6; --brand-dark: #2563EB; --brand-glow: rgba(59,130,246,0.15);
+  --brand: #FF6B4A; --brand-dark: #E24E2E; --brand-light: #FFE4DA;
+  --brand-glow: rgba(255,107,74,0.15);
   --ink: #1E2A33; --text: #4B5760; --text-secondary: #6B7A84; --text-muted: #8B959D;
   --border: #E7DED6; --bg: #F8F5F1; --card-bg: #FFFFFF;
+  --surface-alt: #FAF6F2;
+  --success: #1F9D6C; --warning: #D98A2B; --danger: #DC4B39;
   --shadow: 0 2px 8px rgba(0,0,0,0.06); --card-lift: 0 6px 20px rgba(0,0,0,0.10);
   --radius: 12px; --radius-sm: 8px;
   --font-head: 'Source Serif 4', Georgia, serif;
@@ -38,11 +41,11 @@ a { color: var(--brand); text-decoration: none; }
   border-radius: var(--radius); margin-bottom: 20px;
   font-size: 13px; color: var(--text-secondary); box-shadow: var(--shadow);
 }
-.status-bar .dot { width: 8px; height: 8px; border-radius: 50%; background: #3fb950; flex-shrink: 0; }
+.status-bar .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); flex-shrink: 0; }
 .status-bar .dot.loading { background: var(--brand); animation: pulse-dot 1s infinite; }
-.status-bar .dot.error { background: #da3633; }
+.status-bar .dot.error { background: var(--danger); }
 .status-bar .status-msg { flex: 1; }
-.status-bar .status-msg.error { color: #da3633; }
+.status-bar .status-msg.error { color: var(--danger); }
 @keyframes pulse-dot { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
 
 /* ===== GENERATE FORM ===== */
@@ -156,10 +159,10 @@ a { color: var(--brand); text-decoration: none; }
   display: inline-flex; align-items: center; gap: 4px;
   padding: 3px 12px; border-radius: 999px; font-size: 12px; font-weight: 700; text-transform: uppercase;
 }
-.risk-badge.faible { background: linear-gradient(135deg,#E8F5E9,#C8E6C9); color: #2E7D32; }
-.risk-badge.moderé, .risk-badge.mo, .risk-badge.modere { background: linear-gradient(135deg,#FFF8E1,#FFECB3); color: #B8860B; }
-.risk-badge.elevé, .risk-badge.el, .risk-badge.eleve { background: linear-gradient(135deg,#FFF3E0,#FFE0B2); color: #BF5E00; }
-.risk-badge.critique { background: linear-gradient(135deg,#FFEBEE,#FFCDD2); color: #C62828; }
+.risk-badge.faible { background: linear-gradient(135deg,#E4F5EC,#C8E6C9); color: var(--success); }
+.risk-badge.moderé, .risk-badge.mo, .risk-badge.modere { background: linear-gradient(135deg,#FBEED9,#FFECB3); color: var(--warning); }
+.risk-badge.elevé, .risk-badge.el, .risk-badge.eleve { background: linear-gradient(135deg,#FDE7E2,#FFE0B2); color: #BF5E00; }
+.risk-badge.critique { background: linear-gradient(135deg,#FDD8D4,#FFCDD2); color: #C0392B; }
 .risk-summary-card .risk-title { font-size: 14px; font-weight: 600; margin-bottom: 8px; }
 .risk-summary-card .risk-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font-size: 13px; }
 .risk-summary-card .risk-row .label { color: var(--text-secondary); }
@@ -192,7 +195,7 @@ a { color: var(--brand); text-decoration: none; }
   display: flex; gap: 12px; padding: 12px; border-radius: var(--radius-sm);
   transition: var(--transition); cursor: default;
 }
-.reco-item:hover { background: #F5F0EB; transform: translateX(3px); }
+.reco-item:hover { background: var(--surface-alt); transform: translateX(3px); }
 .reco-item + .reco-item { border-top: 1px solid var(--border); }
 .reco-item .reco-check { width: 20px; height: 20px; margin-top: 2px; flex-shrink: 0; color: var(--brand); }
 .reco-item .reco-content { flex: 1; }
@@ -251,7 +254,7 @@ a { color: var(--brand); text-decoration: none; }
 .twin-preview .twin-header .twin-badge {
   font-size: 10px; font-weight: 700; text-transform: uppercase;
   letter-spacing: 0.05em; padding: 3px 8px; border-radius: 4px;
-  background: #E8F5E9; color: #2E7D32;
+  background: #E4F5EC; color: var(--success);
 }
 .twin-chips { display: flex; flex-wrap: wrap; gap: 6px; padding: 14px 20px; }
 .twin-chip {
@@ -261,25 +264,25 @@ a { color: var(--brand); text-decoration: none; }
 }
 .twin-chip:hover { transform: translateY(-1px); }
 .twin-chip .chip-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
-.twin-chip.faible { background: #E8F5E9; color: #2E7D32; border-color: #A5D6A7; }
-.twin-chip.faible .chip-dot { background: #2E7D32; }
-.twin-chip.moderé, .twin-chip.mo, .twin-chip.modere { background: #FFF8E1; color: #B8860B; border-color: #FFE082; }
-.twin-chip.moderé .chip-dot, .twin-chip.mo .chip-dot, .twin-chip.modere .chip-dot { background: #B8860B; }
+.twin-chip.faible { background: #E4F5EC; color: var(--success); border-color: #A5D6A7; }
+.twin-chip.faible .chip-dot { background: var(--success); }
+.twin-chip.moderé, .twin-chip.mo, .twin-chip.modere { background: #FBEED9; color: var(--warning); border-color: #FFE082; }
+.twin-chip.moderé .chip-dot, .twin-chip.mo .chip-dot, .twin-chip.modere .chip-dot { background: var(--warning); }
 .twin-chip.elevé, .twin-chip.el, .twin-chip.eleve { background: #FFF3E0; color: #BF5E00; border-color: #FFCC80; }
 .twin-chip.elevé .chip-dot, .twin-chip.el .chip-dot, .twin-chip.eleve .chip-dot { background: #BF5E00; }
-.twin-chip.critique { background: #FFEBEE; color: #C62828; border-color: #EF9A9A; }
-.twin-chip.critique .chip-dot { background: #C62828; }
+.twin-chip.critique { background: #FDD8D4; color: #C0392B; border-color: #EF9A9A; }
+.twin-chip.critique .chip-dot { background: #C0392B; }
 .twin-json-toggle {
   display: block; width: 100%; padding: 8px; border: none; border-top: 1px solid var(--border);
   background: var(--bg); cursor: pointer; font-size: 12px; font-weight: 600;
   color: var(--text-secondary); font-family: var(--font-body); transition: var(--transition);
 }
-.twin-json-toggle:hover { background: #F0EBE5; color: var(--ink); }
+.twin-json-toggle:hover { background: var(--surface-alt); color: var(--ink); }
 .twin-json-block { display: none; }
 .twin-json-block.open { display: block; }
 .twin-json-block pre {
   padding: 16px 20px; font-size: 11px; line-height: 1.6; overflow-x: auto;
-  background: #F8F5F1; color: var(--text); max-height: 300px; overflow-y: auto;
+  background: var(--bg); color: var(--text); max-height: 300px; overflow-y: auto;
   font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
 }
 
@@ -385,7 +388,7 @@ a { color: var(--brand); text-decoration: none; }
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
             <span id="cert-expiry">—</span>
           </span>
-          <span class="verified-seal" id="cert-status-badge" style="display:inline-flex;align-items:center;gap:4px;padding:2px 10px;border-radius:999px;font-size:11px;font-weight:700;background:#E8F5E9;color:#2E7D32">
+          <span class="verified-seal" id="cert-status-badge" style="display:inline-flex;align-items:center;gap:4px;padding:2px 10px;border-radius:999px;font-size:11px;font-weight:700;background:#E4F5EC;color:var(--success)">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             VERIFIÉ
           </span>
@@ -532,36 +535,32 @@ function showContentSkeletons(show) {
 
 /* ===== RISK COLORS ===== */
 function riskColor(score) {
-  if (score <= 25) return '#3fb950';
-  if (score <= 50) return '#d29922';
-  if (score <= 75) return '#db6d28';
-  return '#da3633';
+  if (score <= 25) return '#1F9D6C';
+  if (score <= 50) return '#D98A2B';
+  if (score <= 75) return '#E24E2E';
+  return '#DC4B39';
 }
 
 /* ===== CERT LEVELS ===== */
 const CERT_LEVELS = {
   Bronze: {
     primary: '#CD7F32', secondary: '#A0652A', accent: '#E8C88A',
-    label: 'Bronze',
-    desc: 'Résilience de base. Des risques significatifs sont identifiés.',
+    label: 'Bronze', desc: 'Résilience de base. Des risques significatifs sont identifiés.',
     explain: 'Des travaux de rénovation sont fortement recommandés pour améliorer la résilience du bâtiment face aux risques climatiques.',
   },
   Silver: {
     primary: '#A8B8C8', secondary: '#7A8A9A', accent: '#D0DCE8',
-    label: 'Silver',
-    desc: 'Résilience satisfaisante. Des risques modérés existent.',
+    label: 'Silver', desc: 'Résilience satisfaisante. Des risques modérés existent.',
     explain: 'Les risques restent dans des limites acceptables. Des travaux de mitigation sont recommandés pour renforcer le bâtiment.',
   },
   Gold: {
     primary: '#D4A017', secondary: '#B8860B', accent: '#F5D76E',
-    label: 'Gold',
-    desc: 'Très bonne résilience. Les risques sont faibles et bien gérés.',
+    label: 'Gold', desc: 'Très bonne résilience. Les risques sont faibles et bien gérés.',
     explain: 'Ce bâtiment bénéficie d\'une très bonne résilience face aux risques climatiques. Les risques sont maîtrisés.',
   },
   Platinum: {
     primary: '#E5E4E2', secondary: '#B9C2D0', accent: '#FFFFFF',
-    label: 'Platinum',
-    desc: 'Résilience exceptionnelle. Risque climatique minimal.',
+    label: 'Platinum', desc: 'Résilience exceptionnelle. Risque climatique minimal.',
     explain: 'Ce bâtiment dépasse les normes de construction actuelles. Une référence en matière de résilience et de durabilité.',
   },
 };
@@ -616,7 +615,7 @@ function renderBadge(container, cert, pid, date, size) {
     svg += `<text x="60" y="72" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-weight="700" font-size="17" fill="${level === 'Platinum' ? '#4A5A7A' : '#fff'}">${cfg.label}</text>`;
     svg += `<text x="60" y="92" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-weight="700" font-size="13" fill="rgba(255,255,255,0.85)">${score}/100</text>`;
     if (pid) svg += `<text x="60" y="115" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-weight="600" font-size="8" fill="rgba(255,255,255,0.5)">${pid}</text>`;
-    svg += `<text x="60" y="131" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-weight="700" font-size="8" fill="#3fb950" class="verified-seal">● VERIFIÉ</text>`;
+    svg += `<text x="60" y="131" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-weight="700" font-size="8" fill="#1F9D6C" class="verified-seal">● VERIFIÉ</text>`;
   } else {
     svg += `<text x="25" y="38" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-weight="700" font-size="9" fill="#fff">${cfg.label}</text>`;
     svg += `<text x="25" y="50" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-weight="600" font-size="7" fill="rgba(255,255,255,0.7)">${score}</text>`;
