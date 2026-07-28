@@ -398,6 +398,37 @@ a { color: var(--brand); text-decoration: none; }
     </div>
   </div>
 
+  <!-- ===== DEVIS RESULT (from localStorage, set by the main SPA after devis certification) ===== -->
+  <div id="devis-result-section" class="cert-hero section-fade" style="display:none;background:linear-gradient(135deg,#E4F5EC,#FFFFFF);border-color:var(--success);">
+    <div style="flex-shrink:0;">
+      <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="var(--success)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 2 4 5v6c0 5 3.5 9 8 11 4.5-2 8-6 8-11V5z"/>
+        <path d="m9 12 2 2 4-4"/>
+      </svg>
+    </div>
+    <div style="flex:1;">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--success);margin-bottom:2px;">Certification obtenue après travaux</div>
+      <div style="font-size:18px;font-weight:700;color:var(--ink);margin-bottom:4px;" id="devis-cert-heading">Bien Climato-Résilient</div>
+      <div style="display:flex;gap:24px;flex-wrap:wrap;align-items:center;">
+        <div><span style="font-size:11px;color:var(--text-muted);">Score avant</span><br><strong id="devis-score-before" style="font-size:20px;color:var(--warning);">--</strong></div>
+        <div style="font-size:20px;color:var(--text-muted);">→</div>
+        <div><span style="font-size:11px;color:var(--text-muted);">Score après travaux</span><br><strong id="devis-score-after" style="font-size:20px;color:var(--success);">--</strong></div>
+        <div style="border-left:1px solid var(--border);padding-left:20px;">
+          <span style="font-size:11px;color:var(--text-muted);">Prime d'assurance</span><br>
+          <strong id="devis-prime" style="font-size:20px;color:var(--brand);">--</strong>
+        </div>
+        <div style="border-left:1px solid var(--border);padding-left:20px;">
+          <span style="font-size:11px;color:var(--text-muted);">Date de certification</span><br>
+          <strong id="devis-date" style="font-size:14px;color:var(--ink);">--</strong>
+        </div>
+      </div>
+      <div style="margin-top:12px;">
+        <div style="font-size:12px;font-weight:600;color:var(--ink);margin-bottom:6px;">Travaux réalisés</div>
+        <ul id="devis-works-ul" style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:4px;"></ul>
+      </div>
+    </div>
+  </div>
+
   <!-- ===== SCORE GAUGES ===== -->
   <div class="score-gauges section-fade" id="section-gauges">
     <div class="score-gauge-card">
@@ -911,6 +942,81 @@ async function generatePropertyID(adresse) {
     btn.disabled = false;
   }
 }
+
+/* ===== APPLY DEVIS OVERRIDE (localStorage) ===== */
+// Reset gauge label to default (avant d'appliquer un eventuel override)
+function resetDevisOverrides() {
+  const gaugeLabel = document.querySelector('.score-gauge-card:first-child .gauge-explain');
+  if (gaugeLabel) gaugeLabel.innerHTML = 'Résilience globale face aux risques climatiques et géologiques';
+}
+
+// Applique les overrides depuis le localStorage si un devis certifie existe
+// Ne s'applique que si l'adresse du devis correspond a l'adresse courante (evite les melanges)
+function applyDevisOverrides(currentAddress) {
+  const devisSection = $('devis-result-section');
+  if (!devisSection) return;
+  devisSection.style.display = 'none';
+
+  let stored;
+  try {
+    const raw = localStorage.getItem('typhoon_devis_result');
+    if (!raw) return;
+    stored = JSON.parse(raw);
+    if (!stored || !stored.certifie) return;
+  } catch (e) { return; }
+
+  // Verifier que l'adresse du devis correspond a l'adresse du Property ID courant
+  if (currentAddress && stored.adresse && currentAddress.toLowerCase() !== stored.adresse.toLowerCase()) return;
+
+  // Afficher la section certification apres travaux
+  devisSection.style.display = 'flex';
+  // Forcer la reanimation du fade-in en retirant puis rajoutant la classe
+  devisSection.classList.remove('visible');
+  requestAnimationFrame(() => {
+    devisSection.classList.add('visible');
+  });
+
+  $('devis-score-before').textContent = stored.score_avant;
+  $('devis-score-after').textContent = stored.score_apres;
+  $('devis-prime').textContent = stored.prime_percent + '%';
+  $('devis-date').textContent = stored.date_generation
+    ? new Date(stored.date_generation).toLocaleDateString('fr-FR')
+    : '—';
+
+  // Travaux realises
+  const ul = $('devis-works-ul');
+  ul.innerHTML = '';
+  if (stored.travaux_retenus && stored.travaux_retenus.length) {
+    stored.travaux_retenus.forEach(t => {
+      const li = document.createElement('li');
+      li.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:6px 10px;background:rgba(255,255,255,0.7);border-radius:6px;font-size:12px;';
+      li.innerHTML = `<span><strong>${t.travaux}</strong> <span style="color:var(--text-muted);font-size:11px;">— ${t.zone.replace(/_/g, ' ')}</span></span><span style="color:var(--text-secondary);font-weight:600;">${t.cout_estime || '—'}</span>`;
+      ul.appendChild(li);
+    });
+  }
+
+  // Mettre a jour la certification hero pour refleter le score apres travaux
+  const scoreBig = $('cert-score-big');
+  if (scoreBig) {
+    scoreBig.innerHTML = stored.score_apres + '<sup style="font-size:12px;color:var(--success);"> ✓</sup>';
+  }
+
+  // Ajouter un badge "Après travaux" sur le score global gauge
+  const gaugeLabel = document.querySelector('.score-gauge-card:first-child .gauge-explain');
+  if (gaugeLabel) {
+    gaugeLabel.innerHTML = 'Score après travaux réalisés <span style="color:var(--success);font-weight:600;">(−' + Math.round((1 - stored.score_apres / stored.score_avant) * 100) + '%)</span>';
+  }
+}
+
+// Intercepter renderPropertyID pour reset+appliquer les overrides apres chaque rendu
+const _origRender = renderPropertyID;
+renderPropertyID = function(data) {
+  resetDevisOverrides();
+  _origRender(data);
+  // Extraire l'adresse depuis les donnees du Property ID pour la verification
+  const addr = (data && data.building && data.building.address) || '';
+  applyDevisOverrides(addr);
+};
 
 /* ===== FORM ===== */
 $('generate-form').addEventListener('submit', e => {
