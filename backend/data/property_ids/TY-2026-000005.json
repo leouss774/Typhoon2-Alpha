@@ -1,6 +1,6 @@
 {
   "property_id": "TY-2026-000005",
-  "generated_at": "2026-07-28T10:36:11.116384+00:00",
+  "generated_at": "2026-07-28T13:19:48.715719+00:00",
   "building": {
     "address": "26 Rue Victor Hugo 37140 Bourgueil",
     "construction_year": 1850,
@@ -26,9 +26,9 @@
     }
   },
   "scores": {
-    "overall": 40,
-    "climate": 42,
-    "insurance": 40
+    "overall": 42,
+    "climate": 44,
+    "insurance": 42
   },
   "risk_summary": {
     "highest_risk": "sous_sol",
@@ -37,21 +37,8 @@
   },
   "recommendations": [
     {
-      "mesure": "Vérifier l’état des structures portantes en béton et remédier aux éventuelles infiltrations ou stagnations d’eau. Réparer le béton dans les zones dégradées.",
-      "type": "recommandation_source",
-      "cout_estime": null,
-      "aide": null,
-      "sources": [
-        {
-          "fiche_id": "REF-0017",
-          "source_id": "S01",
-          "extrait_exact": "2.2 ÉLÉMENTS DE STRUCTURE EN BÉTON Vériﬁer l’état des structures portantes et remédier aux éventuelles inﬁltrations ou stagnations d’eau."
-        }
-      ],
-      "zone": "fondations"
-    },
-    {
-      "mesure": "Vérifier l’état des structures portantes en maçonnerie et remédier aux éventuelles infiltrations ou stagnations d’eau.",
+      "mesure": "Vérifier et réparer les fondations en maçonnerie",
+      "explication": "Faites inspecter l’état de vos fondations en maçonnerie par un professionnel qualifié. Si des fissures, des infiltrations d’eau ou des zones humides sont détectées, il faudra les réparer rapidement. Ces problèmes aggravent les effets du retrait-gonflement des argiles en affaiblissant la stabilité des fondations. Cette vérification est particulièrement importante pour une maison ancienne comme la vôtre, construite en meulière, un matériau sensible à l’humidité. Un entretien régulier permet d’éviter des dégâts plus graves.",
       "type": "recommandation_source",
       "cout_estime": null,
       "aide": null,
@@ -65,14 +52,166 @@
       "zone": "fondations"
     },
     {
-      "mesure": "Vérifier l’état des parachèvements intérieurs sous la toiture (taches d’humidité, moisissures, corrosion, flèche).",
+      "mesure": "Faire appel à un professionnel pour concevoir les travaux",
+      "explication": "Avant d’engager des travaux sur vos fondations, consultez un architecte ou un maître d’œuvre. Ce professionnel analysera la structure de votre maison et proposera des solutions adaptées pour renforcer vos fondations face au retrait-gonflement des argiles. Cette étape est cruciale pour éviter des erreurs coûteuses et garantir la durabilité des travaux. Elle s’applique à tout projet touchant les fondations, surtout pour une maison ancienne comme la vôtre.",
       "type": "recommandation_source",
       "cout_estime": null,
-      "aide": {
-        "dispositif": null,
-        "conditions": null,
-        "statut": "potential_eligibility_only"
-      },
+      "aide": null,
+      "sources": [
+        {
+          "fiche_id": "REF-0374",
+          "source_id": "S09",
+          "extrait_exact": "Indépendamment du degré de complexité de votre projet, faire appel à un professionnel (architecte, maître d’œuvre) pour analyser l’architecture du bâtiment et vous aider à concevoir votre projet."
+        }
+      ],
+      "zone": "fondations"
+    },
+    {
+      "mesure": "Restaurer les éléments architecturaux de la façade en meulière",
+      "explication": "Lors d’un ravalement de façade, il est important de restaurer et préserver les éléments caractéristiques comme les corniches, soubassements, bandeaux d’étages, encadrements de fenêtres ou moulures. Ces éléments contribuent à la solidité et à l’étanchéité de la façade, ce qui la rend plus résistante aux intempéries comme les tempêtes. Pour les câbles apparents (électricité, télécommunications), il est recommandé de les intégrer visuellement en les peignant dans la couleur de la façade et en les plaçant sous des saillies pour les dissimuler. Cette mesure s’applique particulièrement aux maisons anciennes comme la vôtre, construite en meulière.",
+      "type": "recommandation_source",
+      "cout_estime": null,
+      "aide": null,
+      "sources": [
+        {
+          "fiche_id": "REF-0416",
+          "source_id": "S09",
+          "extrait_exact": "Les corniches et les soubassements, les bandeaux d’étages ou d’angles, les encadrements, souvent marqués par une texture et une couleur différentes, seront maintenus. Ils seront simulés par la couleur et positionnés sous corniche ou autre saillie capable de les faire visuellement disparaître."
+        }
+      ],
+      "zone": "murs_ouest"
+    },
+    {
+      "mesure": "Respecter les techniques locales lors de travaux sur la façade",
+      "explication": "Si vous envisagez des travaux modifiant la façade (comme un ravalement ou une isolation), il est essentiel de respecter les techniques de construction adaptées à votre région et à l’époque de construction de votre maison. Cela permet de préserver la résistance et l’étanchéité de la façade face aux tempêtes, tout en maintenant son caractère patrimonial. Une analyse préalable des caractéristiques architecturales locales est nécessaire pour adapter les travaux. Cette recommandation s’applique à toutes les constructions existantes en France, notamment les maisons anciennes comme la vôtre.",
+      "type": "recommandation_source",
+      "cout_estime": null,
+      "aide": null,
+      "sources": [
+        {
+          "fiche_id": "REF-0362",
+          "source_id": "S09",
+          "extrait_exact": "Selon les régions et en fonction des époques, des techniques de construction spécifiques et adaptées au contexte local ont été employées. Il importe de les respecter, voire de les remettre à jour dans le cas où elles auraient été effacées."
+        }
+      ],
+      "zone": "murs_ouest"
+    },
+    {
+      "mesure": "Restaurer les éléments architecturaux de la façade en meulière",
+      "explication": "Lors d’un ravalement de façade, il est important de restaurer et préserver les éléments caractéristiques comme les corniches, soubassements, bandeaux d’étages, encadrements de fenêtres ou moulures. Ces éléments contribuent à la solidité et à l’étanchéité de la façade, ce qui la rend plus résistante aux intempéries comme les tempêtes. Pour les câbles apparents (électricité, télécommunications), il est recommandé de les intégrer visuellement en les peignant dans la couleur de la façade et en les plaçant sous des saillies pour les dissimuler. Cette mesure s’applique particulièrement aux maisons anciennes comme la vôtre, construite en meulière.",
+      "type": "recommandation_source",
+      "cout_estime": null,
+      "aide": null,
+      "sources": [
+        {
+          "fiche_id": "REF-0416",
+          "source_id": "S09",
+          "extrait_exact": "Les corniches et les soubassements, les bandeaux d’étages ou d’angles, les encadrements, souvent marqués par une texture et une couleur différentes, seront maintenus. Ils seront simulés par la couleur et positionnés sous corniche ou autre saillie capable de les faire visuellement disparaître."
+        }
+      ],
+      "zone": "murs_ouest"
+    },
+    {
+      "mesure": "Respecter les techniques locales lors de travaux sur la façade",
+      "explication": "Si vous envisagez des travaux modifiant la façade (comme un ravalement ou une isolation), il est essentiel de respecter les techniques de construction adaptées à votre région et à l’époque de construction de votre maison. Cela permet de préserver la résistance et l’étanchéité de la façade face aux tempêtes, tout en maintenant son caractère patrimonial. Une analyse préalable des caractéristiques architecturales locales est nécessaire pour adapter les travaux. Cette recommandation s’applique à toutes les constructions existantes en France, notamment les maisons anciennes comme la vôtre.",
+      "type": "recommandation_source",
+      "cout_estime": null,
+      "aide": null,
+      "sources": [
+        {
+          "fiche_id": "REF-0362",
+          "source_id": "S09",
+          "extrait_exact": "Selon les régions et en fonction des époques, des techniques de construction spécifiques et adaptées au contexte local ont été employées. Il importe de les respecter, voire de les remettre à jour dans le cas où elles auraient été effacées."
+        }
+      ],
+      "zone": "murs_ouest"
+    },
+    {
+      "mesure": "Restaurer les éléments architecturaux de la façade en meulière",
+      "explication": "Lors d’un ravalement de façade, il est important de restaurer et préserver les éléments caractéristiques comme les corniches, soubassements, bandeaux d’étages, encadrements de fenêtres ou moulures. Ces éléments contribuent à la solidité et à l’étanchéité de la façade, ce qui la rend plus résistante aux intempéries comme les tempêtes. Pour les câbles apparents (électricité, télécommunications), il est recommandé de les intégrer visuellement en les peignant dans la couleur de la façade et en les plaçant sous des saillies pour les dissimuler. Cette mesure s’applique particulièrement aux maisons anciennes comme la vôtre, construite en meulière.",
+      "type": "recommandation_source",
+      "cout_estime": null,
+      "aide": null,
+      "sources": [
+        {
+          "fiche_id": "REF-0416",
+          "source_id": "S09",
+          "extrait_exact": "Les corniches et les soubassements, les bandeaux d’étages ou d’angles, les encadrements, souvent marqués par une texture et une couleur différentes, seront maintenus. Ils seront simulés par la couleur et positionnés sous corniche ou autre saillie capable de les faire visuellement disparaître."
+        }
+      ],
+      "zone": "murs_ouest"
+    },
+    {
+      "mesure": "Respecter les techniques locales lors de travaux sur la façade",
+      "explication": "Si vous envisagez des travaux modifiant la façade (comme un ravalement ou une isolation), il est essentiel de respecter les techniques de construction adaptées à votre région et à l’époque de construction de votre maison. Cela permet de préserver la résistance et l’étanchéité de la façade face aux tempêtes, tout en maintenant son caractère patrimonial. Une analyse préalable des caractéristiques architecturales locales est nécessaire pour adapter les travaux. Cette recommandation s’applique à toutes les constructions existantes en France, notamment les maisons anciennes comme la vôtre.",
+      "type": "recommandation_source",
+      "cout_estime": null,
+      "aide": null,
+      "sources": [
+        {
+          "fiche_id": "REF-0362",
+          "source_id": "S09",
+          "extrait_exact": "Selon les régions et en fonction des époques, des techniques de construction spécifiques et adaptées au contexte local ont été employées. Il importe de les respecter, voire de les remettre à jour dans le cas où elles auraient été effacées."
+        }
+      ],
+      "zone": "murs_ouest"
+    },
+    {
+      "mesure": "Restaurer les éléments architecturaux de la façade en meulière",
+      "explication": "Lors d’un ravalement de façade, il est important de restaurer et préserver les éléments caractéristiques comme les corniches, soubassements, bandeaux d’étages, encadrements de fenêtres ou moulures. Ces éléments contribuent à la solidité et à l’étanchéité de la façade, ce qui la rend plus résistante aux intempéries comme les tempêtes. Pour les câbles apparents (électricité, télécommunications), il est recommandé de les intégrer visuellement en les peignant dans la couleur de la façade et en les plaçant sous des saillies pour les dissimuler. Cette mesure s’applique particulièrement aux maisons anciennes comme la vôtre, construite en meulière.",
+      "type": "recommandation_source",
+      "cout_estime": null,
+      "aide": null,
+      "sources": [
+        {
+          "fiche_id": "REF-0416",
+          "source_id": "S09",
+          "extrait_exact": "Les corniches et les soubassements, les bandeaux d’étages ou d’angles, les encadrements, souvent marqués par une texture et une couleur différentes, seront maintenus. Ils seront simulés par la couleur et positionnés sous corniche ou autre saillie capable de les faire visuellement disparaître."
+        }
+      ],
+      "zone": "murs_ouest"
+    },
+    {
+      "mesure": "Respecter les techniques locales lors de travaux sur la façade",
+      "explication": "Si vous envisagez des travaux modifiant la façade (comme un ravalement ou une isolation), il est essentiel de respecter les techniques de construction adaptées à votre région et à l’époque de construction de votre maison. Cela permet de préserver la résistance et l’étanchéité de la façade face aux tempêtes, tout en maintenant son caractère patrimonial. Une analyse préalable des caractéristiques architecturales locales est nécessaire pour adapter les travaux. Cette recommandation s’applique à toutes les constructions existantes en France, notamment les maisons anciennes comme la vôtre.",
+      "type": "recommandation_source",
+      "cout_estime": null,
+      "aide": null,
+      "sources": [
+        {
+          "fiche_id": "REF-0362",
+          "source_id": "S09",
+          "extrait_exact": "Selon les régions et en fonction des époques, des techniques de construction spécifiques et adaptées au contexte local ont été employées. Il importe de les respecter, voire de les remettre à jour dans le cas où elles auraient été effacées."
+        }
+      ],
+      "zone": "murs_ouest"
+    },
+    {
+      "mesure": "Isoler la toiture pour réduire la chaleur en été",
+      "explication": "Faire isoler votre toiture par un professionnel qualifié permet de limiter la pénétration de la chaleur dans votre maison pendant les périodes de canicule. La toiture est la première source de déperdition thermique : une bonne isolation améliore le confort en été tout en réduisant les besoins en climatisation. Cette mesure est particulièrement efficace pour les maisons anciennes comme la vôtre, où l'isolation d'origine peut être insuffisante. Aucun prérequis spécifique n'est mentionné, mais un diagnostic préalable par un expert est recommandé pour choisir la solution adaptée à votre type de toiture (ardoises).",
+      "type": "recommandation_source",
+      "cout_estime": null,
+      "aide": null,
+      "sources": [
+        {
+          "fiche_id": "REF-0470",
+          "source_id": "S09",
+          "extrait_exact": "La toiture constitue le premier poste de déperdition loin devant les fenêtres. Nécessaire en hiver, son isolation est indispensable en été, surtout en Méditerranée !"
+        },
+        {
+          "fiche_id": "REF-0473",
+          "source_id": "S09",
+          "extrait_exact": "Dans tous les cas de figure, l’isolation de la toiture est incontournable"
+        }
+      ],
+      "zone": "toiture"
+    },
+    {
+      "mesure": "Vérifier l’état des éléments sous la toiture",
+      "explication": "Faites inspecter régulièrement l’intérieur de votre toiture (combles, plafond sous toiture) par un professionnel pour repérer d’éventuelles taches d’humidité, moisissures, corrosion ou déformation des matériaux. Ces signes peuvent indiquer des problèmes d’étanchéité ou de ventilation, qui aggravent la surchauffe en été et réduisent l’efficacité de votre toiture. Une vérification annuelle est conseillée, surtout pour une maison ancienne comme la vôtre. Cette inspection permet d’agir rapidement avant que les dégâts ne s’aggravent.",
+      "type": "recommandation_source",
+      "cout_estime": null,
+      "aide": null,
       "sources": [
         {
           "fiche_id": "REF-0034",
@@ -83,126 +222,41 @@
       "zone": "toiture"
     },
     {
-      "mesure": "Inspection générale de l’étanchéité (plis, affaissement, vieillissement, décollement, etc.), contrôle des raccords avec les avaloirs, tuyaux de descente, gargouilles, joints de mastic, couche de protection, solins, profils, joints de dilatation, et usure prématurée aux endroits de circulation fréquente.",
-      "type": "recommandation_source",
-      "cout_estime": null,
-      "aide": {
-        "dispositif": null,
-        "conditions": null,
-        "statut": "potential_eligibility_only"
-      },
-      "sources": [
-        {
-          "fiche_id": "REF-0071",
-          "source_id": "S01",
-          "extrait_exact": "Au moins une fois par an (par exemple, après l’hiver): inspection générale de l’étanchéité [...] contrôle des raccords avec les avaloirs, les tuyaux de descente, les gargouilles [...] contrôle des joints de mastic [...] contrôle de l’éventuelle couche de protection, des solins, des proﬁlés, des joints de dilatation [...] contrôle de l’usure prématurée ou des dégradations aux endroits où la circulation est fréquente."
-        }
-      ],
-      "zone": "toiture"
-    },
-    {
-      "mesure": "Vérification régulière des soudures, joints, couvre-joints et fixations de la toiture.",
+      "mesure": "Contrôler les installations d’assainissement et les conduites enterrées",
+      "explication": "Avant et pendant les périodes de risques d’inondation, faites vérifier par un professionnel l’état des séparateurs de graisses, fosses septiques, pompes de relevage et clapets anticrue situés dans votre sous-sol. Ces contrôles permettent de détecter d’éventuels dysfonctionnements (corrosion, bouchons, fuites) qui pourraient aggraver les infiltrations d’eau ou empêcher son évacuation. Un entretien régulier (nettoyage des filtres, vidange, vérification des étanchéités) est indispensable pour garantir leur bon fonctionnement en cas de crue. Ces actions réduisent les risques d’inondation du sous-sol en assurant une évacuation efficace des eaux.",
       "type": "recommandation_source",
       "cout_estime": null,
       "aide": null,
       "sources": [
         {
-          "fiche_id": "REF-0069",
-          "source_id": "S01",
-          "extrait_exact": "Vériﬁcation des soudures, joints, couvre-joints et ﬁxations."
-        }
-      ],
-      "zone": "toiture"
-    },
-    {
-      "mesure": "Vérifier les fixations, principalement aux rives.",
-      "type": "recommandation_source",
-      "cout_estime": null,
-      "aide": null,
-      "sources": [
-        {
-          "fiche_id": "REF-0106",
-          "source_id": "S01",
-          "extrait_exact": "Vérification des fixations, principalement aux rives."
-        }
-      ],
-      "zone": "toiture"
-    },
-    {
-      "mesure": "Remplacer et remettre en place les éléments manquants, endommagés ou déplacés.",
-      "type": "recommandation_source",
-      "cout_estime": null,
-      "aide": null,
-      "sources": [
-        {
-          "fiche_id": "REF-0104",
-          "source_id": "S01",
-          "extrait_exact": "Remplacement et remise en place des éléments manquants, endommagés ou déplacés."
-        }
-      ],
-      "zone": "toiture"
-    },
-    {
-      "mesure": "Vérification de l’état du lestage et remise en place si nécessaire pour éviter le soulèvement des panneaux d’isolation thermique par le vent.",
-      "type": "recommandation_source",
-      "cout_estime": null,
-      "aide": null,
-      "sources": [
-        {
-          "fiche_id": "REF-0072",
-          "source_id": "S01",
-          "extrait_exact": "Après une période de vent violent, on procédera à une vériﬁcation de l’état du lestage et à sa remise en place si nécessaire."
-        }
-      ],
-      "zone": "toiture"
-    },
-    {
-      "mesure": "Procéder à un contrôle supplémentaire des éléments d'assainissement et des conduites enterrées (séparateurs de graisses/hydrocarbures, fosses septiques, stations d'épuration individuelle, pompes de relevage, avaloirs, clapets anticrue, etc.).",
-      "type": "recommandation_source",
-      "cout_estime": null,
-      "aide": {
-        "dispositif": null,
-        "conditions": null,
-        "statut": "potential_eligibility_only"
-      },
-      "sources": [
-        {
           "fiche_id": "REF-0001",
           "source_id": "S01",
-          "extrait_exact": "En cas de conditions météorologiques extrêmes, il est nécessaire de procéder à un contrôle supplémentaire."
-        },
-        {
-          "fiche_id": "REF-0001",
-          "source_id": "S01",
-          "extrait_exact": "examen visuel de l’état du dispositif de fermeture et de son étanchéité, des canalisations pénétrant dans l’appareil et les éventuels dispositifs d’accès"
-        },
-        {
-          "fiche_id": "REF-0001",
-          "source_id": "S01",
-          "extrait_exact": "vidange et nettoyage (ﬁltre et ﬂotteur éventuel en particulier)"
-        },
-        {
-          "fiche_id": "REF-0001",
-          "source_id": "S01",
-          "extrait_exact": "Contrôle des pompes automatiques de relevage des eaux: contrôler le fonctionnement automatique, l’étanchéité des raccords, l’état de la station et des vannes"
-        },
-        {
-          "fiche_id": "REF-0001",
-          "source_id": "S01",
-          "extrait_exact": "Contrôle de leur fonctionnement. Curage des appareils. Vériﬁcation de leur étanchéité."
+          "extrait_exact": "En cas de conditions météorologiques extrêmes, il est nécessaire de procéder à un contrôle supplémentaire. examen visuel de l’état du dispositif de fermeture et de son étanchéité, des canalisations pénétrant dans l’appareil et les éventuels dispositifs d’accès. vidange et nettoyage (ﬁltre et ﬂotteur éventuel en particulier). Contrôle des pompes automatiques de relevage des eaux: contrôler le fonctionnement automatique, l’étanchéité des raccords, l’état de la station et des vannes. Contrôle de leur fonctionnement. Curage des appareils. Vériﬁcation de leur étanchéité."
         }
       ],
       "zone": "sous_sol"
     },
     {
-      "mesure": "Contrôler l’état du sol au voisinage du réseau d’égout pour détecter les affouillements susceptibles d’aggraver les risques d’inondation ou de ruissellement.",
+      "mesure": "Vérifier l’étanchéité des fosses septiques et raccordements",
+      "explication": "Faites inspecter régulièrement l’étanchéité de votre fosse septique et de ses raccordements aux canalisations, surtout avant les périodes de fortes pluies. Une fosse mal étanche ou des raccords défectueux peuvent laisser entrer l’eau en cas d’inondation, inondant votre sous-sol. Un professionnel doit vérifier l’état du bac de décantation et des joints pour éviter les fuites ou infiltrations. Cette mesure est cruciale pour limiter les risques d’inondation liés aux eaux usées ou pluviales.",
       "type": "recommandation_source",
       "cout_estime": null,
-      "aide": {
-        "dispositif": null,
-        "conditions": null,
-        "statut": "potential_eligibility_only"
-      },
+      "aide": null,
+      "sources": [
+        {
+          "fiche_id": "REF-0004",
+          "source_id": "S01",
+          "extrait_exact": "vériﬁcation de l’étanchéité de la fosse. vériﬁer l’état du bac de décantation et des raccords avec les canalisations"
+        }
+      ],
+      "zone": "sous_sol"
+    },
+    {
+      "mesure": "Inspecter le sol près des réseaux d’égout",
+      "explication": "Après des épisodes de pluies intenses, examinez visuellement le sol autour des réseaux d’égout enterrés près de votre maison. Recherchez des signes d’affouillement (creusement du sol) qui pourraient fragiliser les canalisations et aggraver les risques d’inondation. Si vous observez des anomalies, faites appel à un professionnel pour consolider le sol ou réparer les canalisations endommagées. Cette vérification simple permet d’éviter des dégâts plus importants en cas de nouvelle crue.",
+      "type": "recommandation_source",
+      "cout_estime": null,
+      "aide": null,
       "sources": [
         {
           "fiche_id": "REF-0005",
@@ -213,30 +267,8 @@
       "zone": "sous_sol"
     },
     {
-      "mesure": "Vérifier l’étanchéité des fosses septiques et des raccordements aux canalisations pour prévenir les infiltrations d’eau ou les fuites en cas d’inondation.",
-      "type": "recommandation_source",
-      "cout_estime": null,
-      "aide": {
-        "dispositif": null,
-        "conditions": null,
-        "statut": "potential_eligibility_only"
-      },
-      "sources": [
-        {
-          "fiche_id": "REF-0004",
-          "source_id": "S01",
-          "extrait_exact": "vériﬁcation de l’étanchéité de la fosse."
-        },
-        {
-          "fiche_id": "REF-0004",
-          "source_id": "S01",
-          "extrait_exact": "vériﬁer l’état du bac de décantation et des raccords avec les canalisations"
-        }
-      ],
-      "zone": "sous_sol"
-    },
-    {
-      "mesure": "Vérifier l'état, l'étanchéité, les fixations et scellements des canalisations et entonnoirs d'évacuation des eaux pluviales. Contrôler et curer si nécessaire les canalisations et accessoires pour éviter les obstructions.",
+      "mesure": "Vérifier et entretenir les canalisations d’eaux pluviales",
+      "explication": "Faites contrôler par un professionnel l’état des canalisations et entonnoirs d’évacuation des eaux pluviales dans votre sous-sol. Vérifiez leur étanchéité, leurs fixations et leurs scellements pour éviter les fuites ou obstructions. Un curage préventif peut être nécessaire pour éliminer les dépôts (feuilles, boues) qui bloqueraient l’écoulement de l’eau. Ces actions permettent d’éviter les refoulements d’eau dans le sous-sol en cas de fortes pluies, réduisant ainsi les risques d’inondation.",
       "type": "recommandation_source",
       "cout_estime": null,
       "aide": null,
@@ -245,20 +277,6 @@
           "fiche_id": "REF-0272",
           "source_id": "S01",
           "extrait_exact": "Vériﬁcation de l’état, de l’étanchéité, des ﬁxations et scellements des canalisations et entonnoirs. Contrôle et curage éventuel des canalisations et accessoires."
-        }
-      ],
-      "zone": "sous_sol"
-    },
-    {
-      "mesure": "Contrôler le bon fonctionnement des organes de fermeture, du système de motorisation, des rails-guides et de leurs fixations, ainsi que de la signalisation lumineuse. Lubrifier les organes de manœuvre.",
-      "type": "recommandation_source",
-      "cout_estime": null,
-      "aide": null,
-      "sources": [
-        {
-          "fiche_id": "REF-0177",
-          "source_id": "S01",
-          "extrait_exact": "Contrôle du bon fonctionnement des organes de fermeture en action-nant le mécanisme d’ouverture. [...] Lubriﬁcation des organes de manœuvre."
         }
       ],
       "zone": "sous_sol"
@@ -290,30 +308,17 @@
       "has_garage": false,
       "has_garden": false
     },
-    "score_global": 40,
+    "score_global": 42,
     "zones": {
       "fondations": {
-        "risque": 37,
+        "risque": 44,
         "niveau": "modere",
         "alea_principal": "Retrait-gonflement des argiles",
-        "justification": "aléa retrait-gonflement des argiles = « Moyen » (BDNB, au niveau du bâtiment). 0 cavité(s) souterraine(s) recensée(s), 0 mouvement(s) de terrain référencé(s) à proximité, 1 arrêté(s) CATNAT correspondant(s). zone de sismicité non déterminée pour cette commune (valeur de repli faible).",
+        "justification": "• Aléa retrait-gonflement des argiles = « Moyen » (BDNB, au niveau du bâtiment).\n• 0 cavité(s) souterraine(s) recensée(s), 2 mouvement(s) de terrain référencé(s) à proximité, 1 arrêté(s) CATNAT correspondant(s).\n• Zone de sismicité 2 (Géorisques).",
         "recommandations": [
           {
-            "mesure": "Vérifier l’état des structures portantes en béton et remédier aux éventuelles infiltrations ou stagnations d’eau. Réparer le béton dans les zones dégradées.",
-            "type": "recommandation_source",
-            "cout_estime": null,
-            "aide": null,
-            "sources": [
-              {
-                "fiche_id": "REF-0017",
-                "source_id": "S01",
-                "extrait_exact": "2.2 ÉLÉMENTS DE STRUCTURE EN BÉTON Vériﬁer l’état des structures portantes et remédier aux éventuelles inﬁltrations ou stagnations d’eau."
-              }
-            ],
-            "zone": "fondations"
-          },
-          {
-            "mesure": "Vérifier l’état des structures portantes en maçonnerie et remédier aux éventuelles infiltrations ou stagnations d’eau.",
+            "mesure": "Vérifier et réparer les fondations en maçonnerie",
+            "explication": "Faites inspecter l’état de vos fondations en maçonnerie par un professionnel qualifié. Si des fissures, des infiltrations d’eau ou des zones humides sont détectées, il faudra les réparer rapidement. Ces problèmes aggravent les effets du retrait-gonflement des argiles en affaiblissant la stabilité des fondations. Cette vérification est particulièrement importante pour une maison ancienne comme la vôtre, construite en meulière, un matériau sensible à l’humidité. Un entretien régulier permet d’éviter des dégâts plus graves.",
             "type": "recommandation_source",
             "cout_estime": null,
             "aide": null,
@@ -325,52 +330,208 @@
               }
             ],
             "zone": "fondations"
+          },
+          {
+            "mesure": "Faire appel à un professionnel pour concevoir les travaux",
+            "explication": "Avant d’engager des travaux sur vos fondations, consultez un architecte ou un maître d’œuvre. Ce professionnel analysera la structure de votre maison et proposera des solutions adaptées pour renforcer vos fondations face au retrait-gonflement des argiles. Cette étape est cruciale pour éviter des erreurs coûteuses et garantir la durabilité des travaux. Elle s’applique à tout projet touchant les fondations, surtout pour une maison ancienne comme la vôtre.",
+            "type": "recommandation_source",
+            "cout_estime": null,
+            "aide": null,
+            "sources": [
+              {
+                "fiche_id": "REF-0374",
+                "source_id": "S09",
+                "extrait_exact": "Indépendamment du degré de complexité de votre projet, faire appel à un professionnel (architecte, maître d’œuvre) pour analyser l’architecture du bâtiment et vous aider à concevoir votre projet."
+              }
+            ],
+            "zone": "fondations"
           }
         ]
       },
       "murs_nord": {
-        "risque": 33,
+        "risque": 30,
         "niveau": "modere",
-        "alea_principal": "Infiltration (exposition nord)",
-        "justification": "précipitations annuelles non disponibles (Open-Meteo). jours de chaleur extrême non disponibles (Open-Meteo). zone de sismicité non déterminée pour cette commune (valeur de repli faible). Delta d'exposition directionnelle (heuristique, non mesurée par Géorisques).",
-        "recommandations": []
-      },
-      "murs_sud": {
-        "risque": 21,
-        "niveau": "faible",
-        "alea_principal": "Stress thermique (exposition sud)",
-        "justification": "précipitations annuelles non disponibles (Open-Meteo). jours de chaleur extrême non disponibles (Open-Meteo). zone de sismicité non déterminée pour cette commune (valeur de repli faible). Delta d'exposition directionnelle (heuristique, non mesurée par Géorisques).",
-        "recommandations": []
-      },
-      "murs_est": {
-        "risque": 25,
-        "niveau": "faible",
-        "alea_principal": "Vent",
-        "justification": "précipitations annuelles non disponibles (Open-Meteo). jours de chaleur extrême non disponibles (Open-Meteo). zone de sismicité non déterminée pour cette commune (valeur de repli faible). Delta d'exposition directionnelle (heuristique, non mesurée par Géorisques).",
-        "recommandations": []
-      },
-      "murs_ouest": {
-        "risque": 37,
-        "niveau": "modere",
-        "alea_principal": "Intempéries (exposition ouest dominante)",
-        "justification": "précipitations annuelles non disponibles (Open-Meteo). jours de chaleur extrême non disponibles (Open-Meteo). zone de sismicité non déterminée pour cette commune (valeur de repli faible). Delta d'exposition directionnelle (heuristique, non mesurée par Géorisques).",
-        "recommandations": []
-      },
-      "toiture": {
-        "risque": 36,
-        "niveau": "modere",
-        "alea_principal": "Canicule / stress thermique",
-        "justification": "jours de chaleur extrême non disponibles (Open-Meteo). précipitations annuelles non disponibles (Open-Meteo). Toiture antérieure à 1970 (majoration +10).",
+        "alea_principal": "Exposition climatique (façade)",
+        "justification": "• Précipitations annuelles non disponibles (Open-Meteo).\n• Jours de chaleur extrême non disponibles (Open-Meteo).\n• Zone de sismicité 2 (Géorisques).",
         "recommandations": [
           {
-            "mesure": "Vérifier l’état des parachèvements intérieurs sous la toiture (taches d’humidité, moisissures, corrosion, flèche).",
+            "mesure": "Restaurer les éléments architecturaux de la façade en meulière",
+            "explication": "Lors d’un ravalement de façade, il est important de restaurer et préserver les éléments caractéristiques comme les corniches, soubassements, bandeaux d’étages, encadrements de fenêtres ou moulures. Ces éléments contribuent à la solidité et à l’étanchéité de la façade, ce qui la rend plus résistante aux intempéries comme les tempêtes. Pour les câbles apparents (électricité, télécommunications), il est recommandé de les intégrer visuellement en les peignant dans la couleur de la façade et en les plaçant sous des saillies pour les dissimuler. Cette mesure s’applique particulièrement aux maisons anciennes comme la vôtre, construite en meulière.",
             "type": "recommandation_source",
             "cout_estime": null,
-            "aide": {
-              "dispositif": null,
-              "conditions": null,
-              "statut": "potential_eligibility_only"
-            },
+            "aide": null,
+            "sources": [
+              {
+                "fiche_id": "REF-0416",
+                "source_id": "S09",
+                "extrait_exact": "Les corniches et les soubassements, les bandeaux d’étages ou d’angles, les encadrements, souvent marqués par une texture et une couleur différentes, seront maintenus. Ils seront simulés par la couleur et positionnés sous corniche ou autre saillie capable de les faire visuellement disparaître."
+              }
+            ],
+            "zone": "murs_ouest"
+          },
+          {
+            "mesure": "Respecter les techniques locales lors de travaux sur la façade",
+            "explication": "Si vous envisagez des travaux modifiant la façade (comme un ravalement ou une isolation), il est essentiel de respecter les techniques de construction adaptées à votre région et à l’époque de construction de votre maison. Cela permet de préserver la résistance et l’étanchéité de la façade face aux tempêtes, tout en maintenant son caractère patrimonial. Une analyse préalable des caractéristiques architecturales locales est nécessaire pour adapter les travaux. Cette recommandation s’applique à toutes les constructions existantes en France, notamment les maisons anciennes comme la vôtre.",
+            "type": "recommandation_source",
+            "cout_estime": null,
+            "aide": null,
+            "sources": [
+              {
+                "fiche_id": "REF-0362",
+                "source_id": "S09",
+                "extrait_exact": "Selon les régions et en fonction des époques, des techniques de construction spécifiques et adaptées au contexte local ont été employées. Il importe de les respecter, voire de les remettre à jour dans le cas où elles auraient été effacées."
+              }
+            ],
+            "zone": "murs_ouest"
+          }
+        ]
+      },
+      "murs_sud": {
+        "risque": 30,
+        "niveau": "modere",
+        "alea_principal": "Exposition climatique (façade)",
+        "justification": "• Précipitations annuelles non disponibles (Open-Meteo).\n• Jours de chaleur extrême non disponibles (Open-Meteo).\n• Zone de sismicité 2 (Géorisques).",
+        "recommandations": [
+          {
+            "mesure": "Restaurer les éléments architecturaux de la façade en meulière",
+            "explication": "Lors d’un ravalement de façade, il est important de restaurer et préserver les éléments caractéristiques comme les corniches, soubassements, bandeaux d’étages, encadrements de fenêtres ou moulures. Ces éléments contribuent à la solidité et à l’étanchéité de la façade, ce qui la rend plus résistante aux intempéries comme les tempêtes. Pour les câbles apparents (électricité, télécommunications), il est recommandé de les intégrer visuellement en les peignant dans la couleur de la façade et en les plaçant sous des saillies pour les dissimuler. Cette mesure s’applique particulièrement aux maisons anciennes comme la vôtre, construite en meulière.",
+            "type": "recommandation_source",
+            "cout_estime": null,
+            "aide": null,
+            "sources": [
+              {
+                "fiche_id": "REF-0416",
+                "source_id": "S09",
+                "extrait_exact": "Les corniches et les soubassements, les bandeaux d’étages ou d’angles, les encadrements, souvent marqués par une texture et une couleur différentes, seront maintenus. Ils seront simulés par la couleur et positionnés sous corniche ou autre saillie capable de les faire visuellement disparaître."
+              }
+            ],
+            "zone": "murs_ouest"
+          },
+          {
+            "mesure": "Respecter les techniques locales lors de travaux sur la façade",
+            "explication": "Si vous envisagez des travaux modifiant la façade (comme un ravalement ou une isolation), il est essentiel de respecter les techniques de construction adaptées à votre région et à l’époque de construction de votre maison. Cela permet de préserver la résistance et l’étanchéité de la façade face aux tempêtes, tout en maintenant son caractère patrimonial. Une analyse préalable des caractéristiques architecturales locales est nécessaire pour adapter les travaux. Cette recommandation s’applique à toutes les constructions existantes en France, notamment les maisons anciennes comme la vôtre.",
+            "type": "recommandation_source",
+            "cout_estime": null,
+            "aide": null,
+            "sources": [
+              {
+                "fiche_id": "REF-0362",
+                "source_id": "S09",
+                "extrait_exact": "Selon les régions et en fonction des époques, des techniques de construction spécifiques et adaptées au contexte local ont été employées. Il importe de les respecter, voire de les remettre à jour dans le cas où elles auraient été effacées."
+              }
+            ],
+            "zone": "murs_ouest"
+          }
+        ]
+      },
+      "murs_est": {
+        "risque": 30,
+        "niveau": "modere",
+        "alea_principal": "Exposition climatique (façade)",
+        "justification": "• Précipitations annuelles non disponibles (Open-Meteo).\n• Jours de chaleur extrême non disponibles (Open-Meteo).\n• Zone de sismicité 2 (Géorisques).",
+        "recommandations": [
+          {
+            "mesure": "Restaurer les éléments architecturaux de la façade en meulière",
+            "explication": "Lors d’un ravalement de façade, il est important de restaurer et préserver les éléments caractéristiques comme les corniches, soubassements, bandeaux d’étages, encadrements de fenêtres ou moulures. Ces éléments contribuent à la solidité et à l’étanchéité de la façade, ce qui la rend plus résistante aux intempéries comme les tempêtes. Pour les câbles apparents (électricité, télécommunications), il est recommandé de les intégrer visuellement en les peignant dans la couleur de la façade et en les plaçant sous des saillies pour les dissimuler. Cette mesure s’applique particulièrement aux maisons anciennes comme la vôtre, construite en meulière.",
+            "type": "recommandation_source",
+            "cout_estime": null,
+            "aide": null,
+            "sources": [
+              {
+                "fiche_id": "REF-0416",
+                "source_id": "S09",
+                "extrait_exact": "Les corniches et les soubassements, les bandeaux d’étages ou d’angles, les encadrements, souvent marqués par une texture et une couleur différentes, seront maintenus. Ils seront simulés par la couleur et positionnés sous corniche ou autre saillie capable de les faire visuellement disparaître."
+              }
+            ],
+            "zone": "murs_ouest"
+          },
+          {
+            "mesure": "Respecter les techniques locales lors de travaux sur la façade",
+            "explication": "Si vous envisagez des travaux modifiant la façade (comme un ravalement ou une isolation), il est essentiel de respecter les techniques de construction adaptées à votre région et à l’époque de construction de votre maison. Cela permet de préserver la résistance et l’étanchéité de la façade face aux tempêtes, tout en maintenant son caractère patrimonial. Une analyse préalable des caractéristiques architecturales locales est nécessaire pour adapter les travaux. Cette recommandation s’applique à toutes les constructions existantes en France, notamment les maisons anciennes comme la vôtre.",
+            "type": "recommandation_source",
+            "cout_estime": null,
+            "aide": null,
+            "sources": [
+              {
+                "fiche_id": "REF-0362",
+                "source_id": "S09",
+                "extrait_exact": "Selon les régions et en fonction des époques, des techniques de construction spécifiques et adaptées au contexte local ont été employées. Il importe de les respecter, voire de les remettre à jour dans le cas où elles auraient été effacées."
+              }
+            ],
+            "zone": "murs_ouest"
+          }
+        ]
+      },
+      "murs_ouest": {
+        "risque": 30,
+        "niveau": "modere",
+        "alea_principal": "Exposition climatique (façade)",
+        "justification": "• Précipitations annuelles non disponibles (Open-Meteo).\n• Jours de chaleur extrême non disponibles (Open-Meteo).\n• Zone de sismicité 2 (Géorisques).",
+        "recommandations": [
+          {
+            "mesure": "Restaurer les éléments architecturaux de la façade en meulière",
+            "explication": "Lors d’un ravalement de façade, il est important de restaurer et préserver les éléments caractéristiques comme les corniches, soubassements, bandeaux d’étages, encadrements de fenêtres ou moulures. Ces éléments contribuent à la solidité et à l’étanchéité de la façade, ce qui la rend plus résistante aux intempéries comme les tempêtes. Pour les câbles apparents (électricité, télécommunications), il est recommandé de les intégrer visuellement en les peignant dans la couleur de la façade et en les plaçant sous des saillies pour les dissimuler. Cette mesure s’applique particulièrement aux maisons anciennes comme la vôtre, construite en meulière.",
+            "type": "recommandation_source",
+            "cout_estime": null,
+            "aide": null,
+            "sources": [
+              {
+                "fiche_id": "REF-0416",
+                "source_id": "S09",
+                "extrait_exact": "Les corniches et les soubassements, les bandeaux d’étages ou d’angles, les encadrements, souvent marqués par une texture et une couleur différentes, seront maintenus. Ils seront simulés par la couleur et positionnés sous corniche ou autre saillie capable de les faire visuellement disparaître."
+              }
+            ],
+            "zone": "murs_ouest"
+          },
+          {
+            "mesure": "Respecter les techniques locales lors de travaux sur la façade",
+            "explication": "Si vous envisagez des travaux modifiant la façade (comme un ravalement ou une isolation), il est essentiel de respecter les techniques de construction adaptées à votre région et à l’époque de construction de votre maison. Cela permet de préserver la résistance et l’étanchéité de la façade face aux tempêtes, tout en maintenant son caractère patrimonial. Une analyse préalable des caractéristiques architecturales locales est nécessaire pour adapter les travaux. Cette recommandation s’applique à toutes les constructions existantes en France, notamment les maisons anciennes comme la vôtre.",
+            "type": "recommandation_source",
+            "cout_estime": null,
+            "aide": null,
+            "sources": [
+              {
+                "fiche_id": "REF-0362",
+                "source_id": "S09",
+                "extrait_exact": "Selon les régions et en fonction des époques, des techniques de construction spécifiques et adaptées au contexte local ont été employées. Il importe de les respecter, voire de les remettre à jour dans le cas où elles auraient été effacées."
+              }
+            ],
+            "zone": "murs_ouest"
+          }
+        ]
+      },
+      "toiture": {
+        "risque": 32,
+        "niveau": "modere",
+        "alea_principal": "Canicule / stress thermique",
+        "justification": "• Jours de chaleur extrême non disponibles (Open-Meteo).\n• Précipitations annuelles non disponibles (Open-Meteo).\n• Aucun aléa feu de forêt recensé par Géorisques pour cette commune.\n• Toiture antérieure à 1970 : majoration de +10 points.",
+        "recommandations": [
+          {
+            "mesure": "Isoler la toiture pour réduire la chaleur en été",
+            "explication": "Faire isoler votre toiture par un professionnel qualifié permet de limiter la pénétration de la chaleur dans votre maison pendant les périodes de canicule. La toiture est la première source de déperdition thermique : une bonne isolation améliore le confort en été tout en réduisant les besoins en climatisation. Cette mesure est particulièrement efficace pour les maisons anciennes comme la vôtre, où l'isolation d'origine peut être insuffisante. Aucun prérequis spécifique n'est mentionné, mais un diagnostic préalable par un expert est recommandé pour choisir la solution adaptée à votre type de toiture (ardoises).",
+            "type": "recommandation_source",
+            "cout_estime": null,
+            "aide": null,
+            "sources": [
+              {
+                "fiche_id": "REF-0470",
+                "source_id": "S09",
+                "extrait_exact": "La toiture constitue le premier poste de déperdition loin devant les fenêtres. Nécessaire en hiver, son isolation est indispensable en été, surtout en Méditerranée !"
+              },
+              {
+                "fiche_id": "REF-0473",
+                "source_id": "S09",
+                "extrait_exact": "Dans tous les cas de figure, l’isolation de la toiture est incontournable"
+              }
+            ],
+            "zone": "toiture"
+          },
+          {
+            "mesure": "Vérifier l’état des éléments sous la toiture",
+            "explication": "Faites inspecter régulièrement l’intérieur de votre toiture (combles, plafond sous toiture) par un professionnel pour repérer d’éventuelles taches d’humidité, moisissures, corrosion ou déformation des matériaux. Ces signes peuvent indiquer des problèmes d’étanchéité ou de ventilation, qui aggravent la surchauffe en été et réduisent l’efficacité de votre toiture. Une vérification annuelle est conseillée, surtout pour une maison ancienne comme la vôtre. Cette inspection permet d’agir rapidement avant que les dégâts ne s’aggravent.",
+            "type": "recommandation_source",
+            "cout_estime": null,
+            "aide": null,
             "sources": [
               {
                 "fiche_id": "REF-0034",
@@ -379,136 +540,51 @@
               }
             ],
             "zone": "toiture"
-          },
-          {
-            "mesure": "Inspection générale de l’étanchéité (plis, affaissement, vieillissement, décollement, etc.), contrôle des raccords avec les avaloirs, tuyaux de descente, gargouilles, joints de mastic, couche de protection, solins, profils, joints de dilatation, et usure prématurée aux endroits de circulation fréquente.",
-            "type": "recommandation_source",
-            "cout_estime": null,
-            "aide": {
-              "dispositif": null,
-              "conditions": null,
-              "statut": "potential_eligibility_only"
-            },
-            "sources": [
-              {
-                "fiche_id": "REF-0071",
-                "source_id": "S01",
-                "extrait_exact": "Au moins une fois par an (par exemple, après l’hiver): inspection générale de l’étanchéité [...] contrôle des raccords avec les avaloirs, les tuyaux de descente, les gargouilles [...] contrôle des joints de mastic [...] contrôle de l’éventuelle couche de protection, des solins, des proﬁlés, des joints de dilatation [...] contrôle de l’usure prématurée ou des dégradations aux endroits où la circulation est fréquente."
-              }
-            ],
-            "zone": "toiture"
-          },
-          {
-            "mesure": "Vérification régulière des soudures, joints, couvre-joints et fixations de la toiture.",
-            "type": "recommandation_source",
-            "cout_estime": null,
-            "aide": null,
-            "sources": [
-              {
-                "fiche_id": "REF-0069",
-                "source_id": "S01",
-                "extrait_exact": "Vériﬁcation des soudures, joints, couvre-joints et ﬁxations."
-              }
-            ],
-            "zone": "toiture"
-          },
-          {
-            "mesure": "Vérifier les fixations, principalement aux rives.",
-            "type": "recommandation_source",
-            "cout_estime": null,
-            "aide": null,
-            "sources": [
-              {
-                "fiche_id": "REF-0106",
-                "source_id": "S01",
-                "extrait_exact": "Vérification des fixations, principalement aux rives."
-              }
-            ],
-            "zone": "toiture"
-          },
-          {
-            "mesure": "Remplacer et remettre en place les éléments manquants, endommagés ou déplacés.",
-            "type": "recommandation_source",
-            "cout_estime": null,
-            "aide": null,
-            "sources": [
-              {
-                "fiche_id": "REF-0104",
-                "source_id": "S01",
-                "extrait_exact": "Remplacement et remise en place des éléments manquants, endommagés ou déplacés."
-              }
-            ],
-            "zone": "toiture"
-          },
-          {
-            "mesure": "Vérification de l’état du lestage et remise en place si nécessaire pour éviter le soulèvement des panneaux d’isolation thermique par le vent.",
-            "type": "recommandation_source",
-            "cout_estime": null,
-            "aide": null,
-            "sources": [
-              {
-                "fiche_id": "REF-0072",
-                "source_id": "S01",
-                "extrait_exact": "Après une période de vent violent, on procédera à une vériﬁcation de l’état du lestage et à sa remise en place si nécessaire."
-              }
-            ],
-            "zone": "toiture"
           }
         ]
       },
       "sous_sol": {
-        "risque": 70,
+        "risque": 69,
         "niveau": "eleve",
         "alea_principal": "Inondation / remontée de nappe",
-        "justification": "6 arrêté(s) CATNAT inondation recensé(s) sur la commune ; aléa inondation présent dans le référentiel Géorisques communal. potentiel radon non déterminé (valeur de repli faible).",
+        "justification": "• 6 arrêté(s) CATNAT inondation recensé(s) sur la commune ; aléa inondation présent dans le référentiel Géorisques communal ; atlas des zones inondables (Géorisques) indisponible pour cette commune (erreur API), non pris en compte dans le score.\n• Potentiel radon classe 1/3 (Géorisques).",
         "recommandations": [
           {
-            "mesure": "Procéder à un contrôle supplémentaire des éléments d'assainissement et des conduites enterrées (séparateurs de graisses/hydrocarbures, fosses septiques, stations d'épuration individuelle, pompes de relevage, avaloirs, clapets anticrue, etc.).",
+            "mesure": "Contrôler les installations d’assainissement et les conduites enterrées",
+            "explication": "Avant et pendant les périodes de risques d’inondation, faites vérifier par un professionnel l’état des séparateurs de graisses, fosses septiques, pompes de relevage et clapets anticrue situés dans votre sous-sol. Ces contrôles permettent de détecter d’éventuels dysfonctionnements (corrosion, bouchons, fuites) qui pourraient aggraver les infiltrations d’eau ou empêcher son évacuation. Un entretien régulier (nettoyage des filtres, vidange, vérification des étanchéités) est indispensable pour garantir leur bon fonctionnement en cas de crue. Ces actions réduisent les risques d’inondation du sous-sol en assurant une évacuation efficace des eaux.",
             "type": "recommandation_source",
             "cout_estime": null,
-            "aide": {
-              "dispositif": null,
-              "conditions": null,
-              "statut": "potential_eligibility_only"
-            },
+            "aide": null,
             "sources": [
               {
                 "fiche_id": "REF-0001",
                 "source_id": "S01",
-                "extrait_exact": "En cas de conditions météorologiques extrêmes, il est nécessaire de procéder à un contrôle supplémentaire."
-              },
-              {
-                "fiche_id": "REF-0001",
-                "source_id": "S01",
-                "extrait_exact": "examen visuel de l’état du dispositif de fermeture et de son étanchéité, des canalisations pénétrant dans l’appareil et les éventuels dispositifs d’accès"
-              },
-              {
-                "fiche_id": "REF-0001",
-                "source_id": "S01",
-                "extrait_exact": "vidange et nettoyage (ﬁltre et ﬂotteur éventuel en particulier)"
-              },
-              {
-                "fiche_id": "REF-0001",
-                "source_id": "S01",
-                "extrait_exact": "Contrôle des pompes automatiques de relevage des eaux: contrôler le fonctionnement automatique, l’étanchéité des raccords, l’état de la station et des vannes"
-              },
-              {
-                "fiche_id": "REF-0001",
-                "source_id": "S01",
-                "extrait_exact": "Contrôle de leur fonctionnement. Curage des appareils. Vériﬁcation de leur étanchéité."
+                "extrait_exact": "En cas de conditions météorologiques extrêmes, il est nécessaire de procéder à un contrôle supplémentaire. examen visuel de l’état du dispositif de fermeture et de son étanchéité, des canalisations pénétrant dans l’appareil et les éventuels dispositifs d’accès. vidange et nettoyage (ﬁltre et ﬂotteur éventuel en particulier). Contrôle des pompes automatiques de relevage des eaux: contrôler le fonctionnement automatique, l’étanchéité des raccords, l’état de la station et des vannes. Contrôle de leur fonctionnement. Curage des appareils. Vériﬁcation de leur étanchéité."
               }
             ],
             "zone": "sous_sol"
           },
           {
-            "mesure": "Contrôler l’état du sol au voisinage du réseau d’égout pour détecter les affouillements susceptibles d’aggraver les risques d’inondation ou de ruissellement.",
+            "mesure": "Vérifier l’étanchéité des fosses septiques et raccordements",
+            "explication": "Faites inspecter régulièrement l’étanchéité de votre fosse septique et de ses raccordements aux canalisations, surtout avant les périodes de fortes pluies. Une fosse mal étanche ou des raccords défectueux peuvent laisser entrer l’eau en cas d’inondation, inondant votre sous-sol. Un professionnel doit vérifier l’état du bac de décantation et des joints pour éviter les fuites ou infiltrations. Cette mesure est cruciale pour limiter les risques d’inondation liés aux eaux usées ou pluviales.",
             "type": "recommandation_source",
             "cout_estime": null,
-            "aide": {
-              "dispositif": null,
-              "conditions": null,
-              "statut": "potential_eligibility_only"
-            },
+            "aide": null,
+            "sources": [
+              {
+                "fiche_id": "REF-0004",
+                "source_id": "S01",
+                "extrait_exact": "vériﬁcation de l’étanchéité de la fosse. vériﬁer l’état du bac de décantation et des raccords avec les canalisations"
+              }
+            ],
+            "zone": "sous_sol"
+          },
+          {
+            "mesure": "Inspecter le sol près des réseaux d’égout",
+            "explication": "Après des épisodes de pluies intenses, examinez visuellement le sol autour des réseaux d’égout enterrés près de votre maison. Recherchez des signes d’affouillement (creusement du sol) qui pourraient fragiliser les canalisations et aggraver les risques d’inondation. Si vous observez des anomalies, faites appel à un professionnel pour consolider le sol ou réparer les canalisations endommagées. Cette vérification simple permet d’éviter des dégâts plus importants en cas de nouvelle crue.",
+            "type": "recommandation_source",
+            "cout_estime": null,
+            "aide": null,
             "sources": [
               {
                 "fiche_id": "REF-0005",
@@ -519,30 +595,8 @@
             "zone": "sous_sol"
           },
           {
-            "mesure": "Vérifier l’étanchéité des fosses septiques et des raccordements aux canalisations pour prévenir les infiltrations d’eau ou les fuites en cas d’inondation.",
-            "type": "recommandation_source",
-            "cout_estime": null,
-            "aide": {
-              "dispositif": null,
-              "conditions": null,
-              "statut": "potential_eligibility_only"
-            },
-            "sources": [
-              {
-                "fiche_id": "REF-0004",
-                "source_id": "S01",
-                "extrait_exact": "vériﬁcation de l’étanchéité de la fosse."
-              },
-              {
-                "fiche_id": "REF-0004",
-                "source_id": "S01",
-                "extrait_exact": "vériﬁer l’état du bac de décantation et des raccords avec les canalisations"
-              }
-            ],
-            "zone": "sous_sol"
-          },
-          {
-            "mesure": "Vérifier l'état, l'étanchéité, les fixations et scellements des canalisations et entonnoirs d'évacuation des eaux pluviales. Contrôler et curer si nécessaire les canalisations et accessoires pour éviter les obstructions.",
+            "mesure": "Vérifier et entretenir les canalisations d’eaux pluviales",
+            "explication": "Faites contrôler par un professionnel l’état des canalisations et entonnoirs d’évacuation des eaux pluviales dans votre sous-sol. Vérifiez leur étanchéité, leurs fixations et leurs scellements pour éviter les fuites ou obstructions. Un curage préventif peut être nécessaire pour éliminer les dépôts (feuilles, boues) qui bloqueraient l’écoulement de l’eau. Ces actions permettent d’éviter les refoulements d’eau dans le sous-sol en cas de fortes pluies, réduisant ainsi les risques d’inondation.",
             "type": "recommandation_source",
             "cout_estime": null,
             "aide": null,
@@ -554,311 +608,81 @@
               }
             ],
             "zone": "sous_sol"
-          },
-          {
-            "mesure": "Contrôler le bon fonctionnement des organes de fermeture, du système de motorisation, des rails-guides et de leurs fixations, ainsi que de la signalisation lumineuse. Lubrifier les organes de manœuvre.",
-            "type": "recommandation_source",
-            "cout_estime": null,
-            "aide": null,
-            "sources": [
-              {
-                "fiche_id": "REF-0177",
-                "source_id": "S01",
-                "extrait_exact": "Contrôle du bon fonctionnement des organes de fermeture en action-nant le mécanisme d’ouverture. [...] Lubriﬁcation des organes de manœuvre."
-              }
-            ],
-            "zone": "sous_sol"
           }
         ]
       }
     },
     "projection_2050": {
-      "score_global": 42,
+      "score_global": 44,
       "zones": {
         "fondations": {
-          "risque": 44,
+          "risque": 51,
           "niveau": "modere",
           "alea_principal": "Retrait-gonflement des argiles",
-          "justification": "aléa retrait-gonflement des argiles = « Moyen » (BDNB, au niveau du bâtiment) ; +12 pts pour horizon 2050 (sécheresses plus fréquentes, cf. littérature BRGM/CCR). 0 cavité(s) souterraine(s) recensée(s), 0 mouvement(s) de terrain référencé(s) à proximité, 1 arrêté(s) CATNAT correspondant(s). zone de sismicité non déterminée pour cette commune (valeur de repli faible).",
-          "recommandations": [
-            {
-              "mesure": "Vérifier l’état des structures portantes en béton et remédier aux éventuelles infiltrations ou stagnations d’eau. Réparer le béton dans les zones dégradées.",
-              "type": "recommandation_source",
-              "cout_estime": null,
-              "aide": null,
-              "sources": [
-                {
-                  "fiche_id": "REF-0017",
-                  "source_id": "S01",
-                  "extrait_exact": "2.2 ÉLÉMENTS DE STRUCTURE EN BÉTON Vériﬁer l’état des structures portantes et remédier aux éventuelles inﬁltrations ou stagnations d’eau."
-                }
-              ],
-              "zone": "fondations"
-            },
-            {
-              "mesure": "Vérifier l’état des structures portantes en maçonnerie et remédier aux éventuelles infiltrations ou stagnations d’eau.",
-              "type": "recommandation_source",
-              "cout_estime": null,
-              "aide": null,
-              "sources": [
-                {
-                  "fiche_id": "REF-0016",
-                  "source_id": "S01",
-                  "extrait_exact": "2.1 ÉLÉMENTS DE STRUCTURE EN MAÇONNERIE Vériﬁer l’état des structures portantes et remédier aux éventuelles inﬁltrations ou stagnations d’eau."
-                }
-              ],
-              "zone": "fondations"
-            }
-          ]
+          "justification": "• Aléa retrait-gonflement des argiles = « Moyen » (BDNB, au niveau du bâtiment) ; +12 pts pour horizon 2050 (sécheresses plus fréquentes, cf. littérature BRGM/CCR).\n• 0 cavité(s) souterraine(s) recensée(s), 2 mouvement(s) de terrain référencé(s) à proximité, 1 arrêté(s) CATNAT correspondant(s).\n• Zone de sismicité 2 (Géorisques).",
+          "recommandations": []
         },
         "murs_nord": {
-          "risque": 33,
+          "risque": 30,
           "niveau": "modere",
-          "alea_principal": "Infiltration (exposition nord)",
-          "justification": "précipitations annuelles non disponibles (Open-Meteo). jours de chaleur extrême non disponibles (Open-Meteo). zone de sismicité non déterminée pour cette commune (valeur de repli faible). Delta d'exposition directionnelle (heuristique, non mesurée par Géorisques).",
+          "alea_principal": "Exposition climatique (façade)",
+          "justification": "• Précipitations annuelles non disponibles (Open-Meteo).\n• Jours de chaleur extrême non disponibles (Open-Meteo).\n• Zone de sismicité 2 (Géorisques).",
           "recommandations": []
         },
         "murs_sud": {
-          "risque": 21,
-          "niveau": "faible",
-          "alea_principal": "Stress thermique (exposition sud)",
-          "justification": "précipitations annuelles non disponibles (Open-Meteo). jours de chaleur extrême non disponibles (Open-Meteo). zone de sismicité non déterminée pour cette commune (valeur de repli faible). Delta d'exposition directionnelle (heuristique, non mesurée par Géorisques).",
+          "risque": 30,
+          "niveau": "modere",
+          "alea_principal": "Exposition climatique (façade)",
+          "justification": "• Précipitations annuelles non disponibles (Open-Meteo).\n• Jours de chaleur extrême non disponibles (Open-Meteo).\n• Zone de sismicité 2 (Géorisques).",
           "recommandations": []
         },
         "murs_est": {
-          "risque": 25,
-          "niveau": "faible",
-          "alea_principal": "Vent",
-          "justification": "précipitations annuelles non disponibles (Open-Meteo). jours de chaleur extrême non disponibles (Open-Meteo). zone de sismicité non déterminée pour cette commune (valeur de repli faible). Delta d'exposition directionnelle (heuristique, non mesurée par Géorisques).",
+          "risque": 30,
+          "niveau": "modere",
+          "alea_principal": "Exposition climatique (façade)",
+          "justification": "• Précipitations annuelles non disponibles (Open-Meteo).\n• Jours de chaleur extrême non disponibles (Open-Meteo).\n• Zone de sismicité 2 (Géorisques).",
           "recommandations": []
         },
         "murs_ouest": {
-          "risque": 37,
+          "risque": 30,
           "niveau": "modere",
-          "alea_principal": "Intempéries (exposition ouest dominante)",
-          "justification": "précipitations annuelles non disponibles (Open-Meteo). jours de chaleur extrême non disponibles (Open-Meteo). zone de sismicité non déterminée pour cette commune (valeur de repli faible). Delta d'exposition directionnelle (heuristique, non mesurée par Géorisques).",
+          "alea_principal": "Exposition climatique (façade)",
+          "justification": "• Précipitations annuelles non disponibles (Open-Meteo).\n• Jours de chaleur extrême non disponibles (Open-Meteo).\n• Zone de sismicité 2 (Géorisques).",
           "recommandations": []
         },
         "toiture": {
-          "risque": 36,
+          "risque": 32,
           "niveau": "modere",
           "alea_principal": "Canicule / stress thermique",
-          "justification": "jours de chaleur extrême non disponibles (Open-Meteo). précipitations annuelles non disponibles (Open-Meteo). Toiture antérieure à 1970 (majoration +10).",
-          "recommandations": [
-            {
-              "mesure": "Vérifier l’état des parachèvements intérieurs sous la toiture (taches d’humidité, moisissures, corrosion, flèche).",
-              "type": "recommandation_source",
-              "cout_estime": null,
-              "aide": {
-                "dispositif": null,
-                "conditions": null,
-                "statut": "potential_eligibility_only"
-              },
-              "sources": [
-                {
-                  "fiche_id": "REF-0034",
-                  "source_id": "S01",
-                  "extrait_exact": "Vérification de l’état des parachèvements intérieurs situés sous la toiture ou au voisinage de celle-ci (présence de taches d’humidité, développement de moisissures, corrosion de tôles d’acier profilées, flèche, etc.)."
-                }
-              ],
-              "zone": "toiture"
-            },
-            {
-              "mesure": "Inspection générale de l’étanchéité (plis, affaissement, vieillissement, décollement, etc.), contrôle des raccords avec les avaloirs, tuyaux de descente, gargouilles, joints de mastic, couche de protection, solins, profils, joints de dilatation, et usure prématurée aux endroits de circulation fréquente.",
-              "type": "recommandation_source",
-              "cout_estime": null,
-              "aide": {
-                "dispositif": null,
-                "conditions": null,
-                "statut": "potential_eligibility_only"
-              },
-              "sources": [
-                {
-                  "fiche_id": "REF-0071",
-                  "source_id": "S01",
-                  "extrait_exact": "Au moins une fois par an (par exemple, après l’hiver): inspection générale de l’étanchéité [...] contrôle des raccords avec les avaloirs, les tuyaux de descente, les gargouilles [...] contrôle des joints de mastic [...] contrôle de l’éventuelle couche de protection, des solins, des proﬁlés, des joints de dilatation [...] contrôle de l’usure prématurée ou des dégradations aux endroits où la circulation est fréquente."
-                }
-              ],
-              "zone": "toiture"
-            },
-            {
-              "mesure": "Vérification régulière des soudures, joints, couvre-joints et fixations de la toiture.",
-              "type": "recommandation_source",
-              "cout_estime": null,
-              "aide": null,
-              "sources": [
-                {
-                  "fiche_id": "REF-0069",
-                  "source_id": "S01",
-                  "extrait_exact": "Vériﬁcation des soudures, joints, couvre-joints et ﬁxations."
-                }
-              ],
-              "zone": "toiture"
-            },
-            {
-              "mesure": "Vérifier les fixations, principalement aux rives.",
-              "type": "recommandation_source",
-              "cout_estime": null,
-              "aide": null,
-              "sources": [
-                {
-                  "fiche_id": "REF-0106",
-                  "source_id": "S01",
-                  "extrait_exact": "Vérification des fixations, principalement aux rives."
-                }
-              ],
-              "zone": "toiture"
-            },
-            {
-              "mesure": "Remplacer et remettre en place les éléments manquants, endommagés ou déplacés.",
-              "type": "recommandation_source",
-              "cout_estime": null,
-              "aide": null,
-              "sources": [
-                {
-                  "fiche_id": "REF-0104",
-                  "source_id": "S01",
-                  "extrait_exact": "Remplacement et remise en place des éléments manquants, endommagés ou déplacés."
-                }
-              ],
-              "zone": "toiture"
-            },
-            {
-              "mesure": "Vérification de l’état du lestage et remise en place si nécessaire pour éviter le soulèvement des panneaux d’isolation thermique par le vent.",
-              "type": "recommandation_source",
-              "cout_estime": null,
-              "aide": null,
-              "sources": [
-                {
-                  "fiche_id": "REF-0072",
-                  "source_id": "S01",
-                  "extrait_exact": "Après une période de vent violent, on procédera à une vériﬁcation de l’état du lestage et à sa remise en place si nécessaire."
-                }
-              ],
-              "zone": "toiture"
-            }
-          ]
+          "justification": "• Jours de chaleur extrême non disponibles (Open-Meteo).\n• Précipitations annuelles non disponibles (Open-Meteo).\n• Aucun aléa feu de forêt recensé par Géorisques pour cette commune.\n• Toiture antérieure à 1970 : majoration de +10 points.",
+          "recommandations": []
         },
         "sous_sol": {
           "risque": 72,
           "niveau": "eleve",
           "alea_principal": "Inondation / remontée de nappe",
-          "justification": "6 arrêté(s) CATNAT inondation recensé(s) sur la commune ; aléa inondation présent dans le référentiel Géorisques communal. potentiel radon non déterminé (valeur de repli faible).",
-          "recommandations": [
-            {
-              "mesure": "Procéder à un contrôle supplémentaire des éléments d'assainissement et des conduites enterrées (séparateurs de graisses/hydrocarbures, fosses septiques, stations d'épuration individuelle, pompes de relevage, avaloirs, clapets anticrue, etc.).",
-              "type": "recommandation_source",
-              "cout_estime": null,
-              "aide": {
-                "dispositif": null,
-                "conditions": null,
-                "statut": "potential_eligibility_only"
-              },
-              "sources": [
-                {
-                  "fiche_id": "REF-0001",
-                  "source_id": "S01",
-                  "extrait_exact": "En cas de conditions météorologiques extrêmes, il est nécessaire de procéder à un contrôle supplémentaire."
-                },
-                {
-                  "fiche_id": "REF-0001",
-                  "source_id": "S01",
-                  "extrait_exact": "examen visuel de l’état du dispositif de fermeture et de son étanchéité, des canalisations pénétrant dans l’appareil et les éventuels dispositifs d’accès"
-                },
-                {
-                  "fiche_id": "REF-0001",
-                  "source_id": "S01",
-                  "extrait_exact": "vidange et nettoyage (ﬁltre et ﬂotteur éventuel en particulier)"
-                },
-                {
-                  "fiche_id": "REF-0001",
-                  "source_id": "S01",
-                  "extrait_exact": "Contrôle des pompes automatiques de relevage des eaux: contrôler le fonctionnement automatique, l’étanchéité des raccords, l’état de la station et des vannes"
-                },
-                {
-                  "fiche_id": "REF-0001",
-                  "source_id": "S01",
-                  "extrait_exact": "Contrôle de leur fonctionnement. Curage des appareils. Vériﬁcation de leur étanchéité."
-                }
-              ],
-              "zone": "sous_sol"
-            },
-            {
-              "mesure": "Contrôler l’état du sol au voisinage du réseau d’égout pour détecter les affouillements susceptibles d’aggraver les risques d’inondation ou de ruissellement.",
-              "type": "recommandation_source",
-              "cout_estime": null,
-              "aide": {
-                "dispositif": null,
-                "conditions": null,
-                "statut": "potential_eligibility_only"
-              },
-              "sources": [
-                {
-                  "fiche_id": "REF-0005",
-                  "source_id": "S01",
-                  "extrait_exact": "L’état du sol au voisinage du réseau d’égout est contrôlé aﬁn de déceler les éventuels affouillements."
-                }
-              ],
-              "zone": "sous_sol"
-            },
-            {
-              "mesure": "Vérifier l’étanchéité des fosses septiques et des raccordements aux canalisations pour prévenir les infiltrations d’eau ou les fuites en cas d’inondation.",
-              "type": "recommandation_source",
-              "cout_estime": null,
-              "aide": {
-                "dispositif": null,
-                "conditions": null,
-                "statut": "potential_eligibility_only"
-              },
-              "sources": [
-                {
-                  "fiche_id": "REF-0004",
-                  "source_id": "S01",
-                  "extrait_exact": "vériﬁcation de l’étanchéité de la fosse."
-                },
-                {
-                  "fiche_id": "REF-0004",
-                  "source_id": "S01",
-                  "extrait_exact": "vériﬁer l’état du bac de décantation et des raccords avec les canalisations"
-                }
-              ],
-              "zone": "sous_sol"
-            },
-            {
-              "mesure": "Vérifier l'état, l'étanchéité, les fixations et scellements des canalisations et entonnoirs d'évacuation des eaux pluviales. Contrôler et curer si nécessaire les canalisations et accessoires pour éviter les obstructions.",
-              "type": "recommandation_source",
-              "cout_estime": null,
-              "aide": null,
-              "sources": [
-                {
-                  "fiche_id": "REF-0272",
-                  "source_id": "S01",
-                  "extrait_exact": "Vériﬁcation de l’état, de l’étanchéité, des ﬁxations et scellements des canalisations et entonnoirs. Contrôle et curage éventuel des canalisations et accessoires."
-                }
-              ],
-              "zone": "sous_sol"
-            },
-            {
-              "mesure": "Contrôler le bon fonctionnement des organes de fermeture, du système de motorisation, des rails-guides et de leurs fixations, ainsi que de la signalisation lumineuse. Lubrifier les organes de manœuvre.",
-              "type": "recommandation_source",
-              "cout_estime": null,
-              "aide": null,
-              "sources": [
-                {
-                  "fiche_id": "REF-0177",
-                  "source_id": "S01",
-                  "extrait_exact": "Contrôle du bon fonctionnement des organes de fermeture en action-nant le mécanisme d’ouverture. [...] Lubriﬁcation des organes de manœuvre."
-                }
-              ],
-              "zone": "sous_sol"
-            }
-          ]
+          "justification": "• 6 arrêté(s) CATNAT inondation recensé(s) sur la commune ; aléa inondation présent dans le référentiel Géorisques communal ; atlas des zones inondables (Géorisques) indisponible pour cette commune (erreur API), non pris en compte dans le score.\n• Potentiel radon classe 1/3 (Géorisques).",
+          "recommandations": []
         }
       }
     },
-    "climat_2050": {
-      "temperature_max_projetee_c": null,
+    "climat": {
+      "2050": {
+        "temperature_max_projetee_c": null,
+        "temperature_max_moyenne_c": null,
+        "precipitation_annuelle_moyenne_mm": null,
+        "jours_chaleur_extreme_par_an": null
+      },
+      "reference_2015_2024": {
+        "temperature_max_absolue_c": null,
+        "temperature_max_moyenne_c": null,
+        "precipitation_annuelle_moyenne_mm": null,
+        "jours_chaleur_extreme_par_an": null
+      },
       "source": "Open-Meteo Climate API — moyenne des modèles climatiques, projection 2041-2050"
+    },
+    "marche": {
+      "dvf_disponible": false
     },
     "_geometry_build_report": {
       "champs_ok": [
@@ -879,24 +703,25 @@
         "has_garden"
       ]
     },
+    "_sources": {
+      "climat_open_meteo": false,
+      "climat_copernicus": false,
+      "dvf_local": false
+    },
     "_erreurs_collecte": [
       {
-        "source": "dvf_local",
-        "erreur": "DvfLookupUnavailable: Fichier DVF introuvable pour le departement 37 : data\\lookup\\dvf\\37.csv. Voir docs/GUIDE_ORCHESTRATEUR_API.md pour le telecharger."
+        "source": "copernicus",
+        "erreur": "Exception: Missing/incomplete configuration file: C:\\Users\\Makrembz/.cdsapirc"
       },
       {
         "source": "open_meteo",
         "erreur": "HTTPStatusError: Client error '429 Too Many Requests' for url 'https://climate-api.open-meteo.com/v1/climate?latitude=47.283669&longitude=0.169251&start_date=2015-01-01&end_date=2024-12-31&models=EC_Earth3P_HR%2CMRI_AGCM3_2_S&daily=temperature_2m_max%2Cprecipitation_sum'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/429"
-      },
-      {
-        "source": "copernicus",
-        "erreur": "Exception: Missing/incomplete configuration file: C:\\Users\\Makrembz/.cdsapirc"
       }
     ]
   },
   "timeline": [
     {
-      "date": "2026-07-28T10:36:11.116384+00:00",
+      "date": "2026-07-28T13:19:48.715719+00:00",
       "event": "Property ID créé",
       "details": {
         "property_id": "TY-2026-000005",
@@ -904,20 +729,20 @@
       }
     },
     {
-      "date": "2026-07-28T10:36:11.116477+00:00",
+      "date": "2026-07-28T13:19:48.715827+00:00",
       "event": "Certification Gold",
       "details": {
         "level": "Gold",
-        "score": 40,
+        "score": 42,
         "status": "ACTIVE"
       }
     }
   ],
   "certification": {
     "level": "Gold",
-    "score": 40,
-    "issued_at": "2026-07-28T10:36:11.116477+00:00",
-    "expires_at": "2027-07-28T10:36:11.116477+00:00",
+    "score": 42,
+    "issued_at": "2026-07-28T13:19:48.715827+00:00",
+    "expires_at": "2027-07-28T13:19:48.715827+00:00",
     "status": "ACTIVE",
     "badge": {
       "name": "Typhoon Gold",
