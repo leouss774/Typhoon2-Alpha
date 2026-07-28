@@ -8,12 +8,14 @@ interroge la base RAG Mistral, et ecrit les recommandations directement dans
 risk_scores.zones[*].recommandations avant que digital_twin_agent n'assemble le
 contrat final. Si l'index RAG n'est pas charge (MISTRAL_API_KEY absente ou
 build_index.py pas encore lance), le noeud est un no-op : le graphe continue
-normalement et les recommandations restent vides.
+ormalement et les recommandations restent vides.
 
-Checkpointer : `MemorySaver` (en memoire, perdu au redemarrage du process)
+Checkpointer : ``MemorySaver`` (en memoire, perdu au redemarrage du process)
 pour cette etape MVP. Le README prevoit un checkpointer SQLite en local
 / Postgres en prod — a brancher quand la persistance entre redemarrages
 deviendra utile (reprise d'un diagnostic interrompu, audit).
+
+Documentation de reference : backend/recommendation_travaux-main/PROMPT_INTEGRATION_ouss.md
 """
 
 from __future__ import annotations
@@ -33,8 +35,9 @@ logger = get_logger(__name__)
 
 async def _collector_node(state: TyphoonState) -> dict:
     t0 = time.perf_counter()
-    building_data = await collect(state["adresse"])
-    logger.info("collector_agent (noeud) -- termine en %.2fs", time.perf_counter() - t0)
+    copernicus_enabled = state.get("copernicus", True)
+    building_data = await collect(state["adresse"], enable_copernicus=copernicus_enabled)
+    logger.info("collector_agent (noeud) -- termine en %.2fs (copernicus=%s)", time.perf_counter() - t0, copernicus_enabled)
     return {"building_data": building_data}
 
 
@@ -42,8 +45,8 @@ def _scoring_node(state: TyphoonState) -> dict:
     return scoring_agent.run(state)
 
 
-def _recommandations_node(state: TyphoonState) -> dict:
-    return recommandations_agent.run(state)
+async def _recommandations_node(state: TyphoonState) -> dict:
+    return await recommandations_agent.run(state)
 
 
 def _digital_twin_node(state: TyphoonState) -> dict:

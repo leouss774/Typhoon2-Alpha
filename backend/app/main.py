@@ -22,7 +22,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.routes import diagnostic, health, property_id as property_id_router
 from app.core.logging import configure_logging, get_logger
 from app.property_id.service import init_service as init_property_id_service
-from app.recommandations.rag_engine import load_index_into_memory
+from app.recommandations.service import load_index
 
 configure_logging()
 logger = get_logger(__name__)
@@ -44,8 +44,9 @@ app.include_router(property_id_router.router)
 @app.on_event("startup")
 async def on_startup() -> None:
     init_property_id_service()
+    # Index RAG : charge une seule fois au demarrage, pas a chaque requete
     try:
-        load_index_into_memory()
+        load_index()
     except Exception as exc:
         logger.warning("Index RAG non charge : %s — les recommandations resteront vides", exc)
     logger.info("Typhoon API demarree — routes : POST /diagnostic, POST /property-id/generate, GET /property-id/{id}, GET /health")

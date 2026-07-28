@@ -49,6 +49,7 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--out", help="Chemin du fichier JSON de sortie (mode adresse unique uniquement)")
     parser.add_argument("--batch", help="Fichier texte avec une adresse par ligne, traitees a la suite")
     parser.add_argument("--force", action="store_true", help="Ne pas avertir si l'adresse est hors region PACA")
+    parser.add_argument("--no-copernicus", action="store_true", help="Desactiver Copernicus CDS dans la collecte")
     return parser.parse_args()
 
 
@@ -56,9 +57,9 @@ def _out_path(citycode: str, override: str | None = None) -> Path:
     return Path(override) if override else Path("out") / f"{citycode}.json"
 
 
-async def _run_one(address: str, out_override: str | None, force: bool) -> dict:
+async def _run_one(address: str, out_override: str | None, force: bool, enable_copernicus: bool = True) -> dict:
     print(f"\nCollecte en cours pour : {address}", file=sys.stderr)
-    building_data = await collect(address)
+    building_data = await collect(address, enable_copernicus=enable_copernicus)
 
     departement = building_data["departement"]
     if departement not in PACA_DEPARTMENTS and not force:
@@ -81,7 +82,7 @@ async def _run_one(address: str, out_override: str | None, force: bool) -> dict:
     return building_data
 
 
-async def _interactive_loop(force: bool) -> None:
+async def _interactive_loop(force: bool, enable_copernicus: bool = True) -> None:
     print(
         "Mode interactif : tapez une adresse puis Entree pour lancer un diagnostic. "
         "Tapez 'quit' pour quitter.\n",
@@ -94,20 +95,20 @@ async def _interactive_loop(force: bool) -> None:
         if address.lower() in {"quit", "exit", ""}:
             break
         try:
-            building_data = await _run_one(address, None, force)
+            building_data = await _run_one(address, None, force, enable_copernicus=enable_copernicus)
             print(json.dumps(building_data, indent=2, ensure_ascii=False, default=str))
         except Exception as exc:
             print(f"Echec du diagnostic pour cette adresse : {exc}", file=sys.stderr)
 
 
-async def _batch_run(batch_file: str, force: bool) -> int:
+async def _batch_run(batch_file: str, force: bool, enable_copernicus: bool = True) -> int:
     addresses = [line.strip() for line in Path(batch_file).read_text(encoding="utf-8").splitlines() if line.strip()]
     print(f"{len(addresses)} adresse(s) a traiter depuis {batch_file}", file=sys.stderr)
 
     nb_echecs = 0
     for address in addresses:
         try:
-            await _run_one(address, None, force)
+            await _run_one(address, None, force, enable_copernicus=enable_copernicus)
         except Exception as exc:
             nb_echecs += 1
             print(f"Echec du diagnostic pour {address!r} : {exc}", file=sys.stderr)
@@ -118,15 +119,16 @@ async def _batch_run(batch_file: str, force: bool) -> int:
 
 async def _main() -> int:
     args = _parse_args()
+    copernicus_enabled = not args.no_copernicus
 
     if args.batch:
-        return await _batch_run(args.batch, args.force)
+        return await _batch_run(args.batch, args.force, enable_copernicus=copernicus_enabled)
 
     if args.adresse is None:
-        await _interactive_loop(args.force)
+        await _interactive_loop(args.force, enable_copernicus=copernicus_enabled)
         return 0
 
-    building_data = await _run_one(args.adresse, args.out, args.force)
+    building_data = await _run_one(args.adresse, args.out, args.force, enable_copernicus=copernicus_enabled)
     print(json.dumps(building_data, indent=2, ensure_ascii=False, default=str))
     return 0
 
