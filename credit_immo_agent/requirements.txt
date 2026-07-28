@@ -1,0 +1,6 @@
+fastapi
+uvicorn
+pydantic>=2
+pydantic-settings
+httpx
+pandas

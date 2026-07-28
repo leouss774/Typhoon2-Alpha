@@ -1,0 +1,16 @@
+{
+  "score_global": 65,
+  "zones": {
+    "fondations": { "risque": 78, "niveau": "eleve" },
+    "murs_nord": { "risque": 35, "niveau": "modere" },
+    "murs_sud": { "risque": 20, "niveau": "faible" },
+    "murs_est": { "risque": 28, "niveau": "faible" },
+    "murs_ouest": { "risque": 42, "niveau": "modere" },
+    "toiture": { "risque": 55, "niveau": "modere" },
+    "sous_sol": { "risque": 65, "niveau": "eleve" }
+  },
+  "projection_2050": {
+    "score_global": 81,
+    "zones": {}
+  }
+}

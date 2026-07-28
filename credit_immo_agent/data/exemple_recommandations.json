@@ -1,0 +1,38 @@
+{
+  "rga": {
+    "priorite": 1,
+    "titre": "Renforcement des fondations",
+    "description": "Traitement des sols argileux par injection de résine expansive et reprise en sous-œuvre.",
+    "cout_estime_bas": 8000,
+    "cout_estime_haut": 25000,
+    "gain_resilience_pct": 70,
+    "aleas_adresses": ["rga"]
+  },
+  "inondation": {
+    "priorite": 1,
+    "titre": "Drainage périphérique",
+    "description": "Installation d'un système de drainage périphérique avec pompe de relevage.",
+    "cout_estime_bas": 5000,
+    "cout_estime_haut": 15000,
+    "gain_resilience_pct": 65,
+    "aleas_adresses": ["inondation"]
+  },
+  "tempete": {
+    "priorite": 2,
+    "titre": "Renforcement de la toiture",
+    "description": "Pose de fixations anti-arrachement, renforcement de la charpente.",
+    "cout_estime_bas": 6000,
+    "cout_estime_haut": 18000,
+    "gain_resilience_pct": 55,
+    "aleas_adresses": ["tempete"]
+  },
+  "incendie": {
+    "priorite": 2,
+    "titre": "Isolation pare-feu extérieure",
+    "description": "Traitement ignifuge des bardages bois, installation de volets coupe-feu.",
+    "cout_estime_bas": 4000,
+    "cout_estime_haut": 12000,
+    "gain_resilience_pct": 60,
+    "aleas_adresses": ["incendie"]
+  }
+}

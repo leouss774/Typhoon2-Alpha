@@ -1,0 +1,9 @@
+{
+  "valeur_marche_bien": 330000,
+  "montant_emprunte": 300000,
+  "duree_annees": 20,
+  "taux_annuel_propose": 0.034,
+  "tendance_marche_annuelle": 0.01,
+  "localisation": { "commune": "Exemple-sur-Loire", "zone_tendue": false },
+  "travaux_deja_realises": []
+}

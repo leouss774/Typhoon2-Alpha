@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Typhoon — Diagnostic de crédit immobilier</title>
+<link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="/static/chart.umd.min.js"></script>
+<style>
+:root{--bg:#0a1018;--surface:#111b2b;--surface2:#182438;--border:#1e3050;--text:#cfe4ff;--text2:#8ba8cf;--text3:#5a7a9f;--brand:#ff6b4a;--brand2:#e24e2e;--blue:#4da6ff;--green:#3fb950;--yellow:#d29922;--red:#da3633;--font:'Inter','Segoe UI',system-ui,sans-serif}
+*{margin:0;padding:0;box-sizing:border-box}
+html{font-size:15px}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh}
+.header{background:linear-gradient(135deg,#0d1a2e,#132545);border-bottom:1px solid var(--border);padding:1rem 2rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.6rem}
+.header-logo{display:flex;align-items:center;gap:.6rem}
+.header-logo .icon{width:34px;height:34px;background:linear-gradient(135deg,var(--brand),var(--blue));border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:800;color:#fff}
+.header-logo h1{font-size:1.1rem;font-weight:700}
+.header-logo small{font-size:.68rem;color:var(--text2);display:block}
+.header-badge{background:rgba(255,107,74,.12);border:1px solid rgba(255,107,74,.3);padding:.3rem .8rem;border-radius:20px;font-size:.7rem;font-weight:600;color:var(--brand)}
+.container{max-width:1200px;margin:0 auto;padding:1.2rem}
+.form-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1.5rem;margin-bottom:1.2rem}
+.form-card h2{font-size:.95rem;font-weight:600;margin-bottom:.3rem}
+.form-card p{font-size:.8rem;color:var(--text2);margin-bottom:1rem}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:.8rem;margin-bottom:.8rem}
+.fg label{display:block;font-size:.78rem;font-weight:500;color:var(--text2);margin-bottom:.25rem}
+.fg input{width:100%;background:var(--surface2);border:1.5px solid var(--border);color:var(--text);padding:.6rem .9rem;border-radius:9px;font-size:.85rem;font-family:var(--font);outline:0;transition:border .2s}
+.fg input:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(77,166,255,.15)}
+.fg.full{grid-column:1/-1}
+.btn{padding:.65rem 1.6rem;border:0;border-radius:9px;font-size:.82rem;font-weight:600;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:.5rem;font-family:var(--font)}
+.btn-primary{background:linear-gradient(135deg,var(--brand),var(--brand2));color:#fff;box-shadow:0 4px 14px rgba(255,107,74,.25)}
+.btn-primary:hover{box-shadow:0 6px 20px rgba(255,107,74,.4);transform:translateY(-1px)}
+.btn-primary:disabled{opacity:.5;cursor:not-allowed}
+.btn-ghost{background:rgba(77,166,255,.08);border:1px solid rgba(77,166,255,.25);color:var(--blue)}
+.btn-print{background:var(--surface2);border:1px solid var(--border);color:var(--text)}
+.loading{display:none;flex-direction:column;align-items:center;padding:2.5rem 0}
+.loading.show{display:flex}
+.pulse{width:42px;height:42px;border:3px solid var(--border);border-top-color:var(--brand);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading p{margin-top:.8rem;font-size:.85rem;color:var(--text2)}
+.loading .steps{display:flex;gap:1.2rem;margin-top:.6rem;font-size:.75rem;color:var(--text3)}
+.loading .steps .done{color:var(--green)}
+.loading .steps .active{color:var(--blue)}
+.report{display:none}
+.report.show{display:block}
+.r-head{background:linear-gradient(135deg,#0d1a2e,#132545);border:1px solid var(--border);border-radius:14px 14px 0 0;padding:1.2rem 1.5rem;display:flex;justify-content:space-between;flex-wrap:wrap;gap:.8rem}
+.r-head h2{font-size:1rem;font-weight:700}
+.r-head small{font-size:.72rem;color:var(--text2);display:block;margin-top:.1rem}
+.r-head .right{text-align:right;font-size:.75rem;color:var(--text3);line-height:1.5}
+.r-body{background:var(--surface);border:1px solid var(--border);border-top:0;border-radius:0 0 14px 14px;padding:1.5rem}
+.actions{display:flex;gap:.6rem;margin-bottom:1.2rem;flex-wrap:wrap}
+.info-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:.8rem;margin-bottom:1.5rem}
+.info-item{background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:.8rem}
+.info-item .lbl{font-size:.68rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--text3);margin-bottom:.2rem}
+.info-item .val{font-size:1rem;font-weight:700}
+.info-item .sub{font-size:.72rem;color:var(--text2);margin-top:.1rem}
+.sec{border:1px solid var(--border);border-radius:9px;padding:1.1rem;margin-bottom:1rem}
+.sec h3{font-size:.82rem;font-weight:600;color:var(--brand);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.6rem;display:flex;align-items:center;gap:.5rem}
+.sec h3 .n{background:var(--brand);color:#fff;width:20px;height:20px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:.65rem;font-weight:700}
+.sr{display:flex;justify-content:space-between;padding:.4rem 0;border-bottom:1px solid rgba(30,48,80,.4);font-size:.82rem;line-height:1.5}
+.sr:last-child{border:0}
+.sr .l{color:var(--text2)}
+.sr .v{font-weight:600}
+.dec-badge{display:inline-flex;gap:.4rem;padding:.4rem 1rem;border-radius:30px;font-size:.85rem;font-weight:700;margin-bottom:.6rem}
+.bg-green{background:rgba(63,185,80,.15);color:var(--green);border:1px solid rgba(63,185,80,.3)}
+.bg-yellow{background:rgba(210,153,34,.15);color:var(--yellow);border:1px solid rgba(210,153,34,.3)}
+.bg-red{background:rgba(218,54,51,.15);color:var(--red);border:1px solid rgba(218,54,51,.3)}
+.justif{background:var(--surface2);border-left:3px solid var(--brand);padding:.7rem 1rem;border-radius:0 8px 8px 0;font-size:.82rem;line-height:1.5;color:var(--text2);margin-bottom:.5rem}
+.chart-wrap{background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:.8rem;margin-top:.4rem;height:250px}
+.mgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:.6rem;margin-top:.5rem}
+.mi{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:.6rem;text-align:center}
+.mi .mv{font-size:1.05rem;font-weight:700}
+.mi .ml{font-size:.65rem;color:var(--text3);margin-top:.1rem;text-transform:uppercase}
+.r-foot{border-top:1px solid var(--border);padding-top:.8rem;margin-top:1.2rem;font-size:.68rem;color:var(--text3);line-height:1.5}
+.error{display:none;background:rgba(218,54,51,.1);border:1px solid rgba(218,54,51,.3);border-radius:9px;padding:.8rem 1rem;margin-bottom:1rem;font-size:.82rem;color:var(--red)}
+.error.show{display:block}
+#resultAtte{font-size:.8rem;color:var(--text3);margin:.5rem 0 0;font-style:italic}
+@media(max-width:640px){.form-grid{grid-template-columns:1fr}.info-grid{grid-template-columns:1fr 1fr}.mgrid{grid-template-columns:1fr 1fr}}
+@media print{body{background:#fff}.header,.form-card,.loading,.error,.actions{display:none!important}.report.show{display:block!important}.r-head,.r-body{background:#fff!important;border-color:#ccc!important}.sec{border-color:#ccc!important}.info-item{background:#f5f5f5!important;border-color:#ccc!important}.justif{background:#f5f5f5!important}.chart-wrap{background:#f5f5f5!important}.mi{background:#f5f5f5!important;border-color:#ccc!important}.sr{border-color:#eee!important}}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-logo">
+    <div class="icon">T</div>
+    <div><h1>Typhoon</h1><small>Diagnostic de crédit immobilier</small></div>
+  </div>
+  <div class="header-badge">Banque &bull; Assurance prêt</div>
+</div>
+
+<div class="container">
+
+  <div class="form-card" id="formCard">
+    <h2> Dossier de crédit</h2>
+    <p>Entrez l'adresse du bien et les conditions du prêt pour lancer le diagnostic automatique.</p>
+    <div class="form-grid">
+      <div class="fg full"><label>Adresse du bien</label><input id="address" value="1 place Massena, 06000 Nice"></div>
+      <div class="fg"><label>Montant du crédit (€)</label><input id="montant" type="number" value="300000"></div>
+      <div class="fg"><label>Durée (années)</label><input id="duree" type="number" value="20" min="1" max="30"></div>
+      <div class="fg"><label>Taux d'intérêt annuel (%)</label><input id="taux" type="number" value="3.4" step="0.1"></div>
+      <div class="fg"><label>Valeur de marché (€) <span style="color:var(--text3);font-weight:400">— estimée auto</span></label><input id="valeur" type="number" value="" placeholder="Estimation automatique"></div>
+    </div>
+    <details id="detailsFeatures" style="margin-bottom:.6rem;cursor:pointer;color:var(--text2);font-size:.8rem;border:1px solid var(--border);border-radius:9px;padding:.5rem .8rem;background:var(--surface2)">
+      <summary style="font-weight:600"> Caractéristiques du bien (optionnel)</summary>
+      <div class="form-grid" style="margin-top:.6rem">
+        <div class="fg"><label>Année construction</label><input id="f_annee" type="number" placeholder="Ex: 1985"></div>
+        <div class="fg"><label>DPE</label><select id="f_dpe" style="width:100%;background:var(--surface);border:1.5px solid var(--border);color:var(--text);padding:.6rem .9rem;border-radius:9px;font-size:.85rem;font-family:var(--font);outline:0"><option value="">—</option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option></select></div>
+        <div class="fg"><label>Chauffage type</label><select id="f_chauffage" style="width:100%;background:var(--surface);border:1.5px solid var(--border);color:var(--text);padding:.6rem .9rem;border-radius:9px;font-size:.85rem;font-family:var(--font);outline:0"><option value="">—</option><option value="electrique">Électrique</option><option value="gaz">Gaz</option><option value="fioul">Fioul</option><option value="bois">Bois</option><option value="pac">PAC</option><option value="reseau">Réseau</option></select></div>
+        <div class="fg"><label>Chauffage âge</label><select id="f_chauffage_age" style="width:100%;background:var(--surface);border:1.5px solid var(--border);color:var(--text);padding:.6rem .9rem;border-radius:9px;font-size:.85rem;font-family:var(--font);outline:0"><option value="">—</option><option value="recent">&lt;5 ans</option><option value="moyen">5-15 ans</option><option value="vieux">&gt;15 ans</option></select></div>
+        <div class="fg"><label>Électricité</label><select id="f_elec" style="width:100%;background:var(--surface);border:1.5px solid var(--border);color:var(--text);padding:.6rem .9rem;border-radius:9px;font-size:.85rem;font-family:var(--font);outline:0"><option value="">—</option><option value="recent">Récente (normes)</option><option value="bon">Bonne état</option><option value="moyen">Moyenne</option><option value="vetuste">Vétuste</option><option value="dangereux">Dangereuse</option></select></div>
+        <div class="fg"><label>Plomberie</label><select id="f_plom" style="width:100%;background:var(--surface);border:1.5px solid var(--border);color:var(--text);padding:.6rem .9rem;border-radius:9px;font-size:.85rem;font-family:var(--font);outline:0"><option value="">—</option><option value="recent">Récente</option><option value="bon">Bonne état</option><option value="moyen">Moyenne</option><option value="vetuste">Vétuste</option></select></div>
+        <div class="fg"><label>Menuiseries</label><select id="f_menu" style="width:100%;background:var(--surface);border:1.5px solid var(--border);color:var(--text);padding:.6rem .9rem;border-radius:9px;font-size:.85rem;font-family:var(--font);outline:0"><option value="">—</option><option value="double_vitrage_recent">DV récent</option><option value="double_vitrage">Double vitrage</option><option value="simple_bois">Simple bois</option><option value="simple_metal">Simple métal</option></select></div>
+        <div class="fg"><label>Isolation combles</label><select id="f_iso_c" style="width:100%;background:var(--surface);border:1.5px solid var(--border);color:var(--text);padding:.6rem .9rem;border-radius:9px;font-size:.85rem;font-family:var(--font);outline:0"><option value="">—</option><option value="excellente">Excellente</option><option value="bonne">Bonne</option><option value="moyenne">Moyenne</option><option value="insuffisante">Insuffisante</option><option value="absente">Absente</option></select></div>
+        <div class="fg"><label>Isolation murs</label><select id="f_iso_m" style="width:100%;background:var(--surface);border:1.5px solid var(--border);color:var(--text);padding:.6rem .9rem;border-radius:9px;font-size:.85rem;font-family:var(--font);outline:0"><option value="">—</option><option value="excellente">Excellente</option><option value="bonne">Bonne</option><option value="moyenne">Moyenne</option><option value="insuffisante">Insuffisante</option><option value="absente">Absente</option></select></div>
+        <div class="fg"><label>Amiante</label><select id="f_amiante" style="width:100%;background:var(--surface);border:1.5px solid var(--border);color:var(--text);padding:.6rem .9rem;border-radius:9px;font-size:.85rem;font-family:var(--font);outline:0"><option value="">—</option><option value="non">Non</option><option value="non_recherche">Non recherché</option><option value="present">Présent</option></select></div>
+        <div class="fg"><label>Plomb (CREP)</label><select id="f_plomb" style="width:100%;background:var(--surface);border:1.5px solid var(--border);color:var(--text);padding:.6rem .9rem;border-radius:9px;font-size:.85rem;font-family:var(--font);outline:0"><option value="">—</option><option value="non">Non</option><option value="non_recherche">Non recherché</option><option value="present">Présent</option></select></div>
+        <div class="fg"><label>Termites</label><select id="f_termites" style="width:100%;background:var(--surface);border:1.5px solid var(--border);color:var(--text);padding:.6rem .9rem;border-radius:9px;font-size:.85rem;font-family:var(--font);outline:0"><option value="">—</option><option value="non">Non</option><option value="non_recherche">Non recherché</option><option value="present">Présent</option></select></div>
+        <div class="fg"><label>Assainissement</label><select id="f_assain" style="width:100%;background:var(--surface);border:1.5px solid var(--border);color:var(--text);padding:.6rem .9rem;border-radius:9px;font-size:.85rem;font-family:var(--font);outline:0"><option value="">—</option><option value="collecte">Réseau collecte</option><option value="autonome_conforme">Autonome conforme</option><option value="autonome_non_conforme">Autonome non conforme</option></select></div>
+        <div class="fg"><label>Copropriété</label><select id="f_copro" style="width:100%;background:var(--surface);border:1.5px solid var(--border);color:var(--text);padding:.6rem .9rem;border-radius:9px;font-size:.85rem;font-family:var(--font);outline:0"><option value="">—</option><option value="faibles">Faibles charges</option><option value="normales">Normales</option><option value="elevees">Élevées</option><option value="tres_elevees">Très élevées</option></select></div>
+        <div class="fg"><label>Stationnement</label><select id="f_statio" style="width:100%;background:var(--surface);border:1.5px solid var(--border);color:var(--text);padding:.6rem .9rem;border-radius:9px;font-size:.85rem;font-family:var(--font);outline:0"><option value="">—</option><option value="aucun">Aucun</option><option value="exterieur">Extérieur</option><option value="garage_simple">Garage simple</option><option value="garage_double">Garage double</option></select></div>
+      </div>
+    </details>
+    <button class="btn btn-primary" id="btnGo" onclick="start()"> Lancer le diagnostic</button>
+    <div id="resultAtte"></div>
+  </div>
+
+  <div class="loading" id="loading">
+    <div class="pulse"></div>
+    <p>Collecte et analyse en cours...</p>
+    <div class="steps">
+      <span id="s1" class="active"> Collecte données</span>
+      <span id="s2"> Scoring risque</span>
+      <span id="s3"> Analyse crédit</span>
+      <span id="s4"> Rapport</span>
+    </div>
+  </div>
+
+  <div class="error" id="error"></div>
+
+  <div class="report" id="report">
+    <div class="r-head">
+      <div><h2 id="rTitle">Rapport de diagnostic de crédit</h2><small id="rAddr">—</small></div>
+      <div class="right"><div id="rDate">—</div><div>Réf. TYPHOON-<span id="rRef">0000</span></div></div>
+    </div>
+    <div class="r-body">
+      <div class="actions">
+        <button class="btn btn-print" onclick="window.print()"> Imprimer</button>
+        <button class="btn btn-ghost" onclick="resetAll()"> Nouveau</button>
+      </div>
+      <div class="info-grid" id="infoGrid"></div>
+      <div class="sec"><h3><span class="n">1</span> Analyse des risques par zone</h3><div id="riskContent"></div></div>
+      <div class="sec"><h3><span class="n">2</span> Valorisation</h3><div id="valoContent"></div></div>
+      <div class="sec"><h3><span class="n">3</span> Décision de crédit</h3><div id="decContent"></div></div>
+      <div class="sec"><h3><span class="n">4</span> Projection de la valeur</h3><div class="chart-wrap"><canvas id="projChart"></canvas></div></div>
+      <div class="sec"><h3><span class="n">5</span> Plan de suivi</h3><div id="monContent"></div></div>
+      <div class="r-foot">
+        <strong>Avertissement :</strong> Aide à la décision — pas un engagement de crédit (art. 22 RGPD).<br>
+        Typhoon Diagnostic Engine v2.0 — Données : Géorisques, BDNB, Open-Meteo, Copernicus, DVF.
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let ch = null;
+function $(id){return document.getElementById(id)}
+
+function step(n){
+  for(let i=1;i<=4;i++){
+    const e=$('s'+i),t=e.textContent.trim();
+    e.className=i<n?'done':i===n?'active':'';
+    e.innerHTML=(i<n?'✓ ':'')+t;
+  }
+}
+
+async function start(){
+  const addr=$('address').value.trim();
+  if(!addr){alert('Entrez une adresse');return}
+  $('formCard').style.display='none';
+  $('report').classList.remove('show');
+  $('error').classList.remove('show');
+  $('loading').classList.add('show');
+  $('btnGo').disabled=true;
+  step(1);
+  await sleep(500);step(2);
+  await sleep(300);step(3);
+  const features={};
+  const fmap={'f_annee':'annee_construction','f_dpe':'dpe','f_chauffage':'chauffage_type','f_chauffage_age':'chauffage_age','f_elec':'electricite','f_plom':'plomberie','f_menu':'menuiseries','f_iso_c':'isolation_combles','f_iso_m':'isolation_murs','f_amiante':'amiante','f_plomb':'plomb','f_termites':'termites','f_assain':'assainissement','f_copro':'copropriete','f_statio':'stationnement'};
+  for(const[id,key]of Object.entries(fmap)){const v=$(id).value;if(v&&v!=='')features[key]=v}
+  const body={address:addr,montant_emprunte:+$('montant').value||300000,duree_annees:+$('duree').value||20,taux_annuel:+$('taux').value||3.4};
+  if(Object.keys(features).length)body.features=features;
+  try{
+    const resp=await fetch('/diagnostic_by_address',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    step(4);await sleep(300);
+    if(!resp.ok){const e=await resp.json();throw new Error(e.detail||'Erreur')}
+    const d=await resp.json();
+    $('loading').classList.remove('show');
+    render(addr,d);
+  }catch(e){
+    $('loading').classList.remove('show');
+    $('error').classList.add('show');
+    $('error').textContent='Erreur : '+e.message;
+    $('btnGo').disabled=false;
+    $('formCard').style.display='block';
+  }
+}
+
+function sleep(ms){return new Promise(r=>setTimeout(r,ms))}
+
+function render(addr,d){
+  const r=d.resultat,v=r.valorisation,dec=r.decision,p=r.projection,m=r.plan_de_suivi;
+  const now=new Date();
+  $('rAddr').textContent=addr;
+  $('rTitle').textContent='Rapport de diagnostic — '+addr.split(',')[0];
+  $('rDate').textContent=now.toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'});
+  $('rRef').textContent=String(now.getFullYear()).slice(-2)+String(now.getMonth()+1).padStart(2,'0')+String(Math.floor(Math.random()*9999)).padStart(4,'0');
+  $('infoGrid').innerHTML=
+    '<div class="info-item"><div class="lbl">Adresse</div><div class="val" style="font-size:.82rem">'+addr+'</div></div>'+
+    '<div class="info-item"><div class="lbl">Valeur de marché</div><div class="val">'+v.valeur_marche.toLocaleString()+' €</div></div>'+
+    '<div class="info-item"><div class="lbl">Montant emprunté</div><div class="val">'+$('montant').valueAsNumber.toLocaleString()+' €</div><div class="sub">sur '+$('duree').value+' ans</div></div>'+
+    '<div class="info-item"><div class="lbl">Risque pondéré</div><div class="val" style="color:'+riskColor(v.risque_pondere)+'">'+v.risque_pondere+'/100</div></div>'+
+    '<div class="info-item"><div class="lbl">Valeur ajustée</div><div class="val" style="color:var(--blue)">'+v.valeur_ajustee.toLocaleString()+' €</div></div>'+
+    '<div class="info-item"><div class="lbl">Décision</div><div class="val">'+badge(dec.statut)+'</div></div>';
+  const dc=v.details_climat||{};
+  let climHtml='';
+  if(dc.temperature_max_actuelle){
+    climHtml='<h4 style="font-size:.78rem;font-weight:600;color:var(--blue);margin-top:.6rem;margin-bottom:.35rem"> Climat local</h4>'+
+      '<div style="display:flex;flex-wrap:wrap;gap:.35rem;font-size:.72rem;color:var(--text2)">'+
+      '<span style="background:var(--surface2);padding:.2rem .6rem;border-radius:5px">Temp. max: <strong>'+dc.temperature_max_actuelle+'°C → '+dc.temperature_max_2050+'°C</strong> (2050)</span>'+
+      '<span style="background:var(--surface2);padding:.2rem .6rem;border-radius:5px">Canicule: <strong>'+dc.jours_chaleur_extreme_par_an+'j → '+dc.jours_chaleur_extreme_2050+'j</strong></span>'+
+      '<span style="background:var(--surface2);padding:.2rem .6rem;border-radius:5px">Précip.: <strong>'+dc.precipitations_annuelles_mm+' mm/an</strong></span>'+
+      '<span style="background:var(--surface2);padding:.2rem .6rem;border-radius:5px">Altitude: <strong>'+dc.altitude_m+' m</strong></span>'+
+      '<span style="background:var(--surface2);padding:.2rem .6rem;border-radius:5px">Zone sismique: <strong>'+dc.zone_sismique+'</strong></span>'+
+      '<span style="background:var(--surface2);padding:.2rem .6rem;border-radius:5px">Arrêtés CatNat: <strong>'+dc.nb_catnat+'</strong></span>'+
+      '</div>';
+  }
+  const risquesHtml=v.risques_presents&&v.risques_presents.length?
+    '<h4 style="font-size:.78rem;font-weight:600;color:var(--yellow);margin-top:.6rem;margin-bottom:.3rem"> Risques présents</h4>'+
+    '<div style="font-size:.78rem;line-height:1.6">'+
+    v.risques_presents.map(r=>'<span style="display:inline-block;background:rgba(210,153,34,.1);border:1px solid rgba(210,153,34,.25);border-radius:5px;padding:.15rem .5rem;margin:.15rem .2rem;font-size:.72rem">'+r+'</span>').join('')+
+    '</div>':'';
+  $('riskContent').innerHTML=renderZones(v)+risquesHtml+climHtml;
+  $('valoContent').innerHTML=renderValo(v);
+  $('decContent').innerHTML=renderDec(dec);
+  $('monContent').innerHTML=renderMon(m);
+  renderChart(p);
+  $('report').classList.add('show');
+  $('report').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function riskColor(s){return s<30?'var(--green)':s<60?'var(--yellow)':s<80?'#db6d28':'var(--red)'}
+
+function badge(s){
+  const m={accord:['bg-green','ACCORD'],accord_conditionnel:['bg-yellow','CONDITIONNEL'],refus:['bg-red','REFUS']};
+  const [c,l]=m[s]||['bg-green',s];
+  return '<span class="dec-badge '+c+'">'+l+'</span>';
+}
+
+function renderZones(v){
+  const zones={'fondations':'Fondations','toiture':'Toiture','sous_sol':'Sous-sol','murs_nord':'Mur nord','murs_sud':'Mur sud','murs_est':'Mur est','murs_ouest':'Mur ouest'};
+  return Object.entries(zones).map(([k,l])=>{
+    const z=v.zones?.[k]||{risque:0,niveau:'—'};
+    return '<div class="sr"><span class="l">'+l+'</span><span class="v" style="color:'+riskColor(z.risque)+'">'+z.risque+'/100 <span style="font-weight:400;font-size:.72rem;color:var(--text3)">'+z.niveau+'</span></span></div>';
+  }).join('')+
+  '<div class="sr" style="border-bottom:2px solid var(--border);font-weight:700"><span class="l">Risque pondéré global</span><span class="v" style="color:var(--brand)">'+v.risque_pondere+'/100</span></div>';
+}
+
+function renderValo(v){
+  return '<div class="sr"><span class="l">Valeur de marché</span><span class="v">'+v.valeur_marche.toLocaleString()+' €</span></div>'+
+    '<div class="sr"><span class="l">Risque pondéré</span><span class="v">'+v.risque_pondere+'/100</span></div>'+
+    '<div class="sr"><span class="l">Décote</span><span class="v">'+(v.decote_pct*100).toFixed(2)+'%</span></div>'+
+    '<div class="sr" style="border-bottom:2px solid var(--border);font-weight:700"><span class="l">Valeur ajustée</span><span class="v" style="color:var(--blue)">'+v.valeur_ajustee.toLocaleString()+' €</span></div>'+
+    '<div style="margin-top:.5rem;font-size:.75rem;color:var(--text3);line-height:1.5">'+(v.hypotheses||[]).join('<br>')+'</div>';
+}
+
+function renderDec(dec){
+  const m={accord:'bg-green',accord_conditionnel:'bg-yellow',refus:'bg-red'};
+  const l={accord:'ACCORD',accord_conditionnel:'ACCORD CONDITIONNEL',refus:'REFUS'};
+  let h='<div class="dec-badge '+(m[dec.statut]||'bg-red')+'">'+(l[dec.statut]||dec.statut)+'</div>';
+  h+='<div class="justif">'+dec.justification+'</div>';
+  if(dec.conditions&&dec.conditions.length)h+='<div style="margin-top:.4rem;font-size:.78rem"><strong>Conditions :</strong><ul style="margin:.2rem 0 0 1.2rem">'+dec.conditions.map(c=>'<li>'+c+'</li>').join('')+'</ul></div>';
+  if(dec.prime_de_risque_suggeree)h+='<div style="margin-top:.3rem;font-size:.78rem"><strong>Prime de risque :</strong> '+dec.prime_de_risque_suggeree+'%</div>';
+  return h;
+}
+
+function renderMon(m){
+  const lt=m.statut_actuel?.ltv_actuel;
+  const ac=m.statut_actuel?.alerte_declenchee?'<span style="color:var(--red)">OUI</span>':'<span style="color:var(--green)">NON</span>';
+  const re=m.statut_actuel?.reexpertise_requise?'<span style="color:var(--red)">OUI</span>':'<span style="color:var(--green)">NON</span>';
+  return '<div class="mgrid">'+
+    '<div class="mi"><div class="mv">'+m.frequence_indices_marche+'</div><div class="ml">Marché</div></div>'+
+    '<div class="mi"><div class="mv">'+m.frequence_risque_climatique+'</div><div class="ml">Risque</div></div>'+
+    '<div class="mi"><div class="mv">'+(m.seuil_alerte_banque*100).toFixed(0)+'%</div><div class="ml">Seuil alerte</div></div>'+
+    '<div class="mi"><div class="mv">'+(lt?lt*100:0).toFixed(1)+'%</div><div class="ml">LTV</div></div>'+
+    '<div class="mi"><div class="mv">'+ac+'</div><div class="ml">Alerte</div></div>'+
+    '<div class="mi"><div class="mv">'+re+'</div><div class="ml">Réexpertise</div></div>'+
+    '</div>';
+}
+
+function renderChart(p){
+  if(ch)ch.destroy();
+  const ctx=$('projChart').getContext('2d');
+  const ann=p.scenario_sans_travaux.map(y=>y.annee);
+  ch=new Chart(ctx,{
+    type:'line',
+    data:{
+      labels:ann,
+      datasets:[
+        {label:'Sans travaux',data:p.scenario_sans_travaux.map(y=>y.valeur),borderColor:'#da3633',backgroundColor:'rgba(218,54,51,.08)',fill:true,tension:.3,pointRadius:2},
+        {label:'Avec travaux',data:p.scenario_avec_travaux.map(y=>y.valeur),borderColor:'#3fb950',backgroundColor:'rgba(63,185,80,.08)',fill:true,tension:.3,pointRadius:2}
+      ]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      color:'#8ba8cf',borderColor:'#1e3050',
+      plugins:{legend:{labels:{color:'#cfe4ff',font:{size:10},boxWidth:12,usePointStyle:true}},
+        tooltip:{backgroundColor:'#111b2b',borderColor:'#1e3050',borderWidth:1,titleColor:'#cfe4ff',bodyColor:'#8ba8cf',
+          callbacks:{label:ctx=>ctx.dataset.label+': '+Number(ctx.parsed.y).toLocaleString()+' €'}}},
+      scales:{
+        x:{grid:{color:'rgba(30,48,80,.4)'},ticks:{color:'#5a7a9f',font:{size:9}},title:{display:true,text:'Année',color:'#8ba8cf',font:{size:10}}},
+        y:{grid:{color:'rgba(30,48,80,.4)'},ticks:{callback:v=>(v/1000).toFixed(0)+'k',color:'#5a7a9f',font:{size:9}},title:{display:true,text:'Valeur (€)',color:'#8ba8cf',font:{size:10}}}
+      }
+    }
+  });
+}
+
+function resetAll(){
+  $('report').classList.remove('show');
+  $('error').classList.remove('show');
+  $('formCard').style.display='block';
+  $('btnGo').disabled=false;
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,279 @@
+{
+  "name": "credit_agent — Interface de décision de crédit",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "credit_agent — Aide à la décision de crédit immobilier",
+        "formDescription": "Analyse de crédit garanti par un bien. Renseignez l'adresse et le dossier de prêt. Les sorties des agents amont (building_data, risk_scores, recommendations, digital_twin) peuvent être collées en JSON — laissez vide si non disponibles. montant_emprunte et duree_annees sont obligatoires. Cette sortie est une aide à la décision, non un engagement de crédit.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Adresse du bien",
+              "fieldName": "adresse",
+              "placeholder": "ex. 12 rue Nationale, 37000 Tours",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Montant emprunté (€)",
+              "fieldType": "number",
+              "fieldName": "montant_emprunte",
+              "placeholder": "ex. 250000",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Durée du prêt (années)",
+              "fieldType": "number",
+              "fieldName": "duree_annees",
+              "placeholder": "ex. 20",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Taux annuel proposé (%)",
+              "fieldType": "number",
+              "fieldName": "taux_annuel_propose",
+              "placeholder": "ex. 3.5"
+            },
+            {
+              "fieldLabel": "Surface du bien (m²)",
+              "fieldType": "number",
+              "fieldName": "surface_m2",
+              "placeholder": "ex. 90 (sinon tirée de bdnb)"
+            },
+            {
+              "fieldLabel": "Valeur de marché du bien (€) — si connue",
+              "fieldType": "number",
+              "fieldName": "valeur_marche_bien",
+              "placeholder": "Laisser vide pour estimation via DVF"
+            },
+            {
+              "fieldLabel": "building_data (JSON — sortie collector_agent)",
+              "fieldType": "textarea",
+              "fieldName": "building_data_json",
+              "placeholder": "Coller le JSON building_data ou laisser vide"
+            },
+            {
+              "fieldLabel": "risk_scores (JSON — sortie scoring_agent)",
+              "fieldType": "textarea",
+              "fieldName": "risk_scores_json",
+              "placeholder": "Coller le JSON risk_scores ou laisser vide"
+            },
+            {
+              "fieldLabel": "recommendations (JSON — sortie rag_agent)",
+              "fieldType": "textarea",
+              "fieldName": "recommendations_json",
+              "placeholder": "Coller le JSON recommendations ou laisser vide"
+            },
+            {
+              "fieldLabel": "digital_twin (JSON — sortie digital_twin_agent, optionnel)",
+              "fieldType": "textarea",
+              "fieldName": "digital_twin_json",
+              "placeholder": "Coller le JSON digital_twin ou laisser vide"
+            }
+          ]
+        },
+        "responseMode": "lastNode",
+        "options": {
+          "appendAttribution": false,
+          "buttonLabel": "Lancer l’analyse de crédit",
+          "path": "credit-agent"
+        }
+      },
+      "id": "f8dacadb-6859-4085-9158-7fe69eb69e57",
+      "name": "Interface Crédit",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.6,
+      "position": [
+        0,
+        112
+      ],
+      "webhookId": "86ffafaf-3b17-49f6-a691-6d674587900e"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Analyse le dossier de crédit suivant et produis le RAPPORT HTML complet.\n\n## Dossier de prêt\n- adresse: {{ $json.adresse }}\n- montant_emprunte: {{ $json.montant_emprunte }}\n- duree_annees: {{ $json.duree_annees }}\n- taux_annuel_propose: {{ $json.taux_annuel_propose }}\n- surface_m2: {{ $json.surface_m2 }}\n- valeur_marche_bien (si fournie): {{ $json.valeur_marche_bien }}\n\n## Sorties des agents amont (JSON, peuvent être vides)\n### building_data\n{{ $json.building_data_json }}\n\n### risk_scores\n{{ $json.risk_scores_json }}\n\n### recommendations\n{{ $json.recommendations_json }}\n\n### digital_twin\n{{ $json.digital_twin_json }}\n",
+        "options": {
+          "systemMessage": "Tu es credit_agent, un agent d'analyse bancaire spécialisé dans l'évaluation de crédits immobiliers garantis par un bien. Tu produis une AIDE À LA DÉCISION explicable et challengeable, JAMAIS une décision finale opposable. La décision finale relève de l'établissement prêteur (devoir de conseil, article 22 du RGPD sur les décisions automatisées).\n\nTu réponds toujours en français.\n\n# CONTRAINTES NON NÉGOCIABLES\n1. Ne jamais halluciner une donnée manquante (valeur de marché, taux, surface, prix au m²). Si une donnée OBLIGATOIRE manque, indique-la explicitement comme MANQUANTE et ARRÊTE le calcul concerné plutôt que de deviner.\n2. Chaque décision doit être EXPLICABLE : justifie chaque ajustement de valeur et chaque seuil avec le CHIFFRE EXACT qui l'a déclenché.\n3. Précise systématiquement qu'il s'agit d'une aide à la décision.\n4. Distingue toujours une donnée ABSENTE (à demander) d'une donnée PAR DÉFAUT (hypothèse documentée) — ne les mélange jamais silencieusement.\n5. montant_emprunte et duree_annees sont OBLIGATOIRES : s'ils manquent, arrête-toi et demande-les.\n6. valeur_marche_bien : si non fournie, l'estimer via DVF + surface_m2. Si ni la valeur ni une estimation DVF fiable ne sont possibles (et surface absente), arrête-toi et demande-la — n'invente jamais un prix au m² par défaut.\n7. Ne JAMAIS additionner plusieurs gain_resilience d'une même zone. Compose multiplicativement : risque_zone_apres_travaux = risque_zone_initial × Π(1 − gain_resilience_i/100).\n8. Ne jamais présenter une estimation basée sur moins de 3 transactions DVF comparables comme fiable sans signaler une CONFIANCE FAIBLE.\n9. Ne jamais fusionner silencieusement les scénarios \"avec travaux\" et \"sans travaux\" en un seul chiffre.\n10. Si digital_twin est fourni ET complet, l'utiliser comme source unique pour les zones/recommandations et IGNORER risk_scores/recommendations séparés (le signaler). Ne recalcule jamais deux fois la même chose.\n\n# OUTILS DISPONIBLES\n- geocode_adresse : adresse -> lat/lon/citycode (Base Adresse Nationale). Utilise-le d'abord pour obtenir lat/lon depuis l'adresse saisie (sauf si building_data fournit déjà adresse.lat/lon).\n- dvf_comparables : transactions DVF officielles autour d'un point (lat, lon, dist). Utilise-le pour estimer prix_m2_local quand building_data.dvf_local n'est pas fourni. Filtre sur un type de bien comparable et calcule la MÉDIANE de (valeur_fonciere / surface).\n\n# MÉTHODE DE CALCUL\n## Étape 1 — Valeur de marché (si non fournie)\nprix_m2_local = médiane(valeur_fonciere/surface) sur les comparables (dvf_local fourni, sinon via l'outil dvf_comparables), filtré sur type de bien comparable. valeur_marche_bien = prix_m2_local × surface_m2. Si moins de 3 transactions comparables -> confiance FAIBLE.\n## Étape 2 — Risque pondéré et décote actuelle\nPoids : Fondations 0.30, Toiture 0.20, Sous_sol 0.15, Murs (nord+sud+est+ouest répartis) 0.35 au total (soit 0.0875 chacun). risque_pondere = Σ(risque_zone × poids_zone). facteur_severite = 0.5 par défaut. decote_pct = (risque_pondere/100) × facteur_severite. valeur_ajustee = valeur_marche_bien × (1 − decote_pct).\n## Étape 3 — Projection par zone sur la durée du prêt\nUtilise la projection PAR ZONE de risk_scores.projection_2050.zones (PAS d'interpolation homothétique du score global). Pour chaque zone z : risque_z(t) = interpolation_lineaire(risque_z_actuel, risque_z_2050, t/horizon), horizon = 2050 − année courante. risque_pondere(t) = Σ(risque_z(t) × poids_z).\nDeux scénarios : SANS travaux (risque_z_actuel tel quel) ; AVEC travaux (risque_z_actuel remplacé par risque_zone_apres_travaux via la formule multiplicative, gain supposé maintenu proportionnellement jusqu'en 2050).\nvaleur(t) = valeur_ajustee × (1 + tendance_marche_annuelle)^t × (1 + (decote_pct_initiale − decote_pct(t))). Si tendance_marche_annuelle non fournie -> 0% par défaut (à signaler comme hypothèse).\n## Étape 4 — LTV glissant et décision\ncapital_restant_du(t) = montant_emprunte × ((1+i)^n − (1+i)^t)/((1+i)^n − 1), avec i = taux_annuel_propose/12 (mensuel), n = duree_annees×12, t en mois. LTV(t) = capital_restant_du(t)/valeur(t). Calcule LTV annuellement.\nGrille de décision (sur max(LTV) sur la durée) :\n- max(LTV) sans travaux < 80% -> Accord.\n- max(LTV) sans travaux 80–100% ET avec travaux < 80% -> Accord conditionné aux travaux prioritaires.\n- max(LTV) sans travaux 80–100%, travaux insuffisants -> Accord conditionné à un apport/garantie complémentaire.\n- max(LTV) sans travaux > 100% mais avec travaux < 100% -> Accord conditionné, travaux exigés avant déblocage.\n- max(LTV) avec travaux > 100% -> Refus.\n- risque_pondere actuel > 60 sans travaux engagés -> Prime de risque sur le taux (à suggérer).\n## Étape 5 — Plan de suivi\nRéutiliser collector_agent (ne pas dupliquer de connecteurs) : (1) rejouer collector_agent périodiquement (dvf_local trimestriel, georisques mensuel) sur la même adresse ; (2) rejouer scoring_agent sur le nouveau building_data ; (3) recalculer valeur & LTV via credit_agent (cycle complet) ; (4) comparer le LTV actualisé au seuil d'alerte 90% et au seuil de réexpertise 100% (ou nouvelle alerte georisques / nouvelle zone \"eleve\").\n\n# FORMAT DE SORTIE — IMPORTANT\nTa réponse DOIT être un document HTML complet et autonome (commençant par <!DOCTYPE html>) qui sera affiché directement dans le navigateur du conseiller. NE PAS entourer de balises markdown (pas de ```html). Style soigné et professionnel via une balise <style> intégrée (police système, cartes, tableaux lisibles, couleurs sobres ; vert=accord, orange=conditionnel, rouge=refus).\n\nLe rapport HTML doit contenir, dans cet ordre :\n1. Un en-tête avec le titre, l'adresse analysée, et un bandeau AVERTISSEMENT bien visible : \"Cette sortie est une aide à la décision et ne constitue pas un engagement de crédit. La décision finale relève de l'établissement prêteur, conformément à son devoir de conseil (article 22 du RGPD).\"\n2. Un encart DÉCISION en évidence (statut + justification chiffrée + conditions + prime de risque suggérée le cas échéant).\n3. Une section VALORISATION : valeur_marche_bien, source_valeur (fournie|estimee_dvf_local), confiance_estimation (haute|moyenne|faible), risque_pondere, decote_pct, valeur_ajustee, et la liste des HYPOTHÈSES.\n4. Une section DONNÉES MANQUANTES vs PAR DÉFAUT clairement séparées (deux listes distinctes).\n5. Trois GRAPHIQUES explicatifs, chacun inséré comme <img src=\"https://quickchart.io/chart?c=...\"> où le paramètre c est une configuration Chart.js URL-encodée que tu construis toi-même à partir des données calculées :\n   (a) LTV sur la durée du prêt : deux courbes (sans travaux vs avec travaux) + lignes de référence horizontales à 80/90/100%.\n   (b) Projection de la valeur du bien dans le temps : sans travaux vs avec travaux.\n   (c) Risque par zone : actuel vs 2050 (bar chart).\n   URL-encode correctement la config JSON (espaces, guillemets, accolades). Garde les configs compactes.\n6. Un tableau détaillé de la projection annuelle (année, valeur sans/avec travaux, LTV sans/avec travaux).\n7. Une section PLAN DE SUIVI (agents à rejouer, fréquences, seuils d'alerte 90% et de réexpertise 100%).\n8. Un bloc <pre> contenant le JSON structuré complet conforme au schéma credit_agent (valorisation, projection.scenario_sans_travaux[], projection.scenario_avec_travaux[], decision, plan_de_suivi, avertissement).\n\nSi une donnée obligatoire manque (montant_emprunte, duree_annees, ou impossibilité totale d'obtenir la valeur du bien), NE calcule pas : renvoie un HTML expliquant clairement quelle donnée est MANQUANTE et pourquoi le calcul est arrêté, avec l'avertissement.",
+          "maxIterations": 12,
+          "enableStreaming": false
+        }
+      },
+      "id": "1900812b-9f04-435a-82ca-4cc39661eb47",
+      "name": "credit_agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        288,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "model": "mistral-large-latest",
+        "options": {
+          "temperature": 0.1
+        }
+      },
+      "id": "7aa7c4d9-89cd-4f93-8293-44aa8c0314c0",
+      "name": "Mistral Large",
+      "type": "@n8n/n8n-nodes-langchain.lmChatMistralCloud",
+      "typeVersion": 1,
+      "position": [
+        224,
+        336
+      ],
+      "credentials": {
+        "mistralCloudApi": {
+          "id": "uzw7oKVMexKpaV0s",
+          "name": "Mistral Cloud account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "Géocode une adresse française via la Base Adresse Nationale. Renvoie coordonnées (lat/lon), citycode et libellé. Utiliser pour résoudre l'adresse saisie en lat/lon avant d'interroger les comparables DVF.",
+        "url": "https://api-adresse.data.gouv.fr/search/",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('adresse', \"L'adresse à géocoder\") }}"
+            },
+            {
+              "name": "limit",
+              "value": "1"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "d66ad377-f132-4db8-9fdb-32a70d68c496",
+      "name": "geocode_adresse",
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.4,
+      "position": [
+        352,
+        336
+      ]
+    },
+    {
+      "parameters": {
+        "toolDescription": "Renvoie les transactions immobilières officielles DVF (Demandes de Valeurs Foncières) autour d'un point géographique, avec valeur_fonciere, surface et type de bien. Paramètres: lat, lon (obligatoires), dist en mètres (rayon, défaut 500). Utiliser pour calculer le prix médian au m² local sur des biens comparables.",
+        "url": "https://api.cquest.org/dvf",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "lat",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('lat', 'Latitude du bien') }}"
+            },
+            {
+              "name": "lon",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('lon', 'Longitude du bien') }}"
+            },
+            {
+              "name": "dist",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('dist', 'Rayon de recherche en mètres (défaut 500)') }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "42b45f9d-636c-4110-a1da-2e832c361677",
+      "name": "dvf_comparables",
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.4,
+      "position": [
+        480,
+        336
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "completion",
+        "respondWith": "showText",
+        "responseText": "={{ $json.output }}"
+      },
+      "id": "f027a0f8-0dd5-4c93-9e4f-d2565fa6f954",
+      "name": "Rapport de crédit",
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 2.5,
+      "position": [
+        688,
+        112
+      ],
+      "webhookId": "a33cc883-7e8e-43df-a117-35c8b56ae883"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Interface Crédit": {
+      "main": [
+        [
+          {
+            "node": "credit_agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "credit_agent": {
+      "main": [
+        [
+          {
+            "node": "Rapport de crédit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mistral Large": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "credit_agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "geocode_adresse": {
+      "ai_tool": [
+        [
+          {
+            "node": "credit_agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "dvf_comparables": {
+      "ai_tool": [
+        [
+          {
+            "node": "credit_agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "0d50b11d-cdbf-4ac6-a55d-4e86c33292fa",
+  "meta": {
+    "instanceId": "7ae2150a92d2a5c928d8f7f0baad1b8124fba84005d6a9d7164bab7028ceda12"
+  },
+  "nodeGroups": [],
+  "id": "Fminh6IKexD2TxQN",
+  "tags": []
+}
