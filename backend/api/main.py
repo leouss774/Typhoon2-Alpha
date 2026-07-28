@@ -21,7 +21,9 @@ from typing import Any
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import PlainTextResponse
+from fastapi.responses import StreamingResponse
+from backend.services.pdf_generator import generate_bank_report_pdf
+from backend.services import dvf_service
 from pydantic import BaseModel
 
 # Imports de l'orchestrateur
@@ -220,9 +222,7 @@ async def test_vulnerabilite(req: VulnerabilityTestRequest):
 @app.get("/api/bank/report/{session_id}/pdf")
 async def download_report_pdf(session_id: str):
     """Génère et télécharge le rapport d'analyse complet au format PDF.
-    
-    Pour l'instant, retourne un rapport texte formaté.
-    En production, utiliser reportlab, weasyprint ou un template HTML → PDF.
+    Utilise reportlab pour un rendu professionnel avec tableaux et couleurs.
     """
     analysis = analyses_store.get(session_id)
     if not analysis:
@@ -232,80 +232,141 @@ async def download_report_pdf(session_id: str):
     if not db:
         raise HTTPException(status_code=404, detail="Décision bancaire introuvable")
     
-    # Construction du rapport texte (sera remplacé par un vrai PDF)
-    report_lines = []
-    report_lines.append("=" * 60)
-    report_lines.append("  RAPPORT D'ANALYSE DE RISQUE CRÉDIT")
-    report_lines.append("  Outil d'aide à la décision — Aucune décision automatique")
-    report_lines.append("=" * 60)
-    report_lines.append(f"")
-    report_lines.append(f"Bien : {analysis.get('adresse', 'N/A')}")
-    report_lines.append(f"Session : {session_id}")
-    report_lines.append(f"Date : {analysis.get('date_analyse', 'N/A')}")
-    report_lines.append(f"")
-    report_lines.append("─" * 60)
-    report_lines.append("📊 SCORE DE RISQUE DU BIEN")
-    report_lines.append("─" * 60)
-    report_lines.append(f"  Score risque bancaire : {db.get('score_risque_bancaire', 'N/A')}/100")
-    report_lines.append(f"  Score climatique : {db.get('score_climatique', 'N/A')}/100")
-    report_lines.append(f"  Niveau de risque : {db.get('niveau_risque_global', 'N/A')}")
-    report_lines.append(f"  Impact ESG : {db.get('impact_esg', 'N/A')}")
-    report_lines.append(f"  Indice de confiance : {db.get('indice_confiance', 'N/A')}%")
-    report_lines.append(f"")
-    report_lines.append("─" * 60)
-    report_lines.append("⚠️ PRINCIPAUX RISQUES IDENTIFIÉS")
-    report_lines.append("─" * 60)
-    for r in (db.get("risques_identifies") or []):
-        report_lines.append(f"  • {r.get('nom')}: {r.get('score')}/100 — {r.get('zone_impactee')}")
-        if r.get('description'):
-            report_lines.append(f"    {r['description'][:120]}")
-    report_lines.append(f"")
-    report_lines.append("─" * 60)
-    report_lines.append("💰 ÉVALUATION FINANCIÈRE")
-    report_lines.append("─" * 60)
-    report_lines.append(f"  Valeur de marché : {db.get('valeur_marche', 'N/A')} €")
-    report_lines.append(f"  Décote appliquée : {db.get('decote_pct', 0)}%")
-    report_lines.append(f"  Valeur ajustée : {db.get('valeur_ajustee', 'N/A')} €")
-    report_lines.append(f"  Taux proposé : {db.get('taux_propose', 'N/A')}%")
-    report_lines.append(f"")
-    report_lines.append("─" * 60)
-    report_lines.append("🛡️ GARANTIES D'ASSURANCE RECOMMANDÉES")
-    report_lines.append("─" * 60)
-    for g in (db.get("garanties_assurance") or []):
-        report_lines.append(f"  {'🔴' if g.get('obligatoire') else '🟡'} {g.get('type')}")
-        if g.get('detail'):
-            report_lines.append(f"     {g['detail'][:100]}")
-    report_lines.append(f"")
-    report_lines.append("─" * 60)
-    report_lines.append("🏗️ RECOMMANDATIONS DE PRÉVENTION")
-    report_lines.append("─" * 60)
-    for p in (db.get("prevention_recommandations") or [])[:5]:
-        report_lines.append(f"  #{p.get('priorite')} [{p.get('zone')}] {p.get('travaux')}")
-        report_lines.append(f"     Coût: {p.get('cout_estime')} | Gain: +{p.get('gain_resilience')}%")
-    report_lines.append(f"")
-    report_lines.append("─" * 60)
-    report_lines.append("📄 RAPPORT SYNTHÉTIQUE")
-    report_lines.append("─" * 60)
-    rapport = db.get("rapport_synthetique", "")
-    for line in rapport.split("\n"):
-        report_lines.append(f"  {line}")
-    report_lines.append(f"")
-    report_lines.append("=" * 60)
-    report_lines.append("  Document généré automatiquement — Outil d'aide à la décision")
-    report_lines.append("  Aucune décision d'acceptation ou de refus n'est contenue dans ce rapport.")
-    report_lines.append("=" * 60)
+    # Enrichir avec les données de marché DVF
+    stats_marche = None
+    try:
+        adr = analysis.get("adresse", "")
+        evo = dvf_service.get_price_evolution(adr)
+        current = dvf_service.query_market_value(adr)
+        if evo.get("evolution"):
+            stats_marche = {
+                "prix_m2_actuel": current.get("prix_m2_median"),
+                "prix_m2_commune": evo["evolution"][-1]["prix_m2_median"] if evo["evolution"] else None,
+                "nb_transactions": current.get("nb_transactions", 0),
+                "tendance": evo.get("tendance", "stable"),
+            }
+    except Exception as e:
+        logger.warning(f"Impossible de récupérer les stats marché pour le PDF : {e}")
+
+    pdf_buffer = generate_bank_report_pdf(
+        session_id=session_id,
+        adresse=analysis.get("adresse", "N/A"),
+        decision_bancaire=db,
+        stats_marche=stats_marche,
+    )
     
-    report_text = "\n".join(report_lines)
-    
-    return PlainTextResponse(
-        content=report_text,
-        media_type="text/plain; charset=utf-8",
+    return StreamingResponse(
+        content=pdf_buffer,
+        media_type="application/pdf",
         headers={
-            "Content-Disposition": f"attachment; filename=rapport-credit-{session_id}.txt"
+            "Content-Disposition": f"attachment; filename=rapport-credit-{session_id}.pdf",
+            "Content-Type": "application/pdf",
+        }
+    )
+
+
+class MarketTrendsRequest(BaseModel):
+    """Requête pour obtenir l'évolution des prix DVF pour une adresse."""
+    adresse: str
+    type_bien: str = "Maison"
+    surface: float = 100
+
+
+@app.post("/api/bank/market-trends")
+async def get_market_trends(req: MarketTrendsRequest):
+    """Retourne l'évolution du prix au m² + comparaison de marché (données DVF réelles)."""
+    evolution = dvf_service.get_price_evolution(req.adresse, req.type_bien)
+    current = dvf_service.query_market_value(req.adresse, req.surface, req.type_bien)
+    
+    # Données de comparaison : tous types confondus dans la commune
+    try:
+        all_types = dvf_service.get_price_evolution(req.adresse, "Maison")
+        if all_types.get("evolution") and len(all_types["evolution"]) > 0:
+            annee_courante = all_types["evolution"][-1]
+            prix_m2_commune_tous = annee_courante["prix_m2_median"]
+            tx_total = sum(d["nb_transactions"] for d in all_types["evolution"])
+        else:
+            prix_m2_commune_tous = None
+            tx_total = 0
+        
+        # Écart entre le type du bien et la moyenne commune
+        pm2_bien = current.get("prix_m2_median")
+        ecart_pct = None
+        if pm2_bien and prix_m2_commune_tous and prix_m2_commune_tous > 0:
+            ecart_pct = round((pm2_bien - prix_m2_commune_tous) / prix_m2_commune_tous * 100, 1)
+    except Exception:
+        prix_m2_commune_tous = None
+        tx_total = 0
+        ecart_pct = None
+    
+    return {
+        "evolution": evolution.get("evolution", []),
+        "source": evolution.get("source", ""),
+        "tendance": evolution.get("tendance", "stable"),
+        "valeur_actuelle": current.get("valeur_estimee"),
+        "prix_m2_bien": current.get("prix_m2_median"),
+        "prix_m2_commune": prix_m2_commune_tous,
+        "ecart_vs_commune_pct": ecart_pct,
+        "nb_transactions": current.get("nb_transactions", 0),
+        "volume_total_transactions": tx_total,
+        "indice_confiance_dvf": current.get("indice_confiance", 0),
+    }
+
+
+class PdfReportRequest(BaseModel):
+    """Requête pour générer un PDF à partir des données d'analyse fournies par le client.
+    
+    Alternative au endpoint GET /api/bank/report/{session_id}/pdf qui nécessite
+    que l'analyse soit stockée côté serveur (perdue si le backend redémarre).
+    """
+    session_id: str
+    adresse: str = ""
+    decision_bancaire: dict[str, Any]
+
+
+@app.post("/api/bank/report/pdf")
+async def generate_report_pdf_post(req: PdfReportRequest):
+    """Génère et télécharge le rapport PDF à partir des données fournies directement.
+    
+    Version POST : plus robuste car elle ne dépend pas du stockage serveur.
+    Le frontend envoie les données d'analyse récupérées depuis le sessionStorage.
+    """
+    db = req.decision_bancaire or {}
+    if not db:
+        raise HTTPException(status_code=400, detail="Données d'analyse manquantes")
+    
+    stats_marche = None
+    try:
+        adr = req.adresse or ""
+        evo = dvf_service.get_price_evolution(adr)
+        current = dvf_service.query_market_value(adr)
+        if evo.get("evolution"):
+            stats_marche = {
+                "prix_m2_actuel": current.get("prix_m2_median"),
+                "prix_m2_commune": evo["evolution"][-1]["prix_m2_median"] if evo["evolution"] else None,
+                "nb_transactions": current.get("nb_transactions", 0),
+                "tendance": evo.get("tendance", "stable"),
+            }
+    except Exception as e:
+        logger.warning(f"Impossible de récupérer les stats marché pour le PDF : {e}")
+
+    pdf_buffer = generate_bank_report_pdf(
+        session_id=req.session_id,
+        adresse=req.adresse or "N/A",
+        decision_bancaire=db,
+        stats_marche=stats_marche,
+    )
+    
+    return StreamingResponse(
+        content=pdf_buffer,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f"attachment; filename=rapport-credit-{req.session_id}.pdf",
+            "Content-Type": "application/pdf",
         }
     )
 
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("api.main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("backend.api.main:app", host="0.0.0.0", port=8000, reload=True)

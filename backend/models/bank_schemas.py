@@ -106,6 +106,11 @@ class BankDecision(BaseModel):
     )
     analyse_complete_url: str = Field(default="", description="URL de téléchargement du rapport PDF complet")
 
+    # ── Source des taux (scraper MeilleurTaux / .env / defaut) ───────────────
+    source_taux: str = Field(default="", description="Source des taux directeurs (MeilleurTaux, .env, defaut)")
+    date_taux: str = Field(default="", description="Date de publication des taux")
+    confiance_taux: int = Field(default=0, ge=0, le=100, description="Niveau de confiance de la source des taux (0-100)")
+
     # ── Champs legacy conservés pour compatibilité ───────────────────────────
     taux_propose: float = Field(..., description="Taux d'intérêt proposé (%)")
     majoration_taux: float = Field(..., description="Majoration ou bonification du taux liée au risque (%)")

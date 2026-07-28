@@ -293,7 +293,9 @@ def bank_decision_node(state: TyphoonState) -> dict:
         score_global = state.zone_recommandations.get("score_global", 0) or 0
     
     # 1. Outils financiers (API OpenData réelles)
-    market_data = get_property_market_value(adresse)
+    surface = float(form.get("surface", 100) or 100)
+    type_bien = form.get("type_bien", "Maison") or "Maison"
+    market_data = get_property_market_value(adresse, surface, type_bien)
     rates_data = get_current_bank_rates()
     premium_data = calculate_risk_premium(score_global)
     tool_data = {"market": market_data, "rates": rates_data, "premium": premium_data}
@@ -332,29 +334,107 @@ def bank_decision_node(state: TyphoonState) -> dict:
         len(risques_identifies), len(prevention_recos), projection_data
     )
     
-    # 9. Construction du prompt utilisateur enrichi
+    # 9. Calculs déterministes supplémentaires (pour écraser TOUTE hallucination Mistral)
+    # Impact ESG
+    isolation_toit = (form.get("isolation_toiture") or "").lower()
+    impact_esg = "Passoire thermique" if isolation_toit == "faible" else "À évaluer"
+    if score_global <= 30 and "Prêt Vert" in premium_data.get("exigences_banque", []):
+        impact_esg = "Éligible au Prêt Vert"
+    
+    # Taux et financement
+    taux_propose_val = round(rates_data["taux_base_20_ans"] + premium_data["majoration_taux_interet"], 2)
+    
+    # Points à vérifier (déterministes)
+    pts_a_verifier = []
+    type_bien_lower = (form.get("type_bien") or "").lower()
+    if type_bien_lower not in ("terrain nu", ""):
+        pts_a_verifier.append("Vérifier le DPE du bien")
+    if form.get("annee_construction", 2000) < 1980:
+        pts_a_verifier.append("Demander le diagnostic électrique (bâti antérieur à 1980)")
+    if form.get("fissures") in ("Moyennes", "Importantes"):
+        pts_a_verifier.append("Faire expertiser les fissures déclarées par un bureau d'études")
+    if form.get("infiltrations") in ("Oui", "Majeures"):
+        pts_a_verifier.append("Vérifier l'absence d'infiltrations actives par visite sur place")
+    if form.get("etat_toiture") == "Mauvais":
+        pts_a_verifier.append("Faire réaliser un diagnostic toiture par un couvreur")
+    if not pts_a_verifier:
+        pts_a_verifier = ["Vérifier la conformité des déclarations par pièces justificatives"]
+    
+    # Garantie juridique
+    if "terrain" in type_bien_lower:
+        recommandation_garantie = "Garantie hypothécaire sur le terrain"
+    elif "appartement" in type_bien_lower or "immeuble" in type_bien_lower:
+        recommandation_garantie = "IPPD (Immeuble par destination)"
+    else:
+        recommandation_garantie = "Caution bancaire ou hypothèque conventionnelle"
+    
+    # 10. Construction du prompt utilisateur enrichi
     user_prompt = build_bank_user_prompt(
         form, score_global, tool_data, confidence_data, hard_stops,
         risques_identifies, projection_data
     )
     
-    # 10. Appel Mistral (avec fallback robuste)
+    # 11. Appel Mistral (avec fallback robuste)
     try:
         decision = call_mistral_and_validate(SYSTEM_PROMPT_BANK, user_prompt, BankDecision)
         bank_decision_dict = decision.model_dump()
-        # Forcer les valeurs déterministes
+        # Nettoyage des champs interdits (Mistral peut générer statut_dossier par mégarde)
+        bank_decision_dict.pop("statut_dossier", None)
+        # ═══════════════════════════════════════════════════════════════════
+        # ÉCRASEMENT TOTAL : Aucune valeur Mistral n'est gardée
+        # Tous les champs sont forcés avec des valeurs déterministes
+        # ═══════════════════════════════════════════════════════════════════
+        # Section 1 - Score
         bank_decision_dict["score_risque_bancaire"] = score_risque_bancaire
+        bank_decision_dict["score_climatique"] = score_global
         bank_decision_dict["niveau_risque_global"] = niveau
         bank_decision_dict["niveau_risque_bancaire"] = niveau
+        bank_decision_dict["impact_esg"] = impact_esg
         bank_decision_dict["indice_confiance"] = confidence_data['indice']
+        # Section 2 - Risques
         bank_decision_dict["risques_identifies"] = risques_identifies
-        bank_decision_dict["garanties_assurance"] = garanties
-        bank_decision_dict["prevention_recommandations"] = prevention_recos
-        bank_decision_dict["projection_risque"] = projection_data
+        bank_decision_dict["hard_stops"] = hard_stops
+        # Section 3 - Valeur
+        bank_decision_dict["valeur_marche"] = market_data["valeur_estimee"]
+        bank_decision_dict["valeur_ajustee"] = round(market_data["valeur_estimee"] * (1 - premium_data["decote_valeur_garantie_pct"] / 100))
+        bank_decision_dict["decote_pct"] = premium_data["decote_valeur_garantie_pct"]
         bank_decision_dict["source_valorisation"] = market_data.get("source", "")
+        # Section 4 - Assurance
+        bank_decision_dict["garanties_assurance"] = garanties
+        bank_decision_dict["recommandation_garantie"] = recommandation_garantie
+        # Section 5 - Prévention
+        bank_decision_dict["prevention_recommandations"] = prevention_recos
         bank_decision_dict["cout_total_prevention"] = _calc_cout_total(prevention_recos)
+        # Section 6 - Projection
+        bank_decision_dict["projection_risque"] = projection_data
+        # Section 7 - Rapport
         bank_decision_dict["rapport_synthetique"] = rapport_synth
         bank_decision_dict["synthese_points_cles"] = synthese_points
+        bank_decision_dict["avis_analyste"] = rapport_synth  # Fallback: utiliser le rapport synthétique
+        # Financier
+        bank_decision_dict["taux_propose"] = taux_propose_val
+        bank_decision_dict["majoration_taux"] = premium_data["majoration_taux_interet"]
+        bank_decision_dict["exigences"] = premium_data["exigences_banque"]
+        # Points forts/faibles
+        bank_decision_dict["points_forts"] = pts_forts[:3]
+        bank_decision_dict["points_faibles"] = pts_faibles[:4]
+        # Vérifications
+        # Source des taux (dynamique selon le scraper / .env / defaut)
+        taux_source = rates_data.get("source", "Banque de France")
+        taux_date = rates_data.get("date_publication", "N/A")
+        # Niveau de confiance = scraper MeilleurTaux = 90, .env = 70, defaut = 40
+        if "MeilleurTaux" in taux_source:
+            confiance_taux = 90
+        elif ".env" in taux_source.lower() or "env" in taux_source.lower():
+            confiance_taux = 70
+        else:
+            confiance_taux = 40
+        bank_decision_dict["source_taux"] = taux_source
+        bank_decision_dict["date_taux"] = taux_date
+        bank_decision_dict["confiance_taux"] = confiance_taux
+
+        bank_decision_dict["points_a_verifier"] = pts_a_verifier[:4]
+        bank_decision_dict["conditions_suspensives"] = ["Examen des diagnostics techniques obligatoires avant décaissement"]
         bank_decision_dict["analyse_complete_url"] = f"/api/bank/report/{state.session_id}/pdf"
     except Exception as e:
         logger.warning(f"Agent bancaire Mistral indisponible, fallback technique : {e}")
@@ -554,4 +634,8 @@ def _build_fallback_bank_decision(
         "points_faibles": pts_faibles[:4],
         "conditions_suspensives": ["Examen des diagnostics techniques obligatoires avant décaissement"],
         "hard_stops": hard_stops,
+        # Source des taux
+        "source_taux": rates_data.get("source", "Banque de France"),
+        "date_taux": rates_data.get("date_publication", "N/A"),
+        "confiance_taux": 90 if "MeilleurTaux" in rates_data.get("source", "") else (70 if ".env" in rates_data.get("source", "").lower() else 40),
     }
