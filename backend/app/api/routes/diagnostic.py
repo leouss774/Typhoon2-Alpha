@@ -102,10 +102,18 @@ class ZoneRequest(BaseModel):
 async def run_zone_diagnostic(payload: ZoneRequest) -> dict:
     """Évalue les risques climatiques sur une zone géographique.
 
-    Génère une grille d'échantillonnage régulière, score chaque point
-    avec les données simulées (ou réelles si collector_agent est branché),
-    et retourne l'agrégation complète : score global, distribution par péril,
-    worst-case, et la liste des points pour le rendu cartographique.
+    Génère une grille d'échantillonnage régulière et score chaque point
+    avec les VRAIES données (Géorisques, BDNB, IGN Altitude, Open-Meteo,
+    DVF local si les CSV du département sont présents — voir
+    app.agents.collector_agent.collect, appelé par run_zone_risk_assessment
+    avec Copernicus désactivé pour ce mode grille). Retourne l'agrégation
+    complète : score global, distribution par péril, worst-case, et la
+    liste des points pour le rendu cartographique.
+
+    Un point sans donnée exploitable (adresse non résolue par BDNB à cet
+    endroit précis, service externe temporairement indisponible...) est
+    consigné en erreur pour ce point et exclu des agrégats plutôt que de
+    faire échouer toute la requête.
     """
     logger.info(">>> POST /diagnostic/zone  bounds=%s", payload.bounds)
     t0 = time.perf_counter()
@@ -116,7 +124,6 @@ async def run_zone_diagnostic(payload: ZoneRequest) -> dict:
             spacing_km=payload.spacing_km,
             max_points=payload.max_points,
             land_only=payload.land_only,
-            collect_fn=None,  # Pas d'appels API réels → simulation géographique
         )
     except Exception as exc:
         logger.exception("zone_diagnostic -- echec bounds=%s", payload.bounds)

@@ -64,6 +64,16 @@ def assemble_contract(
     projection = climat_open_meteo.get("projection_2041_2050") or {}
     reference = climat_open_meteo.get("reference_2015_2024") or {}
 
+    # Source text for climate data
+    source_parts = ["Open-Meteo Climate API — moyenne des modèles climatiques, projection 2041-2050"]
+    if reference.get("temperature_max_moyenne_c") is not None:
+        source_parts.append(f"référence 2015-2024 : {reference['temperature_max_moyenne_c']}°C")
+
+    # Copernicus enrichment flag
+    climat_copernicus = building_data.get("climat_copernicus")
+    if climat_copernicus:
+        source_parts.append("+ données Copernicus CDS disponibles (climat_copernicus)")
+
     contract = {
         "adresse": adresse_info.get("label", ""),
         "bien": {
@@ -75,13 +85,23 @@ def assemble_contract(
         "score_global": risk_result["score_global"],
         "zones": risk_result["zones"],
         "projection_2050": risk_result["projection_2050"],
-        "climat_2050": {
-            "temperature_max_projetee_c": projection.get("temperature_max_moyenne_c"),
-            "source": (
-                "Open-Meteo Climate API — moyenne des modèles climatiques, "
-                "projection 2041-2050"
-                + (f" (référence 2015-2024 : {reference['temperature_max_moyenne_c']}°C)" if reference.get("temperature_max_moyenne_c") is not None else "")
-            ),
+        "climat": {
+            "2050": {
+                "temperature_max_projetee_c": projection.get("temperature_max_absolue_c") if projection.get("temperature_max_absolue_c") is not None else projection.get("temperature_max_moyenne_c"),
+                "temperature_max_moyenne_c": projection.get("temperature_max_moyenne_c"),
+                "precipitation_annuelle_moyenne_mm": projection.get("precipitation_annuelle_moyenne_mm"),
+                "jours_chaleur_extreme_par_an": projection.get("jours_chaleur_extreme_par_an"),
+            },
+            "reference_2015_2024": {
+                "temperature_max_absolue_c": reference.get("temperature_max_absolue_c"),
+                "temperature_max_moyenne_c": reference.get("temperature_max_moyenne_c"),
+                "precipitation_annuelle_moyenne_mm": reference.get("precipitation_annuelle_moyenne_mm"),
+                "jours_chaleur_extreme_par_an": reference.get("jours_chaleur_extreme_par_an"),
+            },
+            "source": " — ".join(source_parts),
+        },
+        "marche": {
+            "dvf_disponible": bool(building_data.get("dvf_local")),
         },
         # Metadonnees de fabrication, hors contrat frontend strict mais utiles
         # pour deboguer/auditer un diagnostic (ignorees par le rendu 3D).
@@ -89,8 +109,37 @@ def assemble_contract(
             "champs_ok": geometry_report["champs_ok"],
             "champs_manquants_bdnb": geometry_report["champs_manquants"],
         },
+        "_sources": {
+            "climat_open_meteo": bool(climat_open_meteo),
+            "climat_copernicus": bool(climat_copernicus),
+            "dvf_local": bool(building_data.get("dvf_local")),
+        },
         "_erreurs_collecte": building_data.get("erreurs", []),
     }
+
+    # DVF : enrichir la section marche si donnees disponibles
+    dvf_data = building_data.get("dvf_local")
+    if dvf_data:
+        contract["marche"]["nb_transactions"] = len(dvf_data)
+        # On garde un echantillon reduit pour le diagnostic promoteur
+        contract["marche"]["dernieres_transactions"] = dvf_data[:5]
+
+    # Copernicus : passe les donnees brutes en metadata (affichage conditionnel
+    # dans l'UX, cf. _sources.climat_copernicus)
+    if climat_copernicus:
+        contract["_sources"]["climat_copernicus_raw"] = climat_copernicus
+
+    logger.info(
+        "  -> contrat pret : score_global=%d, %d zone(s), geometry=%.1fx%.1fm / %d etage(s), dvf=%s, copernicus=%s",
+        contract["score_global"],
+        len(contract["zones"]),
+        geometry["largeur_m"],
+        geometry["longueur_m"],
+        geometry["floors_count"],
+        contract["marche"]["dvf_disponible"],
+        contract["_sources"]["climat_copernicus"],
+    )
+    return contract
 
     logger.info(
         "  -> contrat pret : score_global=%d, %d zone(s), geometry=%.1fx%.1fm / %d etage(s)",

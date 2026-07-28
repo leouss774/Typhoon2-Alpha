@@ -51,7 +51,17 @@ class Settings(BaseSettings):
     copernicus_enabled: bool = False
     copernicus_cache_dir: str = str(BASE_DIR / "data" / "lookup" / "copernicus")
 
-    # Lookup local DVF - meme logique de chemin absolu.
+    # Lookup local DVF - meme logique de chemin absolu. Les CSV par
+    # departement (voir backend/data/lookup/dvf/README.md) ne sont pas
+    # versionnes dans le repo et pesent lourd : chaque poste doit les
+    # telecharger localement. Ce flag permet de desactiver DVF en un
+    # instant sur un poste qui ne les a pas encore (evite de voir
+    # "dvf_local" en erreur sur chaque diagnostic), sans toucher au code.
+    # --- CHANGEZ ICI --- passez a False si les CSV ne sont pas presents
+    # sur ce poste. Vous pouvez aussi le definir via DVF_ENABLED=false
+    # dans .env (pratique pour ne pas modifier ce fichier vous-meme et
+    # eviter les allers-retours si plusieurs personnes partagent le repo).
+    dvf_enabled: bool = False
     dvf_lookup_dir: str = str(BASE_DIR / "data" / "lookup" / "dvf")
 
     # Mistral (agent recommandations — RAG travaux, cf.

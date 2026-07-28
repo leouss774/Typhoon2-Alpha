@@ -49,10 +49,7 @@
   #toggle-buttons button.active { background: #FF6B4A; border-color: #FF6B4A; color: #FFFFFF; font-weight: 700; }
   #global-score { margin-top: 10px; font-size: 12px; color: #7C8791; }
   #global-score strong { color: #1E2A33; font-size: 22px; text-shadow: 0 0 12px rgba(255,107,74,0.6); }
-  #temp-2050 { display: none; margin-top: 10px; padding-top: 10px; border-top: 1px solid #E7DED6; font-size: 12px; color: #7C8791; line-height: 1.5; }
-  #temp-2050.visible { display: block; }
-  #temp-2050 strong { color: #DC4B39; font-size: 15px; }
-  #temp-2050 .src { color: #A7ADB2; font-size: 10.5px; }
+  #climat-panel { display: none; }
 
   #info-panel {
     position: absolute; top: 20px; right: 20px; width: 320px; max-height: 78vh; overflow-y: auto;
@@ -1109,7 +1106,17 @@
     <button id="btn-2050">2050</button>
   </div>
   <div id="global-score">Score global : <strong id="score-value">--</strong> / 100</div>
-  <div id="temp-2050">Temp. max projetée 2050 : <strong id="temp-value">—</strong><br/><span class="src" id="temp-source">source —</span></div>
+  <div id="climat-panel">
+    <div style="font-size:11px;color:#FF6B4A;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px;">Projection climatique 2050</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 10px;">
+      <div><span style="color:#8B959D;font-size:10.5px;">🔥 Pic de chaleur max</span><br><strong id="temp-value" style="color:#DC4B39;font-size:15px;">—</strong></div>
+      <div><span style="color:#8B959D;font-size:10.5px;">Précipitations</span><br><strong id="precip-value" style="color:#1F9D6C;font-size:15px;">—</strong></div>
+      <div><span style="color:#8B959D;font-size:10.5px;">Jours canicule/an</span><br><strong id="canicule-value" style="color:#D98A2B;font-size:15px;">—</strong></div>
+      <div><span style="color:#8B959D;font-size:10.5px;">Sources</span><br><span id="climat-sources-badge" style="font-size:10px;color:#A7ADB2;">—</span></div>
+    </div>
+    <div id="copernicus-badge" style="display:none;margin-top:6px;background:#FFE4DA;color:#FF6B4A;font-size:10px;padding:3px 8px;border-radius:999px;font-weight:700;">☁ Données Copernicus disponibles</div>
+    <div id="dvf-badge" style="display:none;margin-top:4px;background:#E4F5EC;color:#1F9D6C;font-size:10px;padding:3px 8px;border-radius:999px;font-weight:700;">📊 Données de marché (DVF) disponibles</div>
+  </div>
 </div>
 
 <div id="info-panel">
@@ -1837,14 +1844,43 @@ function loadDataset(data) {
   buildHouse(data.geometry);
   fitCameraToHouse();
   document.getElementById('addr-line').textContent = data.adresse || '—';
-  const temp = data.climat_2050;
-  const tempPanel = document.getElementById('temp-2050');
-  if (temp && typeof temp.temperature_max_projetee_c === 'number') {
-    document.getElementById('temp-value').textContent = temp.temperature_max_projetee_c.toFixed(1) + ' °C';
-    document.getElementById('temp-source').textContent = 'source : ' + (temp.source || '—');
-    tempPanel.classList.add('visible');
-  } else {
-    tempPanel.classList.remove('visible');
+  const climat = data.climat;
+  const climPanel = document.getElementById('climat-panel');
+  if (climat && climat['2050']) {
+    const p2050 = climat['2050'];
+    // Le pic absolu (temperature_max_projetee_c = temperature_max_absolue_c de l'API) a la priorite
+    const picTemp = p2050.temperature_max_projetee_c;
+    if (typeof picTemp === 'number') {
+      document.getElementById('temp-value').textContent = picTemp.toFixed(1) + ' °C';
+    } else if (typeof p2050.temperature_max_moyenne_c === 'number') {
+      document.getElementById('temp-value').textContent = p2050.temperature_max_moyenne_c.toFixed(1) + ' °C (moy.)';
+    }
+    if (typeof p2050.precipitation_annuelle_moyenne_mm === 'number') {
+      document.getElementById('precip-value').textContent = p2050.precipitation_annuelle_moyenne_mm.toFixed(0) + ' mm/an';
+    } else {
+      document.getElementById('precip-value').textContent = 'N/C';
+    }
+    if (typeof p2050.jours_chaleur_extreme_par_an === 'number') {
+      document.getElementById('canicule-value').textContent = p2050.jours_chaleur_extreme_par_an.toFixed(1) + ' j/an';
+    } else {
+      document.getElementById('canicule-value').textContent = 'N/C';
+    }
+    document.getElementById('climat-sources-badge').textContent = climat.source || 'source —';
+    climPanel.style.display = 'block';
+    climPanel.style.marginTop = '10px';
+    climPanel.style.paddingTop = '10px';
+    climPanel.style.borderTop = '1px solid #E7DED6';
+    climPanel.style.fontSize = '12px';
+    climPanel.style.color = '#7C8791';
+    climPanel.style.lineHeight = '1.5';
+  }
+
+  // Badges sources conditionnelles
+  if (data._sources && data._sources.climat_copernicus) {
+    document.getElementById('copernicus-badge').style.display = 'block';
+  }
+  if (data.marche && data.marche.dvf_disponible) {
+    document.getElementById('dvf-badge').style.display = 'block';
   }
   document.getElementById('info-panel').style.display = 'none';
   setYear(2025, true);
