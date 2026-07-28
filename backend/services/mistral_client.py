@@ -56,25 +56,47 @@ def _mock_completion(system_prompt: str, user_prompt: str) -> str:
     
     if "Analyste Crédit IA" in system_prompt:
         return """{
+  "score_risque_bancaire": 42,
+  "score_climatique": 30,
+  "niveau_risque_global": "Modéré",
+  "impact_esg": "Éligible au Prêt Vert",
+  "risques_identifies": [
+    {"nom": "Retrait-gonflement des argiles", "score": 45, "niveau": "modere", "zone_impactee": "Fondations", "description": "Aléa RGA présent selon Géorisques"},
+    {"nom": "Inondation / humidité", "score": 30, "niveau": "modere", "zone_impactee": "Sous-sol", "description": "Proximité cours d'eau et remontée de nappe potentielle"}
+  ],
   "valeur_marche": 400000,
   "valeur_ajustee": 380000,
   "decote_pct": 5,
+  "source_valorisation": "OpenData DVF (Temps Réel)",
+  "garanties_assurance": [
+    {"type": "Multirisque habitation standard", "obligatoire": true, "detail": "Couverture incendie, dégâts des eaux, tempête"},
+    {"type": "Assurance Catastrophes Naturelles", "obligatoire": true, "detail": "Couverture réglementaire inondation, séisme"}
+  ],
+  "recommandation_garantie": "Caution bancaire",
+  "prevention_recommandations": [
+    {"zone": "sous_sol", "travaux": "Pose de batardeaux amovibles étanches", "cout_estime": "800€", "gain_resilience": 60, "priorite": 1, "aide_financiere": "Fonds Barnier"}
+  ],
+  "cout_total_prevention": "800€",
+  "projection_risque": {
+    "horizon": "2050", "score_actuel": 30, "score_projete": 42,
+    "aggravation": 12, "scenario": "CMIP6 EC_Earth3P_HR (≈RCP8.5)",
+    "zones_projetees": {"fondations": {"risque_projete": 55, "evolution": "+10 points"}}
+  },
+  "niveau_risque_bancaire": "Modéré",
+  "indice_confiance": 85,
+  "avis_analyste": "Le risque climatique est modéré mais nécessite une décote préventive sur la valeur de garantie. L'indice de confiance est bon, mais la vérification des points déclaratifs reste requise.",
+  "rapport_synthetique": "RAPPORT D'ANALYSE DE RISQUE CRÉDIT\n\n1. Synthèse du risque : Le bien présente un niveau de risque modéré (score bancaire 42/100, score climatique 30/100). L'indice de confiance des données est de 85%.\n2. Risques identifiés : 2 risque(s) principal(aux) identifié(s) nécessitant une attention particulière.\n3. Points forts : Valorisation DVF réelle : 400000€; Données déclaratives cohérentes (KYC favorable).\n4. Points de vigilance : Score climatique élevé (30/100).\n5. Projection 2050 : L'évolution climatique attendue aggrave le profil de risque.\n6. Recommandation : Analyse humaine requise — ce rapport est un outil d'aide à la décision. L'analyste crédit doit examiner les points de vigilance identifiés.",
+  "synthese_points_cles": ["Score risque bancaire : 42/100 (Modéré)", "2 risque(s) climatique(s) identifié(s)", "1 action(s) de prévention recommandée(s)", "Projection 2050 : aggravation de +12 points (42/100)"],
+  "analyse_complete_url": "/api/bank/report/test-session/pdf",
   "taux_propose": 3.85,
   "majoration_taux": 0.15,
   "exigences": ["Audit énergétique", "Assurance multirisque renforcée"],
   "points_a_verifier": ["Vérifier le DPE de la maison", "Confirmer l'année de construction"],
-  "indice_confiance": 85,
-  "score_climatique": 30,
-  "score_risque_bancaire": 40,
-  "statut_dossier": "Étude Manuelle",
-  "niveau_risque_global": "Faible",
-  "impact_esg": "Éligible au Prêt Vert",
-  "points_forts": ["Bon DPE", "Construction récente"],
+  "points_forts": ["Valorisation DVF réelle : 400000€", "Données déclaratives cohérentes (KYC favorable)"],
   "points_faibles": ["Absence de données DVF"],
   "recommandation_garantie": "Caution bancaire",
   "conditions_suspensives": ["Remise du DPE sous 30 jours"],
-  "hard_stops": [],
-  "avis_analyste": "Le risque climatique est modéré mais nécessite une décote préventive sur la valeur de garantie. L'indice de confiance est bon, mais la vérification des points déclaratifs reste requise."
+  "hard_stops": []
 }"""
 
     return """{

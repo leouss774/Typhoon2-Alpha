@@ -21,6 +21,7 @@ from typing import Any
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel
 
 # Imports de l'orchestrateur
@@ -214,6 +215,95 @@ async def test_vulnerabilite(req: VulnerabilityTestRequest):
             "Une étude plus approfondie est recommandée",
         ],
     }
+
+
+@app.get("/api/bank/report/{session_id}/pdf")
+async def download_report_pdf(session_id: str):
+    """Génère et télécharge le rapport d'analyse complet au format PDF.
+    
+    Pour l'instant, retourne un rapport texte formaté.
+    En production, utiliser reportlab, weasyprint ou un template HTML → PDF.
+    """
+    analysis = analyses_store.get(session_id)
+    if not analysis:
+        raise HTTPException(status_code=404, detail="Analyse introuvable")
+    
+    db = analysis.get("decision_bancaire", {}) or {}
+    if not db:
+        raise HTTPException(status_code=404, detail="Décision bancaire introuvable")
+    
+    # Construction du rapport texte (sera remplacé par un vrai PDF)
+    report_lines = []
+    report_lines.append("=" * 60)
+    report_lines.append("  RAPPORT D'ANALYSE DE RISQUE CRÉDIT")
+    report_lines.append("  Outil d'aide à la décision — Aucune décision automatique")
+    report_lines.append("=" * 60)
+    report_lines.append(f"")
+    report_lines.append(f"Bien : {analysis.get('adresse', 'N/A')}")
+    report_lines.append(f"Session : {session_id}")
+    report_lines.append(f"Date : {analysis.get('date_analyse', 'N/A')}")
+    report_lines.append(f"")
+    report_lines.append("─" * 60)
+    report_lines.append("📊 SCORE DE RISQUE DU BIEN")
+    report_lines.append("─" * 60)
+    report_lines.append(f"  Score risque bancaire : {db.get('score_risque_bancaire', 'N/A')}/100")
+    report_lines.append(f"  Score climatique : {db.get('score_climatique', 'N/A')}/100")
+    report_lines.append(f"  Niveau de risque : {db.get('niveau_risque_global', 'N/A')}")
+    report_lines.append(f"  Impact ESG : {db.get('impact_esg', 'N/A')}")
+    report_lines.append(f"  Indice de confiance : {db.get('indice_confiance', 'N/A')}%")
+    report_lines.append(f"")
+    report_lines.append("─" * 60)
+    report_lines.append("⚠️ PRINCIPAUX RISQUES IDENTIFIÉS")
+    report_lines.append("─" * 60)
+    for r in (db.get("risques_identifies") or []):
+        report_lines.append(f"  • {r.get('nom')}: {r.get('score')}/100 — {r.get('zone_impactee')}")
+        if r.get('description'):
+            report_lines.append(f"    {r['description'][:120]}")
+    report_lines.append(f"")
+    report_lines.append("─" * 60)
+    report_lines.append("💰 ÉVALUATION FINANCIÈRE")
+    report_lines.append("─" * 60)
+    report_lines.append(f"  Valeur de marché : {db.get('valeur_marche', 'N/A')} €")
+    report_lines.append(f"  Décote appliquée : {db.get('decote_pct', 0)}%")
+    report_lines.append(f"  Valeur ajustée : {db.get('valeur_ajustee', 'N/A')} €")
+    report_lines.append(f"  Taux proposé : {db.get('taux_propose', 'N/A')}%")
+    report_lines.append(f"")
+    report_lines.append("─" * 60)
+    report_lines.append("🛡️ GARANTIES D'ASSURANCE RECOMMANDÉES")
+    report_lines.append("─" * 60)
+    for g in (db.get("garanties_assurance") or []):
+        report_lines.append(f"  {'🔴' if g.get('obligatoire') else '🟡'} {g.get('type')}")
+        if g.get('detail'):
+            report_lines.append(f"     {g['detail'][:100]}")
+    report_lines.append(f"")
+    report_lines.append("─" * 60)
+    report_lines.append("🏗️ RECOMMANDATIONS DE PRÉVENTION")
+    report_lines.append("─" * 60)
+    for p in (db.get("prevention_recommandations") or [])[:5]:
+        report_lines.append(f"  #{p.get('priorite')} [{p.get('zone')}] {p.get('travaux')}")
+        report_lines.append(f"     Coût: {p.get('cout_estime')} | Gain: +{p.get('gain_resilience')}%")
+    report_lines.append(f"")
+    report_lines.append("─" * 60)
+    report_lines.append("📄 RAPPORT SYNTHÉTIQUE")
+    report_lines.append("─" * 60)
+    rapport = db.get("rapport_synthetique", "")
+    for line in rapport.split("\n"):
+        report_lines.append(f"  {line}")
+    report_lines.append(f"")
+    report_lines.append("=" * 60)
+    report_lines.append("  Document généré automatiquement — Outil d'aide à la décision")
+    report_lines.append("  Aucune décision d'acceptation ou de refus n'est contenue dans ce rapport.")
+    report_lines.append("=" * 60)
+    
+    report_text = "\n".join(report_lines)
+    
+    return PlainTextResponse(
+        content=report_text,
+        media_type="text/plain; charset=utf-8",
+        headers={
+            "Content-Disposition": f"attachment; filename=rapport-credit-{session_id}.txt"
+        }
+    )
 
 
 if __name__ == "__main__":
