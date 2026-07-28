@@ -1,0 +1,964 @@
+{
+  "property_id": "TY-2026-000007",
+  "generated_at": "2026-07-28T10:56:43.663644+00:00",
+  "building": {
+    "address": "26 Rue Victor Hugo 37140 Bourgueil",
+    "construction_year": 1850,
+    "building_type": "Résidentiel individuel",
+    "materials": "meuliere",
+    "floors": 2,
+    "roof": "deux_pans (ardoises)",
+    "geometry": {
+      "footprint_shape": "rectangulaire",
+      "largeur_m": 9.83,
+      "longueur_m": 20.19,
+      "orientation_deg": 16.1,
+      "floors_count": 2,
+      "hauteur_sous_plafond_m": 2.5,
+      "roof_shape": "deux_pans",
+      "pente_toit_deg": 42.0,
+      "materiau_mur": "meuliere",
+      "materiau_toiture": "ardoises",
+      "has_basement": true,
+      "has_cellar": false,
+      "has_garage": false,
+      "has_garden": false
+    }
+  },
+  "scores": {
+    "overall": 40,
+    "climate": 42,
+    "insurance": 40
+  },
+  "risk_summary": {
+    "highest_risk": "sous_sol",
+    "risk_level": "eleve",
+    "main_hazard": "Inondation / remontée de nappe"
+  },
+  "recommendations": [
+    {
+      "mesure": "Vérifier l’état des structures portantes en maçonnerie et remédier aux éventuelles infiltrations ou stagnations d’eau.",
+      "type": "recommandation_source",
+      "cout_estime": null,
+      "aide": {
+        "dispositif": null,
+        "conditions": null,
+        "statut": "potential_eligibility_only"
+      },
+      "sources": [
+        {
+          "fiche_id": "REF-0016",
+          "source_id": "S01",
+          "extrait_exact": "2.1 ÉLÉMENTS DE STRUCTURE EN MAÇONNERIE Vériﬁer l’état des structures portantes et remédier aux éventuelles inﬁltrations ou stagnations d’eau."
+        }
+      ],
+      "zone": "fondations"
+    },
+    {
+      "mesure": "Isolation thermique des murs pour réduire l'impact des canicules, incluant les murs exposés au sud.",
+      "type": "info_aide",
+      "cout_estime": {
+        "montant_min": null,
+        "montant_max": 15000,
+        "devise": "EUR",
+        "unite": "total",
+        "date_estimation": null,
+        "zone_geo": "France métropolitaine et DROM",
+        "hypotheses": "Coût total des travaux, cumulable avec d'autres aides sous conditions."
+      },
+      "aide": {
+        "dispositif": "Aide Action Logement (subvention)",
+        "conditions": "Propriétaire occupant ou bailleur sous conditions de ressources. Logement en résidence principale. Travaux réalisés par un professionnel RGE avec AMO. Cumul possible avec ANAH, éco-PTZ ou aides locales dans la limite du coût total.",
+        "statut": "potential_eligibility_only"
+      },
+      "sources": [
+        {
+          "fiche_id": "REF-0316",
+          "source_id": "S03",
+          "extrait_exact": "15 000 € maximum sous forme de subvention."
+        },
+        {
+          "fiche_id": "REF-0316",
+          "source_id": "S03",
+          "extrait_exact": "Les travaux sont à réaliser par un professionnel portant le label RGE et doivent inclure l’intervention d’un opérateur d’assistance à maîtrise d’ouvrage (AMO)."
+        },
+        {
+          "fiche_id": "REF-0316",
+          "source_id": "S03",
+          "extrait_exact": "Subvention pour travaux de rénovation énergétique, incluant isolation thermique des murs, planchers ou combles, remplacement du système de chauffage, ou équipement utilisant une source d'énergie renouvelable."
+        }
+      ],
+      "zone": "murs_sud"
+    },
+    {
+      "mesure": "Subvention complémentaire pour travaux de rénovation énergétique, incluant l'isolation thermique des murs exposés au sud.",
+      "type": "info_aide",
+      "cout_estime": null,
+      "aide": {
+        "dispositif": "Aide et prêt Action Logement",
+        "conditions": "5 000 € maximum sous forme de subvention. Cumul possible avec d'autres aides sous conditions.",
+        "statut": "potential_eligibility_only"
+      },
+      "sources": [
+        {
+          "fiche_id": "REF-0322",
+          "source_id": "S03",
+          "extrait_exact": "5 000 € maximum, sous forme de subvention."
+        },
+        {
+          "fiche_id": "REF-0322",
+          "source_id": "S03",
+          "extrait_exact": "Aide cumulable, sous conditions et dans la limite du coût total des travaux, avec les aides de l’ANAH, la CNAV et des conseils départementaux."
+        }
+      ],
+      "zone": "murs_sud"
+    },
+    {
+      "mesure": "Vérifier l’état des parachèvements intérieurs sous la toiture (taches d’humidité, moisissures, corrosion, flèche).",
+      "type": "recommandation_source",
+      "cout_estime": null,
+      "aide": {
+        "dispositif": null,
+        "conditions": null,
+        "statut": "potential_eligibility_only"
+      },
+      "sources": [
+        {
+          "fiche_id": "REF-0034",
+          "source_id": "S01",
+          "extrait_exact": "Vérification de l’état des parachèvements intérieurs situés sous la toiture ou au voisinage de celle-ci (présence de taches d’humidité, développement de moisissures, corrosion de tôles d’acier profilées, flèche, etc.)."
+        }
+      ],
+      "zone": "toiture"
+    },
+    {
+      "mesure": "Inspection générale de l’étanchéité (plis, affaissement, vieillissement, décollement, etc.), contrôle des raccords avec les avaloirs, tuyaux de descente, gargouilles, joints de mastic, couche de protection, solins, profils, joints de dilatation, et usure prématurée aux endroits de circulation fréquente.",
+      "type": "recommandation_source",
+      "cout_estime": null,
+      "aide": {
+        "dispositif": null,
+        "conditions": null,
+        "statut": "potential_eligibility_only"
+      },
+      "sources": [
+        {
+          "fiche_id": "REF-0071",
+          "source_id": "S01",
+          "extrait_exact": "Au moins une fois par an (par exemple, après l’hiver): inspection générale de l’étanchéité [...] contrôle des raccords avec les avaloirs, les tuyaux de descente, les gargouilles [...] contrôle des joints de mastic [...] contrôle de l’éventuelle couche de protection, des solins, des proﬁlés, des joints de dilatation [...] contrôle de l’usure prématurée ou des dégradations aux endroits où la circulation est fréquente."
+        }
+      ],
+      "zone": "toiture"
+    },
+    {
+      "mesure": "Vérification régulière des soudures, joints, couvre-joints et fixations de la toiture.",
+      "type": "recommandation_source",
+      "cout_estime": null,
+      "aide": null,
+      "sources": [
+        {
+          "fiche_id": "REF-0069",
+          "source_id": "S01",
+          "extrait_exact": "Vériﬁcation des soudures, joints, couvre-joints et ﬁxations."
+        }
+      ],
+      "zone": "toiture"
+    },
+    {
+      "mesure": "Vérification de l’état du lestage et remise en place si nécessaire pour éviter le soulèvement des panneaux d’isolation thermique par le vent.",
+      "type": "recommandation_source",
+      "cout_estime": null,
+      "aide": null,
+      "sources": [
+        {
+          "fiche_id": "REF-0072",
+          "source_id": "S01",
+          "extrait_exact": "Après une période de vent violent, on procédera à une vériﬁcation de l’état du lestage et à sa remise en place si nécessaire."
+        }
+      ],
+      "zone": "toiture"
+    },
+    {
+      "mesure": "Procéder à un contrôle supplémentaire des éléments d'assainissement et des conduites enterrées (séparateurs de graisses/hydrocarbures, fosses septiques, stations d'épuration individuelle, pompes de relevage, avaloirs, clapets anticrue, etc.).",
+      "type": "recommandation_source",
+      "cout_estime": null,
+      "aide": {
+        "dispositif": null,
+        "conditions": null,
+        "statut": "potential_eligibility_only"
+      },
+      "sources": [
+        {
+          "fiche_id": "REF-0001",
+          "source_id": "S01",
+          "extrait_exact": "En cas de conditions météorologiques extrêmes, il est nécessaire de procéder à un contrôle supplémentaire."
+        },
+        {
+          "fiche_id": "REF-0001",
+          "source_id": "S01",
+          "extrait_exact": "examen visuel de l’état du dispositif de fermeture et de son étanchéité, des canalisations pénétrant dans l’appareil et les éventuels dispositifs d’accès"
+        },
+        {
+          "fiche_id": "REF-0001",
+          "source_id": "S01",
+          "extrait_exact": "vidange et nettoyage (ﬁltre et ﬂotteur éventuel en particulier)"
+        },
+        {
+          "fiche_id": "REF-0001",
+          "source_id": "S01",
+          "extrait_exact": "Contrôle des pompes automatiques de relevage des eaux: contrôler le fonctionnement automatique, l’étanchéité des raccords, l’état de la station et des vannes"
+        },
+        {
+          "fiche_id": "REF-0001",
+          "source_id": "S01",
+          "extrait_exact": "Contrôle de leur fonctionnement. Curage des appareils. Vériﬁcation de leur étanchéité."
+        }
+      ],
+      "zone": "sous_sol"
+    },
+    {
+      "mesure": "Contrôler l’état du sol au voisinage du réseau d’égout pour détecter les affouillements susceptibles d’aggraver les risques d’inondation ou de ruissellement.",
+      "type": "recommandation_source",
+      "cout_estime": null,
+      "aide": {
+        "dispositif": null,
+        "conditions": null,
+        "statut": "potential_eligibility_only"
+      },
+      "sources": [
+        {
+          "fiche_id": "REF-0005",
+          "source_id": "S01",
+          "extrait_exact": "L’état du sol au voisinage du réseau d’égout est contrôlé aﬁn de déceler les éventuels affouillements."
+        }
+      ],
+      "zone": "sous_sol"
+    },
+    {
+      "mesure": "Vérifier l’étanchéité des fosses septiques et des raccordements aux canalisations pour prévenir les infiltrations d’eau ou les fuites en cas d’inondation.",
+      "type": "recommandation_source",
+      "cout_estime": null,
+      "aide": {
+        "dispositif": null,
+        "conditions": null,
+        "statut": "potential_eligibility_only"
+      },
+      "sources": [
+        {
+          "fiche_id": "REF-0004",
+          "source_id": "S01",
+          "extrait_exact": "vériﬁcation de l’étanchéité de la fosse."
+        },
+        {
+          "fiche_id": "REF-0004",
+          "source_id": "S01",
+          "extrait_exact": "vériﬁer l’état du bac de décantation et des raccords avec les canalisations"
+        }
+      ],
+      "zone": "sous_sol"
+    },
+    {
+      "mesure": "Vérifier l'état, l'étanchéité, les fixations et scellements des canalisations et entonnoirs d'évacuation des eaux pluviales. Contrôler et curer si nécessaire les canalisations et accessoires pour éviter les obstructions.",
+      "type": "recommandation_source",
+      "cout_estime": null,
+      "aide": null,
+      "sources": [
+        {
+          "fiche_id": "REF-0272",
+          "source_id": "S01",
+          "extrait_exact": "Vériﬁcation de l’état, de l’étanchéité, des ﬁxations et scellements des canalisations et entonnoirs. Contrôle et curage éventuel des canalisations et accessoires."
+        }
+      ],
+      "zone": "sous_sol"
+    }
+  ],
+  "digital_twin": {
+    "adresse": "26 Rue Victor Hugo 37140 Bourgueil",
+    "bien": {
+      "type": "Résidentiel individuel",
+      "annee_construction": 1850,
+      "coordonnees": {
+        "lat": 47.283669,
+        "lon": 0.169251
+      }
+    },
+    "geometry": {
+      "footprint_shape": "rectangulaire",
+      "largeur_m": 9.83,
+      "longueur_m": 20.19,
+      "orientation_deg": 16.1,
+      "floors_count": 2,
+      "hauteur_sous_plafond_m": 2.5,
+      "roof_shape": "deux_pans",
+      "pente_toit_deg": 42.0,
+      "materiau_mur": "meuliere",
+      "materiau_toiture": "ardoises",
+      "has_basement": true,
+      "has_cellar": false,
+      "has_garage": false,
+      "has_garden": false
+    },
+    "score_global": 40,
+    "zones": {
+      "fondations": {
+        "risque": 37,
+        "niveau": "modere",
+        "alea_principal": "Retrait-gonflement des argiles",
+        "justification": "aléa retrait-gonflement des argiles = « Moyen » (BDNB, au niveau du bâtiment). 0 cavité(s) souterraine(s) recensée(s), 0 mouvement(s) de terrain référencé(s) à proximité, 1 arrêté(s) CATNAT correspondant(s). zone de sismicité non déterminée pour cette commune (valeur de repli faible).",
+        "recommandations": [
+          {
+            "mesure": "Vérifier l’état des structures portantes en maçonnerie et remédier aux éventuelles infiltrations ou stagnations d’eau.",
+            "type": "recommandation_source",
+            "cout_estime": null,
+            "aide": {
+              "dispositif": null,
+              "conditions": null,
+              "statut": "potential_eligibility_only"
+            },
+            "sources": [
+              {
+                "fiche_id": "REF-0016",
+                "source_id": "S01",
+                "extrait_exact": "2.1 ÉLÉMENTS DE STRUCTURE EN MAÇONNERIE Vériﬁer l’état des structures portantes et remédier aux éventuelles inﬁltrations ou stagnations d’eau."
+              }
+            ],
+            "zone": "fondations"
+          }
+        ]
+      },
+      "murs_nord": {
+        "risque": 33,
+        "niveau": "modere",
+        "alea_principal": "Infiltration (exposition nord)",
+        "justification": "précipitations annuelles non disponibles (Open-Meteo). jours de chaleur extrême non disponibles (Open-Meteo). zone de sismicité non déterminée pour cette commune (valeur de repli faible). Delta d'exposition directionnelle (heuristique, non mesurée par Géorisques).",
+        "recommandations": []
+      },
+      "murs_sud": {
+        "risque": 21,
+        "niveau": "faible",
+        "alea_principal": "Stress thermique (exposition sud)",
+        "justification": "précipitations annuelles non disponibles (Open-Meteo). jours de chaleur extrême non disponibles (Open-Meteo). zone de sismicité non déterminée pour cette commune (valeur de repli faible). Delta d'exposition directionnelle (heuristique, non mesurée par Géorisques).",
+        "recommandations": [
+          {
+            "mesure": "Isolation thermique des murs pour réduire l'impact des canicules, incluant les murs exposés au sud.",
+            "type": "info_aide",
+            "cout_estime": {
+              "montant_min": null,
+              "montant_max": 15000,
+              "devise": "EUR",
+              "unite": "total",
+              "date_estimation": null,
+              "zone_geo": "France métropolitaine et DROM",
+              "hypotheses": "Coût total des travaux, cumulable avec d'autres aides sous conditions."
+            },
+            "aide": {
+              "dispositif": "Aide Action Logement (subvention)",
+              "conditions": "Propriétaire occupant ou bailleur sous conditions de ressources. Logement en résidence principale. Travaux réalisés par un professionnel RGE avec AMO. Cumul possible avec ANAH, éco-PTZ ou aides locales dans la limite du coût total.",
+              "statut": "potential_eligibility_only"
+            },
+            "sources": [
+              {
+                "fiche_id": "REF-0316",
+                "source_id": "S03",
+                "extrait_exact": "15 000 € maximum sous forme de subvention."
+              },
+              {
+                "fiche_id": "REF-0316",
+                "source_id": "S03",
+                "extrait_exact": "Les travaux sont à réaliser par un professionnel portant le label RGE et doivent inclure l’intervention d’un opérateur d’assistance à maîtrise d’ouvrage (AMO)."
+              },
+              {
+                "fiche_id": "REF-0316",
+                "source_id": "S03",
+                "extrait_exact": "Subvention pour travaux de rénovation énergétique, incluant isolation thermique des murs, planchers ou combles, remplacement du système de chauffage, ou équipement utilisant une source d'énergie renouvelable."
+              }
+            ],
+            "zone": "murs_sud"
+          },
+          {
+            "mesure": "Subvention complémentaire pour travaux de rénovation énergétique, incluant l'isolation thermique des murs exposés au sud.",
+            "type": "info_aide",
+            "cout_estime": null,
+            "aide": {
+              "dispositif": "Aide et prêt Action Logement",
+              "conditions": "5 000 € maximum sous forme de subvention. Cumul possible avec d'autres aides sous conditions.",
+              "statut": "potential_eligibility_only"
+            },
+            "sources": [
+              {
+                "fiche_id": "REF-0322",
+                "source_id": "S03",
+                "extrait_exact": "5 000 € maximum, sous forme de subvention."
+              },
+              {
+                "fiche_id": "REF-0322",
+                "source_id": "S03",
+                "extrait_exact": "Aide cumulable, sous conditions et dans la limite du coût total des travaux, avec les aides de l’ANAH, la CNAV et des conseils départementaux."
+              }
+            ],
+            "zone": "murs_sud"
+          }
+        ]
+      },
+      "murs_est": {
+        "risque": 25,
+        "niveau": "faible",
+        "alea_principal": "Vent",
+        "justification": "précipitations annuelles non disponibles (Open-Meteo). jours de chaleur extrême non disponibles (Open-Meteo). zone de sismicité non déterminée pour cette commune (valeur de repli faible). Delta d'exposition directionnelle (heuristique, non mesurée par Géorisques).",
+        "recommandations": []
+      },
+      "murs_ouest": {
+        "risque": 37,
+        "niveau": "modere",
+        "alea_principal": "Intempéries (exposition ouest dominante)",
+        "justification": "précipitations annuelles non disponibles (Open-Meteo). jours de chaleur extrême non disponibles (Open-Meteo). zone de sismicité non déterminée pour cette commune (valeur de repli faible). Delta d'exposition directionnelle (heuristique, non mesurée par Géorisques).",
+        "recommandations": []
+      },
+      "toiture": {
+        "risque": 36,
+        "niveau": "modere",
+        "alea_principal": "Canicule / stress thermique",
+        "justification": "jours de chaleur extrême non disponibles (Open-Meteo). précipitations annuelles non disponibles (Open-Meteo). Toiture antérieure à 1970 (majoration +10).",
+        "recommandations": [
+          {
+            "mesure": "Vérifier l’état des parachèvements intérieurs sous la toiture (taches d’humidité, moisissures, corrosion, flèche).",
+            "type": "recommandation_source",
+            "cout_estime": null,
+            "aide": {
+              "dispositif": null,
+              "conditions": null,
+              "statut": "potential_eligibility_only"
+            },
+            "sources": [
+              {
+                "fiche_id": "REF-0034",
+                "source_id": "S01",
+                "extrait_exact": "Vérification de l’état des parachèvements intérieurs situés sous la toiture ou au voisinage de celle-ci (présence de taches d’humidité, développement de moisissures, corrosion de tôles d’acier profilées, flèche, etc.)."
+              }
+            ],
+            "zone": "toiture"
+          },
+          {
+            "mesure": "Inspection générale de l’étanchéité (plis, affaissement, vieillissement, décollement, etc.), contrôle des raccords avec les avaloirs, tuyaux de descente, gargouilles, joints de mastic, couche de protection, solins, profils, joints de dilatation, et usure prématurée aux endroits de circulation fréquente.",
+            "type": "recommandation_source",
+            "cout_estime": null,
+            "aide": {
+              "dispositif": null,
+              "conditions": null,
+              "statut": "potential_eligibility_only"
+            },
+            "sources": [
+              {
+                "fiche_id": "REF-0071",
+                "source_id": "S01",
+                "extrait_exact": "Au moins une fois par an (par exemple, après l’hiver): inspection générale de l’étanchéité [...] contrôle des raccords avec les avaloirs, les tuyaux de descente, les gargouilles [...] contrôle des joints de mastic [...] contrôle de l’éventuelle couche de protection, des solins, des proﬁlés, des joints de dilatation [...] contrôle de l’usure prématurée ou des dégradations aux endroits où la circulation est fréquente."
+              }
+            ],
+            "zone": "toiture"
+          },
+          {
+            "mesure": "Vérification régulière des soudures, joints, couvre-joints et fixations de la toiture.",
+            "type": "recommandation_source",
+            "cout_estime": null,
+            "aide": null,
+            "sources": [
+              {
+                "fiche_id": "REF-0069",
+                "source_id": "S01",
+                "extrait_exact": "Vériﬁcation des soudures, joints, couvre-joints et ﬁxations."
+              }
+            ],
+            "zone": "toiture"
+          },
+          {
+            "mesure": "Vérification de l’état du lestage et remise en place si nécessaire pour éviter le soulèvement des panneaux d’isolation thermique par le vent.",
+            "type": "recommandation_source",
+            "cout_estime": null,
+            "aide": null,
+            "sources": [
+              {
+                "fiche_id": "REF-0072",
+                "source_id": "S01",
+                "extrait_exact": "Après une période de vent violent, on procédera à une vériﬁcation de l’état du lestage et à sa remise en place si nécessaire."
+              }
+            ],
+            "zone": "toiture"
+          }
+        ]
+      },
+      "sous_sol": {
+        "risque": 70,
+        "niveau": "eleve",
+        "alea_principal": "Inondation / remontée de nappe",
+        "justification": "6 arrêté(s) CATNAT inondation recensé(s) sur la commune ; aléa inondation présent dans le référentiel Géorisques communal. potentiel radon non déterminé (valeur de repli faible).",
+        "recommandations": [
+          {
+            "mesure": "Procéder à un contrôle supplémentaire des éléments d'assainissement et des conduites enterrées (séparateurs de graisses/hydrocarbures, fosses septiques, stations d'épuration individuelle, pompes de relevage, avaloirs, clapets anticrue, etc.).",
+            "type": "recommandation_source",
+            "cout_estime": null,
+            "aide": {
+              "dispositif": null,
+              "conditions": null,
+              "statut": "potential_eligibility_only"
+            },
+            "sources": [
+              {
+                "fiche_id": "REF-0001",
+                "source_id": "S01",
+                "extrait_exact": "En cas de conditions météorologiques extrêmes, il est nécessaire de procéder à un contrôle supplémentaire."
+              },
+              {
+                "fiche_id": "REF-0001",
+                "source_id": "S01",
+                "extrait_exact": "examen visuel de l’état du dispositif de fermeture et de son étanchéité, des canalisations pénétrant dans l’appareil et les éventuels dispositifs d’accès"
+              },
+              {
+                "fiche_id": "REF-0001",
+                "source_id": "S01",
+                "extrait_exact": "vidange et nettoyage (ﬁltre et ﬂotteur éventuel en particulier)"
+              },
+              {
+                "fiche_id": "REF-0001",
+                "source_id": "S01",
+                "extrait_exact": "Contrôle des pompes automatiques de relevage des eaux: contrôler le fonctionnement automatique, l’étanchéité des raccords, l’état de la station et des vannes"
+              },
+              {
+                "fiche_id": "REF-0001",
+                "source_id": "S01",
+                "extrait_exact": "Contrôle de leur fonctionnement. Curage des appareils. Vériﬁcation de leur étanchéité."
+              }
+            ],
+            "zone": "sous_sol"
+          },
+          {
+            "mesure": "Contrôler l’état du sol au voisinage du réseau d’égout pour détecter les affouillements susceptibles d’aggraver les risques d’inondation ou de ruissellement.",
+            "type": "recommandation_source",
+            "cout_estime": null,
+            "aide": {
+              "dispositif": null,
+              "conditions": null,
+              "statut": "potential_eligibility_only"
+            },
+            "sources": [
+              {
+                "fiche_id": "REF-0005",
+                "source_id": "S01",
+                "extrait_exact": "L’état du sol au voisinage du réseau d’égout est contrôlé aﬁn de déceler les éventuels affouillements."
+              }
+            ],
+            "zone": "sous_sol"
+          },
+          {
+            "mesure": "Vérifier l’étanchéité des fosses septiques et des raccordements aux canalisations pour prévenir les infiltrations d’eau ou les fuites en cas d’inondation.",
+            "type": "recommandation_source",
+            "cout_estime": null,
+            "aide": {
+              "dispositif": null,
+              "conditions": null,
+              "statut": "potential_eligibility_only"
+            },
+            "sources": [
+              {
+                "fiche_id": "REF-0004",
+                "source_id": "S01",
+                "extrait_exact": "vériﬁcation de l’étanchéité de la fosse."
+              },
+              {
+                "fiche_id": "REF-0004",
+                "source_id": "S01",
+                "extrait_exact": "vériﬁer l’état du bac de décantation et des raccords avec les canalisations"
+              }
+            ],
+            "zone": "sous_sol"
+          },
+          {
+            "mesure": "Vérifier l'état, l'étanchéité, les fixations et scellements des canalisations et entonnoirs d'évacuation des eaux pluviales. Contrôler et curer si nécessaire les canalisations et accessoires pour éviter les obstructions.",
+            "type": "recommandation_source",
+            "cout_estime": null,
+            "aide": null,
+            "sources": [
+              {
+                "fiche_id": "REF-0272",
+                "source_id": "S01",
+                "extrait_exact": "Vériﬁcation de l’état, de l’étanchéité, des ﬁxations et scellements des canalisations et entonnoirs. Contrôle et curage éventuel des canalisations et accessoires."
+              }
+            ],
+            "zone": "sous_sol"
+          }
+        ]
+      }
+    },
+    "projection_2050": {
+      "score_global": 42,
+      "zones": {
+        "fondations": {
+          "risque": 44,
+          "niveau": "modere",
+          "alea_principal": "Retrait-gonflement des argiles",
+          "justification": "aléa retrait-gonflement des argiles = « Moyen » (BDNB, au niveau du bâtiment) ; +12 pts pour horizon 2050 (sécheresses plus fréquentes, cf. littérature BRGM/CCR). 0 cavité(s) souterraine(s) recensée(s), 0 mouvement(s) de terrain référencé(s) à proximité, 1 arrêté(s) CATNAT correspondant(s). zone de sismicité non déterminée pour cette commune (valeur de repli faible).",
+          "recommandations": [
+            {
+              "mesure": "Vérifier l’état des structures portantes en maçonnerie et remédier aux éventuelles infiltrations ou stagnations d’eau.",
+              "type": "recommandation_source",
+              "cout_estime": null,
+              "aide": {
+                "dispositif": null,
+                "conditions": null,
+                "statut": "potential_eligibility_only"
+              },
+              "sources": [
+                {
+                  "fiche_id": "REF-0016",
+                  "source_id": "S01",
+                  "extrait_exact": "2.1 ÉLÉMENTS DE STRUCTURE EN MAÇONNERIE Vériﬁer l’état des structures portantes et remédier aux éventuelles inﬁltrations ou stagnations d’eau."
+                }
+              ],
+              "zone": "fondations"
+            }
+          ]
+        },
+        "murs_nord": {
+          "risque": 33,
+          "niveau": "modere",
+          "alea_principal": "Infiltration (exposition nord)",
+          "justification": "précipitations annuelles non disponibles (Open-Meteo). jours de chaleur extrême non disponibles (Open-Meteo). zone de sismicité non déterminée pour cette commune (valeur de repli faible). Delta d'exposition directionnelle (heuristique, non mesurée par Géorisques).",
+          "recommandations": []
+        },
+        "murs_sud": {
+          "risque": 21,
+          "niveau": "faible",
+          "alea_principal": "Stress thermique (exposition sud)",
+          "justification": "précipitations annuelles non disponibles (Open-Meteo). jours de chaleur extrême non disponibles (Open-Meteo). zone de sismicité non déterminée pour cette commune (valeur de repli faible). Delta d'exposition directionnelle (heuristique, non mesurée par Géorisques).",
+          "recommandations": [
+            {
+              "mesure": "Isolation thermique des murs pour réduire l'impact des canicules, incluant les murs exposés au sud.",
+              "type": "info_aide",
+              "cout_estime": {
+                "montant_min": null,
+                "montant_max": 15000,
+                "devise": "EUR",
+                "unite": "total",
+                "date_estimation": null,
+                "zone_geo": "France métropolitaine et DROM",
+                "hypotheses": "Coût total des travaux, cumulable avec d'autres aides sous conditions."
+              },
+              "aide": {
+                "dispositif": "Aide Action Logement (subvention)",
+                "conditions": "Propriétaire occupant ou bailleur sous conditions de ressources. Logement en résidence principale. Travaux réalisés par un professionnel RGE avec AMO. Cumul possible avec ANAH, éco-PTZ ou aides locales dans la limite du coût total.",
+                "statut": "potential_eligibility_only"
+              },
+              "sources": [
+                {
+                  "fiche_id": "REF-0316",
+                  "source_id": "S03",
+                  "extrait_exact": "15 000 € maximum sous forme de subvention."
+                },
+                {
+                  "fiche_id": "REF-0316",
+                  "source_id": "S03",
+                  "extrait_exact": "Les travaux sont à réaliser par un professionnel portant le label RGE et doivent inclure l’intervention d’un opérateur d’assistance à maîtrise d’ouvrage (AMO)."
+                },
+                {
+                  "fiche_id": "REF-0316",
+                  "source_id": "S03",
+                  "extrait_exact": "Subvention pour travaux de rénovation énergétique, incluant isolation thermique des murs, planchers ou combles, remplacement du système de chauffage, ou équipement utilisant une source d'énergie renouvelable."
+                }
+              ],
+              "zone": "murs_sud"
+            },
+            {
+              "mesure": "Subvention complémentaire pour travaux de rénovation énergétique, incluant l'isolation thermique des murs exposés au sud.",
+              "type": "info_aide",
+              "cout_estime": null,
+              "aide": {
+                "dispositif": "Aide et prêt Action Logement",
+                "conditions": "5 000 € maximum sous forme de subvention. Cumul possible avec d'autres aides sous conditions.",
+                "statut": "potential_eligibility_only"
+              },
+              "sources": [
+                {
+                  "fiche_id": "REF-0322",
+                  "source_id": "S03",
+                  "extrait_exact": "5 000 € maximum, sous forme de subvention."
+                },
+                {
+                  "fiche_id": "REF-0322",
+                  "source_id": "S03",
+                  "extrait_exact": "Aide cumulable, sous conditions et dans la limite du coût total des travaux, avec les aides de l’ANAH, la CNAV et des conseils départementaux."
+                }
+              ],
+              "zone": "murs_sud"
+            }
+          ]
+        },
+        "murs_est": {
+          "risque": 25,
+          "niveau": "faible",
+          "alea_principal": "Vent",
+          "justification": "précipitations annuelles non disponibles (Open-Meteo). jours de chaleur extrême non disponibles (Open-Meteo). zone de sismicité non déterminée pour cette commune (valeur de repli faible). Delta d'exposition directionnelle (heuristique, non mesurée par Géorisques).",
+          "recommandations": []
+        },
+        "murs_ouest": {
+          "risque": 37,
+          "niveau": "modere",
+          "alea_principal": "Intempéries (exposition ouest dominante)",
+          "justification": "précipitations annuelles non disponibles (Open-Meteo). jours de chaleur extrême non disponibles (Open-Meteo). zone de sismicité non déterminée pour cette commune (valeur de repli faible). Delta d'exposition directionnelle (heuristique, non mesurée par Géorisques).",
+          "recommandations": []
+        },
+        "toiture": {
+          "risque": 36,
+          "niveau": "modere",
+          "alea_principal": "Canicule / stress thermique",
+          "justification": "jours de chaleur extrême non disponibles (Open-Meteo). précipitations annuelles non disponibles (Open-Meteo). Toiture antérieure à 1970 (majoration +10).",
+          "recommandations": [
+            {
+              "mesure": "Vérifier l’état des parachèvements intérieurs sous la toiture (taches d’humidité, moisissures, corrosion, flèche).",
+              "type": "recommandation_source",
+              "cout_estime": null,
+              "aide": {
+                "dispositif": null,
+                "conditions": null,
+                "statut": "potential_eligibility_only"
+              },
+              "sources": [
+                {
+                  "fiche_id": "REF-0034",
+                  "source_id": "S01",
+                  "extrait_exact": "Vérification de l’état des parachèvements intérieurs situés sous la toiture ou au voisinage de celle-ci (présence de taches d’humidité, développement de moisissures, corrosion de tôles d’acier profilées, flèche, etc.)."
+                }
+              ],
+              "zone": "toiture"
+            },
+            {
+              "mesure": "Inspection générale de l’étanchéité (plis, affaissement, vieillissement, décollement, etc.), contrôle des raccords avec les avaloirs, tuyaux de descente, gargouilles, joints de mastic, couche de protection, solins, profils, joints de dilatation, et usure prématurée aux endroits de circulation fréquente.",
+              "type": "recommandation_source",
+              "cout_estime": null,
+              "aide": {
+                "dispositif": null,
+                "conditions": null,
+                "statut": "potential_eligibility_only"
+              },
+              "sources": [
+                {
+                  "fiche_id": "REF-0071",
+                  "source_id": "S01",
+                  "extrait_exact": "Au moins une fois par an (par exemple, après l’hiver): inspection générale de l’étanchéité [...] contrôle des raccords avec les avaloirs, les tuyaux de descente, les gargouilles [...] contrôle des joints de mastic [...] contrôle de l’éventuelle couche de protection, des solins, des proﬁlés, des joints de dilatation [...] contrôle de l’usure prématurée ou des dégradations aux endroits où la circulation est fréquente."
+                }
+              ],
+              "zone": "toiture"
+            },
+            {
+              "mesure": "Vérification régulière des soudures, joints, couvre-joints et fixations de la toiture.",
+              "type": "recommandation_source",
+              "cout_estime": null,
+              "aide": null,
+              "sources": [
+                {
+                  "fiche_id": "REF-0069",
+                  "source_id": "S01",
+                  "extrait_exact": "Vériﬁcation des soudures, joints, couvre-joints et ﬁxations."
+                }
+              ],
+              "zone": "toiture"
+            },
+            {
+              "mesure": "Vérification de l’état du lestage et remise en place si nécessaire pour éviter le soulèvement des panneaux d’isolation thermique par le vent.",
+              "type": "recommandation_source",
+              "cout_estime": null,
+              "aide": null,
+              "sources": [
+                {
+                  "fiche_id": "REF-0072",
+                  "source_id": "S01",
+                  "extrait_exact": "Après une période de vent violent, on procédera à une vériﬁcation de l’état du lestage et à sa remise en place si nécessaire."
+                }
+              ],
+              "zone": "toiture"
+            }
+          ]
+        },
+        "sous_sol": {
+          "risque": 72,
+          "niveau": "eleve",
+          "alea_principal": "Inondation / remontée de nappe",
+          "justification": "6 arrêté(s) CATNAT inondation recensé(s) sur la commune ; aléa inondation présent dans le référentiel Géorisques communal. potentiel radon non déterminé (valeur de repli faible).",
+          "recommandations": [
+            {
+              "mesure": "Procéder à un contrôle supplémentaire des éléments d'assainissement et des conduites enterrées (séparateurs de graisses/hydrocarbures, fosses septiques, stations d'épuration individuelle, pompes de relevage, avaloirs, clapets anticrue, etc.).",
+              "type": "recommandation_source",
+              "cout_estime": null,
+              "aide": {
+                "dispositif": null,
+                "conditions": null,
+                "statut": "potential_eligibility_only"
+              },
+              "sources": [
+                {
+                  "fiche_id": "REF-0001",
+                  "source_id": "S01",
+                  "extrait_exact": "En cas de conditions météorologiques extrêmes, il est nécessaire de procéder à un contrôle supplémentaire."
+                },
+                {
+                  "fiche_id": "REF-0001",
+                  "source_id": "S01",
+                  "extrait_exact": "examen visuel de l’état du dispositif de fermeture et de son étanchéité, des canalisations pénétrant dans l’appareil et les éventuels dispositifs d’accès"
+                },
+                {
+                  "fiche_id": "REF-0001",
+                  "source_id": "S01",
+                  "extrait_exact": "vidange et nettoyage (ﬁltre et ﬂotteur éventuel en particulier)"
+                },
+                {
+                  "fiche_id": "REF-0001",
+                  "source_id": "S01",
+                  "extrait_exact": "Contrôle des pompes automatiques de relevage des eaux: contrôler le fonctionnement automatique, l’étanchéité des raccords, l’état de la station et des vannes"
+                },
+                {
+                  "fiche_id": "REF-0001",
+                  "source_id": "S01",
+                  "extrait_exact": "Contrôle de leur fonctionnement. Curage des appareils. Vériﬁcation de leur étanchéité."
+                }
+              ],
+              "zone": "sous_sol"
+            },
+            {
+              "mesure": "Contrôler l’état du sol au voisinage du réseau d’égout pour détecter les affouillements susceptibles d’aggraver les risques d’inondation ou de ruissellement.",
+              "type": "recommandation_source",
+              "cout_estime": null,
+              "aide": {
+                "dispositif": null,
+                "conditions": null,
+                "statut": "potential_eligibility_only"
+              },
+              "sources": [
+                {
+                  "fiche_id": "REF-0005",
+                  "source_id": "S01",
+                  "extrait_exact": "L’état du sol au voisinage du réseau d’égout est contrôlé aﬁn de déceler les éventuels affouillements."
+                }
+              ],
+              "zone": "sous_sol"
+            },
+            {
+              "mesure": "Vérifier l’étanchéité des fosses septiques et des raccordements aux canalisations pour prévenir les infiltrations d’eau ou les fuites en cas d’inondation.",
+              "type": "recommandation_source",
+              "cout_estime": null,
+              "aide": {
+                "dispositif": null,
+                "conditions": null,
+                "statut": "potential_eligibility_only"
+              },
+              "sources": [
+                {
+                  "fiche_id": "REF-0004",
+                  "source_id": "S01",
+                  "extrait_exact": "vériﬁcation de l’étanchéité de la fosse."
+                },
+                {
+                  "fiche_id": "REF-0004",
+                  "source_id": "S01",
+                  "extrait_exact": "vériﬁer l’état du bac de décantation et des raccords avec les canalisations"
+                }
+              ],
+              "zone": "sous_sol"
+            },
+            {
+              "mesure": "Vérifier l'état, l'étanchéité, les fixations et scellements des canalisations et entonnoirs d'évacuation des eaux pluviales. Contrôler et curer si nécessaire les canalisations et accessoires pour éviter les obstructions.",
+              "type": "recommandation_source",
+              "cout_estime": null,
+              "aide": null,
+              "sources": [
+                {
+                  "fiche_id": "REF-0272",
+                  "source_id": "S01",
+                  "extrait_exact": "Vériﬁcation de l’état, de l’étanchéité, des ﬁxations et scellements des canalisations et entonnoirs. Contrôle et curage éventuel des canalisations et accessoires."
+                }
+              ],
+              "zone": "sous_sol"
+            }
+          ]
+        }
+      }
+    },
+    "climat_2050": {
+      "temperature_max_projetee_c": null,
+      "source": "Open-Meteo Climate API — moyenne des modèles climatiques, projection 2041-2050"
+    },
+    "_geometry_build_report": {
+      "champs_ok": [
+        "largeur_m",
+        "longueur_m",
+        "orientation_deg",
+        "floors_count",
+        "hauteur_sous_plafond_m",
+        "materiau_mur",
+        "materiau_toiture",
+        "roof_shape",
+        "pente_toit_deg"
+      ],
+      "champs_manquants_bdnb": [
+        "has_basement",
+        "has_cellar",
+        "has_garage",
+        "has_garden"
+      ]
+    },
+    "_erreurs_collecte": [
+      {
+        "source": "dvf_local",
+        "erreur": "DvfLookupUnavailable: Fichier DVF introuvable pour le departement 37 : data\\lookup\\dvf\\37.csv. Voir docs/GUIDE_ORCHESTRATEUR_API.md pour le telecharger."
+      },
+      {
+        "source": "copernicus",
+        "erreur": "Exception: Missing/incomplete configuration file: C:\\Users\\Makrembz/.cdsapirc"
+      },
+      {
+        "source": "open_meteo",
+        "erreur": "HTTPStatusError: Client error '429 Too Many Requests' for url 'https://climate-api.open-meteo.com/v1/climate?latitude=47.283669&longitude=0.169251&start_date=2015-01-01&end_date=2024-12-31&models=EC_Earth3P_HR%2CMRI_AGCM3_2_S&daily=temperature_2m_max%2Cprecipitation_sum'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/429"
+      }
+    ]
+  },
+  "timeline": [
+    {
+      "date": "2026-07-28T10:56:43.663644+00:00",
+      "event": "Property ID créé",
+      "details": {
+        "property_id": "TY-2026-000007",
+        "adresse": "26 Rue Victor Hugo 37140 Bourgueil"
+      }
+    },
+    {
+      "date": "2026-07-28T10:56:43.663754+00:00",
+      "event": "Certification Gold",
+      "details": {
+        "level": "Gold",
+        "score": 40,
+        "status": "ACTIVE"
+      }
+    }
+  ],
+  "certification": {
+    "level": "Gold",
+    "score": 40,
+    "issued_at": "2026-07-28T10:56:43.663754+00:00",
+    "expires_at": "2027-07-28T10:56:43.663754+00:00",
+    "status": "ACTIVE",
+    "badge": {
+      "name": "Typhoon Gold",
+      "version": "1.0",
+      "icon_svg_path": "M12 2L2 7v10l10 5 10-5V7L12 2zM12 6v12M8 9l4-3 4 3M8 15l4 3 4-3",
+      "style": {
+        "primary_color": "#D4A017",
+        "secondary_color": "#B8860B",
+        "accent_color": "#F5D76E",
+        "label": "Gold",
+        "description": "Très bonne résilience. Les risques sont faibles et bien gérés. Quelques améliorations mineures peuvent être envisagées."
+      }
+    }
+  },
+  "future_modules": {
+    "bank": null,
+    "real_estate": null,
+    "artisan": null,
+    "certifications": null
+  }
+}

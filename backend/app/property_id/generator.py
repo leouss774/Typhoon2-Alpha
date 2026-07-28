@@ -151,13 +151,16 @@ def generate(
     zones = risk_scores.get("zones", {}) or {}
     highest_risk_zone = max(
         zones,
-        key=lambda z: zones[z].get("score", 0),
+        key=lambda z: zones[z].get("risque", 0),
     ) if zones else None
+
+    # Les champs niveau et alea_principal sont stockés dans chaque zone
+    risk_zone = zones.get(highest_risk_zone, {}) if highest_risk_zone else {}
 
     risk_summary = RiskSummary(
         highest_risk=highest_risk_zone or "N/A",
-        risk_level=risk_scores.get("niveau_risque", "N/A"),
-        main_hazard=risk_scores.get("alea_principal", "N/A"),
+        risk_level=risk_zone.get("niveau", "N/A"),
+        main_hazard=risk_zone.get("alea_principal", "N/A"),
     )
 
     # --- Recommandations (aggregation de toutes les zones) ---

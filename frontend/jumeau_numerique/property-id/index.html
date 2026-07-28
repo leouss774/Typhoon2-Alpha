@@ -10,7 +10,7 @@
 <style>
 /* ===== DESIGN TOKENS ===== */
 :root {
-  --brand: #FF6B4A; --brand-dark: #E24E2E; --brand-glow: rgba(255,107,74,0.15);
+  --brand: #3B82F6; --brand-dark: #2563EB; --brand-glow: rgba(59,130,246,0.15);
   --ink: #1E2A33; --text: #4B5760; --text-secondary: #6B7A84; --text-muted: #8B959D;
   --border: #E7DED6; --bg: #F8F5F1; --card-bg: #FFFFFF;
   --shadow: 0 2px 8px rgba(0,0,0,0.06); --card-lift: 0 6px 20px rgba(0,0,0,0.10);
@@ -157,8 +157,8 @@ a { color: var(--brand); text-decoration: none; }
   padding: 3px 12px; border-radius: 999px; font-size: 12px; font-weight: 700; text-transform: uppercase;
 }
 .risk-badge.faible { background: linear-gradient(135deg,#E8F5E9,#C8E6C9); color: #2E7D32; }
-.risk-badge.moderé, .risk-badge.mo { background: linear-gradient(135deg,#FFF8E1,#FFECB3); color: #B8860B; }
-.risk-badge.elevé, .risk-badge.el { background: linear-gradient(135deg,#FFF3E0,#FFE0B2); color: #BF5E00; }
+.risk-badge.moderé, .risk-badge.mo, .risk-badge.modere { background: linear-gradient(135deg,#FFF8E1,#FFECB3); color: #B8860B; }
+.risk-badge.elevé, .risk-badge.el, .risk-badge.eleve { background: linear-gradient(135deg,#FFF3E0,#FFE0B2); color: #BF5E00; }
 .risk-badge.critique { background: linear-gradient(135deg,#FFEBEE,#FFCDD2); color: #C62828; }
 .risk-summary-card .risk-title { font-size: 14px; font-weight: 600; margin-bottom: 8px; }
 .risk-summary-card .risk-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font-size: 13px; }
@@ -203,6 +203,13 @@ a { color: var(--brand); text-decoration: none; }
   letter-spacing: 0.05em; padding: 2px 8px; border-radius: 4px;
   background: #F0F0F0; color: var(--text-secondary); height: fit-content; white-space: nowrap;
 }
+.reco-type-badge {
+  display:inline-block; font-size:10px; font-weight:600; padding:2px 8px;
+  border-radius:4px; background:var(--brand-glow); color:var(--brand);
+  white-space:nowrap; text-transform:uppercase; letter-spacing:0.03em;
+}
+.reco-desc { font-size:12px; color:var(--text); line-height:1.5; margin-bottom:4px; }
+.reco-sources { font-size:10px; color:var(--text-muted); margin-top:2px; font-style:italic; }
 .reco-empty {
   text-align: center; padding: 28px 16px; color: var(--text-muted);
 }
@@ -256,10 +263,10 @@ a { color: var(--brand); text-decoration: none; }
 .twin-chip .chip-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
 .twin-chip.faible { background: #E8F5E9; color: #2E7D32; border-color: #A5D6A7; }
 .twin-chip.faible .chip-dot { background: #2E7D32; }
-.twin-chip.moderé, .twin-chip.mo { background: #FFF8E1; color: #B8860B; border-color: #FFE082; }
-.twin-chip.moderé .chip-dot, .twin-chip.mo .chip-dot { background: #B8860B; }
-.twin-chip.elevé, .twin-chip.el { background: #FFF3E0; color: #BF5E00; border-color: #FFCC80; }
-.twin-chip.elevé .chip-dot, .twin-chip.el .chip-dot { background: #BF5E00; }
+.twin-chip.moderé, .twin-chip.mo, .twin-chip.modere { background: #FFF8E1; color: #B8860B; border-color: #FFE082; }
+.twin-chip.moderé .chip-dot, .twin-chip.mo .chip-dot, .twin-chip.modere .chip-dot { background: #B8860B; }
+.twin-chip.elevé, .twin-chip.el, .twin-chip.eleve { background: #FFF3E0; color: #BF5E00; border-color: #FFCC80; }
+.twin-chip.elevé .chip-dot, .twin-chip.el .chip-dot, .twin-chip.eleve .chip-dot { background: #BF5E00; }
 .twin-chip.critique { background: #FFEBEE; color: #C62828; border-color: #EF9A9A; }
 .twin-chip.critique .chip-dot { background: #C62828; }
 .twin-json-toggle {
@@ -781,16 +788,26 @@ function renderPropertyID(data) {
     recos.forEach(r => {
       const div = document.createElement('div');
       div.className = 'reco-item';
+      const mesure = r.mesure || r.travaux || r.title || 'Travaux recommandés';
+      const typeName = r.type || '';
+      const zoneName = r.zone ? r.zone.replace(/_/g, ' ') : '';
+      const sources = r.sources || [];
+      const coutText = r.cout_estime ? (r.cout_estime.montant_min || r.cout_estime) : '';
       div.innerHTML = `
-        <svg class="reco-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
         <div class="reco-content">
-          <div class="reco-title">${r.travaux || r.title || 'Travaux recommandés'}</div>
-          <div class="reco-meta">
-            ${r.cout_estime ? '<span>' + r.cout_estime + '</span>' : ''}
-            ${r.gain_resilience ? '<span>+ Résilience ' + r.gain_resilience + '</span>' : ''}
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px">
+            <div class="reco-title">${mesure.slice(0, 120)}${mesure.length > 120 ? '...' : ''}</div>
+            ${zoneName ? '<span class="reco-zone">' + zoneName + '</span>' : ''}
+            ${typeName ? '<span class="reco-type-badge">' + typeName.replace(/_/g, ' ') + '</span>' : ''}
           </div>
-        </div>
-        ${r.zone ? '<div class="reco-zone">' + r.zone.replace(/_/g, ' ') + '</div>' : ''}`;
+          ${mesure.length > 120 ? '<div class="reco-desc">' + mesure.slice(0, 300) + '</div>' : ''}
+          <div class="reco-meta">
+            ${coutText ? '<span>💰 ' + coutText + '</span>' : ''}
+            ${r.gain_resilience ? '<span>📈 Résilience +' + r.gain_resilience + '</span>' : ''}
+            ${sources.length > 0 ? '<span>📄 ' + sources.length + ' source(s)</span>' : ''}
+          </div>
+          ${sources.length > 0 ? '<div class="reco-sources">Sources : ' + sources.map(s => s.source_id || '').filter(Boolean).join(', ') + '</div>' : ''}
+        </div>`;
       recoList.appendChild(div);
     });
   }
