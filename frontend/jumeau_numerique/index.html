@@ -1219,6 +1219,7 @@
         <div id="cert-actions">
           <button id="cert-back-btn">← Modifier ma sélection</button>
           <button id="cert-download-btn">Télécharger le devis</button>
+          <button id="cert-property-id-btn" style="background:var(--brand);color:#fff;border:none;border-radius:8px;padding:10px 20px;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;transition:background .15s;box-shadow:0 4px 14px rgba(255,107,74,0.3);width:100%;margin-top:6px;">Voir mon Property ID certifié →</button>
         </div>
         <div id="cert-footnote">Typhoon — devis indicatif non contractuel, généré automatiquement par l'agent IA de diagnostic climatique.</div>
       </div>
@@ -2986,6 +2987,27 @@ loadDataset(DEFAULT_DATA);
     selectView.classList.remove('hide');
   });
   downloadBtn.addEventListener('click', function () { window.print(); });
+
+  // Bouton "Voir mon Property ID certifié"
+  const propertyIdBtn = document.getElementById('cert-property-id-btn');
+  if (propertyIdBtn) {
+    propertyIdBtn.addEventListener('click', function () {
+      // Lire l'adresse depuis le devis déjà sauvegardé (typhoon_devis_result) plutôt que
+      // depuis le DOM — l'ID du champ formulaire (#f-adresse) est différent de #address
+      // et le devis contient l'adresse canonique exacte utilisée pour la comparaison
+      // dans applyDevisOverrides() côté Property ID.
+      try {
+        const devisRaw = localStorage.getItem('typhoon_devis_result');
+        if (devisRaw) {
+          const devisParsed = JSON.parse(devisRaw);
+          if (devisParsed && devisParsed.adresse) {
+            localStorage.setItem('typhoon_current_address', devisParsed.adresse);
+          }
+        }
+      } catch (e) { /* localStorage peut être bloqué */ }
+      window.location.href = 'property-id/';
+    });
+  }
 })();
 </script>
 </body>
