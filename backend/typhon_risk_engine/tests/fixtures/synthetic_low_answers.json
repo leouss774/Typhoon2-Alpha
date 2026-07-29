@@ -1,0 +1,94 @@
+{
+  "building.foundation.type": {
+    "value": "radier",
+    "basis": "observe"
+  },
+  "building.foundation.depth_class": {
+    "value": "gt_1_20",
+    "basis": "observe"
+  },
+  "building.foundation.uniform": {
+    "value": true,
+    "basis": "observe"
+  },
+  "building.rga.crack_width_class": {
+    "value": "aucune",
+    "basis": "observe"
+  },
+  "site.trees_within_1_5h": {
+    "value": false,
+    "basis": "observe"
+  },
+  "building.structure.wall_material": {
+    "value": "beton arme",
+    "basis": "observe"
+  },
+  "building.seismic.chaining": {
+    "value": true,
+    "basis": "observe"
+  },
+  "building.seismic.soft_storey": {
+    "value": false,
+    "basis": "observe"
+  },
+  "building.levels": {
+    "value": 1,
+    "basis": "observe"
+  },
+  "questionnaire.building.electrical.diagnosis_age": {
+    "value": "lt_15",
+    "basis": "observe"
+  },
+  "questionnaire.building.chimney.sweep_age": {
+    "value": "lt_12m",
+    "basis": "observe"
+  },
+  "questionnaire.building.fire.daaf": {
+    "value": "installe_teste",
+    "basis": "observe"
+  },
+  "questionnaire.building.fire.compartmentation": {
+    "value": "oui",
+    "basis": "observe"
+  },
+  "questionnaire.building.fire.converted_attic": {
+    "value": false,
+    "basis": "observe"
+  },
+  "questionnaire.building.fire.attached_garage": {
+    "value": false,
+    "basis": "observe"
+  },
+  "questionnaire.building.fire.extinguisher": {
+    "value": true,
+    "basis": "observe"
+  },
+  "questionnaire.building.plumbing.material": {
+    "value": "multicouche",
+    "basis": "observe"
+  },
+  "questionnaire.building.plumbing.unheated_pipes": {
+    "value": "aucune",
+    "basis": "observe"
+  },
+  "questionnaire.building.plumbing.joints_state": {
+    "value": "bon",
+    "basis": "observe"
+  },
+  "questionnaire.building.flat_roof_or_walkin_shower": {
+    "value": false,
+    "basis": "observe"
+  },
+  "questionnaire.building.plumbing.leak_detector": {
+    "value": true,
+    "basis": "observe"
+  },
+  "questionnaire.building.plumbing.auto_shutoff": {
+    "value": true,
+    "basis": "observe"
+  },
+  "building.basement": {
+    "value": "aucun",
+    "basis": "observe"
+  }
+}
