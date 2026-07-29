@@ -68,6 +68,15 @@ class Settings(BaseSettings):
     # app/recommandations/ et backend/recommendation_travaux-main/)
     mistral_api_key: str | None = None
 
+    # --- Zone-Insurer (insurer MVP) settings ---
+    zone_database_url: str = "sqlite:///./zone_insurer.db"
+    zone_max_concurrency: int = 8
+    zone_max_buildings_per_job: int = 60
+    zone_default_radius_m: float = 300.0
+    zone_max_radius_m: float = 1500.0
+    zone_cache_ttl_hours: int = 24 * 7
+    zone_enable_copernicus: bool = False
+
     # Divers
     http_timeout_seconds: float = 15.0
 

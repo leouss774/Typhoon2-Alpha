@@ -39,6 +39,7 @@ ZONE_TO_RECO = {
     "fondations": "fondations",
     "toiture": "toiture",
     "sous_sol": "sous_sol",
+    "inondation": "sous_sol",
     "murs_nord": "facade",
     "murs_sud": "facade",
     "murs_est": "facade",

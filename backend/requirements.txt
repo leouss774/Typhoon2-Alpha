@@ -28,6 +28,9 @@ chromadb
 mistralai>=1.5.0
 numpy>=1.26.0
 
+# --- Zone-Insurer : cache de duplication (Postgres en prod / SQLite en dev) ---
+psycopg[binary]>=3.1
+
 # --- Divers ---
 python-dotenv
 sqlalchemy

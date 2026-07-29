@@ -353,7 +353,7 @@
   /* ---- Section "deux modes" ---- */
   #home-modes { max-width: 1180px; margin: 0 auto; padding: 6px 5vw 76px; }
   .modes-head { text-align: center; max-width: 620px; margin: 0 auto 40px; }
-  #mode-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+  #mode-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 22px; }
   .mode-card {
     position: relative; border-radius: 12px; overflow: hidden; min-height: 430px;
     display: flex; flex-direction: column; justify-content: flex-end;
@@ -402,6 +402,31 @@
   .mode-btn-b { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.35); color: #FFFFFF; }
   .mode-btn-b:hover { border-color: #7FCBFF; color: #7FCBFF; }
 
+  /* ---- Mode C : Assurance (zone-insurer MVP) ---- */
+  .mode-card.mode-c { background: linear-gradient(165deg, #1a0a0a 0%, #2d1a1a 45%, #4a1a1a 100%); }
+  .mode-card.mode-c .ins-fx {
+    position: absolute; inset: 0; z-index: 1; overflow: hidden;
+  }
+  .mode-card.mode-c .ins-fx .grid-dots {
+    position: absolute; inset: 0;
+    background-image: radial-gradient(circle, rgba(255,107,74,0.12) 1px, transparent 1px);
+    background-size: 24px 24px;
+    -webkit-mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, #000 40%, transparent 100%);
+    mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, #000 40%, transparent 100%);
+  }
+  .mode-card.mode-c .ins-fx .shield-glow {
+    position: absolute; top: -40px; right: -40px; width: 200px; height: 200px;
+    background: radial-gradient(circle, rgba(255,107,74,0.15) 0%, transparent 70%);
+    border-radius: 50%;
+  }
+  .mode-card.mode-c h3, .mode-card.mode-c p, .mode-card.mode-c ul, .mode-card.mode-c .mode-kicker-c, .mode-btn-c { position: relative; z-index: 2; }
+  .mode-kicker-c { background: rgba(255,107,74,0.18); color: #FF6B4A; border: 1px solid rgba(255,107,74,0.4); }
+  .mode-btn-c {
+    background: linear-gradient(135deg, #FF6B4A, #E24E2E); border: none; color: #FFFFFF;
+    box-shadow: 0 4px 16px rgba(255,107,74,0.35);
+  }
+  .mode-btn-c:hover { background: linear-gradient(135deg, #FF8563, #E24E2E); transform: translateY(-1px); box-shadow: 0 6px 22px rgba(255,107,74,0.5); }
+
   #home-trust { max-width: 1180px; margin: 0 auto; padding: 20px 5vw 76px; text-align: center; }
   #home-trust .section-eyebrow { color: #FF6B4A; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px; }
   #home-trust h2 { font-size: 28px; color: #1E2A33; margin: 0 0 12px 0; font-weight: 700; }
@@ -426,6 +451,10 @@
 
   @media (max-width: 880px) {
     #trust-grid { grid-template-columns: 1fr; }
+  }
+
+  @media (max-width: 960px) {
+    #mode-grid { grid-template-columns: 1fr; }
   }
 
   #home-footer { border-top: 1px solid #E7DED6; padding: 30px 5vw; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
@@ -782,6 +811,7 @@
     <nav id="home-nav">
       <a href="#home-features">Nos solutions</a>
       <a href="#modes">Comment ça marche</a>
+      <a href="#" id="nav-insurer-link" style="color:#FF6B4A;">Assurance</a>
       <a href="#">Nous contacter</a>
     </nav>
     <div id="home-header-actions">
@@ -870,12 +900,31 @@
           <button class="btn-ghost mode-btn-b" id="home-cta-mode-b" type="button">Explorer une zone →</button>
         </div>
       </div>
+        </div>
+      </div>
+
+      <!-- Mode C : Assurance (zone-insurer, service séparé port 8100) -->
+      <div class="mode-card mode-c">
+        <div class="ins-fx" aria-hidden="true">
+          <div class="grid-dots"></div>
+          <div class="shield-glow"></div>
+        </div>
+        <div class="mode-kicker mode-kicker-c">Mode assurance (MVP)</div>
+        <h3>Évaluer une zone pour la souscription</h3>
+        <p>Un rapport agrégé pour les assureurs : score de risque global, ventilation par aléa, liste des actifs à risque nécessitant une revue individuelle.</p>
+        <ul>
+          <li><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#FF6B4A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>Adresse + rayon ou zone libre</li>
+          <li><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#FF6B4A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>Rapport avec actifs flaggés et tier de risque</li>
+          <li><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#FF6B4A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>Service indépendant (port 8100)</li>
+        </ul>
+        <button class="btn-primary mode-btn-c" id="home-cta-mode-c" type="button">Ouvrir l'outil assurance →</button>
+      </div>
     </div>
   </section>
 
   <section id="home-features">
     <div class="section-eyebrow">Comment ça marche</div>
-    <h2>Le moteur derrière les deux modes</h2>
+    <h2>Le moteur derrière les trois modes</h2>
     <p class="section-lead">Notre orchestrateur multi-agents croise l'adresse ou la zone recherchée avec les bases de risques climatiques (Géorisques, Copernicus, BDNB) pour construire le jumeau numérique et calculer le score de résilience — sans aucune saisie manuelle.</p>
     <div id="home-feature-grid">
       <div class="feature-card">
@@ -2465,6 +2514,21 @@ loadDataset(DEFAULT_DATA);
 
   const exploreZoneBtn = document.getElementById('home-cta-mode-b');
   if (exploreZoneBtn) exploreZoneBtn.addEventListener('click', openZoneExplorer);
+
+  // Mode C : ouvre le zone-insurer MVP (service séparé port 8100)
+  const openInsurerBtn = document.getElementById('home-cta-mode-c');
+  if (openInsurerBtn) {
+    openInsurerBtn.addEventListener('click', function () {
+      window.location.href = '../zone_insurer/index.html';
+    });
+  }
+  const navInsurerLink = document.getElementById('nav-insurer-link');
+  if (navInsurerLink) {
+    navInsurerLink.addEventListener('click', function (e) {
+      e.preventDefault();
+      window.location.href = '../zone_insurer/index.html';
+    });
+  }
 
   zoneCloseBtn.addEventListener('click', closeZoneExplorer);
   zoneOverlay.addEventListener('click', function (e) {

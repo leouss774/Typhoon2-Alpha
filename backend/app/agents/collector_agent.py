@@ -47,7 +47,6 @@ import httpx
 from app.connectors import bdnb as bdnb_connector
 from app.connectors.bdnb import BdnbAdresseIntrouvable
 from app.connectors import copernicus
-from app.connectors import dvf_lookup
 from app.connectors import georisques as georisques_connector
 from app.connectors import ign_altitude
 from app.connectors import open_meteo
@@ -185,8 +184,10 @@ async def collect(address: str, enable_copernicus: bool = True, enable_dvf: bool
         # ajouter d'erreur (ce n'est pas un echec, juste une source coupee
         # volontairement sur ce poste).
         if enable_dvf:
+            from app.connectors import dvf_lookup as _dvf  # lazy: pandas dependency
+
             tasks["dvf"] = _safe_call(
-                "dvf_local", asyncio.to_thread(dvf_lookup.lookup_dvf, geocode.citycode), erreurs
+                "dvf_local", asyncio.to_thread(_dvf.lookup_dvf, geocode.citycode), erreurs
             )
         else:
             logger.info("  dvf desactive (flag=False) -> dvf_local = None")
