@@ -1358,8 +1358,13 @@ function mapRiskToEffect(zoneName, score) {
 // ---------- 2. SCÈNE THREE.JS ----------
 const container = document.getElementById('scene-container');
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x04070c);
-scene.fog = new THREE.Fog(0x04070c, 20, 55);
+// Fond legerement remonte : sur les ecrans peu contrastes, le 0x04070c
+// d'origine rendait les aretes sombres indiscernables du noir.
+const FOND_SCENE = 0x080e18;
+scene.background = new THREE.Color(FOND_SCENE);
+// Distances recalculees par fitCameraToHouse en fonction de la taille du
+// bati : ces valeurs ne sont que l'amorce avant le premier diagnostic.
+scene.fog = new THREE.Fog(FOND_SCENE, 20, 55);
 
 const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
 const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -1372,7 +1377,7 @@ const rim = new THREE.DirectionalLight(0x4da6ff, 0.5); rim.position.set(-8, 10, 
 const key = new THREE.DirectionalLight(0xbfe0ff, 0.4); key.position.set(8, 12, 8); scene.add(key);
 
 const grid = new THREE.GridHelper(60, 60, 0x1560ff, 0x0d2647);
-grid.material.transparent = true; grid.material.opacity = 0.32;
+grid.material.transparent = true; grid.material.opacity = 0.45;
 scene.add(grid);
 
 const ringGeo = new THREE.RingGeometry(6.5, 6.7, 64);
@@ -1382,9 +1387,24 @@ scanRing.rotation.x = -Math.PI / 2; scanRing.position.y = 0.01;
 scene.add(scanRing);
 
 const WIRE_COLOR = 0x5fb2ff;
-function makeWireMat() { return new THREE.LineBasicMaterial({ color: WIRE_COLOR, transparent: true, opacity: 0.85 }); }
+
+// --- Réglage de la luminosité de la scène ---
+// Les volumes de la maison sont des MeshBasicMaterial en blending additif :
+// ils n'ont PAS de normales éclairées et ignorent donc complètement les
+// HemisphereLight/DirectionalLight ajoutées plus haut. Leur clarté ne dépend
+// que de leur opacité — c'est ce coefficient qu'il faut toucher pour
+// éclaircir le rendu, pas l'intensité des lumières.
+// 1.0 = rendu d'origine. Au-delà de ~2.4 les zones se superposent et les
+// couleurs de risque deviennent difficiles à distinguer les unes des autres.
+const LUMINOSITE = 1.9;
+const OPACITE_FILAIRE = 1.0;   // aretes : 0.85 a l'origine
+
+function makeWireMat() { return new THREE.LineBasicMaterial({ color: WIRE_COLOR, transparent: true, opacity: OPACITE_FILAIRE }); }
 function makeFillMat(color, opacity) {
-  return new THREE.MeshBasicMaterial({ color, transparent: true, opacity: opacity ?? 0.16, side: THREE.DoubleSide, blending: THREE.AdditiveBlending, depthWrite: false });
+  // Plafond a 0.9 : au-dela, l'additif sature en blanc et la couleur de
+  // risque (vert/orange/rouge) n'est plus lisible.
+  const opacite = Math.min(0.9, (opacity ?? 0.16) * LUMINOSITE);
+  return new THREE.MeshBasicMaterial({ color, transparent: true, opacity: opacite, side: THREE.DoubleSide, blending: THREE.AdditiveBlending, depthWrite: false });
 }
 function addPart(group, geometry, position, fillColor, opacity) {
   const fill = new THREE.Mesh(geometry, makeFillMat(fillColor, opacity));
@@ -1455,12 +1475,17 @@ let house = null, zoneGroups = {}, zoneFillMeshes = {}, interactiveMeshes = [];
 let crackMesh = null, waterMesh = null, stainMeshes = {};
 let houseDims = {};
 let labelSprites = {}, leaderLines = {};
+// Point + normale representatifs de chaque façade, renseignes uniquement en
+// mode emprise reelle : sur un polygone quelconque, "le mur nord" n'est plus
+// a z = -D/2, il faut retenir l'arete reellement construite pour y accrocher
+// les etiquettes et les effets (auréoles d'humidite).
+let zoneAnchors = {};
 
 function disposeHouse() {
   if (house) scene.remove(house);
   house = null; zoneGroups = {}; zoneFillMeshes = {}; interactiveMeshes = [];
   crackMesh = null; waterMesh = null; stainMeshes = {};
-  labelSprites = {}; leaderLines = {};
+  labelSprites = {}; leaderLines = {}; zoneAnchors = {};
 }
 
 function registerFill(zoneName, fillMesh) {
@@ -1469,7 +1494,338 @@ function registerFill(zoneName, fillMesh) {
   interactiveMeshes.push(fillMesh);
 }
 
+// ---------- 4a. EMPRISE RÉELLE (polygone BDNB) ----------
+// `geometry.footprint` arrive deja en metres, dans le repere de la scene
+// (x = Est, z = Sud, origine au centre du bati) : aucune reprojection ici,
+// c'est `app/digital_twin/footprint.py` qui s'en charge cote backend.
+
+function footprintPolygons(g) {
+  const fp = g && g.footprint;
+  if (!fp || !Array.isArray(fp.polygones)) return null;
+  const polys = fp.polygones
+    .map(p => ({
+      ext: (p.exterieur || []).filter(pt => Array.isArray(pt) && pt.length >= 2).map(pt => [+pt[0], +pt[1]]),
+      holes: (p.trous || []).map(t => t.filter(pt => Array.isArray(pt) && pt.length >= 2).map(pt => [+pt[0], +pt[1]])).filter(t => t.length >= 3)
+    }))
+    .filter(p => p.ext.length >= 3 && p.ext.every(pt => isFinite(pt[0]) && isFinite(pt[1])));
+  return polys.length ? polys : null;
+}
+
+function polygonBounds(polys) {
+  let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
+  polys.forEach(p => p.ext.forEach(([x, z]) => {
+    minX = Math.min(minX, x); maxX = Math.max(maxX, x);
+    minZ = Math.min(minZ, z); maxZ = Math.max(maxZ, z);
+  }));
+  return { minX, maxX, minZ, maxZ, W: maxX - minX, D: maxZ - minZ };
+}
+
+// THREE.Shape vit dans le plan XY et s'extrude vers +Z. On construit donc la
+// forme en (x, -z) puis on couche le mesh avec rotation.x = -90°, ce qui
+// renvoie shape.y sur la scene z ET oriente l'extrusion vers le haut.
+const SHAPE_ROT_X = -Math.PI / 2;
+function toShape(ext, holes) {
+  const shape = new THREE.Shape();
+  ext.forEach((p, i) => i ? shape.lineTo(p[0], -p[1]) : shape.moveTo(p[0], -p[1]));
+  shape.closePath();
+  (holes || []).forEach(h => {
+    const path = new THREE.Path();
+    h.forEach((p, i) => i ? path.lineTo(p[0], -p[1]) : path.moveTo(p[0], -p[1]));
+    path.closePath();
+    shape.holes.push(path);
+  });
+  return shape;
+}
+
+// Dalle horizontale (fondations, plancher, toit-terrasse) suivant l'emprise.
+function slabFromPolygons(polys, y, thickness) {
+  const group = [];
+  polys.forEach(p => {
+    const geo = new THREE.ExtrudeGeometry(toShape(p.ext, p.holes), { depth: thickness, bevelEnabled: false });
+    geo.rotateX(SHAPE_ROT_X);
+    geo.translate(0, y, 0);
+    group.push(geo);
+  });
+  return group;
+}
+
+function quadsToGeometry(quads) {
+  const verts = new Float32Array(quads.length * 18);
+  quads.forEach((q, i) => {
+    const [a, b, c, d] = q;
+    verts.set([...a, ...b, ...c, ...a, ...c, ...d], i * 18);
+  });
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(verts, 3));
+  geo.computeVertexNormals();
+  return geo;
+}
+
+// Normale sortante d'une arete : le contour exterieur arrive en sens
+// trigonometrique et les trous en sens horaire (garanti par le backend),
+// donc (dz, -dx) pointe toujours vers l'exterieur de la matiere — y compris
+// pour une cour interieure, ou elle pointe vers la cour.
+function edgeNormal(p, q) {
+  const dx = q[0] - p[0], dz = q[1] - p[1];
+  const len = Math.hypot(dx, dz) || 1;
+  return [dz / len, -dx / len];
+}
+
+function cardinalZone(normal) {
+  const [nx, nz] = normal;
+  if (Math.abs(nx) > Math.abs(nz)) return nx > 0 ? 'murs_est' : 'murs_ouest';
+  return nz > 0 ? 'murs_sud' : 'murs_nord';
+}
+
+function ringEdges(ring) {
+  return ring.map((p, i) => [p, ring[(i + 1) % ring.length]]);
+}
+
+function pointInRing(x, z, ring) {
+  let inside = false;
+  for (let i = 0, n = ring.length; i < n; i++) {
+    const [x1, z1] = ring[i], [x2, z2] = ring[(i + 1) % n];
+    if ((z1 > z) !== (z2 > z)) {
+      const xCross = x1 + (z - z1) / (z2 - z1) * (x2 - x1);
+      if (xCross > x) inside = !inside;
+    }
+  }
+  return inside;
+}
+
+// Contour rentre d'une distance `d` (jointure en onglet). Sert a fabriquer
+// une toiture a pans sur une emprise quelconque : le contour rentre devient
+// le faitage, ce qui donne une croupe correcte sur un L ou un U la ou une
+// simple boite ne savait produire que deux pans droits.
+function insetRing(ring, d) {
+  const n = ring.length;
+  const out = [];
+  for (let i = 0; i < n; i++) {
+    const prev = ring[(i - 1 + n) % n], cur = ring[i], next = ring[(i + 1) % n];
+    const e1 = [cur[0] - prev[0], cur[1] - prev[1]];
+    const e2 = [next[0] - cur[0], next[1] - cur[1]];
+    const l1 = Math.hypot(e1[0], e1[1]), l2 = Math.hypot(e2[0], e2[1]);
+    if (l1 < 1e-6 || l2 < 1e-6) return null;
+    // normale rentrante = -(normale sortante)
+    const n1 = [-e1[1] / l1, e1[0] / l1];
+    const n2 = [-e2[1] / l2, e2[0] / l2];
+    const bis = [n1[0] + n2[0], n1[1] + n2[1]];
+    const bl = Math.hypot(bis[0], bis[1]);
+    if (bl < 1e-6) return null;              // demi-tour : onglet indefini
+    const m = [bis[0] / bl, bis[1] / bl];
+    const cosHalf = n1[0] * m[0] + n1[1] * m[1];
+    if (cosHalf < 0.2) return null;          // angle trop aigu : pic aberrant
+    const scale = d / cosHalf;
+    out.push([cur[0] + m[0] * scale, cur[1] + m[1] * scale]);
+  }
+  // Un contour rentre valide reste a l'interieur du contour d'origine ;
+  // sinon l'emprise est trop etroite pour cette pente et on renonce.
+  if (!out.every(([x, z]) => pointInRing(x, z, ring))) return null;
+  return out;
+}
+
+function buildHouseFromFootprint(geometry, polys) {
+  disposeHouse();
+  const g = geometry || {};
+  const bounds = polygonBounds(polys);
+  const W = bounds.W, D = bounds.D;
+  const floors = Math.max(1, Math.min(8, Math.round(g.floors_count ?? 1)));
+  const levelH = clamp(g.hauteur_sous_plafond_m ?? 2.6, 2.0, 3.5);
+  const roofShape = (g.roof_shape || 'deux_pans').toLowerCase();
+  const penteDeg = clamp(g.pente_toit_deg ?? 35, 12, 55);
+  const hasBasement = g.has_basement !== false;
+  const estImmeuble = g.type_batiment === 'immeuble';
+
+  house = new THREE.Group();
+  scene.add(house);
+  ZONE_NAMES.forEach(name => {
+    const grp = new THREE.Group(); grp.name = name;
+    house.add(grp); zoneGroups[name] = grp; zoneFillMeshes[name] = [];
+  });
+
+  const basementTopY = 0.4;
+  const basementH = hasBasement ? 1.6 : 0.35;
+  const basementCenterY = basementTopY - basementH / 2;
+  const fondY = basementTopY + 0.15;
+  const wallsStartY = basementTopY + 0.3;
+  const eavesY = wallsStartY + floors * levelH;
+
+  // -- sous-sol et fondations : extrusion de l'emprise reelle --
+  slabFromPolygons(polys, basementTopY - basementH, basementH).forEach(geo =>
+    registerFill('sous_sol', addRawPart(zoneGroups.sous_sol, geo, 0x3fb950, 0.18)));
+  slabFromPolygons(polys, fondY - 0.15, 0.3).forEach(geo =>
+    registerFill('fondations', addRawPart(zoneGroups.fondations, geo, 0x3fb950, 0.18)));
+
+  // -- murs : une facade par arete, rattachee a sa zone cardinale --
+  const wallQuads = {};       // zone -> etage -> quads
+  ZONE_NAMES.filter(z => z.startsWith('murs_')).forEach(z => { wallQuads[z] = {}; });
+  const anchorCandidates = {};
+
+  polys.forEach(p => {
+    const rings = [p.ext].concat(p.holes || []);
+    rings.forEach(ring => {
+      ringEdges(ring).forEach(([a, b]) => {
+        const normal = edgeNormal(a, b);
+        const zone = cardinalZone(normal);
+        const longueur = Math.hypot(b[0] - a[0], b[1] - a[1]);
+        if (longueur < 0.05) return;
+
+        for (let i = 0; i < floors; i++) {
+          const y0 = wallsStartY + i * levelH;
+          const y1 = y0 + levelH;
+          (wallQuads[zone][i] = wallQuads[zone][i] || []).push([
+            [a[0], y0, a[1]], [b[0], y0, b[1]], [b[0], y1, b[1]], [a[0], y1, a[1]]
+          ]);
+        }
+        // La façade la plus longue de chaque orientation porte l'etiquette
+        // et l'effet d'humidite : c'est la plus lisible a l'ecran.
+        if (!anchorCandidates[zone] || longueur > anchorCandidates[zone].longueur) {
+          anchorCandidates[zone] = {
+            longueur,
+            milieu: [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2],
+            normal
+          };
+        }
+      });
+    });
+  });
+
+  Object.entries(wallQuads).forEach(([zone, parEtage]) => {
+    Object.values(parEtage).forEach(quads => {
+      if (quads.length) registerFill(zone, addRawPart(zoneGroups[zone], quadsToGeometry(quads), 0x3fb950, 0.16));
+    });
+  });
+
+  Object.entries(anchorCandidates).forEach(([zone, info]) => {
+    zoneAnchors[zone] = {
+      position: new THREE.Vector3(info.milieu[0], wallsStartY + levelH / 2, info.milieu[1]),
+      normal: new THREE.Vector3(info.normal[0], 0, info.normal[1])
+    };
+  });
+
+  // -- planchers intermediaires : simple filaire suivant l'emprise --
+  for (let i = 1; i < floors; i++) {
+    const bandY = wallsStartY + i * levelH;
+    polys.forEach(p => {
+      [p.ext].concat(p.holes || []).forEach(ring => {
+        const pts = ring.map(([x, z]) => new THREE.Vector3(x, bandY, z));
+        pts.push(pts[0].clone());
+        const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),
+          new THREE.LineBasicMaterial({ color: WIRE_COLOR, transparent: true, opacity: 0.55 }));
+        house.add(line);
+      });
+    });
+  }
+
+  // -- toiture --
+  // Toit-terrasse pour les immeubles et les toits plats ; sinon, croupe
+  // obtenue en rentrant le contour (voir insetRing). Une emprise a cour
+  // interieure part aussi en terrasse : rentrer un contour troue n'a pas de
+  // solution simple et fiable, et ces batis sont massivement en terrasse.
+  const aCour = polys.some(p => (p.holes || []).length > 0);
+  const toitPlat = estImmeuble || aCour || roofShape === 'plat' || roofShape === 'toit_plat';
+  let ridgeY = eavesY;
+
+  if (toitPlat) {
+    slabFromPolygons(polys, eavesY, 0.25).forEach(geo =>
+      registerFill('toiture', addRawPart(zoneGroups.toiture, geo, 0x3fb950, 0.16)));
+    ridgeY = eavesY + 0.25;
+  } else {
+    const penteRad = penteDeg * Math.PI / 180;
+    polys.forEach(p => {
+      const inset = Math.min(2.0, Math.max(0.8, Math.min(W, D) * 0.18));
+      let creux = null, retenu = inset;
+      for (let essai = 0; essai < 4 && !creux; essai++) {
+        retenu = inset / Math.pow(2, essai);
+        creux = insetRing(p.ext, retenu);
+      }
+      const rise = (creux ? retenu : 0) * Math.tan(penteRad);
+      const sommetY = eavesY + rise;
+      ridgeY = Math.max(ridgeY, sommetY);
+
+      if (!creux) {
+        // Emprise trop etroite ou trop torturee pour une croupe : terrasse.
+        slabFromPolygons([p], eavesY, 0.25).forEach(geo =>
+          registerFill('toiture', addRawPart(zoneGroups.toiture, geo, 0x3fb950, 0.16)));
+        return;
+      }
+
+      const pans = ringEdges(p.ext).map(([a, b], i) => {
+        const j = (i + 1) % p.ext.length;
+        return [
+          [a[0], eavesY, a[1]], [b[0], eavesY, b[1]],
+          [creux[j][0], sommetY, creux[j][1]], [creux[i][0], sommetY, creux[i][1]]
+        ];
+      });
+      registerFill('toiture', addRawPart(zoneGroups.toiture, quadsToGeometry(pans), 0x3fb950, 0.16));
+
+      const faitage = new THREE.ExtrudeGeometry(toShape(creux, []), { depth: 0.06, bevelEnabled: false });
+      faitage.rotateX(SHAPE_ROT_X);
+      faitage.translate(0, sommetY, 0);
+      registerFill('toiture', addRawPart(zoneGroups.toiture, faitage, 0x3fb950, 0.16));
+    });
+  }
+
+  buildAnnexes(g, {
+    minX: bounds.minX, maxX: bounds.maxX, minZ: bounds.minZ, maxZ: bounds.maxZ,
+    W, D, wallsStartY, basementTopY
+  });
+
+  // Pas de rotation : l'orientation reelle est deja portee par les
+  // coordonnees du polygone (contrairement au mode boite, ou elle doit etre
+  // rejouee via orientation_deg).
+  houseDims = { W, D, floors, levelH, wallsStartY, eavesY, ridgeY, basementCenterY, fondY, bounds };
+}
+
+// Garage et jardin : decor commun aux deux modes de construction.
+function buildAnnexes(g, dims) {
+  const hasGarage = !!g.has_garage;
+  const garagePos = g.garage_position || 'ouest';
+  const hasGarden = !!g.has_garden;
+  const decor = new THREE.Group(); house.add(decor);
+
+  function addDecorPanel(geometry, position) {
+    const fill = new THREE.Mesh(geometry, makeFillMat(0x5fb2ff, 0.22));
+    fill.position.copy(position); decor.add(fill);
+    const wire = new THREE.LineSegments(new THREE.EdgesGeometry(geometry), makeWireMat());
+    wire.position.copy(position); decor.add(wire);
+  }
+
+  if (hasGarage) {
+    const garageW = 3.0, garageD = 4.2, garageH = 2.4;
+    let gx = 0, gz = 0;
+    if (garagePos === 'ouest') gx = dims.minX - garageW / 2 - 0.05;
+    else if (garagePos === 'est') gx = dims.maxX + garageW / 2 + 0.05;
+    else if (garagePos === 'nord') gz = dims.minZ - garageD / 2 - 0.05;
+    else gz = dims.maxZ + garageD / 2 + 0.05;
+    const baseY = dims.wallsStartY - 0.3;
+    addDecorPanel(new THREE.BoxGeometry(garageW, garageH, garageD), new THREE.Vector3(gx, baseY + garageH / 2, gz));
+    addDecorPanel(new THREE.BoxGeometry(garageW + 0.3, 0.1, garageD + 0.3), new THREE.Vector3(gx, baseY + garageH + 0.05, gz));
+  }
+
+  if (hasGarden) {
+    const side = hasGarage && garagePos === 'ouest' ? 1 : -1;
+    const size = Math.sqrt(clamp(g.garden_surface_m2 ?? 100, 20, 2000));
+    const gardenMesh = new THREE.Mesh(
+      new THREE.PlaneGeometry(size, size),
+      new THREE.MeshBasicMaterial({ color: 0x3fb950, transparent: true, opacity: 0.08, side: THREE.DoubleSide })
+    );
+    gardenMesh.rotation.x = -Math.PI / 2;
+    const x = side > 0 ? dims.maxX + size / 2 + 1.2 : dims.minX - size / 2 - 1.2;
+    gardenMesh.position.set(x, 0.02, (dims.minZ + dims.maxZ) / 2);
+    house.add(gardenMesh);
+  }
+}
+
 function buildHouse(geometry) {
+  const polys = footprintPolygons(geometry);
+  if (polys) buildHouseFromFootprint(geometry, polys);
+  else buildHouseFromBox(geometry);
+  buildLabels();
+  buildEffectMeshes();
+}
+
+function buildHouseFromBox(geometry) {
   disposeHouse();
   const g = geometry || {};
   const W = clamp(g.largeur_m ?? 8, 3, 35);
@@ -1617,8 +1973,6 @@ function buildHouse(geometry) {
   house.rotation.y = orientationDeg * Math.PI / 180;
 
   houseDims = { W, D, floors, levelH, wallsStartY, eavesY, ridgeY, basementCenterY, fondY };
-  buildLabels();
-  buildEffectMeshes();
 }
 
 function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
@@ -1637,35 +1991,51 @@ function triGeo(a, b, c) {
 
 // ---------- 5. EFFETS VISUELS PILOTÉS PAR LE RISQUE ----------
 function buildEffectMeshes() {
-  const { W, D, fondY, basementCenterY } = houseDims;
+  const { W, D, fondY, basementCenterY, bounds } = houseDims;
+  // En mode emprise reelle, le bati n'est pas centre sur l'origine : les
+  // effets doivent se caler sur ses bornes, pas sur ±W/2.
+  const centreX = bounds ? (bounds.minX + bounds.maxX) / 2 : 0;
+  const faceSudZ = bounds ? bounds.maxZ : D / 2;
 
   const crackGeo = new THREE.PlaneGeometry(W * 0.8, 0.5);
   const crackMat = new THREE.MeshBasicMaterial({ map: crackTextures[1], transparent: true, opacity: 0, depthWrite: false });
   crackMesh = new THREE.Mesh(crackGeo, crackMat);
-  crackMesh.position.set(0, fondY, D / 2 + 0.22);
+  crackMesh.position.set(centreX, fondY, faceSudZ + 0.22);
   house.add(crackMesh);
 
   const waterGeo = new THREE.CircleGeometry(Math.max(W, D) * 0.9, 48);
   const waterMat = new THREE.MeshBasicMaterial({ color: 0x2fa9ff, transparent: true, opacity: 0.32, side: THREE.DoubleSide, depthWrite: false });
   waterMesh = new THREE.Mesh(waterGeo, waterMat);
   waterMesh.rotation.x = -Math.PI / 2;
+  waterMesh.position.x = centreX;
+  waterMesh.position.z = bounds ? (bounds.minZ + bounds.maxZ) / 2 : 0;
   waterMesh.position.y = basementCenterY - 5;
   waterMesh.userData.baseY = basementCenterY;
   waterMesh.userData.targetRatio = 0;
   house.add(waterMesh);
 
   stainMeshes = {};
+  const wallY = houseDims.wallsStartY + houseDims.levelH / 2;
   const stainDefs = {
-    murs_nord: { pos: new THREE.Vector3(0, houseDims.wallsStartY + houseDims.levelH / 2, -D / 2 - 0.03), rot: 0 },
-    murs_sud:  { pos: new THREE.Vector3(0, houseDims.wallsStartY + houseDims.levelH / 2, D / 2 + 0.03), rot: 0 },
-    murs_est:  { pos: new THREE.Vector3(W / 2 + 0.03, houseDims.wallsStartY + houseDims.levelH / 2, 0), rot: Math.PI / 2 },
-    murs_ouest:{ pos: new THREE.Vector3(-W / 2 - 0.03, houseDims.wallsStartY + houseDims.levelH / 2, 0), rot: Math.PI / 2 }
+    murs_nord: { pos: new THREE.Vector3(centreX, wallY, (bounds ? bounds.minZ : -D / 2) - 0.03), rot: 0 },
+    murs_sud:  { pos: new THREE.Vector3(centreX, wallY, (bounds ? bounds.maxZ : D / 2) + 0.03), rot: 0 },
+    murs_est:  { pos: new THREE.Vector3((bounds ? bounds.maxX : W / 2) + 0.03, wallY, 0), rot: Math.PI / 2 },
+    murs_ouest:{ pos: new THREE.Vector3((bounds ? bounds.minX : -W / 2) - 0.03, wallY, 0), rot: Math.PI / 2 }
   };
   Object.entries(stainDefs).forEach(([zone, def]) => {
     const geo = new THREE.PlaneGeometry(1.6, 1.6);
     const mat = new THREE.MeshBasicMaterial({ map: stainTexture, transparent: true, opacity: 0, depthWrite: false });
     const mesh = new THREE.Mesh(geo, mat);
-    mesh.position.copy(def.pos); mesh.rotation.y = def.rot;
+    // Sur une emprise reelle, la façade retenue est celle effectivement
+    // construite pour cette orientation : l'aureole se colle dessus, avec
+    // sa vraie normale, plutot que sur une face de boite qui n'existe pas.
+    const ancre = zoneAnchors[zone];
+    if (ancre) {
+      mesh.position.copy(ancre.position).addScaledVector(ancre.normal, 0.04);
+      mesh.lookAt(mesh.position.clone().add(ancre.normal));
+    } else {
+      mesh.position.copy(def.pos); mesh.rotation.y = def.rot;
+    }
     house.add(mesh);
     stainMeshes[zone] = mesh;
   });
@@ -1732,17 +2102,26 @@ function updateZoneColor(zoneName, score, animated = true) {
 }
 
 function buildLabels() {
-  const { W, D, wallsStartY, levelH, floors, ridgeY, basementCenterY } = houseDims;
+  const { W, D, wallsStartY, levelH, floors, ridgeY, basementCenterY, bounds } = houseDims;
   const topY = wallsStartY + floors * levelH;
+  const minX = bounds ? bounds.minX : -W / 2, maxX = bounds ? bounds.maxX : W / 2;
+  const minZ = bounds ? bounds.minZ : -D / 2, maxZ = bounds ? bounds.maxZ : D / 2;
+  const centreX = (minX + maxX) / 2, centreZ = (minZ + maxZ) / 2;
   const anchors = {
-    fondations: new THREE.Vector3(W / 2 + 0.3, houseDims.fondY, D / 2 + 0.3),
-    murs_nord:  new THREE.Vector3(0, topY - levelH / 2, -D / 2),
-    murs_sud:   new THREE.Vector3(0, topY - levelH / 2, D / 2),
-    murs_est:   new THREE.Vector3(W / 2, wallsStartY + levelH / 2, 0),
-    murs_ouest: new THREE.Vector3(-W / 2, wallsStartY + levelH / 2, 0),
-    toiture:    new THREE.Vector3(0, ridgeY, 0),
-    sous_sol:   new THREE.Vector3(-W / 2 - 0.3, basementCenterY, D / 2 + 0.3)
+    fondations: new THREE.Vector3(maxX + 0.3, houseDims.fondY, maxZ + 0.3),
+    murs_nord:  new THREE.Vector3(centreX, topY - levelH / 2, minZ),
+    murs_sud:   new THREE.Vector3(centreX, topY - levelH / 2, maxZ),
+    murs_est:   new THREE.Vector3(maxX, wallsStartY + levelH / 2, centreZ),
+    murs_ouest: new THREE.Vector3(minX, wallsStartY + levelH / 2, centreZ),
+    toiture:    new THREE.Vector3(centreX, ridgeY, centreZ),
+    sous_sol:   new THREE.Vector3(minX - 0.3, basementCenterY, maxZ + 0.3)
   };
+  // Sur une emprise reelle, on accroche l'etiquette de façade au mur
+  // effectivement construit pour cette orientation (le milieu geometrique
+  // peut tomber dans le vide, par exemple dans le creux d'un L).
+  Object.keys(zoneAnchors).forEach(zone => {
+    if (anchors[zone]) anchors[zone] = zoneAnchors[zone].position.clone().setY(anchors[zone].y);
+  });
   const offsets = {
     fondations: new THREE.Vector3(1.8, 0.6, 1.8), murs_nord: new THREE.Vector3(0, 1.6, -1.4),
     murs_sud: new THREE.Vector3(0, 1.6, 1.4), murs_est: new THREE.Vector3(2.4, 1.2, 0),
@@ -1805,11 +2184,40 @@ window.addEventListener('mousemove', e => {
   const dx = e.clientX - lastX, dy = e.clientY - lastY; lastX = e.clientX; lastY = e.clientY;
   targetTheta -= dx * 0.006; targetPhi = Math.max(0.35, Math.min(Math.PI / 2.1, targetPhi - dy * 0.006));
 });
-renderer.domElement.addEventListener('wheel', e => { e.preventDefault(); targetRadius = Math.max(6, Math.min(60, targetRadius + e.deltaY * 0.01)); }, { passive: false });
+renderer.domElement.addEventListener('wheel', e => { e.preventDefault(); targetRadius = Math.max(6, Math.min(140, targetRadius + e.deltaY * 0.01)); }, { passive: false });
 function fitCameraToHouse() {
   const span = Math.max(houseDims.W || 8, houseDims.D || 8);
-  const fit = clamp(span * 1.9, 12, 55);
+  const hauteur = houseDims.ridgeY || 6;
+  // Un immeuble de 5 niveaux sur 40 m d'emprise ne tenait pas dans le cadrage
+  // prevu pour une maison : la distance suit desormais la plus grande des
+  // deux dimensions, emprise ou hauteur.
+  const fit = clamp(Math.max(span * 1.9, hauteur * 2.4), 12, 110);
   radius = fit; targetRadius = fit;
+  // Le brouillard etait fige a 20/55 unites, calibre pour une maison vue de
+  // 17 unites. Sur un immeuble de 40 m recule a 110 unites, tout le bati
+  // tombait au-dela de la distance de disparition et virait a la couleur de
+  // fond : d'ou l'impression de ne plus rien voir. Les distances suivent
+  // desormais le cadrage.
+  if (scene.fog) { scene.fog.near = fit * 1.15; scene.fog.far = fit * 3.2; }
+
+  // Grille et cercle de scan sont dimensionnes pour une maison : sur un
+  // immeuble, la grille s'arretait sous le bati et l'anneau disparaissait a
+  // l'interieur. Les deux suivent maintenant l'emprise.
+  const echelleSol = clamp(span / 14, 1, 6);
+  grid.scale.setScalar(echelleSol);
+  scanRing.scale.setScalar(echelleSol);
+
+  const b = houseDims.bounds;
+  if (b) {
+    const cx = (b.minX + b.maxX) / 2, cz = (b.minZ + b.maxZ) / 2;
+    grid.position.set(cx, 0, cz);
+    scanRing.position.set(cx, 0.01, cz);
+  }
+  cameraTarget.set(
+    b ? (b.minX + b.maxX) / 2 : 0,
+    Math.max(2.2, hauteur * 0.45),
+    b ? (b.minZ + b.maxZ) / 2 : 0
+  );
 }
 
 // ---------- 8. RAYCASTING (survol + clic) ----------
