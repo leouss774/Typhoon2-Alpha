@@ -851,7 +851,6 @@
 .pid-cert-pill.bronze { background: linear-gradient(135deg,#FFF5EB,#F5E6D3); color: #8B4513; border-color: #CD7F32; }
 .pid-cert-pill.silver { background: linear-gradient(135deg,#F0F4F8,#E2E8F0); color: #5A6A7A; border-color: #A8B8C8; }
 .pid-cert-pill.gold { background: linear-gradient(135deg,#FFF8E1,#FFE082); color: #8B6914; border-color: #D4A017; }
-.pid-cert-pill.platinum { background: linear-gradient(135deg,#F0F4FF,#E8EEF8); color: #4A5A7A; border-color: #B0C0D0; }
 .pid-cert-pill.pending { background: var(--surface-alt); color: var(--muted); border-color: var(--border); font-style: italic; }
 
 /* Cert Hero */
@@ -872,7 +871,6 @@
 #property-id-screen .pid-cert-hero .ci .cl.bronze { color: #CD7F32; }
 #property-id-screen .pid-cert-hero .ci .cl.silver { color: #7A8A9A; }
 #property-id-screen .pid-cert-hero .ci .cl.gold { color: #B8860B; }
-#property-id-screen .pid-cert-hero .ci .cl.platinum { color: #4A5A7A; }
 #property-id-screen .pid-cert-hero .ci .cl.pending { color: var(--muted); font-style: italic; }
 #property-id-screen .pid-cert-hero .ci .cd { font-size: 13px; color: var(--text); line-height: 1.5; margin-bottom: 4px; }
 #property-id-screen .pid-cert-hero .ci .ce { font-size: 11.5px; color: var(--muted); line-height: 1.5; margin-bottom: 14px; font-style: italic; }
@@ -3549,25 +3547,21 @@ function pid_riskColor(score) {
 }
 
 const pid_CERT_LEVELS = {
-  Bronze: { primary: '#CD7F32', secondary: '#A0652A', accent: '#E8C88A', label: 'Bronze',
-    desc: 'Résilience de base. Des risques significatifs sont identifiés.',
-    explain: 'Des travaux de rénovation sont fortement recommandés pour améliorer la résilience du bâtiment face aux risques climatiques.' },
-  Silver: { primary: '#A8B8C8', secondary: '#7A8A9A', accent: '#D0DCE8', label: 'Silver',
-    desc: 'Résilience satisfaisante. Des risques modérés existent.',
-    explain: 'Les risques restent dans des limites acceptables. Des travaux de mitigation sont recommandés pour renforcer le bâtiment.' },
   Gold: { primary: '#D4A017', secondary: '#B8860B', accent: '#F5D76E', label: 'Gold',
     desc: 'Très bonne résilience. Les risques sont faibles et bien gérés.',
     explain: "Ce bâtiment bénéficie d'une très bonne résilience face aux risques climatiques. Les risques sont maîtrisés." },
-  Platinum: { primary: '#E5E4E2', secondary: '#B9C2D0', accent: '#FFFFFF', label: 'Platinum',
-    desc: 'Résilience exceptionnelle. Risque climatique minimal.',
-    explain: 'Ce bâtiment dépasse les normes de construction actuelles. Une référence en matière de résilience et de durabilité.' },
+  Silver: { primary: '#A8B8C8', secondary: '#7A8A9A', accent: '#D0DCE8', label: 'Silver',
+    desc: 'Résilience satisfaisante. Des risques modérés existent.',
+    explain: 'Les risques restent dans des limites acceptables. Des travaux de mitigation sont recommandés pour renforcer le bâtiment.' },
+  Bronze: { primary: '#CD7F32', secondary: '#A0652A', accent: '#E8C88A', label: 'Bronze',
+    desc: 'Résilience de base. Des risques significatifs sont identifiés.',
+    explain: 'Des travaux de rénovation sont fortement recommandés pour améliorer la résilience du bâtiment face aux risques climatiques.' },
 };
 
 function pid_certLevel(score) {
   if (score == null) return '—';
-  if (score <= 25) return 'Platinum';
-  if (score <= 50) return 'Gold';
-  if (score <= 75) return 'Silver';
+  if (score <= 33) return 'Gold';
+  if (score <= 66) return 'Silver';
   return 'Bronze';
 }
 
@@ -3600,7 +3594,7 @@ function pid_renderBadge(container, level, score, pid) {
   svg += `<path d="${insetPath}" fill="rgba(255,255,255,0.12)" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>`;
   svg += `<path d="${shieldPath}" fill="url(#${shineId})"/>`;
   svg += '<path d="M51 40 L69 45 L69 62 C69 76 60 84 60 88 C60 84 51 76 51 62 Z" fill="' + cfg.secondary + '" stroke="' + cfg.primary + '" stroke-width="1"/>';
-  svg += '<text x="60" y="72" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-weight="700" font-size="17" fill="' + (level === 'Platinum' ? '#4A5A7A' : '#fff') + '">' + cfg.label + '</text>';
+  svg += '<text x="60" y="72" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-weight="700" font-size="17" fill="#fff">' + cfg.label + '</text>';
   svg += '<text x="60" y="92" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-weight="700" font-size="13" fill="rgba(255,255,255,0.85)">' + (score != null ? score : '—') + '/100</text>';
   if (pid) svg += '<text x="60" y="115" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-weight="600" font-size="8" fill="rgba(255,255,255,0.5)">' + pid + '</text>';
   svg += '<text x="60" y="131" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-weight="700" font-size="8" fill="#1F9D6C">● VERIFIÉ</text>';
@@ -3923,8 +3917,20 @@ function pid_showPropertyID() {
     if (geometry.materiau_toiture) roofStr += ' (' + geometry.materiau_toiture + ')';
   }
 
-  // --- Certification ---
-  const certLevel = pid_certLevel(overallScore);
+  // --- Certification : utiliser le score après travaux si un devis certifié existe ---
+  var certScore = overallScore;
+  var certDate = new Date().toISOString();
+  try {
+    var devisRaw = localStorage.getItem('typhoon_devis_result');
+    if (devisRaw) {
+      var devisParsed = JSON.parse(devisRaw);
+      if (devisParsed && devisParsed.certifie && typeof devisParsed.score_apres === 'number') {
+        certScore = devisParsed.score_apres;
+        if (devisParsed.date_generation) certDate = devisParsed.date_generation;
+      }
+    }
+  } catch (e) { /* localStorage peut etre bloque */ }
+  const certLevel = pid_certLevel(certScore);
 
   const data = {
     property_id: 'TY-' + new Date().getFullYear() + '-' + String(Math.floor(Math.random() * 999999)).padStart(6, '0'),
@@ -3939,14 +3945,14 @@ function pid_showPropertyID() {
     },
     certification: {
       level: certLevel !== '—' ? certLevel : null,
-      score: overallScore,
-      issued_at: new Date().toISOString(),
+      score: certScore,
+      issued_at: certDate,
       expires_at: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
     },
     scores: {
-      overall: overallScore,
+      overall: certScore,
       climate: climateScore,
-      insurance: overallScore,
+      insurance: certScore,
       zones: zones,
     },
     risk_summary: {

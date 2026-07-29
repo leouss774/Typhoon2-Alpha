@@ -9,11 +9,10 @@ Les seuils et les descriptions sont isolés ici pour permettre :
 Règles actuelles (MVP) :
   - Le niveau est déterminé par le score global (overall).
   - Plus le score est bas, meilleur est le niveau.
-  - Seuils :
-      0–25  → PLATINUM
-      26–50 → GOLD
-      51–75 → SILVER
-      76–100 → BRONZE
+  - Seuils (3 niveaux) :
+      0–33  → GOLD
+      34–66 → SILVER
+      67–100 → BRONZE
 """
 
 from __future__ import annotations
@@ -24,10 +23,6 @@ from app.property_id.certification.schemas import CertificationLevel
 def get_description_for_level(level: CertificationLevel) -> str:
     """Retourne une description textuelle du niveau de certification."""
     descriptions = {
-        CertificationLevel.PLATINUM: (
-            "Résilience exceptionnelle. Ce bâtiment présente un risque "
-            "climatique minimal et dépasse les normes de construction actuelles."
-        ),
         CertificationLevel.GOLD: (
             "Très bonne résilience. Les risques sont faibles et bien gérés. "
             "Quelques améliorations mineures peuvent être envisagées."
@@ -74,11 +69,9 @@ def compute_certification_level(
     # MVP : le score global est le score de certification
     cert_score = overall_score
 
-    if cert_score <= 25:
-        level = CertificationLevel.PLATINUM
-    elif cert_score <= 50:
+    if cert_score <= 33:
         level = CertificationLevel.GOLD
-    elif cert_score <= 75:
+    elif cert_score <= 66:
         level = CertificationLevel.SILVER
     else:
         level = CertificationLevel.BRONZE

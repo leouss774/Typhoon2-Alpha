@@ -28,13 +28,12 @@ from pydantic import BaseModel, Field
 class CertificationLevel(str, Enum):
     """Niveaux de certification Typhoon.
 
-    Ordre croissant : BRONZE < SILVER < GOLD < PLATINUM.
+    Ordre croissant : BRONZE < SILVER < GOLD.
     Utilisé pour les comparaisons (ex: level >= GOLD).
     """
     BRONZE = "Bronze"
     SILVER = "Silver"
     GOLD = "Gold"
-    PLATINUM = "Platinum"
 
 
 class CertificationStatus(str, Enum):
