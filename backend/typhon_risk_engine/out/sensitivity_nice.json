@@ -1,0 +1,9 @@
+{
+  "delta": 0.1,
+  "n_provisional_weights_tested": 64,
+  "n_perturbations": 128,
+  "n_class_or_status_changes": 0,
+  "critical_weights": [],
+  "details": [],
+  "note": "Diagnostic uniquement. Un poids critique doit etre justifie par une source ou la variable retiree — jamais ajuste pour faire passer le test."
+}

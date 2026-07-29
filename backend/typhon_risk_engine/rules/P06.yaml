@@ -1,0 +1,127 @@
+# Regles du peril P06 — Grele
+# Constantes metier : ce fichier fait foi, jamais le code Python.
+peril_id: P06
+name: Grele
+hazard_available: false
+hazard_absence_reason: aucune climatologie grele francaise validee. La variable `hailRisk` du pipeline
+  est une CONSTANTE PAR DEFAUT, exclue par la decision D04. La courbe MESHS (Schmid et al. 2024) est calibree
+  en Suisse et exige un radar grele sans equivalent francais identifie. Ne pas deduire la grele des precipitations
+  ordinaires (decision 9).
+commune_context_codes: []
+vulnerability:
+  variables:
+  - key: questionnaire.building.roof.material
+    raw_paths:
+    - questionnaire.building.roof.material
+    - bdnb.batiment.mat_toit_txt
+    role: V
+    weight: 0.4
+    transform:
+      type: categorical
+      mapping:
+        tuile_terre_cuite: 0.35
+        ardoise: 0.6
+        fibrociment: 0.8
+        bac_acier: 0.4
+        zinc: 0.5
+        chaume: 1.0
+        tuile_beton: 0.4
+      unmapped: null
+    direction: increasing
+    unit: class
+    physical_mechanism: La nature de la couverture conditionne la resistance a l'impact des grelons.
+    min_source_rank: 4
+    allowed_scopes:
+    - dwelling
+    - building
+    - building_group
+    allowed_time_horizons:
+    - current
+    on_missing: renormalize_if_dominant_present
+    on_conflict: keep_highest_rank
+    evidence_level: medium
+    references:
+    - 'Referentiel, grille Declencheurs & aggravants P06 : ardoise et fibrociment plus fragiles'
+    calibration_status: provisional_modeling_weight
+    dominant: true
+  - key: questionnaire.building.glazed_roof
+    raw_paths:
+    - questionnaire.building.glazed_roof
+    role: V
+    weight: 0.25
+    transform:
+      type: boolean
+      'true': 1.0
+      'false': 0.0
+    direction: increasing
+    unit: bool
+    physical_mechanism: 'Veranda, verriere ou toiture translucide : surfaces les plus exposees.'
+    min_source_rank: 3
+    allowed_scopes:
+    - dwelling
+    - building
+    - building_group
+    allowed_time_horizons:
+    - current
+    on_missing: renormalize_if_dominant_present
+    on_conflict: keep_highest_rank
+    evidence_level: medium
+    references:
+    - Referentiel, grille Declencheurs & aggravants P06
+    calibration_status: provisional_modeling_weight
+  - key: questionnaire.building.solar_panels
+    raw_paths:
+    - questionnaire.building.solar_panels
+    role: V
+    weight: 0.2
+    transform:
+      type: boolean
+      'true': 1.0
+      'false': 0.0
+    direction: increasing
+    unit: bool
+    physical_mechanism: Panneaux photovoltaiques ou thermiques exposes a l'impact.
+    min_source_rank: 3
+    allowed_scopes:
+    - dwelling
+    - building
+    - building_group
+    allowed_time_horizons:
+    - current
+    on_missing: renormalize_if_dominant_present
+    on_conflict: keep_highest_rank
+    evidence_level: medium
+    references:
+    - 'Referentiel XL-E05 : forte exposition des panneaux a P06'
+    calibration_status: provisional_modeling_weight
+  - key: building.openings.shutter_type
+    raw_paths:
+    - bdnb.batiment.type_fermeture
+    - questionnaire.building.shutter_type
+    role: V
+    weight: 0.15
+    transform:
+      type: categorical
+      mapping:
+        volet roulant pvc ( e <= 12 mm): 1.0
+        volet_roulant_pvc: 1.0
+        volet_roulant_alu: 0.5
+        volet_battant_bois: 0.4
+        aucun: 0.6
+      unmapped: null
+    direction: increasing
+    unit: class
+    physical_mechanism: 'Volets roulants PVC : point faible identifie face a la grele.'
+    min_source_rank: 4
+    allowed_scopes:
+    - dwelling
+    - building
+    - building_group
+    allowed_time_horizons:
+    - current
+    on_missing: renormalize_if_dominant_present
+    on_conflict: keep_highest_rank
+    evidence_level: low
+    references:
+    - 'Referentiel, grille Declencheurs & aggravants P06 : volets roulants PVC'
+    calibration_status: provisional_modeling_weight

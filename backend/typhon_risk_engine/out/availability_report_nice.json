@@ -1,0 +1,46 @@
+{
+  "bdnb": {
+    "expected": 3,
+    "present": [
+      "bdnb.batiment.alea_argile",
+      "bdnb.batiment.annee_construction",
+      "bdnb.batiment.materiaux_structure_mur_exterieur"
+    ],
+    "absent": [],
+    "coverage": 1.0
+  },
+  "georisques": {
+    "expected": 4,
+    "present": [
+      "georisques.cavites.results",
+      "georisques.mouvements_de_terrain.results",
+      "georisques.zonage_sismique.data[0].code_zone",
+      "georisques.zones_inondables"
+    ],
+    "absent": [],
+    "coverage": 1.0
+  },
+  "open_meteo_daily": {
+    "expected": 6,
+    "present": [],
+    "absent": [
+      "climat_open_meteo.daily.precipitation_sum",
+      "climat_open_meteo.daily.relative_humidity_2m_mean",
+      "climat_open_meteo.daily.soil_moisture_0_to_10cm_mean",
+      "climat_open_meteo.daily.temperature_2m_max",
+      "climat_open_meteo.daily.temperature_2m_min",
+      "climat_open_meteo.daily.wind_speed_10m_max"
+    ],
+    "coverage": 0.0
+  },
+  "wfs_distances": {
+    "expected": 3,
+    "present": [],
+    "absent": [
+      "distanceFireStation",
+      "distanceToForest",
+      "distanceToWaterway"
+    ],
+    "coverage": 0.0
+  }
+}
