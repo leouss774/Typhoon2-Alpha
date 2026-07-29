@@ -1,10 +1,11 @@
 """
-digital_twin_agent — dernier maillon du graphe (cf. README racine).
+diagnostic_builder — dernier maillon du graphe (cf. README racine).
 
-Ne collecte rien, ne calcule aucun score : assemble la geometrie
-(`geometry_builder`), les scores (`scoring_agent`) et l'adresse/bien
-(`collector_agent`) dans le contrat JSON unique consomme par la scene
-Three.js (voir README, section "Jumeau numerique 3D — contrat de sortie").
+Ne collecte rien, ne calcule aucun score : assemble la géométrie
+(`geometry_builder`), les scores (`scoring_agent`), les interprétations
+(`interpretation_agent`) et les données du bien (`collector_agent`) dans
+le diagnostic JSON unique consommé par la scène Three.js du frontend
+(voir README, section "Jumeau numérique 3D — format de sortie").
 """
 
 from __future__ import annotations
@@ -18,9 +19,9 @@ logger = get_logger(__name__)
 
 # Valeurs de repli MVP pour les champs que ni la BDNB ni le formulaire ne
 # couvrent aujourd'hui (cave/sous-sol/garage/jardin — cf. README next-steps
-# §4 "Role de l'IA dans ce noeud" : a terme, un LLM complete ces champs a
-# partir du contexte ; en attendant ce branchement, on applique un defaut
-# documente plutot que de laisser une valeur nulle cassser le rendu 3D).
+# §4 "Rôle de l'IA dans ce noeud" : à terme, un LLM complète ces champs à
+# partir du contexte ; en attendant ce branchement, on applique un défaut
+# documenté plutôt que de laisser une valeur nulle casser le rendu 3D).
 def _apply_mvp_defaults(geometry: dict[str, Any], annee_construction: int | None) -> None:
     if geometry.get("has_basement") is None:
         geometry["has_basement"] = bool(annee_construction and annee_construction < 1949)
@@ -38,12 +39,26 @@ def _bien_type(bdnb: dict[str, Any] | None) -> str:
     return usage or "maison individuelle"
 
 
-def assemble_contract(
+def build_diagnostic(
     building_data: dict[str, Any],
     risk_result: dict[str, Any],
     formulaire: dict[str, Any] | None = None,
+    interpretations: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    logger.info("digital_twin_agent -- assemblage du contrat")
+    """Assemble le diagnostic final de vulnérabilité climatique.
+
+    Combine les données collectées (building_data), les scores de risque
+    (risk_result), les interprétations LLM (interpretations) et la géométrie
+    du bâtiment dans un dictionnaire unique transmis au frontend.
+
+    Returns
+    -------
+    dict
+        Le diagnostic complet avec adresse, bien, geometry, score_global,
+        zones (enrichies des conclusions interprétées), projection_2050,
+        climat, marché (DVF), et métadonnées de construction.
+    """
+    logger.info("diagnostic_builder -- assemblage du diagnostic")
 
     adresse_info = building_data.get("adresse") or {}
     bdnb = building_data.get("bdnb")
@@ -54,7 +69,7 @@ def assemble_contract(
     geometry = geometry_report["geometry"]
     if geometry_report["champs_manquants"]:
         logger.info(
-            "  champs geometry non fournis par la BDNB/formulaire : %s (defauts MVP appliques)",
+            "  champs geometry non fournis par la BDNB/formulaire : %s (défauts MVP appliqués)",
             ", ".join(geometry_report["champs_manquants"]),
         )
     annee_construction = batiment.get("annee_construction")
@@ -74,7 +89,27 @@ def assemble_contract(
     if climat_copernicus:
         source_parts.append("+ données Copernicus CDS disponibles (climat_copernicus)")
 
-    contract = {
+    # Enrichir chaque zone avec la conclusion interprétée (si disponible)
+    interpretations = interpretations or {}
+    zones_enriched = {}
+    for zone_name, zone_data in risk_result["zones"].items():
+        zone_copy = dict(zone_data)
+        interp = interpretations.get(zone_name)
+        if interp:
+            # La conclusion enrichie remplace la justification technique
+            # dans l'affichage principal (le front n'affiche pas "interprétation")
+            zone_copy["conclusion"] = interp.get("conclusion", "")
+            zone_copy["facteurs_aggravants"] = interp.get("facteurs_aggravants", [])
+            zone_copy["facteurs_attenuants"] = interp.get("facteurs_attenuants", [])
+            zone_copy["vulnerabilite"] = interp.get("vulnerabilite", "moderee")
+        else:
+            zone_copy["conclusion"] = ""
+            zone_copy["facteurs_aggravants"] = []
+            zone_copy["facteurs_attenuants"] = []
+            zone_copy["vulnerabilite"] = zone_data.get("niveau", "modere")
+        zones_enriched[zone_name] = zone_copy
+
+    diagnostic = {
         "adresse": adresse_info.get("label", ""),
         "bien": {
             "type": _bien_type(bdnb),
@@ -83,7 +118,7 @@ def assemble_contract(
         },
         "geometry": geometry,
         "score_global": risk_result["score_global"],
-        "zones": risk_result["zones"],
+        "zones": zones_enriched,
         "projection_2050": risk_result["projection_2050"],
         "climat": {
             "2050": {
@@ -103,8 +138,8 @@ def assemble_contract(
         "marche": {
             "dvf_disponible": bool(building_data.get("dvf_local")),
         },
-        # Metadonnees de fabrication, hors contrat frontend strict mais utiles
-        # pour deboguer/auditer un diagnostic (ignorees par le rendu 3D).
+        # Métadonnées de fabrication, hors diagnostic frontend strict mais utiles
+        # pour déboguer/auditer un diagnostic (ignorées par le rendu 3D).
         "_geometry_build_report": {
             "champs_ok": geometry_report["champs_ok"],
             "champs_manquants_bdnb": geometry_report["champs_manquants"],
@@ -117,36 +152,24 @@ def assemble_contract(
         "_erreurs_collecte": building_data.get("erreurs", []),
     }
 
-    # DVF : enrichir la section marche si donnees disponibles
+    # DVF : enrichir la section marché si données disponibles
     dvf_data = building_data.get("dvf_local")
     if dvf_data:
-        contract["marche"]["nb_transactions"] = len(dvf_data)
-        # On garde un echantillon reduit pour le diagnostic promoteur
-        contract["marche"]["dernieres_transactions"] = dvf_data[:5]
+        diagnostic["marche"]["nb_transactions"] = len(dvf_data)
+        diagnostic["marche"]["dernieres_transactions"] = dvf_data[:5]
 
-    # Copernicus : passe les donnees brutes en metadata (affichage conditionnel
-    # dans l'UX, cf. _sources.climat_copernicus)
+    # Copernicus : passe les données brutes en metadata (affichage conditionnel)
     if climat_copernicus:
-        contract["_sources"]["climat_copernicus_raw"] = climat_copernicus
+        diagnostic["_sources"]["climat_copernicus_raw"] = climat_copernicus
 
     logger.info(
-        "  -> contrat pret : score_global=%d, %d zone(s), geometry=%.1fx%.1fm / %d etage(s), dvf=%s, copernicus=%s",
-        contract["score_global"],
-        len(contract["zones"]),
+        "  -> diagnostic prêt : score_global=%d, %d zone(s), geometry=%.1fx%.1fm / %d étage(s), dvf=%s, copernicus=%s",
+        diagnostic["score_global"],
+        len(diagnostic["zones"]),
         geometry["largeur_m"],
         geometry["longueur_m"],
         geometry["floors_count"],
-        contract["marche"]["dvf_disponible"],
-        contract["_sources"]["climat_copernicus"],
+        diagnostic["marche"]["dvf_disponible"],
+        diagnostic["_sources"]["climat_copernicus"],
     )
-    return contract
-
-    logger.info(
-        "  -> contrat pret : score_global=%d, %d zone(s), geometry=%.1fx%.1fm / %d etage(s)",
-        contract["score_global"],
-        len(contract["zones"]),
-        geometry["largeur_m"],
-        geometry["longueur_m"],
-        geometry["floors_count"],
-    )
-    return contract
+    return diagnostic

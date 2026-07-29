@@ -1,0 +1,2398 @@
+{
+  "engine_version": "2.0.0",
+  "rules_version": "1.0.0",
+  "rules_digest": "32762e7683d0e6c8",
+  "address": {
+    "label": "Cas test Cas-Eleve",
+    "citycode": "30189",
+    "lat": 45.0,
+    "lon": 4.0,
+    "score_geocodage": 0.97
+  },
+  "entity_match": {
+    "level": "building_group",
+    "reason": "adresse saisie presente dans le groupe BDNB",
+    "input_label": "Cas test Cas-Eleve",
+    "bdnb_principal_label": "Cas test Cas-Eleve",
+    "n_addresses_in_group": 1,
+    "parcel_ids": [
+      "30189000AA0001"
+    ]
+  },
+  "building_typology": {
+    "kind": "individual_house",
+    "signals": [],
+    "levels": 2,
+    "n_dwellings": 1,
+    "note": null
+  },
+  "source_status": {
+    "bdnb": "AVAILABLE",
+    "georisques": "AVAILABLE",
+    "open_meteo": "NOT_COLLECTED",
+    "copernicus": "NOT_COLLECTED",
+    "dvf": "EXCLUDED_BY_DESIGN"
+  },
+  "commune_context": {
+    "risks": [
+      {
+        "code": "13",
+        "label": "Seisme"
+      },
+      {
+        "code": "127",
+        "label": "Tassements differentiels"
+      }
+    ],
+    "codes": [
+      "127",
+      "13"
+    ],
+    "weight_in_F": 0.0,
+    "note": "Presence declaree a l'echelle de la COMMUNE. Ni intensite, ni exposition au batiment. Poids nul dans F (decision D03/D04)."
+  },
+  "catnat_context": {
+    "records_present": 2,
+    "records_announced": 2,
+    "total_pages": 1,
+    "pagination_complete": true,
+    "weight_in_F": 0.0,
+    "note": "Historique administratif. Un arrete CatNat reflete autant la demarche de la commune que l'alea physique. Poids nul dans F (D03).",
+    "warning": null
+  },
+  "prospective_context": {
+    "available": false,
+    "note": "Aucune donnee prospective (DRIAS/Copernicus) dans ce run. Les projections restent de toute facon exclues de F, V et R (D05)."
+  },
+  "pii_dropped": [],
+  "global_warnings": [
+    "AZI en erreur (SOURCE_ERROR) : l'absence de zone inondable n'est PAS etablie."
+  ],
+  "perils": {
+    "P01": {
+      "peril_id": "P01",
+      "peril_name": "Inondation",
+      "status": "INDETERMINATE",
+      "frequency": {
+        "score": null,
+        "score_raw": null,
+        "label": "indice ordinal d'alea / exposition (PAS une frequence annuelle)",
+        "determinate": false,
+        "indeterminate_reason": "variable dominante absente (hazard.flood.zone)",
+        "coverage": 0,
+        "used_variables": [],
+        "missing_variables": [
+          {
+            "key": "hazard.flood.zone",
+            "weight": 0.55,
+            "status": "SOURCE_ERROR",
+            "reason": "source en erreur (SOURCE_ERROR) — pas une absence de phenomene",
+            "source_hint": [
+              "georisques.zones_inondables",
+              "georisques.ppri.zone"
+            ]
+          },
+          {
+            "key": "site.hand",
+            "weight": 0.25,
+            "status": "NOT_COLLECTED",
+            "reason": "champ non collecte par le pipeline",
+            "source_hint": [
+              "derive.hand"
+            ]
+          },
+          {
+            "key": "climate.heavy_precipitation",
+            "weight": 0.2,
+            "status": "NOT_COLLECTED",
+            "reason": "variable absente du bag (NOT_COLLECTED)",
+            "source_hint": [
+              "climat_open_meteo.derived.max5day_precip"
+            ]
+          }
+        ],
+        "protection_reduction": 0.0,
+        "detail": []
+      },
+      "vulnerability": {
+        "score": null,
+        "score_raw": null,
+        "label": null,
+        "determinate": false,
+        "indeterminate_reason": "variable dominante absente (building.flood.floor_height_class)",
+        "coverage": 0.3,
+        "used_variables": [
+          "building.basement"
+        ],
+        "missing_variables": [
+          {
+            "key": "building.flood.floor_height_class",
+            "weight": 0.4,
+            "status": "NOT_COLLECTED",
+            "reason": "variable absente du bag (NOT_COLLECTED)",
+            "source_hint": [
+              "questionnaire.building.flood.floor_height_class"
+            ]
+          },
+          {
+            "key": "building.flood.technical_equipment_low",
+            "weight": 0.3,
+            "status": "NOT_COLLECTED",
+            "reason": "variable absente du bag (NOT_COLLECTED)",
+            "source_hint": [
+              "questionnaire.building.flood.technical_equipment_low"
+            ]
+          }
+        ],
+        "protection_reduction": 0.0,
+        "detail": [
+          {
+            "key": "building.basement",
+            "weight": 0.3,
+            "index": 1.0,
+            "value": "sous_sol_total",
+            "source": "questionnaire",
+            "source_rank": 2,
+            "scope": "dwelling",
+            "evidence_level": "high",
+            "calibration_status": "published_threshold"
+          }
+        ]
+      },
+      "risk": null,
+      "confidence": {
+        "score": 72,
+        "score_raw": 71.76,
+        "components": {
+          "geocoding_entity": 0.888,
+          "completeness": 0.15,
+          "spatial_scale": 1.0,
+          "evidence_level": 1.0,
+          "coherence": 0.95
+        },
+        "weights": {
+          "geocoding_entity": 0.2,
+          "completeness": 0.3,
+          "spatial_scale": 0.25,
+          "evidence_level": 0.15,
+          "coherence": 0.1
+        },
+        "cap_applied": null,
+        "reasons": [
+          "bloc F indetermine : variable dominante absente (hazard.flood.zone)",
+          "bloc V indetermine : variable dominante absente (building.flood.floor_height_class)",
+          "completude ponderee faible (15 %)",
+          "correspondance au GROUPE de batiments, pas au logement : les attributs BDNB decrivent l'ensemble immobilier",
+          "erreur de source sur hazard.flood.zone"
+        ],
+        "independent_of_risk": true
+      },
+      "current_context": {
+        "commune_risk_codes_matched": [],
+        "weight_in_F": 0.0,
+        "note": "Presence declaree a l'echelle de la COMMUNE. Ni intensite, ni exposition au batiment. Poids nul dans F (decision D03/D04)."
+      },
+      "prospective_context": {
+        "note": "Vide par construction : les projections climatiques n'entrent jamais dans F, V ou R (decision D05)."
+      },
+      "dominant_factors": [],
+      "protective_factors": [],
+      "warnings": [
+        "F indetermine : variable dominante absente (hazard.flood.zone). Aucun score de risque n'est publie."
+      ],
+      "evidence": [
+        {
+          "key": "building.basement",
+          "mechanism": "Volume enterre : premier atteint, et souvent siege des equipements techniques.",
+          "references": [
+            "Referentiel HAZUS-V02 : courbes distinctes avec et sans sous-sol"
+          ],
+          "evidence_level": "high"
+        }
+      ],
+      "required_user_questions": [
+        "building.flood.floor_height_class",
+        "building.flood.technical_equipment_low"
+      ]
+    },
+    "P02": {
+      "peril_id": "P02",
+      "peril_name": "Retrait-gonflement des argiles",
+      "status": "CALCULATED",
+      "frequency": {
+        "score": 100,
+        "score_raw": 100.0,
+        "label": "indice ordinal d'alea / exposition (PAS une frequence annuelle)",
+        "determinate": true,
+        "indeterminate_reason": null,
+        "coverage": 0.7,
+        "used_variables": [
+          "hazard.clay.exposure_class"
+        ],
+        "missing_variables": [
+          {
+            "key": "climate.consecutive_dry_days",
+            "weight": 0.3,
+            "status": "NOT_COLLECTED",
+            "reason": "champ non collecte par le pipeline",
+            "source_hint": [
+              "climat_open_meteo.derived.consecutive_dry_days"
+            ]
+          }
+        ],
+        "protection_reduction": 0.0,
+        "detail": [
+          {
+            "key": "hazard.clay.exposure_class",
+            "weight": 0.7,
+            "index": 1.0,
+            "value": "Fort",
+            "source": "BDNB",
+            "source_rank": 1,
+            "scope": "building_group",
+            "evidence_level": "high",
+            "calibration_status": "published_threshold"
+          }
+        ]
+      },
+      "vulnerability": {
+        "score": 86,
+        "score_raw": 86.0,
+        "label": null,
+        "determinate": true,
+        "indeterminate_reason": null,
+        "coverage": 1.0,
+        "used_variables": [
+          "building.foundation.type",
+          "building.foundation.depth_class",
+          "building.rga.crack_width_class",
+          "site.trees_within_1_5h",
+          "building.foundation.uniform"
+        ],
+        "missing_variables": [],
+        "protection_reduction": 0.0,
+        "detail": [
+          {
+            "key": "building.foundation.type",
+            "weight": 0.35,
+            "index": 1.0,
+            "value": "mixte",
+            "source": "questionnaire",
+            "source_rank": 2,
+            "scope": "dwelling",
+            "evidence_level": "medium",
+            "calibration_status": "provisional_modeling_weight"
+          },
+          {
+            "key": "building.foundation.depth_class",
+            "weight": 0.2,
+            "index": 1.0,
+            "value": "lt_0_80",
+            "source": "questionnaire",
+            "source_rank": 2,
+            "scope": "dwelling",
+            "evidence_level": "medium",
+            "calibration_status": "published_threshold"
+          },
+          {
+            "key": "building.rga.crack_width_class",
+            "weight": 0.2,
+            "index": 0.8,
+            "value": "D4",
+            "source": "questionnaire",
+            "source_rank": 2,
+            "scope": "dwelling",
+            "evidence_level": "high",
+            "calibration_status": "published_threshold"
+          },
+          {
+            "key": "site.trees_within_1_5h",
+            "weight": 0.15,
+            "index": 1.0,
+            "value": true,
+            "source": "questionnaire",
+            "source_rank": 2,
+            "scope": "dwelling",
+            "evidence_level": "high",
+            "calibration_status": "published_threshold"
+          },
+          {
+            "key": "building.foundation.uniform",
+            "weight": 0.1,
+            "index": 0.0,
+            "value": false,
+            "source": "questionnaire",
+            "source_rank": 2,
+            "scope": "dwelling",
+            "evidence_level": "medium",
+            "calibration_status": "provisional_modeling_weight"
+          }
+        ]
+      },
+      "risk": {
+        "score": 93,
+        "score_raw": 92.7362,
+        "class": "tres eleve",
+        "formula": "R = 100 x (F/100)^0.5 x (V/100)^0.5",
+        "calibration_status": "provisional_uncalibrated"
+      },
+      "confidence": {
+        "score": 88,
+        "score_raw": 88.4071,
+        "components": {
+          "geocoding_entity": 0.888,
+          "completeness": 0.85,
+          "spatial_scale": 0.9176,
+          "evidence_level": 0.8471,
+          "coherence": 0.95
+        },
+        "weights": {
+          "geocoding_entity": 0.2,
+          "completeness": 0.3,
+          "spatial_scale": 0.25,
+          "evidence_level": 0.15,
+          "coherence": 0.1
+        },
+        "cap_applied": null,
+        "reasons": [
+          "2 ponderation(s) provisoire(s) non calibree(s) dans ce score",
+          "correspondance au GROUPE de batiments, pas au logement : les attributs BDNB decrivent l'ensemble immobilier"
+        ],
+        "independent_of_risk": true
+      },
+      "current_context": {
+        "commune_risk_codes_matched": [
+          {
+            "code": "127",
+            "label": "Tassements differentiels"
+          }
+        ],
+        "weight_in_F": 0.0,
+        "note": "Presence declaree a l'echelle de la COMMUNE. Ni intensite, ni exposition au batiment. Poids nul dans F (decision D03/D04)."
+      },
+      "prospective_context": {
+        "note": "Vide par construction : les projections climatiques n'entrent jamais dans F, V ou R (decision D05)."
+      },
+      "dominant_factors": [
+        {
+          "block": "F",
+          "key": "hazard.clay.exposure_class",
+          "contribution": 1.0,
+          "index": 1.0,
+          "weight_renormalized": 1.0
+        },
+        {
+          "block": "V",
+          "key": "building.foundation.type",
+          "contribution": 0.35,
+          "index": 1.0,
+          "weight_renormalized": 0.35
+        },
+        {
+          "block": "V",
+          "key": "building.foundation.depth_class",
+          "contribution": 0.2,
+          "index": 1.0,
+          "weight_renormalized": 0.2
+        },
+        {
+          "block": "V",
+          "key": "building.rga.crack_width_class",
+          "contribution": 0.16,
+          "index": 0.8,
+          "weight_renormalized": 0.2
+        }
+      ],
+      "protective_factors": [],
+      "warnings": [],
+      "evidence": [
+        {
+          "key": "hazard.clay.exposure_class",
+          "mechanism": "Susceptibilite du sol au retrait-gonflement, mesuree directement a la parcelle par la carte d'exposition officielle. Classe publiee, consommee telle quelle.\n",
+          "references": [
+            "Carte d'exposition RGA Georisques, arrete du 9 janvier 2026 actualisant la carte 2020",
+            "Referentiel M24/M25 (BRGM/RP-55122-FR) : methode ayant PRODUIT cette carte"
+          ],
+          "evidence_level": "high"
+        },
+        {
+          "key": "building.foundation.type",
+          "mechanism": "La rigidite du systeme de fondation conditionne la transmission du tassement differentiel a la superstructure. Convergence independante de deux sources sur deux perils distincts.\n",
+          "references": [
+            "Referentiel MZU-V01 (Mzungu et al. 2025, IJDRR 127:105636) : micropieux les plus performants, fondations mixtes les moins performantes",
+            "Referentiel SFL-V02 (SafeLand D2.5 2011) : fondation rigide vs souple, meme sens sur P04"
+          ],
+          "evidence_level": "medium"
+        },
+        {
+          "key": "building.foundation.depth_class",
+          "mechanism": "La zone active de dessiccation atteint 1 a 2 m en regime normal et 3 a 5 m en secheresse exceptionnelle. Une fondation ancree sous cette zone est soustraite au mouvement.\n",
+          "references": [
+            "Referentiel BRGM R 40355 (1998) : profondeur de zone active 1-2 m normal, 3-5 m en secheresse",
+            "Referentiel BRGM/RP-54862-FR : seuil d'encastrement 1,20 m"
+          ],
+          "evidence_level": "medium"
+        },
+        {
+          "key": "building.rga.crack_width_class",
+          "mechanism": "Desordre deja constitue : la fissuration observee temoigne d'une sensibilite averee du couple sol-structure a l'adresse.\n",
+          "references": [
+            "Referentiel M88 (Mzungu et al. 2025) : echelle D1-D5, seuils de largeur 0,1-1 / 1-5 / 5-15 / 15-25 / >25 mm, calee sur 10 325 rapports d'expertise"
+          ],
+          "evidence_level": "high"
+        },
+        {
+          "key": "site.trees_within_1_5h",
+          "mechanism": "La vegetation arboree est le seul facteur permettant au front de dessiccation de depasser 1 m de profondeur. Seuil operationnel : arbre a moins de 1,5 fois sa hauteur du bati.\n",
+          "references": [
+            "Referentiel BRGM-B01 (BRGM R 40355) : seuil 1,5 x hauteur",
+            "Referentiel Mzungu 2025 2e passe : confirme comme mode operatoire reel des experts d'assurance"
+          ],
+          "evidence_level": "high"
+        },
+        {
+          "key": "building.foundation.uniform",
+          "mechanism": "Des profondeurs d'ancrage multiples sur un meme batiment creent un differentiel de mouvement plus endommageant qu'une profondeur unique.\n",
+          "references": [
+            "Referentiel MZU-V07 (Mzungu et al. 2025) : heterogeneite de profondeur",
+            "Referentiel BRGM/RP-54862-FR : encastrement variable dans 38 % des sinistres (frequence NON utilisee comme coefficient)"
+          ],
+          "evidence_level": "medium"
+        }
+      ],
+      "required_user_questions": []
+    },
+    "P03": {
+      "peril_id": "P03",
+      "peril_name": "Seisme",
+      "status": "CALCULATED",
+      "frequency": {
+        "score": 75,
+        "score_raw": 75.0,
+        "label": "indice ordinal d'alea / exposition (PAS une frequence annuelle)",
+        "determinate": true,
+        "indeterminate_reason": null,
+        "coverage": 1.0,
+        "used_variables": [
+          "hazard.seismic.zone"
+        ],
+        "missing_variables": [],
+        "protection_reduction": 0.0,
+        "detail": [
+          {
+            "key": "hazard.seismic.zone",
+            "weight": 1.0,
+            "index": 0.75,
+            "value": "4",
+            "source": "Georisques zonage_sismique",
+            "source_rank": 3,
+            "scope": "commune",
+            "evidence_level": "high",
+            "calibration_status": "published_threshold"
+          }
+        ]
+      },
+      "vulnerability": {
+        "score": 82,
+        "score_raw": 82.5,
+        "label": null,
+        "determinate": true,
+        "indeterminate_reason": null,
+        "coverage": 1.0,
+        "used_variables": [
+          "building.structure.wall_material",
+          "building.year_built",
+          "building.levels",
+          "building.seismic.soft_storey"
+        ],
+        "missing_variables": [],
+        "protection_reduction": 0.0,
+        "detail": [
+          {
+            "key": "building.structure.wall_material",
+            "weight": 0.4,
+            "index": 1.0,
+            "value": "moellons",
+            "source": "questionnaire",
+            "source_rank": 2,
+            "scope": "dwelling",
+            "evidence_level": "medium",
+            "calibration_status": "provisional_modeling_weight"
+          },
+          {
+            "key": "building.year_built",
+            "weight": 0.25,
+            "index": 1.0,
+            "value": 1935,
+            "source": "BDNB",
+            "source_rank": 4,
+            "scope": "building_group",
+            "evidence_level": "medium",
+            "calibration_status": "provisional_modeling_weight"
+          },
+          {
+            "key": "building.levels",
+            "weight": 0.25,
+            "index": 0.3,
+            "value": 2,
+            "source": "questionnaire",
+            "source_rank": 2,
+            "scope": "dwelling",
+            "evidence_level": "low",
+            "calibration_status": "provisional_modeling_weight"
+          },
+          {
+            "key": "building.seismic.soft_storey",
+            "weight": 0.1,
+            "index": 1.0,
+            "value": true,
+            "source": "questionnaire",
+            "source_rank": 2,
+            "scope": "dwelling",
+            "evidence_level": "medium",
+            "calibration_status": "provisional_modeling_weight"
+          }
+        ]
+      },
+      "risk": {
+        "score": 79,
+        "score_raw": 78.6607,
+        "class": "eleve",
+        "formula": "R = 100 x (F/100)^0.5 x (V/100)^0.5",
+        "calibration_status": "provisional_uncalibrated"
+      },
+      "confidence": {
+        "score": 87,
+        "score_raw": 87.4475,
+        "components": {
+          "geocoding_entity": 0.888,
+          "completeness": 1.0,
+          "spatial_scale": 0.75,
+          "evidence_level": 0.7625,
+          "coherence": 0.95
+        },
+        "weights": {
+          "geocoding_entity": 0.2,
+          "completeness": 0.3,
+          "spatial_scale": 0.25,
+          "evidence_level": 0.15,
+          "coherence": 0.1
+        },
+        "cap_applied": null,
+        "reasons": [
+          "4 ponderation(s) provisoire(s) non calibree(s) dans ce score",
+          "correspondance au GROUPE de batiments, pas au logement : les attributs BDNB decrivent l'ensemble immobilier"
+        ],
+        "independent_of_risk": true
+      },
+      "current_context": {
+        "commune_risk_codes_matched": [
+          {
+            "code": "13",
+            "label": "Seisme"
+          }
+        ],
+        "weight_in_F": 0.0,
+        "note": "Presence declaree a l'echelle de la COMMUNE. Ni intensite, ni exposition au batiment. Poids nul dans F (decision D03/D04)."
+      },
+      "prospective_context": {
+        "note": "Vide par construction : les projections climatiques n'entrent jamais dans F, V ou R (decision D05)."
+      },
+      "dominant_factors": [
+        {
+          "block": "F",
+          "key": "hazard.seismic.zone",
+          "contribution": 0.75,
+          "index": 0.75,
+          "weight_renormalized": 1.0
+        },
+        {
+          "block": "V",
+          "key": "building.structure.wall_material",
+          "contribution": 0.4,
+          "index": 1.0,
+          "weight_renormalized": 0.4
+        },
+        {
+          "block": "V",
+          "key": "building.year_built",
+          "contribution": 0.25,
+          "index": 1.0,
+          "weight_renormalized": 0.25
+        },
+        {
+          "block": "V",
+          "key": "building.seismic.soft_storey",
+          "contribution": 0.1,
+          "index": 1.0,
+          "weight_renormalized": 0.1
+        }
+      ],
+      "protective_factors": [],
+      "warnings": [],
+      "evidence": [
+        {
+          "key": "hazard.seismic.zone",
+          "mechanism": "Zonage probabiliste reglementaire (10 % de depassement en 50 ans). Seuils d'acceleration : z1 < 0,7 m/s2 ; z2 0,7-1,1 ; z3 1,1-1,6 ; z4 1,6-3,0 ; z5 >= 3,0.\n",
+          "references": [
+            "Art. D.563-8-1 du code de l'environnement ; decret n. 2010-1255 du 22 octobre 2010",
+            "PHASE1_AUDIT section 5.2"
+          ],
+          "evidence_level": "high"
+        },
+        {
+          "key": "building.structure.wall_material",
+          "mechanism": "Le systeme porteur conditionne la capacite a dissiper l'energie sismique. La maconnerie non chainee est la typologie la plus fragile, les voiles en beton arme la plus resistante.\n",
+          "references": [
+            "Referentiel RUE-V01 (Lagomarsino & Giovinazzi 2006, RISK-UE Table 3) : indices V par typologie, utilises ici en CLASSEMENT ORDINAL uniquement",
+            "Decision 11 : l'equation muD n'est PAS implementee, faute de conversion justifiee acceleration -> intensite EMS-98"
+          ],
+          "evidence_level": "medium"
+        },
+        {
+          "key": "building.year_built",
+          "mechanism": "Epoque de construction rapportee aux regles parasismiques successives : aucune regle avant 1969, PS69/PS92 ensuite, Eurocode 8 obligatoire depuis le 1er mai 2011.\n",
+          "references": [
+            "Decret n. 2010-1254 et arrete du 22 octobre 2010 : EC8 applicable au 1er mai 2011",
+            "Referentiel, grille Declencheurs & aggravants P03"
+          ],
+          "evidence_level": "medium"
+        },
+        {
+          "key": "building.levels",
+          "mechanism": "La hauteur augmente la periode propre et les efforts en pied de structure ; elle accroit aussi l'exposition aux effets de site.\n",
+          "references": [
+            "Referentiel, grille Declencheurs & aggravants P03 : irregularite en elevation"
+          ],
+          "evidence_level": "low"
+        },
+        {
+          "key": "building.seismic.soft_storey",
+          "mechanism": "Rez-de-chaussee largement ouvert : discontinuite de raideur concentrant la deformation sur un seul niveau.\n",
+          "references": [
+            "Referentiel, grille Declencheurs & aggravants P03 : niveau souple en rez-de-chaussee"
+          ],
+          "evidence_level": "medium"
+        }
+      ],
+      "required_user_questions": []
+    },
+    "P04-BLO": {
+      "peril_id": "P04-BLO",
+      "peril_name": "Mouvements de terrain - chute de blocs",
+      "status": "NEEDS_USER_INPUT",
+      "frequency": null,
+      "vulnerability": {
+        "score": null,
+        "score_raw": null,
+        "label": "Sensibilite du batiment hors exposition — ne constitue pas un score de risque",
+        "determinate": false,
+        "indeterminate_reason": "variable dominante absente (questionnaire.site.rockfall_exposure)",
+        "coverage": 0,
+        "used_variables": [],
+        "missing_variables": [
+          {
+            "key": "questionnaire.site.rockfall_exposure",
+            "weight": 1.0,
+            "status": "NOT_COLLECTED",
+            "reason": "variable absente du bag (NOT_COLLECTED)",
+            "source_hint": [
+              "questionnaire.site.rockfall_exposure"
+            ]
+          }
+        ],
+        "protection_reduction": 0.0,
+        "detail": []
+      },
+      "risk": null,
+      "confidence": {
+        "score": 27,
+        "score_raw": 27.26,
+        "components": {
+          "geocoding_entity": 0.888,
+          "completeness": 0.0,
+          "spatial_scale": 0.0,
+          "evidence_level": 0.0,
+          "coherence": 0.95
+        },
+        "weights": {
+          "geocoding_entity": 0.2,
+          "completeness": 0.3,
+          "spatial_scale": 0.25,
+          "evidence_level": 0.15,
+          "coherence": 0.1
+        },
+        "cap_applied": null,
+        "reasons": [
+          "bloc V indetermine : variable dominante absente (questionnaire.site.rockfall_exposure)",
+          "completude ponderee faible (0 %)",
+          "correspondance au GROUPE de batiments, pas au logement : les attributs BDNB decrivent l'ensemble immobilier"
+        ],
+        "independent_of_risk": true
+      },
+      "current_context": {
+        "commune_risk_codes_matched": [],
+        "weight_in_F": 0.0,
+        "note": "Presence declaree a l'echelle de la COMMUNE. Ni intensite, ni exposition au batiment. Poids nul dans F (decision D03/D04)."
+      },
+      "prospective_context": {},
+      "dominant_factors": [],
+      "protective_factors": [],
+      "warnings": [
+        "Aucun score d'alea : aucune donnee d'alea chute de blocs a la parcelle. Le code communal 123 signale la presence du phenomene sur la commune, sans localisation ni intensite (poids nul dans F, decision D03)."
+      ],
+      "evidence": [],
+      "required_user_questions": [
+        "questionnaire.site.rockfall_exposure"
+      ]
+    },
+    "P04-CAV": {
+      "peril_id": "P04-CAV",
+      "peril_name": "Mouvements de terrain - cavites et affaissements",
+      "status": "CALCULATED",
+      "frequency": {
+        "score": 75,
+        "score_raw": 75.0,
+        "label": "indice ordinal d'alea / exposition (PAS une frequence annuelle)",
+        "determinate": true,
+        "indeterminate_reason": null,
+        "coverage": 1.0,
+        "used_variables": [
+          "hazard.landslide.cavities_count"
+        ],
+        "missing_variables": [],
+        "protection_reduction": 0.0,
+        "detail": [
+          {
+            "key": "hazard.landslide.cavities_count",
+            "weight": 1.0,
+            "index": 0.75,
+            "value": 3,
+            "source": "Georisques cavites",
+            "source_rank": 2,
+            "scope": "neighbourhood",
+            "evidence_level": "medium",
+            "calibration_status": "provisional_modeling_weight"
+          }
+        ]
+      },
+      "vulnerability": {
+        "score": 100,
+        "score_raw": 100.0,
+        "label": null,
+        "determinate": true,
+        "indeterminate_reason": null,
+        "coverage": 1.0,
+        "used_variables": [
+          "questionnaire.site.known_cavity",
+          "questionnaire.site.subsidence_signs"
+        ],
+        "missing_variables": [],
+        "protection_reduction": 0.0,
+        "detail": [
+          {
+            "key": "questionnaire.site.known_cavity",
+            "weight": 0.5,
+            "index": 1.0,
+            "value": true,
+            "source": "questionnaire",
+            "source_rank": 2,
+            "scope": "dwelling",
+            "evidence_level": "medium",
+            "calibration_status": "provisional_modeling_weight"
+          },
+          {
+            "key": "questionnaire.site.subsidence_signs",
+            "weight": 0.5,
+            "index": 1.0,
+            "value": true,
+            "source": "questionnaire",
+            "source_rank": 2,
+            "scope": "dwelling",
+            "evidence_level": "medium",
+            "calibration_status": "provisional_modeling_weight"
+          }
+        ]
+      },
+      "risk": {
+        "score": 87,
+        "score_raw": 86.6025,
+        "class": "tres eleve",
+        "formula": "R = 100 x (F/100)^0.5 x (V/100)^0.5",
+        "calibration_status": "provisional_uncalibrated"
+      },
+      "confidence": {
+        "score": 89,
+        "score_raw": 88.76,
+        "components": {
+          "geocoding_entity": 0.888,
+          "completeness": 1.0,
+          "spatial_scale": 0.9,
+          "evidence_level": 0.6,
+          "coherence": 0.95
+        },
+        "weights": {
+          "geocoding_entity": 0.2,
+          "completeness": 0.3,
+          "spatial_scale": 0.25,
+          "evidence_level": 0.15,
+          "coherence": 0.1
+        },
+        "cap_applied": null,
+        "reasons": [
+          "3 ponderation(s) provisoire(s) non calibree(s) dans ce score",
+          "correspondance au GROUPE de batiments, pas au logement : les attributs BDNB decrivent l'ensemble immobilier"
+        ],
+        "independent_of_risk": true
+      },
+      "current_context": {
+        "commune_risk_codes_matched": [],
+        "weight_in_F": 0.0,
+        "note": "Presence declaree a l'echelle de la COMMUNE. Ni intensite, ni exposition au batiment. Poids nul dans F (decision D03/D04)."
+      },
+      "prospective_context": {
+        "note": "Vide par construction : les projections climatiques n'entrent jamais dans F, V ou R (decision D05)."
+      },
+      "dominant_factors": [
+        {
+          "block": "F",
+          "key": "hazard.landslide.cavities_count",
+          "contribution": 0.75,
+          "index": 0.75,
+          "weight_renormalized": 1.0
+        },
+        {
+          "block": "V",
+          "key": "questionnaire.site.known_cavity",
+          "contribution": 0.5,
+          "index": 1.0,
+          "weight_renormalized": 0.5
+        },
+        {
+          "block": "V",
+          "key": "questionnaire.site.subsidence_signs",
+          "contribution": 0.5,
+          "index": 1.0,
+          "weight_renormalized": 0.5
+        }
+      ],
+      "protective_factors": [],
+      "warnings": [],
+      "evidence": [
+        {
+          "key": "hazard.landslide.cavities_count",
+          "mechanism": "Nombre de cavites souterraines recensees dans le rayon de requete. Mecanisme d'effondrement distinct du glissement.",
+          "references": [
+            "Georisques base cavites ; PHASE1_AUDIT section 1 (P04)"
+          ],
+          "evidence_level": "medium"
+        },
+        {
+          "key": "questionnaire.site.known_cavity",
+          "mechanism": "Puits, cave, galerie ou cavite connue sous ou pres du bati.",
+          "references": [
+            "Referentiel, grille Declencheurs & aggravants P04 : presence de cavites"
+          ],
+          "evidence_level": "medium"
+        },
+        {
+          "key": "questionnaire.site.subsidence_signs",
+          "mechanism": "Signes d'affaissement observes : sol, dallage, seuils.",
+          "references": [
+            "Referentiel, grille Declencheurs & aggravants P04"
+          ],
+          "evidence_level": "medium"
+        }
+      ],
+      "required_user_questions": []
+    },
+    "P04-GLI": {
+      "peril_id": "P04-GLI",
+      "peril_name": "Mouvements de terrain - glissement et instabilite de pente",
+      "status": "INDETERMINATE",
+      "frequency": {
+        "score": null,
+        "score_raw": null,
+        "label": "indice ordinal d'alea / exposition (PAS une frequence annuelle)",
+        "determinate": false,
+        "indeterminate_reason": "variable dominante absente (site.slope_degrees)",
+        "coverage": 0,
+        "used_variables": [],
+        "missing_variables": [
+          {
+            "key": "site.slope_degrees",
+            "weight": 0.6,
+            "status": "NOT_COLLECTED",
+            "reason": "champ non collecte par le pipeline",
+            "source_hint": [
+              "derive.slope_degrees"
+            ]
+          },
+          {
+            "key": "site.twi",
+            "weight": 0.4,
+            "status": "NOT_COLLECTED",
+            "reason": "champ non collecte par le pipeline",
+            "source_hint": [
+              "derive.twi"
+            ]
+          }
+        ],
+        "protection_reduction": 0.0,
+        "detail": []
+      },
+      "vulnerability": {
+        "score": null,
+        "score_raw": null,
+        "label": null,
+        "determinate": false,
+        "indeterminate_reason": "variable dominante absente (questionnaire.building.foundation.rigidity)",
+        "coverage": 0,
+        "used_variables": [],
+        "missing_variables": [
+          {
+            "key": "questionnaire.building.foundation.rigidity",
+            "weight": 0.45,
+            "status": "NOT_COLLECTED",
+            "reason": "variable absente du bag (NOT_COLLECTED)",
+            "source_hint": [
+              "questionnaire.building.foundation.rigidity"
+            ]
+          },
+          {
+            "key": "questionnaire.site.slope_position",
+            "weight": 0.3,
+            "status": "NOT_COLLECTED",
+            "reason": "variable absente du bag (NOT_COLLECTED)",
+            "source_hint": [
+              "questionnaire.site.slope_position"
+            ]
+          },
+          {
+            "key": "questionnaire.site.retaining_wall_state",
+            "weight": 0.25,
+            "status": "NOT_COLLECTED",
+            "reason": "variable absente du bag (NOT_COLLECTED)",
+            "source_hint": [
+              "questionnaire.site.retaining_wall_state"
+            ]
+          }
+        ],
+        "protection_reduction": 0.0,
+        "detail": []
+      },
+      "risk": null,
+      "confidence": {
+        "score": 27,
+        "score_raw": 27.26,
+        "components": {
+          "geocoding_entity": 0.888,
+          "completeness": 0.0,
+          "spatial_scale": 0.0,
+          "evidence_level": 0.0,
+          "coherence": 0.95
+        },
+        "weights": {
+          "geocoding_entity": 0.2,
+          "completeness": 0.3,
+          "spatial_scale": 0.25,
+          "evidence_level": 0.15,
+          "coherence": 0.1
+        },
+        "cap_applied": null,
+        "reasons": [
+          "bloc F indetermine : variable dominante absente (site.slope_degrees)",
+          "bloc V indetermine : variable dominante absente (questionnaire.building.foundation.rigidity)",
+          "completude ponderee faible (0 %)",
+          "correspondance au GROUPE de batiments, pas au logement : les attributs BDNB decrivent l'ensemble immobilier"
+        ],
+        "independent_of_risk": true
+      },
+      "current_context": {
+        "commune_risk_codes_matched": [],
+        "weight_in_F": 0.0,
+        "note": "Presence declaree a l'echelle de la COMMUNE. Ni intensite, ni exposition au batiment. Poids nul dans F (decision D03/D04)."
+      },
+      "prospective_context": {
+        "note": "Vide par construction : les projections climatiques n'entrent jamais dans F, V ou R (decision D05)."
+      },
+      "dominant_factors": [],
+      "protective_factors": [],
+      "warnings": [
+        "F indetermine : variable dominante absente (site.slope_degrees). Aucun score de risque n'est publie."
+      ],
+      "evidence": [],
+      "required_user_questions": [
+        "questionnaire.building.foundation.rigidity",
+        "questionnaire.site.retaining_wall_state",
+        "questionnaire.site.slope_position"
+      ]
+    },
+    "P04-TAS": {
+      "peril_id": "P04-TAS",
+      "peril_name": "Mouvements de terrain - tassement differentiel",
+      "status": "VULNERABILITY_ONLY",
+      "frequency": null,
+      "vulnerability": {
+        "score": 100,
+        "score_raw": 100.0,
+        "label": "Sensibilite du batiment hors exposition — ne constitue pas un score de risque",
+        "determinate": true,
+        "indeterminate_reason": null,
+        "coverage": 1.0,
+        "used_variables": [
+          "questionnaire.site.soil_nature",
+          "questionnaire.building.crack_evolution"
+        ],
+        "missing_variables": [],
+        "protection_reduction": 0.0,
+        "detail": [
+          {
+            "key": "questionnaire.site.soil_nature",
+            "weight": 0.5,
+            "index": 1.0,
+            "value": "remblai",
+            "source": "questionnaire",
+            "source_rank": 2,
+            "scope": "dwelling",
+            "evidence_level": "medium",
+            "calibration_status": "provisional_modeling_weight"
+          },
+          {
+            "key": "questionnaire.building.crack_evolution",
+            "weight": 0.5,
+            "index": 1.0,
+            "value": "evolutive",
+            "source": "questionnaire",
+            "source_rank": 2,
+            "scope": "dwelling",
+            "evidence_level": "high",
+            "calibration_status": "provisional_modeling_weight"
+          }
+        ]
+      },
+      "risk": null,
+      "confidence": {
+        "score": 94,
+        "score_raw": 94.26,
+        "components": {
+          "geocoding_entity": 0.888,
+          "completeness": 1.0,
+          "spatial_scale": 1.0,
+          "evidence_level": 0.8,
+          "coherence": 0.95
+        },
+        "weights": {
+          "geocoding_entity": 0.2,
+          "completeness": 0.3,
+          "spatial_scale": 0.25,
+          "evidence_level": 0.15,
+          "coherence": 0.1
+        },
+        "cap_applied": null,
+        "reasons": [
+          "2 ponderation(s) provisoire(s) non calibree(s) dans ce score",
+          "correspondance au GROUPE de batiments, pas au logement : les attributs BDNB decrivent l'ensemble immobilier"
+        ],
+        "independent_of_risk": true
+      },
+      "current_context": {
+        "commune_risk_codes_matched": [
+          {
+            "code": "127",
+            "label": "Tassements differentiels"
+          }
+        ],
+        "weight_in_F": 0.0,
+        "note": "Presence declaree a l'echelle de la COMMUNE. Ni intensite, ni exposition au batiment. Poids nul dans F (decision D03/D04)."
+      },
+      "prospective_context": {},
+      "dominant_factors": [],
+      "protective_factors": [],
+      "warnings": [
+        "Aucun score d'alea : aucune donnee d'alea tassement a la parcelle. Le code communal 127 est contextuel. Le tassement lie au retrait-gonflement est traite par P02 : ne pas double-compter."
+      ],
+      "evidence": [
+        {
+          "key": "questionnaire.site.soil_nature",
+          "mechanism": "Nature du sol d'assise declaree par une etude geotechnique ou les plans. Remblai et sol heterogene sont les configurations les plus tassantes.",
+          "references": [
+            "Referentiel SFL-A04 : nature du sol du versant ; BRGM R40355"
+          ],
+          "evidence_level": "medium"
+        },
+        {
+          "key": "questionnaire.building.crack_evolution",
+          "mechanism": "Cinetique des fissures : une fissuration evolutive signale un mouvement en cours.",
+          "references": [
+            "Referentiel M89 (Mzungu et al. 2025) : la cinetique est l'un des quatre criteres du grade"
+          ],
+          "evidence_level": "high"
+        }
+      ],
+      "required_user_questions": []
+    },
+    "P05": {
+      "peril_id": "P05",
+      "peril_name": "Vent et tempete",
+      "status": "INDETERMINATE",
+      "frequency": {
+        "score": null,
+        "score_raw": null,
+        "label": "indice ordinal d'alea / exposition (PAS une frequence annuelle)",
+        "determinate": false,
+        "indeterminate_reason": "variable dominante absente (climate.wind_speed_max_stat)",
+        "coverage": 0,
+        "used_variables": [],
+        "missing_variables": [
+          {
+            "key": "climate.wind_speed_max_stat",
+            "weight": 0.6,
+            "status": "NOT_COLLECTED",
+            "reason": "champ non collecte par le pipeline",
+            "source_hint": [
+              "climat_open_meteo.daily.wind_speed_10m_max"
+            ]
+          },
+          {
+            "key": "hazard.wind.eurocode_zone",
+            "weight": 0.4,
+            "status": "NOT_COLLECTED",
+            "reason": "variable absente du bag (NOT_COLLECTED)",
+            "source_hint": [
+              "lookup.eurocode_wind_zone"
+            ]
+          }
+        ],
+        "protection_reduction": 0.0,
+        "detail": []
+      },
+      "vulnerability": {
+        "score": null,
+        "score_raw": null,
+        "label": null,
+        "determinate": false,
+        "indeterminate_reason": "variable dominante absente (questionnaire.building.roof.material)",
+        "coverage": 0,
+        "used_variables": [],
+        "missing_variables": [
+          {
+            "key": "questionnaire.building.roof.material",
+            "weight": 0.35,
+            "status": "NOT_COLLECTED",
+            "reason": "variable absente du bag (NOT_COLLECTED)",
+            "source_hint": [
+              "questionnaire.building.roof.material",
+              "bdnb.batiment.mat_toit_txt"
+            ]
+          },
+          {
+            "key": "questionnaire.building.roof.age",
+            "weight": 0.25,
+            "status": "NOT_COLLECTED",
+            "reason": "variable absente du bag (NOT_COLLECTED)",
+            "source_hint": [
+              "questionnaire.building.roof.age"
+            ]
+          },
+          {
+            "key": "questionnaire.building.roof.state",
+            "weight": 0.25,
+            "status": "NOT_COLLECTED",
+            "reason": "variable absente du bag (NOT_COLLECTED)",
+            "source_hint": [
+              "questionnaire.building.roof.state"
+            ]
+          },
+          {
+            "key": "questionnaire.building.roof.attachments",
+            "weight": 0.15,
+            "status": "NOT_COLLECTED",
+            "reason": "variable absente du bag (NOT_COLLECTED)",
+            "source_hint": [
+              "questionnaire.building.roof.attachments"
+            ]
+          }
+        ],
+        "protection_reduction": 0.0,
+        "detail": []
+      },
+      "risk": null,
+      "confidence": {
+        "score": 27,
+        "score_raw": 27.26,
+        "components": {
+          "geocoding_entity": 0.888,
+          "completeness": 0.0,
+          "spatial_scale": 0.0,
+          "evidence_level": 0.0,
+          "coherence": 0.95
+        },
+        "weights": {
+          "geocoding_entity": 0.2,
+          "completeness": 0.3,
+          "spatial_scale": 0.25,
+          "evidence_level": 0.15,
+          "coherence": 0.1
+        },
+        "cap_applied": null,
+        "reasons": [
+          "bloc F indetermine : variable dominante absente (climate.wind_speed_max_stat)",
+          "bloc V indetermine : variable dominante absente (questionnaire.building.roof.material)",
+          "completude ponderee faible (0 %)",
+          "correspondance au GROUPE de batiments, pas au logement : les attributs BDNB decrivent l'ensemble immobilier"
+        ],
+        "independent_of_risk": true
+      },
+      "current_context": {
+        "commune_risk_codes_matched": [],
+        "weight_in_F": 0.0,
+        "note": "Presence declaree a l'echelle de la COMMUNE. Ni intensite, ni exposition au batiment. Poids nul dans F (decision D03/D04)."
+      },
+      "prospective_context": {
+        "note": "Vide par construction : les projections climatiques n'entrent jamais dans F, V ou R (decision D05)."
+      },
+      "dominant_factors": [],
+      "protective_factors": [],
+      "warnings": [
+        "F indetermine : variable dominante absente (climate.wind_speed_max_stat). Aucun score de risque n'est publie."
+      ],
+      "evidence": [],
+      "required_user_questions": [
+        "questionnaire.building.roof.age",
+        "questionnaire.building.roof.attachments",
+        "questionnaire.building.roof.material",
+        "questionnaire.building.roof.state"
+      ]
+    },
+    "P06": {
+      "peril_id": "P06",
+      "peril_name": "Grele",
+      "status": "NEEDS_USER_INPUT",
+      "frequency": null,
+      "vulnerability": {
+        "score": null,
+        "score_raw": null,
+        "label": "Sensibilite du batiment hors exposition — ne constitue pas un score de risque",
+        "determinate": false,
+        "indeterminate_reason": "variable dominante absente (questionnaire.building.roof.material)",
+        "coverage": 0.15,
+        "used_variables": [
+          "building.openings.shutter_type"
+        ],
+        "missing_variables": [
+          {
+            "key": "questionnaire.building.roof.material",
+            "weight": 0.4,
+            "status": "NOT_COLLECTED",
+            "reason": "variable absente du bag (NOT_COLLECTED)",
+            "source_hint": [
+              "questionnaire.building.roof.material",
+              "bdnb.batiment.mat_toit_txt"
+            ]
+          },
+          {
+            "key": "questionnaire.building.glazed_roof",
+            "weight": 0.25,
+            "status": "NOT_COLLECTED",
+            "reason": "variable absente du bag (NOT_COLLECTED)",
+            "source_hint": [
+              "questionnaire.building.glazed_roof"
+            ]
+          },
+          {
+            "key": "questionnaire.building.solar_panels",
+            "weight": 0.2,
+            "status": "NOT_COLLECTED",
+            "reason": "variable absente du bag (NOT_COLLECTED)",
+            "source_hint": [
+              "questionnaire.building.solar_panels"
+            ]
+          }
+        ],
+        "protection_reduction": 0.0,
+        "detail": [
+          {
+            "key": "building.openings.shutter_type",
+            "weight": 0.15,
+            "index": 0.4,
+            "value": "volet_battant_bois",
+            "source": "BDNB",
+            "source_rank": 4,
+            "scope": "building_group",
+            "evidence_level": "low",
+            "calibration_status": "provisional_modeling_weight"
+          }
+        ]
+      },
+      "risk": null,
+      "confidence": {
+        "score": 56,
+        "score_raw": 56.26,
+        "components": {
+          "geocoding_entity": 0.888,
+          "completeness": 0.15,
+          "spatial_scale": 0.8,
+          "evidence_level": 0.3,
+          "coherence": 0.95
+        },
+        "weights": {
+          "geocoding_entity": 0.2,
+          "completeness": 0.3,
+          "spatial_scale": 0.25,
+          "evidence_level": 0.15,
+          "coherence": 0.1
+        },
+        "cap_applied": null,
+        "reasons": [
+          "1 ponderation(s) provisoire(s) non calibree(s) dans ce score",
+          "bloc V indetermine : variable dominante absente (questionnaire.building.roof.material)",
+          "completude ponderee faible (15 %)",
+          "correspondance au GROUPE de batiments, pas au logement : les attributs BDNB decrivent l'ensemble immobilier"
+        ],
+        "independent_of_risk": true
+      },
+      "current_context": {
+        "commune_risk_codes_matched": [],
+        "weight_in_F": 0.0,
+        "note": "Presence declaree a l'echelle de la COMMUNE. Ni intensite, ni exposition au batiment. Poids nul dans F (decision D03/D04)."
+      },
+      "prospective_context": {},
+      "dominant_factors": [],
+      "protective_factors": [],
+      "warnings": [
+        "Aucun score d'alea : aucune climatologie grele francaise validee. La variable `hailRisk` du pipeline est une CONSTANTE PAR DEFAUT, exclue par la decision D04. La courbe MESHS (Schmid et al. 2024) est calibree en Suisse et exige un radar grele sans equivalent francais identifie. Ne pas deduire la grele des precipitations ordinaires (decision 9)."
+      ],
+      "evidence": [
+        {
+          "key": "building.openings.shutter_type",
+          "mechanism": "Volets roulants PVC : point faible identifie face a la grele.",
+          "references": [
+            "Referentiel, grille Declencheurs & aggravants P06 : volets roulants PVC"
+          ],
+          "evidence_level": "low"
+        }
+      ],
+      "required_user_questions": [
+        "questionnaire.building.glazed_roof",
+        "questionnaire.building.roof.material",
+        "questionnaire.building.solar_panels"
+      ]
+    },
+    "P07": {
+      "peril_id": "P07",
+      "peril_name": "Poids de la neige",
+      "status": "NEEDS_USER_INPUT",
+      "frequency": null,
+      "vulnerability": {
+        "score": null,
+        "score_raw": null,
+        "label": "Sensibilite du batiment hors exposition — ne constitue pas un score de risque",
+        "determinate": false,
+        "indeterminate_reason": "variable dominante absente (questionnaire.building.roof.slope_class)",
+        "coverage": 0,
+        "used_variables": [],
+        "missing_variables": [
+          {
+            "key": "questionnaire.building.roof.slope_class",
+            "weight": 0.35,
+            "status": "NOT_COLLECTED",
+            "reason": "variable absente du bag (NOT_COLLECTED)",
+            "source_hint": [
+              "questionnaire.building.roof.slope_class"
+            ]
+          },
+          {
+            "key": "questionnaire.building.roof.frame",
+            "weight": 0.3,
+            "status": "NOT_COLLECTED",
+            "reason": "variable absente du bag (NOT_COLLECTED)",
+            "source_hint": [
+              "questionnaire.building.roof.frame"
+            ]
+          },
+          {
+            "key": "questionnaire.building.roof.accumulation",
+            "weight": 0.2,
+            "status": "NOT_COLLECTED",
+            "reason": "variable absente du bag (NOT_COLLECTED)",
+            "source_hint": [
+              "questionnaire.building.roof.accumulation"
+            ]
+          },
+          {
+            "key": "questionnaire.building.veranda",
+            "weight": 0.15,
+            "status": "NOT_COLLECTED",
+            "reason": "variable absente du bag (NOT_COLLECTED)",
+            "source_hint": [
+              "questionnaire.building.veranda"
+            ]
+          }
+        ],
+        "protection_reduction": 0.0,
+        "detail": []
+      },
+      "risk": null,
+      "confidence": {
+        "score": 27,
+        "score_raw": 27.26,
+        "components": {
+          "geocoding_entity": 0.888,
+          "completeness": 0.0,
+          "spatial_scale": 0.0,
+          "evidence_level": 0.0,
+          "coherence": 0.95
+        },
+        "weights": {
+          "geocoding_entity": 0.2,
+          "completeness": 0.3,
+          "spatial_scale": 0.25,
+          "evidence_level": 0.15,
+          "coherence": 0.1
+        },
+        "cap_applied": null,
+        "reasons": [
+          "bloc V indetermine : variable dominante absente (questionnaire.building.roof.slope_class)",
+          "completude ponderee faible (0 %)",
+          "correspondance au GROUPE de batiments, pas au logement : les attributs BDNB decrivent l'ensemble immobilier"
+        ],
+        "independent_of_risk": true
+      },
+      "current_context": {
+        "commune_risk_codes_matched": [],
+        "weight_in_F": 0.0,
+        "note": "Presence declaree a l'echelle de la COMMUNE. Ni intensite, ni exposition au batiment. Poids nul dans F (decision D03/D04)."
+      },
+      "prospective_context": {},
+      "dominant_factors": [],
+      "protective_factors": [],
+      "warnings": [
+        "Aucun score d'alea : zonage neige NF EN 1991-1-3/NA non installe. La variable `snowZone` du pipeline vaut 'A1' par DEFAUT, exclue par D04. L'altitude seule est insuffisante : 300 m en Bretagne (zone A1, sk=0,45 kN/m2) et 300 m dans le Jura (zone E, sk=1,40) ne portent pas la meme charge (decision 7)."
+      ],
+      "evidence": [],
+      "required_user_questions": [
+        "questionnaire.building.roof.accumulation",
+        "questionnaire.building.roof.frame",
+        "questionnaire.building.roof.slope_class",
+        "questionnaire.building.veranda"
+      ]
+    },
+    "P08": {
+      "peril_id": "P08",
+      "peril_name": "Incendie du batiment",
+      "status": "CALCULATED",
+      "frequency": {
+        "score": 83,
+        "score_raw": 82.75,
+        "label": "indice ordinal d'alea / exposition (PAS une frequence annuelle)",
+        "determinate": true,
+        "indeterminate_reason": null,
+        "coverage": 1.0,
+        "used_variables": [
+          "questionnaire.building.electrical.diagnosis_age",
+          "building.heating.generator",
+          "building.dhw.generator",
+          "questionnaire.building.chimney.sweep_age"
+        ],
+        "missing_variables": [],
+        "protection_reduction": 0.0,
+        "detail": [
+          {
+            "key": "questionnaire.building.electrical.diagnosis_age",
+            "weight": 0.4,
+            "index": 1.0,
+            "value": "jamais",
+            "source": "questionnaire",
+            "source_rank": 2,
+            "scope": "dwelling",
+            "evidence_level": "low",
+            "calibration_status": "provisional_modeling_weight"
+          },
+          {
+            "key": "building.heating.generator",
+            "weight": 0.3,
+            "index": 0.85,
+            "value": "poele a bois",
+            "source": "BDNB",
+            "source_rank": 4,
+            "scope": "building_group",
+            "evidence_level": "low",
+            "calibration_status": "provisional_modeling_weight"
+          },
+          {
+            "key": "building.dhw.generator",
+            "weight": 0.15,
+            "index": 0.15,
+            "value": "ballon electrique",
+            "source": "BDNB",
+            "source_rank": 4,
+            "scope": "building_group",
+            "evidence_level": "low",
+            "calibration_status": "provisional_modeling_weight"
+          },
+          {
+            "key": "questionnaire.building.chimney.sweep_age",
+            "weight": 0.15,
+            "index": 1.0,
+            "value": "jamais",
+            "source": "questionnaire",
+            "source_rank": 2,
+            "scope": "dwelling",
+            "evidence_level": "low",
+            "calibration_status": "provisional_modeling_weight"
+          }
+        ]
+      },
+      "vulnerability": {
+        "score": 100,
+        "score_raw": 100.0,
+        "label": null,
+        "determinate": true,
+        "indeterminate_reason": null,
+        "coverage": 1.0,
+        "used_variables": [
+          "questionnaire.building.fire.daaf",
+          "questionnaire.building.fire.compartmentation",
+          "questionnaire.building.fire.converted_attic",
+          "questionnaire.building.fire.attached_garage"
+        ],
+        "missing_variables": [],
+        "protection_reduction": 0.0,
+        "detail": [
+          {
+            "key": "questionnaire.building.fire.daaf",
+            "weight": 0.35,
+            "index": 1.0,
+            "value": "absent",
+            "source": "questionnaire",
+            "source_rank": 2,
+            "scope": "dwelling",
+            "evidence_level": "medium",
+            "calibration_status": "provisional_modeling_weight"
+          },
+          {
+            "key": "questionnaire.building.fire.compartmentation",
+            "weight": 0.25,
+            "index": 1.0,
+            "value": "non",
+            "source": "questionnaire",
+            "source_rank": 2,
+            "scope": "dwelling",
+            "evidence_level": "medium",
+            "calibration_status": "provisional_modeling_weight"
+          },
+          {
+            "key": "questionnaire.building.fire.converted_attic",
+            "weight": 0.2,
+            "index": 1.0,
+            "value": true,
+            "source": "questionnaire",
+            "source_rank": 2,
+            "scope": "dwelling",
+            "evidence_level": "medium",
+            "calibration_status": "provisional_modeling_weight"
+          },
+          {
+            "key": "questionnaire.building.fire.attached_garage",
+            "weight": 0.2,
+            "index": 1.0,
+            "value": true,
+            "source": "questionnaire",
+            "source_rank": 2,
+            "scope": "dwelling",
+            "evidence_level": "medium",
+            "calibration_status": "provisional_modeling_weight"
+          }
+        ]
+      },
+      "risk": {
+        "score": 91,
+        "score_raw": 90.967,
+        "class": "tres eleve",
+        "formula": "R = 100 x (F/100)^0.5 x (V/100)^0.5",
+        "calibration_status": "provisional_uncalibrated"
+      },
+      "confidence": {
+        "score": 88,
+        "score_raw": 87.885,
+        "components": {
+          "geocoding_entity": 0.888,
+          "completeness": 1.0,
+          "spatial_scale": 0.955,
+          "evidence_level": 0.45,
+          "coherence": 0.95
+        },
+        "weights": {
+          "geocoding_entity": 0.2,
+          "completeness": 0.3,
+          "spatial_scale": 0.25,
+          "evidence_level": 0.15,
+          "coherence": 0.1
+        },
+        "cap_applied": null,
+        "reasons": [
+          "8 ponderation(s) provisoire(s) non calibree(s) dans ce score",
+          "correspondance au GROUPE de batiments, pas au logement : les attributs BDNB decrivent l'ensemble immobilier"
+        ],
+        "independent_of_risk": true
+      },
+      "current_context": {
+        "commune_risk_codes_matched": [],
+        "weight_in_F": 0.0,
+        "note": "Presence declaree a l'echelle de la COMMUNE. Ni intensite, ni exposition au batiment. Poids nul dans F (decision D03/D04)."
+      },
+      "prospective_context": {
+        "note": "Vide par construction : les projections climatiques n'entrent jamais dans F, V ou R (decision D05)."
+      },
+      "dominant_factors": [
+        {
+          "block": "F",
+          "key": "questionnaire.building.electrical.diagnosis_age",
+          "contribution": 0.4,
+          "index": 1.0,
+          "weight_renormalized": 0.4
+        },
+        {
+          "block": "V",
+          "key": "questionnaire.building.fire.daaf",
+          "contribution": 0.35,
+          "index": 1.0,
+          "weight_renormalized": 0.35
+        },
+        {
+          "block": "F",
+          "key": "building.heating.generator",
+          "contribution": 0.255,
+          "index": 0.85,
+          "weight_renormalized": 0.3
+        },
+        {
+          "block": "V",
+          "key": "questionnaire.building.fire.compartmentation",
+          "contribution": 0.25,
+          "index": 1.0,
+          "weight_renormalized": 0.25
+        },
+        {
+          "block": "V",
+          "key": "questionnaire.building.fire.attached_garage",
+          "contribution": 0.2,
+          "index": 1.0,
+          "weight_renormalized": 0.2
+        },
+        {
+          "block": "F",
+          "key": "questionnaire.building.chimney.sweep_age",
+          "contribution": 0.15,
+          "index": 1.0,
+          "weight_renormalized": 0.15
+        }
+      ],
+      "protective_factors": [],
+      "warnings": [],
+      "evidence": [
+        {
+          "key": "questionnaire.building.electrical.diagnosis_age",
+          "mechanism": "Vetuste de l'installation electrique : premiere cause identifiee d'incendie domestique. Seuil d'opposabilite legal a 15 ans.",
+          "references": [
+            "Referentiel XL-V13 : anciennete du diagnostic electrique, seuil 15 ans"
+          ],
+          "evidence_level": "low"
+        },
+        {
+          "key": "building.heating.generator",
+          "mechanism": "Source d'ignition liee au generateur de chauffage : la combustion solide et la cheminee ouverte dominent.",
+          "references": [
+            "Referentiel, grille Declencheurs & aggravants P08 : type de chauffage (bois, gaz)"
+          ],
+          "evidence_level": "low"
+        },
+        {
+          "key": "building.dhw.generator",
+          "mechanism": "Source d'ignition de l'eau chaude sanitaire, DISTINCTE du chauffage. Une PAC electrique en chauffage et une chaudiere gaz en ECS ne sont pas une contradiction : ce sont deux sources a evaluer separement.",
+          "references": [
+            "Referentiel XL-V14 : entretien annuel de la chaudiere ; ADDENDUM section 5"
+          ],
+          "evidence_level": "low"
+        },
+        {
+          "key": "questionnaire.building.chimney.sweep_age",
+          "mechanism": "Defaut de ramonage : cause frequente de feu de conduit et motif courant de reduction d'indemnite.",
+          "references": [
+            "Referentiel XL-V02 : ramonage annuel certifie"
+          ],
+          "evidence_level": "low"
+        },
+        {
+          "key": "questionnaire.building.fire.daaf",
+          "mechanism": "Detecteur avertisseur autonome de fumee : reduit la SEVERITE par detection precoce, pas la frequence d'ignition.",
+          "references": [
+            "Referentiel XL-V01 : DAAF installe et teste, reduit la severite pas la frequence"
+          ],
+          "evidence_level": "medium"
+        },
+        {
+          "key": "questionnaire.building.fire.compartmentation",
+          "mechanism": "Recoupement coupe-feu : limite la propagation entre volumes.",
+          "references": [
+            "Referentiel, grille Declencheurs & aggravants P08 : absence de recoupement coupe-feu"
+          ],
+          "evidence_level": "medium"
+        },
+        {
+          "key": "questionnaire.building.fire.converted_attic",
+          "mechanism": "Combles amenages : volume habite sous charpente, propagation rapide et evacuation difficile.",
+          "references": [
+            "Referentiel, grille Declencheurs & aggravants P08 : combles amenages"
+          ],
+          "evidence_level": "medium"
+        },
+        {
+          "key": "questionnaire.building.fire.attached_garage",
+          "mechanism": "Garage accole : charge calorifique elevee contigue au logement.",
+          "references": [
+            "Referentiel, grille Declencheurs & aggravants P08 : stockage de combustibles"
+          ],
+          "evidence_level": "medium"
+        }
+      ],
+      "required_user_questions": []
+    },
+    "P09": {
+      "peril_id": "P09",
+      "peril_name": "Feu de foret / interface habitat-foret",
+      "status": "INDETERMINATE",
+      "frequency": {
+        "score": null,
+        "score_raw": null,
+        "label": "indice ordinal d'alea / exposition (PAS une frequence annuelle)",
+        "determinate": false,
+        "indeterminate_reason": "variable dominante absente (site.distance_to_forest)",
+        "coverage": 0,
+        "used_variables": [],
+        "missing_variables": [
+          {
+            "key": "site.distance_to_forest",
+            "weight": 0.5,
+            "status": "NOT_COLLECTED",
+            "reason": "champ non collecte par le pipeline",
+            "source_hint": [
+              "derive.distance_to_forest"
+            ]
+          },
+          {
+            "key": "climate.fire_weather_index",
+            "weight": 0.3,
+            "status": "NOT_COLLECTED",
+            "reason": "variable absente du bag (NOT_COLLECTED)",
+            "source_hint": [
+              "derive.fwi_van_wagner"
+            ]
+          },
+          {
+            "key": "climate.consecutive_dry_days",
+            "weight": 0.2,
+            "status": "NOT_COLLECTED",
+            "reason": "champ non collecte par le pipeline",
+            "source_hint": [
+              "climat_open_meteo.derived.consecutive_dry_days"
+            ]
+          }
+        ],
+        "protection_reduction": 0.0,
+        "detail": []
+      },
+      "vulnerability": {
+        "score": null,
+        "score_raw": null,
+        "label": null,
+        "determinate": false,
+        "indeterminate_reason": "variable dominante absente (questionnaire.site.vegetation_within_10m)",
+        "coverage": 0,
+        "used_variables": [],
+        "missing_variables": [
+          {
+            "key": "questionnaire.site.vegetation_within_10m",
+            "weight": 0.35,
+            "status": "NOT_COLLECTED",
+            "reason": "variable absente du bag (NOT_COLLECTED)",
+            "source_hint": [
+              "questionnaire.site.vegetation_within_10m"
+            ]
+          },
+          {
+            "key": "questionnaire.building.facade_material",
+            "weight": 0.25,
+            "status": "NOT_COLLECTED",
+            "reason": "variable absente du bag (NOT_COLLECTED)",
+            "source_hint": [
+              "questionnaire.building.facade_material"
+            ]
+          },
+          {
+            "key": "questionnaire.building.openings_protection",
+            "weight": 0.2,
+            "status": "NOT_COLLECTED",
+            "reason": "variable absente du bag (NOT_COLLECTED)",
+            "source_hint": [
+              "questionnaire.building.openings_protection"
+            ]
+          },
+          {
+            "key": "questionnaire.site.access_for_firefighters",
+            "weight": 0.2,
+            "status": "NOT_COLLECTED",
+            "reason": "variable absente du bag (NOT_COLLECTED)",
+            "source_hint": [
+              "questionnaire.site.access_for_firefighters"
+            ]
+          }
+        ],
+        "protection_reduction": 0.0,
+        "detail": []
+      },
+      "risk": null,
+      "confidence": {
+        "score": 27,
+        "score_raw": 27.26,
+        "components": {
+          "geocoding_entity": 0.888,
+          "completeness": 0.0,
+          "spatial_scale": 0.0,
+          "evidence_level": 0.0,
+          "coherence": 0.95
+        },
+        "weights": {
+          "geocoding_entity": 0.2,
+          "completeness": 0.3,
+          "spatial_scale": 0.25,
+          "evidence_level": 0.15,
+          "coherence": 0.1
+        },
+        "cap_applied": null,
+        "reasons": [
+          "bloc F indetermine : variable dominante absente (site.distance_to_forest)",
+          "bloc V indetermine : variable dominante absente (questionnaire.site.vegetation_within_10m)",
+          "completude ponderee faible (0 %)",
+          "correspondance au GROUPE de batiments, pas au logement : les attributs BDNB decrivent l'ensemble immobilier"
+        ],
+        "independent_of_risk": true
+      },
+      "current_context": {
+        "commune_risk_codes_matched": [],
+        "weight_in_F": 0.0,
+        "note": "Presence declaree a l'echelle de la COMMUNE. Ni intensite, ni exposition au batiment. Poids nul dans F (decision D03/D04)."
+      },
+      "prospective_context": {
+        "note": "Vide par construction : les projections climatiques n'entrent jamais dans F, V ou R (decision D05)."
+      },
+      "dominant_factors": [],
+      "protective_factors": [],
+      "warnings": [
+        "F indetermine : variable dominante absente (site.distance_to_forest). Aucun score de risque n'est publie."
+      ],
+      "evidence": [],
+      "required_user_questions": [
+        "questionnaire.building.facade_material",
+        "questionnaire.building.openings_protection",
+        "questionnaire.site.access_for_firefighters",
+        "questionnaire.site.vegetation_within_10m"
+      ]
+    },
+    "P10": {
+      "peril_id": "P10",
+      "peril_name": "Foudre",
+      "status": "NEEDS_USER_INPUT",
+      "frequency": null,
+      "vulnerability": {
+        "score": null,
+        "score_raw": null,
+        "label": "Sensibilite du batiment hors exposition — ne constitue pas un score de risque",
+        "determinate": false,
+        "indeterminate_reason": "variable dominante absente (questionnaire.building.lightning.surge_protector)",
+        "coverage": 0,
+        "used_variables": [],
+        "missing_variables": [
+          {
+            "key": "questionnaire.building.lightning.surge_protector",
+            "weight": 0.4,
+            "status": "NOT_COLLECTED",
+            "reason": "variable absente du bag (NOT_COLLECTED)",
+            "source_hint": [
+              "questionnaire.building.lightning.surge_protector"
+            ]
+          },
+          {
+            "key": "questionnaire.building.lightning.earthing_checked",
+            "weight": 0.25,
+            "status": "NOT_COLLECTED",
+            "reason": "variable absente du bag (NOT_COLLECTED)",
+            "source_hint": [
+              "questionnaire.building.lightning.earthing_checked"
+            ]
+          },
+          {
+            "key": "questionnaire.building.lightning.dominant_position",
+            "weight": 0.2,
+            "status": "NOT_COLLECTED",
+            "reason": "variable absente du bag (NOT_COLLECTED)",
+            "source_hint": [
+              "questionnaire.building.lightning.dominant_position",
+              "bdnb.batiment.hauteur_mean"
+            ]
+          },
+          {
+            "key": "questionnaire.building.lightning.overhead_supply",
+            "weight": 0.15,
+            "status": "NOT_COLLECTED",
+            "reason": "variable absente du bag (NOT_COLLECTED)",
+            "source_hint": [
+              "questionnaire.building.lightning.overhead_supply"
+            ]
+          }
+        ],
+        "protection_reduction": 0.0,
+        "detail": []
+      },
+      "risk": null,
+      "confidence": {
+        "score": 27,
+        "score_raw": 27.26,
+        "components": {
+          "geocoding_entity": 0.888,
+          "completeness": 0.0,
+          "spatial_scale": 0.0,
+          "evidence_level": 0.0,
+          "coherence": 0.95
+        },
+        "weights": {
+          "geocoding_entity": 0.2,
+          "completeness": 0.3,
+          "spatial_scale": 0.25,
+          "evidence_level": 0.15,
+          "coherence": 0.1
+        },
+        "cap_applied": null,
+        "reasons": [
+          "bloc V indetermine : variable dominante absente (questionnaire.building.lightning.surge_protector)",
+          "completude ponderee faible (0 %)",
+          "correspondance au GROUPE de batiments, pas au logement : les attributs BDNB decrivent l'ensemble immobilier"
+        ],
+        "independent_of_risk": true
+      },
+      "current_context": {
+        "commune_risk_codes_matched": [],
+        "weight_in_F": 0.0,
+        "note": "Presence declaree a l'echelle de la COMMUNE. Ni intensite, ni exposition au batiment. Poids nul dans F (decision D03/D04)."
+      },
+      "prospective_context": {},
+      "dominant_factors": [],
+      "protective_factors": [],
+      "warnings": [
+        "Aucun score d'alea : aucune donnee de foudroiement. Ni densite Ng, ni densite de points de contact Nsg, ni niveau kerauniqe Nk dans le pipeline. La donnee est detenue par Meteorage (filiale Meteo-France) et commercialisee. Aucun proxy arbitraire n'est cree (decision 8)."
+      ],
+      "evidence": [],
+      "required_user_questions": [
+        "questionnaire.building.lightning.dominant_position",
+        "questionnaire.building.lightning.earthing_checked",
+        "questionnaire.building.lightning.overhead_supply",
+        "questionnaire.building.lightning.surge_protector"
+      ]
+    },
+    "P11": {
+      "peril_id": "P11",
+      "peril_name": "Degats des eaux",
+      "status": "CALCULATED",
+      "frequency": {
+        "score": 100,
+        "score_raw": 100.0,
+        "label": "indice ordinal d'alea / exposition (PAS une frequence annuelle)",
+        "determinate": true,
+        "indeterminate_reason": null,
+        "coverage": 0.7,
+        "used_variables": [
+          "questionnaire.building.plumbing.material",
+          "building.year_built"
+        ],
+        "missing_variables": [
+          {
+            "key": "climate.freeze_days",
+            "weight": 0.3,
+            "status": "NOT_COLLECTED",
+            "reason": "champ non collecte par le pipeline",
+            "source_hint": [
+              "climat_open_meteo.daily.temperature_2m_min"
+            ]
+          }
+        ],
+        "protection_reduction": 0.0,
+        "detail": [
+          {
+            "key": "questionnaire.building.plumbing.material",
+            "weight": 0.4,
+            "index": 1.0,
+            "value": "plomb",
+            "source": "questionnaire",
+            "source_rank": 2,
+            "scope": "dwelling",
+            "evidence_level": "low",
+            "calibration_status": "provisional_modeling_weight"
+          },
+          {
+            "key": "building.year_built",
+            "weight": 0.3,
+            "index": 1.0,
+            "value": 1935,
+            "source": "BDNB",
+            "source_rank": 4,
+            "scope": "building_group",
+            "evidence_level": "low",
+            "calibration_status": "provisional_modeling_weight"
+          }
+        ]
+      },
+      "vulnerability": {
+        "score": 100,
+        "score_raw": 100.0,
+        "label": null,
+        "determinate": true,
+        "indeterminate_reason": null,
+        "coverage": 0.75,
+        "used_variables": [
+          "questionnaire.building.plumbing.unheated_pipes",
+          "questionnaire.building.plumbing.joints_state",
+          "questionnaire.building.flat_roof_or_walkin_shower"
+        ],
+        "missing_variables": [
+          {
+            "key": "questionnaire.building.basement",
+            "weight": 0.25,
+            "status": "NOT_COLLECTED",
+            "reason": "variable absente du bag (NOT_COLLECTED)",
+            "source_hint": [
+              "questionnaire.building.basement"
+            ]
+          }
+        ],
+        "protection_reduction": 0.0,
+        "detail": [
+          {
+            "key": "questionnaire.building.plumbing.unheated_pipes",
+            "weight": 0.35,
+            "index": 1.0,
+            "value": "nombreuses",
+            "source": "questionnaire",
+            "source_rank": 2,
+            "scope": "dwelling",
+            "evidence_level": "medium",
+            "calibration_status": "provisional_modeling_weight"
+          },
+          {
+            "key": "questionnaire.building.plumbing.joints_state",
+            "weight": 0.2,
+            "index": 1.0,
+            "value": "degrade",
+            "source": "questionnaire",
+            "source_rank": 2,
+            "scope": "dwelling",
+            "evidence_level": "medium",
+            "calibration_status": "provisional_modeling_weight"
+          },
+          {
+            "key": "questionnaire.building.flat_roof_or_walkin_shower",
+            "weight": 0.2,
+            "index": 1.0,
+            "value": true,
+            "source": "questionnaire",
+            "source_rank": 2,
+            "scope": "dwelling",
+            "evidence_level": "medium",
+            "calibration_status": "provisional_modeling_weight"
+          }
+        ]
+      },
+      "risk": {
+        "score": 100,
+        "score_raw": 100.0,
+        "class": "tres eleve",
+        "formula": "R = 100 x (F/100)^0.5 x (V/100)^0.5",
+        "calibration_status": "provisional_uncalibrated"
+      },
+      "confidence": {
+        "score": 80,
+        "score_raw": 79.8031,
+        "components": {
+          "geocoding_entity": 0.888,
+          "completeness": 0.725,
+          "spatial_scale": 0.9586,
+          "evidence_level": 0.4552,
+          "coherence": 0.95
+        },
+        "weights": {
+          "geocoding_entity": 0.2,
+          "completeness": 0.3,
+          "spatial_scale": 0.25,
+          "evidence_level": 0.15,
+          "coherence": 0.1
+        },
+        "cap_applied": null,
+        "reasons": [
+          "5 ponderation(s) provisoire(s) non calibree(s) dans ce score",
+          "correspondance au GROUPE de batiments, pas au logement : les attributs BDNB decrivent l'ensemble immobilier"
+        ],
+        "independent_of_risk": true
+      },
+      "current_context": {
+        "commune_risk_codes_matched": [],
+        "weight_in_F": 0.0,
+        "note": "Presence declaree a l'echelle de la COMMUNE. Ni intensite, ni exposition au batiment. Poids nul dans F (decision D03/D04)."
+      },
+      "prospective_context": {
+        "note": "Vide par construction : les projections climatiques n'entrent jamais dans F, V ou R (decision D05)."
+      },
+      "dominant_factors": [
+        {
+          "block": "F",
+          "key": "questionnaire.building.plumbing.material",
+          "contribution": 0.571429,
+          "index": 1.0,
+          "weight_renormalized": 0.571429
+        },
+        {
+          "block": "V",
+          "key": "questionnaire.building.plumbing.unheated_pipes",
+          "contribution": 0.466667,
+          "index": 1.0,
+          "weight_renormalized": 0.466667
+        },
+        {
+          "block": "F",
+          "key": "building.year_built",
+          "contribution": 0.428571,
+          "index": 1.0,
+          "weight_renormalized": 0.428571
+        },
+        {
+          "block": "V",
+          "key": "questionnaire.building.flat_roof_or_walkin_shower",
+          "contribution": 0.266667,
+          "index": 1.0,
+          "weight_renormalized": 0.266667
+        },
+        {
+          "block": "V",
+          "key": "questionnaire.building.plumbing.joints_state",
+          "contribution": 0.266667,
+          "index": 1.0,
+          "weight_renormalized": 0.266667
+        }
+      ],
+      "protective_factors": [],
+      "warnings": [],
+      "evidence": [
+        {
+          "key": "questionnaire.building.plumbing.material",
+          "mechanism": "Materiau des canalisations : sensibilite a la corrosion et au vieillissement.",
+          "references": [
+            "Referentiel, grille Declencheurs & aggravants P11 : age et materiau des canalisations"
+          ],
+          "evidence_level": "low"
+        },
+        {
+          "key": "building.year_built",
+          "mechanism": "Age du reseau, approche par l'age du bati a defaut de date de refection declaree.",
+          "references": [
+            "Referentiel, grille Declencheurs & aggravants P11 : vieillissement et corrosion"
+          ],
+          "evidence_level": "low"
+        },
+        {
+          "key": "questionnaire.building.plumbing.unheated_pipes",
+          "mechanism": "Conduites en volume non chauffe : siege des ruptures par gel.",
+          "references": [
+            "Referentiel XL-V08 : calorifugeage des conduites en zone non chauffee"
+          ],
+          "evidence_level": "medium"
+        },
+        {
+          "key": "questionnaire.building.plumbing.joints_state",
+          "mechanism": "Etat des joints d'etancheite : defaut d'entretien opposable par l'assureur.",
+          "references": [
+            "Referentiel XL-V06 : entretien des canalisations apparentes"
+          ],
+          "evidence_level": "medium"
+        },
+        {
+          "key": "questionnaire.building.flat_roof_or_walkin_shower",
+          "mechanism": "Toiture-terrasse ou douche a l'italienne : points d'etancheite critiques et sinistres lents.",
+          "references": [
+            "Referentiel XL-V07 : infiltrations lentes exclues de garantie"
+          ],
+          "evidence_level": "medium"
+        }
+      ],
+      "required_user_questions": [
+        "questionnaire.building.basement"
+      ]
+    },
+    "P14": {
+      "peril_id": "P14",
+      "peril_name": "Submersion marine",
+      "status": "INDETERMINATE",
+      "frequency": {
+        "score": null,
+        "score_raw": null,
+        "label": "indice ordinal d'alea / exposition (PAS une frequence annuelle)",
+        "determinate": false,
+        "indeterminate_reason": "variable dominante absente (site.distance_to_coast)",
+        "coverage": 0.25,
+        "used_variables": [
+          "site.altitude"
+        ],
+        "missing_variables": [
+          {
+            "key": "site.distance_to_coast",
+            "weight": 0.45,
+            "status": "NOT_COLLECTED",
+            "reason": "champ non collecte par le pipeline",
+            "source_hint": [
+              "derive.distance_to_coast"
+            ]
+          },
+          {
+            "key": "hazard.coastal.pprl_zone",
+            "weight": 0.3,
+            "status": "NOT_COLLECTED",
+            "reason": "variable absente du bag (NOT_COLLECTED)",
+            "source_hint": [
+              "georisques.pprl.zone"
+            ]
+          }
+        ],
+        "protection_reduction": 0.0,
+        "detail": [
+          {
+            "key": "site.altitude",
+            "weight": 0.25,
+            "index": 0.0,
+            "value": 95.0,
+            "source": "IGN RGE ALTI",
+            "source_rank": 1,
+            "scope": "parcel",
+            "evidence_level": "medium",
+            "calibration_status": "provisional_modeling_weight"
+          }
+        ]
+      },
+      "vulnerability": {
+        "score": null,
+        "score_raw": null,
+        "label": null,
+        "determinate": false,
+        "indeterminate_reason": "variable dominante absente (building.flood.floor_height_class)",
+        "coverage": 0,
+        "used_variables": [],
+        "missing_variables": [
+          {
+            "key": "building.flood.floor_height_class",
+            "weight": 0.35,
+            "status": "NOT_COLLECTED",
+            "reason": "variable absente du bag (NOT_COLLECTED)",
+            "source_hint": [
+              "questionnaire.building.flood.floor_height_class"
+            ]
+          },
+          {
+            "key": "questionnaire.building.basement",
+            "weight": 0.25,
+            "status": "NOT_COLLECTED",
+            "reason": "variable absente du bag (NOT_COLLECTED)",
+            "source_hint": [
+              "questionnaire.building.basement"
+            ]
+          },
+          {
+            "key": "questionnaire.building.salt_sensitive_materials",
+            "weight": 0.25,
+            "status": "NOT_COLLECTED",
+            "reason": "variable absente du bag (NOT_COLLECTED)",
+            "source_hint": [
+              "questionnaire.building.salt_sensitive_materials"
+            ]
+          },
+          {
+            "key": "questionnaire.building.flood.technical_equipment_low",
+            "weight": 0.15,
+            "status": "NOT_COLLECTED",
+            "reason": "variable absente du bag (NOT_COLLECTED)",
+            "source_hint": [
+              "questionnaire.building.flood.technical_equipment_low"
+            ]
+          }
+        ],
+        "protection_reduction": 0.0,
+        "detail": []
+      },
+      "risk": null,
+      "confidence": {
+        "score": 65,
+        "score_raw": 65.01,
+        "components": {
+          "geocoding_entity": 0.888,
+          "completeness": 0.125,
+          "spatial_scale": 1.0,
+          "evidence_level": 0.6,
+          "coherence": 0.95
+        },
+        "weights": {
+          "geocoding_entity": 0.2,
+          "completeness": 0.3,
+          "spatial_scale": 0.25,
+          "evidence_level": 0.15,
+          "coherence": 0.1
+        },
+        "cap_applied": null,
+        "reasons": [
+          "1 ponderation(s) provisoire(s) non calibree(s) dans ce score",
+          "bloc F indetermine : variable dominante absente (site.distance_to_coast)",
+          "bloc V indetermine : variable dominante absente (building.flood.floor_height_class)",
+          "completude ponderee faible (12 %)",
+          "correspondance au GROUPE de batiments, pas au logement : les attributs BDNB decrivent l'ensemble immobilier"
+        ],
+        "independent_of_risk": true
+      },
+      "current_context": {
+        "commune_risk_codes_matched": [],
+        "weight_in_F": 0.0,
+        "note": "Presence declaree a l'echelle de la COMMUNE. Ni intensite, ni exposition au batiment. Poids nul dans F (decision D03/D04)."
+      },
+      "prospective_context": {
+        "note": "Vide par construction : les projections climatiques n'entrent jamais dans F, V ou R (decision D05)."
+      },
+      "dominant_factors": [],
+      "protective_factors": [],
+      "warnings": [
+        "F indetermine : variable dominante absente (site.distance_to_coast). Aucun score de risque n'est publie."
+      ],
+      "evidence": [
+        {
+          "key": "site.altitude",
+          "mechanism": "Altitude du site : condition necessaire mais non suffisante de l'atteinte par la mer.",
+          "references": [
+            "Referentiel CEPRI-01 : hauteur d'eau obtenue par cote d'eau - cote plancher"
+          ],
+          "evidence_level": "medium"
+        }
+      ],
+      "required_user_questions": [
+        "building.flood.floor_height_class",
+        "questionnaire.building.basement",
+        "questionnaire.building.flood.technical_equipment_low",
+        "questionnaire.building.salt_sensitive_materials"
+      ]
+    }
+  },
+  "global_score": null,
+  "monetary_output": null
+}
