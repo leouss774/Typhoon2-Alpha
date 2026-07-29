@@ -865,7 +865,7 @@
   height: 3px; background: linear-gradient(90deg, var(--brand-light), var(--brand), var(--brand-light)); opacity: 0.6;
 }
 #property-id-screen .pid-cert-hero .badge-wrap { flex-shrink: 0; filter: drop-shadow(0 4px 12px rgba(0,0,0,0.10)); }
-#property-id-screen .pid-cert-hero .badge-wrap svg { width: 120px; height: 140px; display: block; }
+#property-id-screen .pid-cert-hero .badge-wrap img { width: 120px; height: 140px; display: block; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.10); object-fit: contain; }
 #property-id-screen .pid-cert-hero .ci { flex: 1; }
 #property-id-screen .pid-cert-hero .ci .cl { font-size: 24px; font-weight: 700; margin-bottom: 4px; font-family: var(--font-head); }
 #property-id-screen .pid-cert-hero .ci .cl.bronze { color: #CD7F32; }
@@ -903,7 +903,7 @@
   display: flex; align-items: center; justify-content: center;
   box-shadow: 0 0 0 4px rgba(31,157,108,0.15);
 }
-#property-id-screen #pid-devis-result .di svg { width: 28px; height: 28px; color: #fff; }
+#property-id-screen #pid-devis-result .di img { width: 28px; height: 28px; object-fit: contain; border-radius: 4px; }
 #property-id-screen #pid-devis-result .db { flex: 1; min-width: 0; }
 #property-id-screen #pid-devis-result .de { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--success); margin-bottom: 2px; }
 #property-id-screen #pid-devis-result .dh { font-family: var(--font-head); font-size: 20px; font-weight: 700; color: var(--ink); margin-bottom: 14px; }
@@ -1098,7 +1098,7 @@
   #property-id-screen .pid-brand-bar { flex-direction: column; align-items: flex-start; gap: 8px; }
   #property-id-screen .pid-close-btn { width: 100%; justify-content: center; }
   #property-id-screen .pid-cert-hero { flex-direction: column; text-align: center; padding: 24px 20px; }
-  #property-id-screen .pid-cert-hero .badge-wrap svg { width: 90px; height: 105px; margin: 0 auto; }
+  #property-id-screen .pid-cert-hero .badge-wrap img { width: 90px; height: 105px; margin: 0 auto; }
   #property-id-screen .pid-cert-hero .ci .cm { justify-content: center; }
   #property-id-screen .pid-gauges { grid-template-columns: 1fr; max-width: 320px; margin: 0 auto 20px; }
   #property-id-screen .pid-two-col { grid-template-columns: 1fr; }
@@ -1109,7 +1109,7 @@
   #property-id-screen .pid-nc { flex-direction: column; text-align: center; }
 }
 @media (max-width: 400px) {
-  #property-id-screen .pid-cert-hero .badge-wrap svg { width: 70px; height: 82px; }
+  #property-id-screen .pid-cert-hero .badge-wrap img { width: 70px; height: 82px; }
   #property-id-screen .pid-gauge-card .gw { width: 100px; height: 100px; }
   #property-id-screen .pid-gauge-card .gw .gc { font-size: 22px; }
 }
@@ -1627,7 +1627,7 @@
     </div>
     <div id="pid-cert-content" style="display:none;width:100%">
       <div class="badge-wrap" id="pid-badge-wrap">
-        <svg id="pid-badge-svg" viewBox="0 0 120 140" width="120" height="140"></svg>
+        <img id="pid-badge-img" width="120" height="140" alt="Badge de certification Typhoon" style="display:block;width:120px;height:140px;object-fit:contain;border-radius:8px;">
       </div>
       <div class="ci">
         <div class="cl" id="pid-cert-level">—</div>
@@ -1646,10 +1646,7 @@
   <!-- DEVIS RESULT (certification apres travaux) -->
   <div id="pid-devis-result" class="pid-fade d2">
     <div class="di">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M12 2 4 5v6c0 5 3.5 9 8 11 4.5-2 8-6 8-11V5z"/>
-        <path d="m9 12 2 2 4-4"/>
-      </svg>
+      <img id="pid-devis-badge-img" width="28" height="28" alt="" style="display:block;width:28px;height:28px;object-fit:contain;border-radius:4px;">
     </div>
     <div class="db">
       <div class="de">Certification obtenue après travaux</div>
@@ -3566,39 +3563,17 @@ function pid_certLevel(score) {
 }
 
 function pid_renderBadge(container, level, score, pid) {
+  if (!container || !container.tagName) return;
+  if (container.tagName === 'IMG' || container.id === 'pid-badge-img') {
+    const lvl = (level || 'Bronze').toLowerCase();
+    container.src = 'assets/badges/badge-' + lvl + '.jpg';
+    container.alt = 'Badge Typhoon ' + (level || 'Bronze');
+    container.style.display = '';
+    return;
+  }
+  /* Fallback pour les autres conteneurs eventuels (non-img) */
   const cfg = pid_CERT_LEVELS[level] || pid_CERT_LEVELS.Bronze;
-  const isLarge = true;
-  const shieldPath = 'M60 5 L110 25 L110 70 C110 105 85 125 60 135 C35 125 10 105 10 70 L10 25 Z';
-  const insetPath = 'M60 12 L103 30 L103 68 C103 99 82 117 60 126 C38 117 17 99 17 68 L17 30 Z';
-  const gradId = 'pid-bg-' + Date.now();
-  const glowId = 'pid-gl-' + Date.now();
-  const shineId = 'pid-sh-' + Date.now();
-
-  let svg = `<defs>
-    <linearGradient id="${gradId}" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="${cfg.accent}"/>
-      <stop offset="40%" stop-color="${cfg.primary}"/>
-      <stop offset="100%" stop-color="${cfg.secondary}"/>
-    </linearGradient>
-    <linearGradient id="${shineId}" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="rgba(255,255,255,0.4)"/>
-      <stop offset="50%" stop-color="rgba(255,255,255,0)"/>
-      <stop offset="100%" stop-color="rgba(255,255,255,0.08)"/>
-    </linearGradient>
-    <filter id="${glowId}" x="-20%" y="-20%" width="140%" height="140%">
-      <feGaussianBlur stdDeviation="3" result="blur"/>
-      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
-    </filter>
-  </defs>`;
-  svg += `<path d="${shieldPath}" fill="url(#${gradId})" stroke="${cfg.secondary}" stroke-width="2" filter="url(#${glowId})"/>`;
-  svg += `<path d="${insetPath}" fill="rgba(255,255,255,0.12)" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>`;
-  svg += `<path d="${shieldPath}" fill="url(#${shineId})"/>`;
-  svg += '<path d="M51 40 L69 45 L69 62 C69 76 60 84 60 88 C60 84 51 76 51 62 Z" fill="' + cfg.secondary + '" stroke="' + cfg.primary + '" stroke-width="1"/>';
-  svg += '<text x="60" y="72" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-weight="700" font-size="17" fill="#fff">' + cfg.label + '</text>';
-  svg += '<text x="60" y="92" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-weight="700" font-size="13" fill="rgba(255,255,255,0.85)">' + (score != null ? score : '—') + '/100</text>';
-  if (pid) svg += '<text x="60" y="115" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-weight="600" font-size="8" fill="rgba(255,255,255,0.5)">' + pid + '</text>';
-  svg += '<text x="60" y="131" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-weight="700" font-size="8" fill="#1F9D6C">● VERIFIÉ</text>';
-  container.innerHTML = svg;
+  container.innerHTML = '<span style="display:inline-flex;align-items:center;gap:6px;padding:4px 14px;border-radius:999px;background:' + cfg.primary + ';color:#fff;font-weight:700;font-size:12px;">' + (level || '—') + ' ' + (score != null ? score + '/100' : '') + '</span>';
 }
 
 function pid_renderGauge(svgEl, valueEl, score) {
@@ -3658,11 +3633,11 @@ function pid_renderPropertyID(data) {
 
   /* Certification */
   const cert = data.certification;
-  const bdgSvg = pid_$('pid-badge-svg');
+  const bdgImg = pid_$('pid-badge-img');
   if (cert && cert.level && cert.level !== '—') {
     const level = cert.level;
     const cfg = pid_CERT_LEVELS[level] || pid_CERT_LEVELS.Bronze;
-    pid_renderBadge(bdgSvg, level, cert.score, data.property_id);
+    pid_renderBadge(bdgImg, level, cert.score, data.property_id);
     pid_$('pid-cert-level').textContent = 'Typhoon ' + cfg.label;
     pid_$('pid-cert-level').className = 'cl ' + level.toLowerCase();
     pid_$('pid-cert-desc').textContent = cfg.desc;
@@ -3678,7 +3653,7 @@ function pid_renderPropertyID(data) {
     pid_$('pid-skel-cert').classList.remove('active');
     pid_$('pid-cert-content').style.display = 'flex';
   } else {
-    bdgSvg.innerHTML = '';
+    if (bdgImg) { bdgImg.style.display = 'none'; }
     pid_$('pid-cert-level').textContent = 'Aucune certification disponible';
     pid_$('pid-cert-level').className = 'cl pending';
     pid_$('pid-cert-desc').textContent = 'Un diagnostic initial a été réalisé. La certification sera délivrée après validation des travaux recommandés.';
@@ -3856,6 +3831,17 @@ function pid_applyDevisOverrides(currentAddress) {
       li.innerHTML = '<span><span class="wn">' + t.travaux + '</span><span class="wz"> — ' + (t.zone ? t.zone.replace(/_/g, ' ') : '') + '</span></span><span class="wc">' + (t.cout_estime || '—') + '</span>';
       ul.appendChild(li);
     });
+  }
+
+  /* Appliquer le badge de niveau dans la bannière devis */
+  var devisBadge = pid_$('pid-devis-badge-img');
+  if (devisBadge && stored.score_apres != null) {
+    var devisLevel = pid_certLevel(stored.score_apres);
+    if (devisLevel !== '—') {
+      devisBadge.src = 'assets/badges/badge-' + devisLevel.toLowerCase() + '.jpg';
+      devisBadge.alt = 'Badge ' + devisLevel;
+      devisBadge.style.display = '';
+    }
   }
 
   const scoreBig = pid_$('pid-cert-score');
