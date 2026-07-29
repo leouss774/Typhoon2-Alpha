@@ -1132,7 +1132,6 @@
     <nav id="home-nav">
       <a href="#home-features">Nos solutions</a>
       <a href="#modes">Comment ça marche</a>
-      <a href="property-id/">Property ID</a>
       <a href="#">Nous contacter</a>
     </nav>
     <div id="home-header-actions">
@@ -1457,12 +1456,6 @@
     <button id="btn-2050">2050</button>
   </div>
   <div id="global-score">Score global : <strong id="score-value">--</strong> / 100</div>
-  <div style="margin-top:8px;">
-    <a href="property-id/" style="color:var(--brand);font-size:12px;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:4px;">
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-      Voir mon Property ID →
-    </a>
-  </div>
   <div id="climat-panel">
     <div style="font-size:11px;color:#FF6B4A;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px;">Projection climatique 2050</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 10px;">
@@ -4003,36 +3996,6 @@ if (pidJsonBtn) {
   });
 }
 
-/* Ajouter un gestionnaire pour le lien nav vers Property ID */
-document.querySelectorAll('#home-nav a').forEach(function(a) {
-  if (a.textContent.trim() === 'Property ID') {
-    a.addEventListener('click', function(e) {
-      e.preventDefault();
-      if (typeof window.currentGlobalScore !== 'undefined' && window.currentGlobalScore !== null) {
-        pid_showPropertyID();
-      } else {
-        var navEmpty = pid_$('property-id-screen');
-        if (navEmpty) {
-          navEmpty.style.display = 'block';
-          document.body.style.overflow = 'hidden';
-          pid_$('pid-prop-address').textContent = 'Aucun diagnostic disponible';
-          pid_$('pid-cert-level').textContent = 'Aucune donnée';
-          pid_$('pid-cert-level').className = 'cl pending';
-          pid_$('pid-cert-desc').textContent = 'Lancez un diagnostic depuis la page d\'accueil Typhoon pour générer un Property ID.';
-          pid_$('pid-cert-explain').textContent = '';
-          pid_$('pid-verif-badge').style.display = 'none';
-          pid_$('pid-cert-score').textContent = '—';
-          pid_$('pid-cert-pill').style.display = 'none';
-          pid_$('pid-reco-list').innerHTML = '<div class="pid-reco-empty"><p style="font-size:13px">Lancez un diagnostic pour voir les recommandations.</p></div>';
-          pid_$('pid-timeline-container').innerHTML = '<div class="pid-reco-empty"><p style="font-size:13px">Aucun historique disponible.</p></div>';
-          pid_$('pid-twin-chips').innerHTML = '<span style="color:var(--muted);font-size:12px;">Aucune donnée de jumeau numérique disponible.</span>';
-          pid_setStatus('Aucune adresse trouvée. Veuillez d\'abord lancer un diagnostic.', null);
-          pid_fadeIn();
-        }
-      }
-    });
-  }
-});
 
 </script>
 </body>
