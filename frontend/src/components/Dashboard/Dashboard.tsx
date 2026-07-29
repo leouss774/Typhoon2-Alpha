@@ -292,7 +292,12 @@ export default function Dashboard({ sessionId, isBankRoute }: DashboardProps) {
         </header>
 
         {data.decision_bancaire ? (
-          <BankDecisionPanel decision={data.decision_bancaire} />
+          <BankDecisionPanel
+            decision={data.decision_bancaire}
+            adresse={data.adresse || ""}
+            typeBien={data.formulaire_client?.type_bien || "Maison"}
+            surface={data.formulaire_client?.surface || 100}
+          />
         ) : (
           <div style={{ padding: "20px", background: "rgba(210,153,34,0.1)", border: "1px solid #d29922", borderRadius: "8px", color: "#d29922", textAlign: "center" }}>
             Aucune décision bancaire générée pour ce dossier.

@@ -21,6 +21,9 @@ from typing import Any
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
+from backend.services.pdf_generator import generate_bank_report_pdf
+from backend.services import dvf_service
 from pydantic import BaseModel
 
 # Imports de l'orchestrateur
@@ -216,6 +219,154 @@ async def test_vulnerabilite(req: VulnerabilityTestRequest):
     }
 
 
+@app.get("/api/bank/report/{session_id}/pdf")
+async def download_report_pdf(session_id: str):
+    """Génère et télécharge le rapport d'analyse complet au format PDF.
+    Utilise reportlab pour un rendu professionnel avec tableaux et couleurs.
+    """
+    analysis = analyses_store.get(session_id)
+    if not analysis:
+        raise HTTPException(status_code=404, detail="Analyse introuvable")
+    
+    db = analysis.get("decision_bancaire", {}) or {}
+    if not db:
+        raise HTTPException(status_code=404, detail="Décision bancaire introuvable")
+    
+    # Enrichir avec les données de marché DVF
+    stats_marche = None
+    try:
+        adr = analysis.get("adresse", "")
+        evo = dvf_service.get_price_evolution(adr)
+        current = dvf_service.query_market_value(adr)
+        if evo.get("evolution"):
+            stats_marche = {
+                "prix_m2_actuel": current.get("prix_m2_median"),
+                "prix_m2_commune": evo["evolution"][-1]["prix_m2_median"] if evo["evolution"] else None,
+                "nb_transactions": current.get("nb_transactions", 0),
+                "tendance": evo.get("tendance", "stable"),
+            }
+    except Exception as e:
+        logger.warning(f"Impossible de récupérer les stats marché pour le PDF : {e}")
+
+    pdf_buffer = generate_bank_report_pdf(
+        session_id=session_id,
+        adresse=analysis.get("adresse", "N/A"),
+        decision_bancaire=db,
+        stats_marche=stats_marche,
+    )
+    
+    return StreamingResponse(
+        content=pdf_buffer,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f"attachment; filename=rapport-credit-{session_id}.pdf",
+            "Content-Type": "application/pdf",
+        }
+    )
+
+
+class MarketTrendsRequest(BaseModel):
+    """Requête pour obtenir l'évolution des prix DVF pour une adresse."""
+    adresse: str
+    type_bien: str = "Maison"
+    surface: float = 100
+
+
+@app.post("/api/bank/market-trends")
+async def get_market_trends(req: MarketTrendsRequest):
+    """Retourne l'évolution du prix au m² + comparaison de marché (données DVF réelles)."""
+    evolution = dvf_service.get_price_evolution(req.adresse, req.type_bien)
+    current = dvf_service.query_market_value(req.adresse, req.surface, req.type_bien)
+    
+    # Données de comparaison : tous types confondus dans la commune
+    try:
+        all_types = dvf_service.get_price_evolution(req.adresse, "Maison")
+        if all_types.get("evolution") and len(all_types["evolution"]) > 0:
+            annee_courante = all_types["evolution"][-1]
+            prix_m2_commune_tous = annee_courante["prix_m2_median"]
+            tx_total = sum(d["nb_transactions"] for d in all_types["evolution"])
+        else:
+            prix_m2_commune_tous = None
+            tx_total = 0
+        
+        # Écart entre le type du bien et la moyenne commune
+        pm2_bien = current.get("prix_m2_median")
+        ecart_pct = None
+        if pm2_bien and prix_m2_commune_tous and prix_m2_commune_tous > 0:
+            ecart_pct = round((pm2_bien - prix_m2_commune_tous) / prix_m2_commune_tous * 100, 1)
+    except Exception:
+        prix_m2_commune_tous = None
+        tx_total = 0
+        ecart_pct = None
+    
+    return {
+        "evolution": evolution.get("evolution", []),
+        "source": evolution.get("source", ""),
+        "tendance": evolution.get("tendance", "stable"),
+        "valeur_actuelle": current.get("valeur_estimee"),
+        "prix_m2_bien": current.get("prix_m2_median"),
+        "prix_m2_commune": prix_m2_commune_tous,
+        "ecart_vs_commune_pct": ecart_pct,
+        "nb_transactions": current.get("nb_transactions", 0),
+        "volume_total_transactions": tx_total,
+        "indice_confiance_dvf": current.get("indice_confiance", 0),
+    }
+
+
+class PdfReportRequest(BaseModel):
+    """Requête pour générer un PDF à partir des données d'analyse fournies par le client.
+    
+    Alternative au endpoint GET /api/bank/report/{session_id}/pdf qui nécessite
+    que l'analyse soit stockée côté serveur (perdue si le backend redémarre).
+    """
+    session_id: str
+    adresse: str = ""
+    decision_bancaire: dict[str, Any]
+
+
+@app.post("/api/bank/report/pdf")
+async def generate_report_pdf_post(req: PdfReportRequest):
+    """Génère et télécharge le rapport PDF à partir des données fournies directement.
+    
+    Version POST : plus robuste car elle ne dépend pas du stockage serveur.
+    Le frontend envoie les données d'analyse récupérées depuis le sessionStorage.
+    """
+    db = req.decision_bancaire or {}
+    if not db:
+        raise HTTPException(status_code=400, detail="Données d'analyse manquantes")
+    
+    stats_marche = None
+    try:
+        adr = req.adresse or ""
+        evo = dvf_service.get_price_evolution(adr)
+        current = dvf_service.query_market_value(adr)
+        if evo.get("evolution"):
+            stats_marche = {
+                "prix_m2_actuel": current.get("prix_m2_median"),
+                "prix_m2_commune": evo["evolution"][-1]["prix_m2_median"] if evo["evolution"] else None,
+                "nb_transactions": current.get("nb_transactions", 0),
+                "tendance": evo.get("tendance", "stable"),
+            }
+    except Exception as e:
+        logger.warning(f"Impossible de récupérer les stats marché pour le PDF : {e}")
+
+    pdf_buffer = generate_bank_report_pdf(
+        session_id=req.session_id,
+        adresse=req.adresse or "N/A",
+        decision_bancaire=db,
+        stats_marche=stats_marche,
+    )
+    
+    return StreamingResponse(
+        content=pdf_buffer,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f"attachment; filename=rapport-credit-{req.session_id}.pdf",
+            "Content-Type": "application/pdf",
+        }
+    )
+
+
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("api.main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("backend.api.main:app", host="0.0.0.0", port=8000, reload=True)
