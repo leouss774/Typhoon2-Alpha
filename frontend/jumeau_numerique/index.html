@@ -1470,6 +1470,170 @@ function mulberry32(seed) {
 const crackTextures = { 1: makeCrackTexture(1), 2: makeCrackTexture(2), 3: makeCrackTexture(3) };
 const stainTexture = makeStainTexture();
 
+// ---------- 3bis. TEXTURES DE MATÉRIAU RÉEL (murs/toiture) ----------
+// Motifs procéduraux sélectionnés par le SLUG DE MATÉRIAU RÉEL renvoyé par
+// la BDNB (`geometry.materiau_mur` / `materiau_toiture`, cf.
+// backend/app/digital_twin/geometry_builder.py::_slugify). Rien n'est
+// inventé sur QUEL materiau utiliser — seul le rendu du motif est une
+// approximation graphique. Quand le materiau est "indetermine" (valeur
+// reelle et frequente de la BDNB) ou inconnu, le rendu reste un enduit
+// neutre plutot que de deviner une texture specifique.
+//
+// Taille reelle (m) couverte par un motif avant repetition : pilote
+// `texture.repeat`, pas les UV (deja en metres, voir quadsToGeometry).
+const MATERIAL_TILE_M = { mur: 2.2, toit: 2.4 };
+const materialTextureCache = {};
+
+function getMaterialTexture(kind, materiauSlugBrut) {
+  const slug = (materiauSlugBrut || 'indetermine').toLowerCase();
+  const key = kind + ':' + slug;
+  if (materialTextureCache[key]) return materialTextureCache[key];
+  const canvas = kind === 'toit' ? drawRoofTexture(slug) : drawWallTexture(slug);
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+  const tuile = MATERIAL_TILE_M[kind] || 2.2;
+  texture.repeat.set(1 / tuile, 1 / tuile);
+  materialTextureCache[key] = texture;
+  return texture;
+}
+
+function drawWallTexture(slug) {
+  const c = document.createElement('canvas'); c.width = 256; c.height = 256;
+  const ctx = c.getContext('2d');
+  const rand = mulberry32(7);
+
+  if (slug.includes('brique')) {
+    ctx.fillStyle = '#8a4a3a'; ctx.fillRect(0, 0, 256, 256);
+    ctx.strokeStyle = 'rgba(230,220,205,0.55)'; ctx.lineWidth = 3;
+    const briqueH = 22, briqueW = 56;
+    for (let row = 0, y = 0; y < 256 + briqueH; row++, y += briqueH) {
+      const decalage = (row % 2) * (briqueW / 2);
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(256, y); ctx.stroke();
+      for (let x = -decalage; x < 256 + briqueW; x += briqueW) {
+        ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, y + briqueH); ctx.stroke();
+        ctx.fillStyle = `rgba(0,0,0,${0.04 + rand() * 0.06})`;
+        ctx.fillRect(x + 2, y + 2, briqueW - 4, briqueH - 4);
+      }
+    }
+  } else if (slug.includes('pierre_de_taille') || slug.includes('meuliere')) {
+    ctx.fillStyle = '#c9bd9e'; ctx.fillRect(0, 0, 256, 256);
+    const blocH = 40, blocW = 84;
+    ctx.strokeStyle = 'rgba(90,80,60,0.5)'; ctx.lineWidth = 2.5;
+    for (let row = 0, y = 0; y < 256 + blocH; row++, y += blocH) {
+      const decalage = (row % 2) * (blocW / 2);
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(256, y); ctx.stroke();
+      for (let x = -decalage; x < 256 + blocW; x += blocW) {
+        ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, y + blocH); ctx.stroke();
+        ctx.fillStyle = `rgba(120,105,80,${0.05 + rand() * 0.08})`;
+        ctx.fillRect(x + 3, y + 3, blocW - 6, blocH - 6);
+      }
+    }
+    if (slug.includes('meuliere')) {
+      // Meuliere : moellons ronds (silex) plus irreguliers que la pierre de taille.
+      for (let i = 0; i < 90; i++) {
+        const r = 4 + rand() * 7;
+        ctx.fillStyle = `rgba(70,60,45,${0.12 + rand() * 0.18})`;
+        ctx.beginPath(); ctx.arc(rand() * 256, rand() * 256, r, 0, Math.PI * 2); ctx.fill();
+      }
+    }
+  } else if (slug.includes('pan_de_bois')) {
+    ctx.fillStyle = '#d9cba8'; ctx.fillRect(0, 0, 256, 256);   // torchis clair en remplissage
+    ctx.strokeStyle = '#4a3323'; ctx.lineWidth = 10;
+    ctx.strokeRect(5, 5, 246, 246);
+    ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(256, 256); ctx.moveTo(256, 0); ctx.lineTo(0, 256); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(128, 0); ctx.lineTo(128, 256); ctx.moveTo(0, 128); ctx.lineTo(256, 128); ctx.stroke();
+  } else if (slug.includes('torchis')) {
+    ctx.fillStyle = '#d9cba8'; ctx.fillRect(0, 0, 256, 256);
+    for (let i = 0; i < 260; i++) {
+      ctx.fillStyle = `rgba(150,120,80,${0.05 + rand() * 0.1})`;
+      ctx.fillRect(rand() * 256, rand() * 256, 1 + rand() * 2, 1 + rand() * 2);
+    }
+  } else if (slug.includes('bois')) {
+    ctx.fillStyle = '#6b4a30'; ctx.fillRect(0, 0, 256, 256);
+    const plancheW = 32;
+    for (let x = 0; x < 256; x += plancheW) {
+      ctx.fillStyle = `rgba(0,0,0,${0.05 + rand() * 0.05})`;
+      ctx.fillRect(x, 0, 2, 256);
+      for (let i = 0; i < 6; i++) {
+        ctx.strokeStyle = `rgba(40,25,15,${0.15 + rand() * 0.15})`;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        const xg = x + 4 + rand() * (plancheW - 8);
+        ctx.moveTo(xg, 0); ctx.lineTo(xg + (rand() - 0.5) * 8, 256); ctx.stroke();
+      }
+    }
+  } else {
+    // parpaing_enduit, beton, indetermine et tout le reste : enduit neutre
+    // -- le rendu ne pretend PAS connaitre un materiau que la donnee ne
+    // fournit pas (INDETERMINE est une valeur reelle et frequente).
+    ctx.fillStyle = '#c7c2b6'; ctx.fillRect(0, 0, 256, 256);
+    for (let i = 0; i < 900; i++) {
+      ctx.fillStyle = `rgba(0,0,0,${rand() * 0.035})`;
+      ctx.fillRect(rand() * 256, rand() * 256, 1, 1);
+    }
+  }
+  return c;
+}
+
+function drawRoofTexture(slug) {
+  const c = document.createElement('canvas'); c.width = 256; c.height = 256;
+  const ctx = c.getContext('2d');
+  const rand = mulberry32(11);
+
+  if (slug.includes('ardoise')) {
+    ctx.fillStyle = '#33404d'; ctx.fillRect(0, 0, 256, 256);
+    const h = 26, w = 40;
+    ctx.strokeStyle = 'rgba(10,15,20,0.6)'; ctx.lineWidth = 2;
+    for (let row = 0, y = 0; y < 256 + h; row++, y += h * 0.72) {
+      const decalage = (row % 2) * (w / 2);
+      for (let x = -decalage; x < 256 + w; x += w) {
+        ctx.beginPath();
+        ctx.moveTo(x, y); ctx.lineTo(x + w / 2, y + h); ctx.lineTo(x + w, y);
+        ctx.stroke();
+        ctx.fillStyle = `rgba(255,255,255,${0.02 + rand() * 0.03})`;
+        ctx.fill();
+      }
+    }
+  } else if (slug.includes('tuile')) {
+    ctx.fillStyle = '#a8502e'; ctx.fillRect(0, 0, 256, 256);
+    const h = 30, w = 34;
+    for (let row = 0, y = 0; y < 256 + h; row++, y += h * 0.62) {
+      const decalage = (row % 2) * (w / 2);
+      for (let x = -decalage; x < 256 + w; x += w) {
+        ctx.fillStyle = `rgba(0,0,0,${0.08 + rand() * 0.06})`;
+        ctx.beginPath(); ctx.arc(x + w / 2, y, w / 2 - 2, 0, Math.PI, false); ctx.fill();
+        ctx.fillStyle = `rgba(255,200,150,${0.04 + rand() * 0.05})`;
+        ctx.beginPath(); ctx.arc(x + w / 2, y - 2, w / 2 - 6, 0, Math.PI, false); ctx.fill();
+      }
+    }
+  } else if (slug.includes('zinc')) {
+    ctx.fillStyle = '#9aa3ab'; ctx.fillRect(0, 0, 256, 256);
+    ctx.strokeStyle = 'rgba(50,55,60,0.5)'; ctx.lineWidth = 2;
+    for (let x = 0; x < 256; x += 22) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, 256); ctx.stroke(); }
+  } else if (slug.includes('bac_acier')) {
+    ctx.fillStyle = '#7c8790'; ctx.fillRect(0, 0, 256, 256);
+    for (let x = 0; x < 256; x += 16) {
+      const g = ctx.createLinearGradient(x, 0, x + 16, 0);
+      g.addColorStop(0, 'rgba(0,0,0,0.18)'); g.addColorStop(0.5, 'rgba(255,255,255,0.10)'); g.addColorStop(1, 'rgba(0,0,0,0.18)');
+      ctx.fillStyle = g; ctx.fillRect(x, 0, 16, 256);
+    }
+  } else if (slug.includes('vegetalise')) {
+    ctx.fillStyle = '#3d6b3a'; ctx.fillRect(0, 0, 256, 256);
+    for (let i = 0; i < 700; i++) {
+      ctx.fillStyle = `rgba(${40 + rand() * 40},${90 + rand() * 60},${40 + rand() * 30},0.5)`;
+      ctx.fillRect(rand() * 256, rand() * 256, 2, 2);
+    }
+  } else {
+    // beton (toiture-terrasse) / indetermine : surface neutre, plate.
+    ctx.fillStyle = '#9a978c'; ctx.fillRect(0, 0, 256, 256);
+    for (let i = 0; i < 500; i++) {
+      ctx.fillStyle = `rgba(0,0,0,${rand() * 0.04})`;
+      ctx.fillRect(rand() * 256, rand() * 256, 1, 1);
+    }
+  }
+  return c;
+}
+
 // ---------- 4. CONSTRUCTION PARAMÉTRIQUE DE LA MAISON ----------
 let house = null, zoneGroups = {}, zoneFillMeshes = {}, interactiveMeshes = [];
 let crackMesh = null, waterMesh = null, stainMeshes = {};
@@ -1480,18 +1644,42 @@ let labelSprites = {}, leaderLines = {};
 // a z = -D/2, il faut retenir l'arete reellement construite pour y accrocher
 // les etiquettes et les effets (auréoles d'humidite).
 let zoneAnchors = {};
+// Couche "structure" : volumes opaques et texturés par matériau réel
+// (murs/toiture/fondations), ajoutée SOUS la couche translucide de scan de
+// risque (zoneFillMeshes) sans y toucher — Three.js rend les objets
+// opaques avant les transparents quel que soit l'ordre d'ajout à la scène,
+// donc la texture apparaît "derrière" le halo coloré de risque, sans
+// z-fighting ni changement du raycasting existant (cette couche n'est pas
+// ajoutée à interactiveMeshes).
+let structureMeshes = [];
+// Portes/fenêtres/balcon réels (voir addOpenings) : simples meshes décor,
+// même traitement que structureMeshes (non interactifs).
+let openingMeshes = [];
 
 function disposeHouse() {
   if (house) scene.remove(house);
   house = null; zoneGroups = {}; zoneFillMeshes = {}; interactiveMeshes = [];
   crackMesh = null; waterMesh = null; stainMeshes = {};
   labelSprites = {}; leaderLines = {}; zoneAnchors = {};
+  structureMeshes = []; openingMeshes = [];
 }
 
 function registerFill(zoneName, fillMesh) {
   fillMesh.userData.zoneName = zoneName;
   zoneFillMeshes[zoneName].push(fillMesh);
   interactiveMeshes.push(fillMesh);
+}
+
+// Ajoute la couche opaque texturee (materiau reel) pour un volume donne.
+// `geometry` est reutilisee telle quelle pour la couche de scan (aucune
+// duplication de donnees) : computeVertexNormals est deja fait une fois par
+// registerFill/addRawPart, appeler ceci AVANT ou APRES n'a pas d'incidence.
+function addStructureLayer(group, geometry, texture) {
+  const mat = new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide });
+  const mesh = new THREE.Mesh(geometry, mat);
+  group.add(mesh);
+  structureMeshes.push(mesh);
+  return mesh;
 }
 
 // ---------- 4a. EMPRISE RÉELLE (polygone BDNB) ----------
@@ -1549,14 +1737,30 @@ function slabFromPolygons(polys, y, thickness) {
   return group;
 }
 
+// UV en METRES REELS (pas normalisees 0-1) : u = distance projetee sur l'axe
+// a->b, v = hauteur. Les textures de materiau (getMaterialTexture) reglent
+// leur propre `repeat` en consequence, ce qui les fait carreler a la bonne
+// echelle quelle que soit la taille de la facade ou de l'etage.
+function _uvAxis(a, b) {
+  const dx = b[0] - a[0], dz = b[2] - a[2];
+  const l = Math.hypot(dx, dz) || 1;
+  return [dx / l, dz / l];
+}
+function _uvOf(p, origine, ux, uz) { return [(p[0] - origine[0]) * ux + (p[2] - origine[2]) * uz, p[1] - origine[1]]; }
+
 function quadsToGeometry(quads) {
   const verts = new Float32Array(quads.length * 18);
+  const uvs = new Float32Array(quads.length * 12);
   quads.forEach((q, i) => {
     const [a, b, c, d] = q;
     verts.set([...a, ...b, ...c, ...a, ...c, ...d], i * 18);
+    const [ux, uz] = _uvAxis(a, b);
+    const uvA = _uvOf(a, a, ux, uz), uvB = _uvOf(b, a, ux, uz), uvC = _uvOf(c, a, ux, uz), uvD = _uvOf(d, a, ux, uz);
+    uvs.set([...uvA, ...uvB, ...uvC, ...uvA, ...uvC, ...uvD], i * 12);
   });
   const geo = new THREE.BufferGeometry();
   geo.setAttribute('position', new THREE.BufferAttribute(verts, 3));
+  geo.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
   geo.computeVertexNormals();
   return geo;
 }
@@ -1650,15 +1854,31 @@ function buildHouseFromFootprint(geometry, polys) {
   const wallsStartY = basementTopY + 0.3;
   const eavesY = wallsStartY + floors * levelH;
 
+  // -- textures de materiau reel (BDNB) : les fondations/sous-sol restent en
+  // beton par convention (la BDNB ne donne pas de materiau de fondation
+  // specifique — utiliser le materiau des murs serait une supposition, pas
+  // une donnee).
+  const wallTexture = getMaterialTexture('mur', g.materiau_mur);
+  const roofTexture = getMaterialTexture('toit', g.materiau_toiture);
+  const foundationTexture = getMaterialTexture('toit', 'beton');
+
   // -- sous-sol et fondations : extrusion de l'emprise reelle --
-  slabFromPolygons(polys, basementTopY - basementH, basementH).forEach(geo =>
-    registerFill('sous_sol', addRawPart(zoneGroups.sous_sol, geo, 0x3fb950, 0.18)));
-  slabFromPolygons(polys, fondY - 0.15, 0.3).forEach(geo =>
-    registerFill('fondations', addRawPart(zoneGroups.fondations, geo, 0x3fb950, 0.18)));
+  slabFromPolygons(polys, basementTopY - basementH, basementH).forEach(geo => {
+    addStructureLayer(zoneGroups.sous_sol, geo, foundationTexture);
+    registerFill('sous_sol', addRawPart(zoneGroups.sous_sol, geo, 0x3fb950, 0.18));
+  });
+  slabFromPolygons(polys, fondY - 0.15, 0.3).forEach(geo => {
+    addStructureLayer(zoneGroups.fondations, geo, foundationTexture);
+    registerFill('fondations', addRawPart(zoneGroups.fondations, geo, 0x3fb950, 0.18));
+  });
 
   // -- murs : une facade par arete, rattachee a sa zone cardinale --
   const wallQuads = {};       // zone -> etage -> quads
-  ZONE_NAMES.filter(z => z.startsWith('murs_')).forEach(z => { wallQuads[z] = {}; });
+  // Aretes reelles par zone (independantes de l'etage) : servent a repartir
+  // les ouvertures reelles (fenetres/porte) le long des vraies facades,
+  // cf. addOpenings plus bas.
+  const edgesByZone = {};
+  ZONE_NAMES.filter(z => z.startsWith('murs_')).forEach(z => { wallQuads[z] = {}; edgesByZone[z] = []; });
   const anchorCandidates = {};
 
   polys.forEach(p => {
@@ -1677,6 +1897,7 @@ function buildHouseFromFootprint(geometry, polys) {
             [a[0], y0, a[1]], [b[0], y0, b[1]], [b[0], y1, b[1]], [a[0], y1, a[1]]
           ]);
         }
+        edgesByZone[zone].push({ a, b, normal, longueur });
         // La façade la plus longue de chaque orientation porte l'etiquette
         // et l'effet d'humidite : c'est la plus lisible a l'ecran.
         if (!anchorCandidates[zone] || longueur > anchorCandidates[zone].longueur) {
@@ -1692,7 +1913,10 @@ function buildHouseFromFootprint(geometry, polys) {
 
   Object.entries(wallQuads).forEach(([zone, parEtage]) => {
     Object.values(parEtage).forEach(quads => {
-      if (quads.length) registerFill(zone, addRawPart(zoneGroups[zone], quadsToGeometry(quads), 0x3fb950, 0.16));
+      if (!quads.length) return;
+      const geo = quadsToGeometry(quads);
+      addStructureLayer(zoneGroups[zone], geo, wallTexture);
+      registerFill(zone, addRawPart(zoneGroups[zone], geo, 0x3fb950, 0.16));
     });
   });
 
@@ -1702,6 +1926,8 @@ function buildHouseFromFootprint(geometry, polys) {
       normal: new THREE.Vector3(info.normal[0], 0, info.normal[1])
     };
   });
+
+  addOpenings(g, edgesByZone, { wallsStartY, levelH, floors });
 
   // -- planchers intermediaires : simple filaire suivant l'emprise --
   for (let i = 1; i < floors; i++) {
@@ -1727,8 +1953,10 @@ function buildHouseFromFootprint(geometry, polys) {
   let ridgeY = eavesY;
 
   if (toitPlat) {
-    slabFromPolygons(polys, eavesY, 0.25).forEach(geo =>
-      registerFill('toiture', addRawPart(zoneGroups.toiture, geo, 0x3fb950, 0.16)));
+    slabFromPolygons(polys, eavesY, 0.25).forEach(geo => {
+      addStructureLayer(zoneGroups.toiture, geo, foundationTexture); // etancheite terrasse : meme rendu neutre que le beton
+      registerFill('toiture', addRawPart(zoneGroups.toiture, geo, 0x3fb950, 0.16));
+    });
     ridgeY = eavesY + 0.25;
   } else {
     const penteRad = penteDeg * Math.PI / 180;
@@ -1745,8 +1973,10 @@ function buildHouseFromFootprint(geometry, polys) {
 
       if (!creux) {
         // Emprise trop etroite ou trop torturee pour une croupe : terrasse.
-        slabFromPolygons([p], eavesY, 0.25).forEach(geo =>
-          registerFill('toiture', addRawPart(zoneGroups.toiture, geo, 0x3fb950, 0.16)));
+        slabFromPolygons([p], eavesY, 0.25).forEach(geo => {
+          addStructureLayer(zoneGroups.toiture, geo, foundationTexture);
+          registerFill('toiture', addRawPart(zoneGroups.toiture, geo, 0x3fb950, 0.16));
+        });
         return;
       }
 
@@ -1757,11 +1987,14 @@ function buildHouseFromFootprint(geometry, polys) {
           [creux[j][0], sommetY, creux[j][1]], [creux[i][0], sommetY, creux[i][1]]
         ];
       });
-      registerFill('toiture', addRawPart(zoneGroups.toiture, quadsToGeometry(pans), 0x3fb950, 0.16));
+      const roofGeo = quadsToGeometry(pans);
+      addStructureLayer(zoneGroups.toiture, roofGeo, roofTexture);
+      registerFill('toiture', addRawPart(zoneGroups.toiture, roofGeo, 0x3fb950, 0.16));
 
       const faitage = new THREE.ExtrudeGeometry(toShape(creux, []), { depth: 0.06, bevelEnabled: false });
       faitage.rotateX(SHAPE_ROT_X);
       faitage.translate(0, sommetY, 0);
+      addStructureLayer(zoneGroups.toiture, faitage, roofTexture);
       registerFill('toiture', addRawPart(zoneGroups.toiture, faitage, 0x3fb950, 0.16));
     });
   }
@@ -1775,6 +2008,180 @@ function buildHouseFromFootprint(geometry, polys) {
   // coordonnees du polygone (contrairement au mode boite, ou elle doit etre
   // rejouee via orientation_deg).
   houseDims = { W, D, floors, levelH, wallsStartY, eavesY, ridgeY, basementCenterY, fondY, bounds };
+}
+
+// ---------- 4b. OUVERTURES RÉELLES (porte / fenêtres / balcon) ----------
+//
+// Couleur de menuiserie : seul signal disponible est le MATÉRIAU réel
+// (`type_materiaux_menuiserie` — bois/pvc/alu/métal), pas une couleur RAL.
+// La couleur choisie ici illustre le matériau réel, elle ne l'invente pas.
+function menuiserieColor(materiauBrut) {
+  const m = (materiauBrut || '').toLowerCase();
+  if (m.includes('bois')) return 0x6b4a30;
+  if (m.includes('pvc')) return 0xe8e6df;
+  if (m.includes('alu') || m.includes('métal') || m.includes('metal')) return 0x5a6068;
+  return 0xcfcac0; // materiau non renseigne : cadre neutre, pas une couleur devinee
+}
+
+// Fenêtre unique : vitrage sombre + cadre. `edgePos` est l'abscisse (mètres)
+// depuis `a` le long de l'arête ; `normal` oriente le plan vers l'extérieur.
+function addWindowMesh(a, b, normal, edgePos, y, largeur, hauteur, cadreColor) {
+  const [ux, uz] = _uvAxis(a, b);
+  const cx = a[0] + ux * edgePos, cz = a[1] + uz * edgePos;
+  const group = new THREE.Group();
+  group.position.set(cx, y, cz);
+  group.lookAt(cx + normal[0], y, cz + normal[1]);
+
+  const vitrage = new THREE.Mesh(
+    new THREE.PlaneGeometry(largeur, hauteur),
+    new THREE.MeshBasicMaterial({ color: 0x1a2430, side: THREE.DoubleSide })
+  );
+  vitrage.position.z = 0.03;
+  group.add(vitrage);
+
+  const cadre = new THREE.Mesh(
+    new THREE.PlaneGeometry(largeur * 1.14, hauteur * 1.1),
+    new THREE.MeshBasicMaterial({ color: cadreColor, side: THREE.DoubleSide })
+  );
+  // Cadre en retrait (z=0.025 < vitrage z=0.03) : la profondeur reelle fait
+  // la superposition visuelle, pas l'ordre d'ajout au groupe.
+  cadre.position.z = 0.025;
+  group.add(cadre);
+
+  house.add(group);
+  openingMeshes.push(group);
+}
+
+// Porte d'entrée : placée au milieu de la plus longue arête de la façade
+// orientée rue (`entree_facade`), au rez-de-chaussée. Aucune donnée BDNB ne
+// précise le matériau/la couleur de porte — teinte neutre assumée, jamais
+// présentée comme une donnée réelle (contrairement au côté choisi, lui basé
+// sur le point d'adresse géocodé).
+function addDoorMesh(arete, wallsStartY) {
+  const { a, b, normal } = arete;
+  const largeur = 1.0, hauteur = 2.05;
+  const milieu = Math.hypot(b[0] - a[0], b[1] - a[1]) / 2;
+  const [ux, uz] = _uvAxis(a, b);
+  const cx = a[0] + ux * milieu, cz = a[1] + uz * milieu;
+  const group = new THREE.Group();
+  group.position.set(cx, wallsStartY + hauteur / 2, cz);
+  group.lookAt(cx + normal[0], wallsStartY + hauteur / 2, cz + normal[1]);
+
+  const porte = new THREE.Mesh(
+    new THREE.PlaneGeometry(largeur, hauteur),
+    new THREE.MeshBasicMaterial({ color: 0x4a3323, side: THREE.DoubleSide })
+  );
+  porte.position.z = 0.03;
+  group.add(porte);
+
+  const cadre = new THREE.Mesh(
+    new THREE.PlaneGeometry(largeur * 1.16, hauteur * 1.06),
+    new THREE.MeshBasicMaterial({ color: 0xe8e6df, side: THREE.DoubleSide })
+  );
+  cadre.position.z = 0.02;
+  group.add(cadre);
+
+  house.add(group);
+  openingMeshes.push(group);
+}
+
+function addBalconyMesh(arete, y) {
+  const { a, b, normal } = arete;
+  const largeur = Math.min(2.4, Math.hypot(b[0] - a[0], b[1] - a[1]) * 0.7);
+  const milieu = Math.hypot(b[0] - a[0], b[1] - a[1]) / 2;
+  const [ux, uz] = _uvAxis(a, b);
+  const cx = a[0] + ux * milieu, cz = a[1] + uz * milieu;
+  const profondeur = 0.9;
+
+  const dalle = new THREE.Mesh(
+    new THREE.BoxGeometry(largeur, 0.08, profondeur),
+    new THREE.MeshBasicMaterial({ color: 0x9a978c })
+  );
+  dalle.position.set(cx + normal[0] * profondeur / 2, y - 0.04, cz + normal[1] * profondeur / 2);
+  house.add(dalle); openingMeshes.push(dalle);
+
+  const garde_corps = new THREE.Mesh(
+    new THREE.BoxGeometry(largeur, 0.9, 0.04),
+    new THREE.MeshBasicMaterial({ color: 0x2c3238 })
+  );
+  garde_corps.position.set(cx + normal[0] * profondeur, y + 0.45, cz + normal[1] * profondeur);
+  garde_corps.lookAt(garde_corps.position.clone().add(new THREE.Vector3(normal[0], 0, normal[1])));
+  house.add(garde_corps); openingMeshes.push(garde_corps);
+}
+
+// Point d'entrée : porte (côté rue, si déterminable) + fenêtres (uniquement
+// si le DPE de ce bien renseigne les baies vitrées) + balcon (si
+// `presence_balcon` est réellement vrai). Aucun de ces trois éléments
+// n'apparaît quand la donnée qui le justifie est absente — pas de
+// génération par défaut.
+function addOpenings(g, edgesByZone, dims) {
+  const { wallsStartY, levelH, floors } = dims;
+  const ouvertures = g.ouvertures || {};
+  const entreeFacade = g.entree_facade || null;
+  const cadreColor = menuiserieColor(ouvertures.menuiserie_materiau);
+
+  if (entreeFacade && edgesByZone[entreeFacade] && edgesByZone[entreeFacade].length) {
+    const aretes = edgesByZone[entreeFacade];
+    const arete = aretes.reduce((best, e) => (e.longueur > best.longueur ? e : best), aretes[0]);
+    addDoorMesh(arete, wallsStartY);
+  }
+
+  const facadesVitrage = ouvertures.disponible ? new Set(ouvertures.facades_avec_vitrage || []) : new Set();
+
+  if (facadesVitrage.size) {
+    // Taille de fenêtre TYPE (1.2 x 1.4 m, ratio résidentiel courant) : seule
+    // valeur non issue de la donnée du bâtiment dans ce calcul — la BDNB
+    // fournit un RATIO de surface vitrée, pas une taille ni un nombre de
+    // fenêtres. Assumée et documentée ici, pas mesurée pour ce bien précis.
+    const FENETRE_L = 1.2, FENETRE_H = 1.4, MARGE = 0.5, ESPACEMENT_MIN = 1.4;
+
+    const slots = []; // { zone, edge, floor }
+    let longueurPonderee = 0;
+    facadesVitrage.forEach(zone => {
+      (edgesByZone[zone] || []).forEach(edge => {
+        for (let floor = 0; floor < floors; floor++) {
+          if (zone === entreeFacade && floor === 0) continue; // rez-de-chaussée réservé à la porte
+          if (edge.longueur < MARGE * 2 + 0.3) continue;
+          slots.push({ zone, edge, floor });
+          longueurPonderee += edge.longueur;
+        }
+      });
+    });
+    if (slots.length && longueurPonderee > 0) {
+      const ratio = ouvertures.ratio_vitrage ?? 0.15;
+      const surfaceMurTotale = longueurPonderee * levelH;
+      const surfaceVitreeCible = surfaceMurTotale * ratio;
+      const densiteParMetre = (surfaceVitreeCible / (FENETRE_L * FENETRE_H)) / longueurPonderee;
+
+      slots.forEach(({ zone, edge, floor }) => {
+        const maxParEspacement = Math.floor((edge.longueur - 2 * MARGE) / ESPACEMENT_MIN) + 1;
+        const nb = Math.max(0, Math.min(Math.round(edge.longueur * densiteParMetre), Math.max(1, maxParEspacement)));
+        if (!nb) return;
+        const y = wallsStartY + floor * levelH + levelH * 0.55;
+        for (let k = 0; k < nb; k++) {
+          const t = nb === 1 ? 0.5 : (k + 0.5) / nb;
+          const pos = MARGE + t * (edge.longueur - 2 * MARGE);
+          addWindowMesh(edge.a, edge.b, edge.normal, pos, y, FENETRE_L, FENETRE_H, cadreColor);
+        }
+      });
+    }
+  }
+
+  if (ouvertures.has_balcony === true) {
+    // Aucune donnée BDNB ne précise la façade/l'étage du balcon : on le
+    // rattache à la façade rue si elle a aussi des fenêtres réelles, sinon
+    // à la première façade vitrée connue — approximation assumée, pas une
+    // donnée par bâtiment.
+    const zoneBalcon = (entreeFacade && facadesVitrage.has(entreeFacade))
+      ? entreeFacade
+      : (facadesVitrage.size ? Array.from(facadesVitrage)[0] : null);
+    if (zoneBalcon && edgesByZone[zoneBalcon] && edgesByZone[zoneBalcon].length && floors >= 2) {
+      const aretes = edgesByZone[zoneBalcon];
+      const arete = aretes.reduce((best, e) => (e.longueur > best.longueur ? e : best), aretes[0]);
+      const yBalcon = wallsStartY + (floors - 1) * levelH;
+      addBalconyMesh(arete, yBalcon);
+    }
+  }
 }
 
 // Garage et jardin : decor commun aux deux modes de construction.
@@ -1980,12 +2387,18 @@ function quadGeo(a, b, c, d) {
   const geo = new THREE.BufferGeometry();
   const verts = new Float32Array([...a, ...b, ...c, ...a, ...c, ...d]);
   geo.setAttribute('position', new THREE.BufferAttribute(verts, 3));
+  const [ux, uz] = _uvAxis(a, b);
+  const uvA = _uvOf(a, a, ux, uz), uvB = _uvOf(b, a, ux, uz), uvC = _uvOf(c, a, ux, uz), uvD = _uvOf(d, a, ux, uz);
+  geo.setAttribute('uv', new THREE.BufferAttribute(new Float32Array([...uvA, ...uvB, ...uvC, ...uvA, ...uvC, ...uvD]), 2));
   return geo;
 }
 function triGeo(a, b, c) {
   const geo = new THREE.BufferGeometry();
   const verts = new Float32Array([...a, ...b, ...c]);
   geo.setAttribute('position', new THREE.BufferAttribute(verts, 3));
+  const [ux, uz] = _uvAxis(a, b);
+  const uvA = _uvOf(a, a, ux, uz), uvB = _uvOf(b, a, ux, uz), uvC = _uvOf(c, a, ux, uz);
+  geo.setAttribute('uv', new THREE.BufferAttribute(new Float32Array([...uvA, ...uvB, ...uvC]), 2));
   return geo;
 }
 

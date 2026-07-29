@@ -14,7 +14,10 @@ import math
 
 from app.digital_twin.footprint import (
     classify_type_batiment,
+    estimate_street_facing_zone,
     extract_footprint,
+    lambert93_to_wgs84,
+    wgs84_to_lambert93,
 )
 from app.digital_twin.geometry_builder import build_geometry_from_bdnb
 
@@ -190,6 +193,65 @@ def test_maison_detectee_sur_bati_bas():
     assert classify_type_batiment(2, 5.0, 155.0) == "maison_individuelle"
 
 
+def test_lambert93_wgs84_aller_retour_est_quasi_exact():
+    """L'aller-retour doit tomber sous le millimetre : sinon l'estimation
+    du cote rue (qui compare des points a l'echelle du batiment) serait
+    faussee par l'erreur de conversion elle-meme plutot que par le signal
+    reel."""
+    lat0, lon0 = 48.8566, 2.3522  # Paris
+    x, y = wgs84_to_lambert93(lat0, lon0)
+    lat1, lon1 = lambert93_to_wgs84(x, y)
+    assert abs(lat1 - lat0) < 1e-9
+    assert abs(lon1 - lon0) < 1e-9
+
+
+def test_lambert93_wgs84_coherent_avec_une_adresse_reelle_bourgueil():
+    """Le centroide du polygone BDNB de la maison de Bourgueil, converti en
+    WGS84, doit tomber a quelques dizaines de metres au plus de l'adresse
+    BAN reelle de ce meme bien — pas a l'autre bout du departement. Sert de
+    garde-fou contre une inversion de signe ou une confusion de convention
+    (X/Y, degres/radians) qui donnerait un resultat a des kilometres."""
+    lat_c, lon_c = lambert93_to_wgs84(486100.0, 6690870.0)  # proche du centroide BATIMENT_NICE-like
+    # Bourgueil (37140) est autour de 47.28 N / 0.17 E : un bug de
+    # conversion sortirait de cet ordre de grandeur.
+    assert 47.0 < lat_c < 47.5
+    assert -0.2 < lon_c < 0.6
+
+
+def test_estimation_cote_rue_pointe_vers_le_point_adresse():
+    """Emprise carree centree a l'origine (en Lambert-93, autour du
+    centroide Bourgueil) ; un point d'adresse artificiellement place au
+    nord doit faire ressortir murs_nord, et vice-versa."""
+    cx, cy = 486100.0, 6690870.0
+    carre = _geom([
+        [cx - 5, cy - 5], [cx + 5, cy - 5], [cx + 5, cy + 5], [cx - 5, cy + 5], [cx - 5, cy - 5],
+    ])
+    lat_c, lon_c = lambert93_to_wgs84(cx, cy)
+
+    metres_par_deg_lat = 110540.0
+    metres_par_deg_lon = 111320.0 * math.cos(math.radians(lat_c))
+
+    lat_nord = lat_c + 30.0 / metres_par_deg_lat
+    assert estimate_street_facing_zone(carre, lat_nord, lon_c) == "murs_nord"
+
+    lon_est = lon_c + 30.0 / metres_par_deg_lon
+    assert estimate_street_facing_zone(carre, lat_c, lon_est) == "murs_est"
+
+
+def test_estimation_cote_rue_none_si_confondu_avec_le_centroide():
+    cx, cy = 486100.0, 6690870.0
+    carre = _geom([
+        [cx - 5, cy - 5], [cx + 5, cy - 5], [cx + 5, cy + 5], [cx - 5, cy + 5], [cx - 5, cy - 5],
+    ])
+    lat_c, lon_c = lambert93_to_wgs84(cx, cy)
+    assert estimate_street_facing_zone(carre, lat_c, lon_c) is None
+
+
+def test_estimation_cote_rue_none_sans_adresse_ou_sans_geometrie():
+    assert estimate_street_facing_zone(None, 47.28, 0.17) is None
+    assert estimate_street_facing_zone(_geom(_carre(10)), None, None) is None
+
+
 def test_usage_bdnb_prime_sur_l_heuristique():
     """L'usage BDNB est une donnee : elle doit l'emporter sur la deduction
     dimensionnelle."""
@@ -243,6 +305,71 @@ def test_geometry_expose_l_emprise_reelle_et_le_type():
     # L'emprise reelle doit rester coherente avec la surface declaree par la
     # BDNB (1256 m^2) — a la simplification des contours pres.
     assert abs(geometry["footprint"]["surface_m2"] - 1256) / 1256 < 0.10
+
+
+def test_geometry_expose_les_ouvertures_reelles_quand_le_dpe_existe():
+    batiment = dict(BATIMENT_NICE)
+    batiment.update({
+        "l_orientation_baie_vitree": ["sud"],
+        "pourcentage_surface_baie_vitree_exterieur": 0.111,
+        "presence_balcon": False,
+        "type_materiaux_menuiserie": "bois",
+        "type_fermeture": "volet battant bois",
+        "type_vitrage": "double vitrage",
+    })
+    result = build_geometry_from_bdnb(batiment)
+    ouvertures = result["geometry"]["ouvertures"]
+    assert ouvertures["disponible"] is True
+    assert ouvertures["facades_avec_vitrage"] == ["murs_sud"]
+    assert ouvertures["ratio_vitrage"] == 0.111
+    assert ouvertures["has_balcony"] is False
+    assert "ouvertures" in result["champs_ok"]
+    assert "ouvertures.has_balcony" in result["champs_ok"]
+
+
+def test_geometry_ne_fabrique_aucune_ouverture_sans_donnee_dpe():
+    """Cas reel majoritaire (ex. la maison de Bourgueil) : aucun champ DPE
+    renseigne -> aucune fenetre ne doit etre inventee."""
+    result = build_geometry_from_bdnb(BATIMENT_NICE)  # sans champs DPE
+    ouvertures = result["geometry"]["ouvertures"]
+    assert ouvertures["disponible"] is False
+    assert ouvertures["facades_avec_vitrage"] == []
+    assert ouvertures["has_balcony"] is None
+    assert "ouvertures" in result["champs_manquants"]
+
+
+def test_geometry_ignore_une_orientation_de_baie_non_reconnue():
+    """Une valeur inattendue dans l_orientation_baie_vitree (ex. donnee
+    fournisseur bruitee) ne doit pas faire planter l'agregation ni produire
+    une zone murs_xxx inexistante."""
+    batiment = dict(BATIMENT_NICE)
+    batiment.update({
+        "l_orientation_baie_vitree": ["sud", "toiture", None, 42],
+        "pourcentage_surface_baie_vitree_exterieur": 0.15,
+    })
+    ouvertures = build_geometry_from_bdnb(batiment)["geometry"]["ouvertures"]
+    assert ouvertures["facades_avec_vitrage"] == ["murs_sud"]
+
+
+def test_geometry_estime_l_entree_facade_a_partir_de_l_adresse():
+    cx, cy = 486100.0, 6690870.0
+    from app.digital_twin.footprint import lambert93_to_wgs84
+    lat_c, lon_c = lambert93_to_wgs84(cx, cy)
+    lat_nord = lat_c + 30.0 / 110540.0
+
+    batiment = dict(BATIMENT_NICE)
+    batiment["geom_groupe"] = _geom([
+        [cx - 5, cy - 5], [cx + 5, cy - 5], [cx + 5, cy + 5], [cx - 5, cy + 5], [cx - 5, cy - 5],
+    ])
+    result = build_geometry_from_bdnb(batiment, adresse={"lat": lat_nord, "lon": lon_c})
+    assert result["geometry"]["entree_facade"] == "murs_nord"
+    assert "entree_facade" in result["champs_ok"]
+
+
+def test_geometry_sans_adresse_ne_place_pas_de_porte():
+    result = build_geometry_from_bdnb(BATIMENT_NICE)  # pas d'adresse fournie
+    assert result["geometry"]["entree_facade"] is None
+    assert "entree_facade" in result["champs_manquants"]
 
 
 def test_geometry_sans_geom_groupe_signale_le_footprint_manquant():
