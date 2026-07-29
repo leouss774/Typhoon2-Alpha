@@ -10,7 +10,9 @@ Pour tester un autre diagnostic : utiliser le champ **"Charger un autre diagnost
 
 ## Ce qui est branché
 
-- **Géométrie paramétrique** : la maison est reconstruite à partir du bloc `geometry` (largeur/longueur, nombre d'étages, type de toiture — 2 pans / 4 pans-croupe / plat —, pente, sous-sol, garage, jardin, orientation). Rien n'est codé en dur, contrairement au prototype `docs/typhoon_site.html`.
+- **Emprise au sol réelle** : quand le contrat contient un bloc `geometry.footprint` (polygone BDNB), le bâtiment est extrudé sur sa forme exacte — murs suivant chaque façade réelle, cour intérieure percée, multipolygone géré. Chaque arête est rattachée à sa zone cardinale (`murs_nord/sud/est/ouest`) d'après sa normale sortante, donc les 7 zones cliquables restent valides sur une forme en L, en U ou quelconque. L'orientation vient des coordonnées elles-mêmes : aucune rotation n'est appliquée dans ce mode.
+- **Toiture adaptée à l'emprise** : toit-terrasse pour les immeubles, les toits plats et les emprises à cour intérieure ; sinon croupe obtenue en rentrant le contour (le contour rentré devient le faîtage), ce qui donne une toiture correcte sur un L ou un U. Repli automatique en terrasse si l'emprise est trop étroite pour la pente demandée.
+- **Géométrie paramétrique (repli)** : sans `footprint`, la maison reste reconstruite en boîte à partir de `largeur_m` / `longueur_m` / `orientation_deg` et du reste du bloc `geometry` (étages, type de toiture, pente, sous-sol, garage, jardin). Rien n'est codé en dur, contrairement au prototype `docs/typhoon_site.html`.
 - **7 zones cliquables** (`fondations`, `murs_nord/sud/est/ouest`, `toiture`, `sous_sol`) : couleur pilotée par `risque`, panneau de détail avec `alea_principal`, `justification`, `recommandations`.
 - **Bascule 2025 / 2050** sur `projection_2050`.
 - **Effets visuels pilotés par le score** (fonction de mapping pure `mapRiskToEffect`, voir `next steps/README_noeud_jumeau_numerique.md` §5) :

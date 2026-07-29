@@ -25,7 +25,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+    # env_file ancre sur BASE_DIR (et non sur le repertoire courant) : le
+    # .env est trouve que uvicorn soit lance depuis backend/ ou depuis la
+    # racine du depot, comme pour les chemins de cache/lookup ci-dessous.
+    model_config = SettingsConfigDict(env_file=BASE_DIR / ".env", extra="ignore")
 
     # BDNB (aucune cle necessaire, confirme par un test reel - voir le guide)
     bdnb_api_key: str | None = None
