@@ -823,6 +823,356 @@
   #cert-download-btn { background: #FF6B4A; color: #FFFFFF; }
   #cert-download-btn:hover { background: #FF8563; }
   #cert-footnote { margin-top: 16px; color: #A7ADB2; font-size: 10.5px; }
+
+/* ========================================================================
+   PROPERTY ID SCREEN — Styles fusionnés depuis property-id/index.html
+   ======================================================================== */
+#property-id-screen {
+  position: fixed; inset: 0; z-index: 175;
+  display: none; overflow-y: auto;
+  background: #F8F5F1;
+  -webkit-overflow-scrolling: touch;
+}
+#property-id-screen .pid-container {
+  max-width: 1120px; margin: 0 auto;
+  padding: 20px 20px 48px; width: 100%;
+}
+#property-id-screen .pid-brand-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; margin-bottom: 20px; padding: 12px 16px;
+  background: #fff; border: 1px solid var(--border);
+  border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+#property-id-screen .pid-logo {
+  display: flex; align-items: center; gap: 10px;
+}
+#property-id-screen .pid-logo .mark {
+  width: 32px; height: 32px; border-radius: 8px;
+  background: linear-gradient(135deg, #FF9269, var(--brand));
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 0 14px rgba(255,107,74,0.3); flex-shrink: 0;
+}
+#property-id-screen .pid-logo .mark svg { width: 18px; height: 18px; stroke: #fff; stroke-width: 2.5; fill: none; }
+#property-id-screen .pid-logo .name { font-family: var(--font-head); color: var(--ink); font-size: 16px; font-weight: 700; }
+#property-id-screen .pid-logo .baseline { color: var(--brand); font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; }
+#property-id-screen .pid-close-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 14px; border: 1px solid var(--border); border-radius: 8px;
+  background: var(--surface-alt); color: var(--text);
+  font-size: 12px; font-weight: 600; cursor: pointer;
+  font-family: var(--font-body); transition: all 0.2s ease;
+}
+#property-id-screen .pid-close-btn:hover { border-color: var(--brand); color: var(--brand); background: #fff; }
+#property-id-screen .pid-status {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 16px; background: #fff; border: 1px solid var(--border);
+  border-radius: 12px; margin-bottom: 20px;
+  font-size: 13px; color: var(--text); box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+#property-id-screen .pid-status .dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--success); flex-shrink: 0;
+}
+#property-id-screen .pid-status .dot.loading { background: var(--brand); animation: pulse-dot 1s infinite; }
+#property-id-screen .pid-status .dot.error { background: var(--danger); }
+#property-id-screen .pid-status .msg.error { color: var(--danger); }
+#property-id-screen .pid-section-title {
+  font-size: 15px; font-weight: 700; margin-bottom: 16px;
+  display: flex; align-items: center; gap: 8px; color: var(--ink);
+}
+#property-id-screen .pid-section-title svg { width: 20px; height: 20px; color: var(--brand); flex-shrink: 0; }
+
+/* Property Header */
+#property-id-screen .pid-header {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  gap: 16px; margin-bottom: 20px; flex-wrap: wrap;
+  padding: 24px 28px; background: #fff;
+  border: 1px solid var(--border); border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+#property-id-screen .pid-header .hl { flex: 1; min-width: 200px; }
+#property-id-screen .pid-header .hl .pid-label {
+  font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.1em; color: var(--muted); margin-bottom: 6px;
+}
+#property-id-screen .pid-header .hl h2 { font-size: 22px; line-height: 1.3; margin-bottom: 2px; font-weight: 700; font-family: var(--font-head); }
+#property-id-screen .pid-header .hl .addr-line { font-size: 14px; color: var(--text); }
+#property-id-screen .pid-header .hl .date-line { font-size: 12px; color: var(--muted); margin-top: 4px; }
+#property-id-screen .pid-header .hr { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+
+/* Cert pill */
+.pid-cert-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 14px; border-radius: 999px;
+  font-size: 12px; font-weight: 700; border: 1.5px solid;
+}
+.pid-cert-pill.bronze { background: linear-gradient(135deg,#FFF5EB,#F5E6D3); color: #8B4513; border-color: #CD7F32; }
+.pid-cert-pill.silver { background: linear-gradient(135deg,#F0F4F8,#E2E8F0); color: #5A6A7A; border-color: #A8B8C8; }
+.pid-cert-pill.gold { background: linear-gradient(135deg,#FFF8E1,#FFE082); color: #8B6914; border-color: #D4A017; }
+.pid-cert-pill.platinum { background: linear-gradient(135deg,#F0F4FF,#E8EEF8); color: #4A5A7A; border-color: #B0C0D0; }
+.pid-cert-pill.pending { background: var(--surface-alt); color: var(--muted); border-color: var(--border); font-style: italic; }
+
+/* Cert Hero */
+#property-id-screen .pid-cert-hero {
+  display: flex; gap: 28px; align-items: center; margin-bottom: 20px;
+  background: #fff; border: 1px solid var(--border); border-radius: 16px;
+  padding: 28px 32px; box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  position: relative; overflow: hidden;
+}
+#property-id-screen .pid-cert-hero::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0;
+  height: 3px; background: linear-gradient(90deg, var(--brand-light), var(--brand), var(--brand-light)); opacity: 0.6;
+}
+#property-id-screen .pid-cert-hero .badge-wrap { flex-shrink: 0; filter: drop-shadow(0 4px 12px rgba(0,0,0,0.10)); }
+#property-id-screen .pid-cert-hero .badge-wrap svg { width: 120px; height: 140px; display: block; }
+#property-id-screen .pid-cert-hero .ci { flex: 1; }
+#property-id-screen .pid-cert-hero .ci .cl { font-size: 24px; font-weight: 700; margin-bottom: 4px; font-family: var(--font-head); }
+#property-id-screen .pid-cert-hero .ci .cl.bronze { color: #CD7F32; }
+#property-id-screen .pid-cert-hero .ci .cl.silver { color: #7A8A9A; }
+#property-id-screen .pid-cert-hero .ci .cl.gold { color: #B8860B; }
+#property-id-screen .pid-cert-hero .ci .cl.platinum { color: #4A5A7A; }
+#property-id-screen .pid-cert-hero .ci .cl.pending { color: var(--muted); font-style: italic; }
+#property-id-screen .pid-cert-hero .ci .cd { font-size: 13px; color: var(--text); line-height: 1.5; margin-bottom: 4px; }
+#property-id-screen .pid-cert-hero .ci .ce { font-size: 11.5px; color: var(--muted); line-height: 1.5; margin-bottom: 14px; font-style: italic; }
+#property-id-screen .pid-cert-hero .ci .cm {
+  display: flex; gap: 20px; font-size: 12px; color: var(--muted);
+  flex-wrap: wrap; align-items: center;
+}
+#property-id-screen .pid-cert-hero .ci .cm span { display: flex; align-items: center; gap: 5px; }
+#property-id-screen .pid-cert-hero .cs {
+  font-size: 38px; font-weight: 700; line-height: 1;
+  font-family: var(--font-head);
+}
+#property-id-screen .pid-cert-hero .cs sup { font-size: 15px; font-weight: 400; color: var(--muted); }
+
+/* Devis result (certification obtenue) */
+#property-id-screen #pid-devis-result {
+  display: none; gap: 24px; align-items: flex-start; margin-bottom: 20px;
+  background: linear-gradient(135deg, #F0F8F4 0%, #fff 100%);
+  border: 1.5px solid var(--success); border-radius: 16px;
+  padding: 28px 32px; box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  position: relative; overflow: hidden;
+}
+#property-id-screen #pid-devis-result::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0;
+  height: 3px; background: linear-gradient(90deg, var(--success), #3FCF8E, var(--success));
+}
+#property-id-screen #pid-devis-result .di {
+  flex-shrink: 0; width: 56px; height: 56px;
+  background: var(--success); border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 0 0 4px rgba(31,157,108,0.15);
+}
+#property-id-screen #pid-devis-result .di svg { width: 28px; height: 28px; color: #fff; }
+#property-id-screen #pid-devis-result .db { flex: 1; min-width: 0; }
+#property-id-screen #pid-devis-result .de { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--success); margin-bottom: 2px; }
+#property-id-screen #pid-devis-result .dh { font-family: var(--font-head); font-size: 20px; font-weight: 700; color: var(--ink); margin-bottom: 14px; }
+#property-id-screen #pid-devis-result .ds { display: flex; gap: 28px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
+#property-id-screen #pid-devis-result .ds .ds-box { display: flex; flex-direction: column; gap: 2px; }
+#property-id-screen #pid-devis-result .ds .ds-box .dsl { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+#property-id-screen #pid-devis-result .ds .ds-box .dsv { font-size: 22px; font-weight: 700; line-height: 1.2; }
+#property-id-screen #pid-devis-result .ds .ds-box .dsv.grn { color: var(--success); }
+#property-id-screen #pid-devis-result .ds .ds-box .dsv.amb { color: var(--warning); }
+#property-id-screen #pid-devis-result .ds .ds-box .dsv.brd { color: var(--brand); }
+#property-id-screen #pid-devis-result .ds .arrow { font-size: 20px; color: var(--muted); }
+#property-id-screen #pid-devis-result .dw-title { font-size: 12px; font-weight: 600; color: var(--ink); margin-bottom: 8px; }
+#property-id-screen #pid-devis-result #pid-works-ul { list-style: none; display: flex; flex-direction: column; gap: 5px; }
+#property-id-screen #pid-devis-result #pid-works-ul li {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 7px 12px; background: rgba(255,255,255,0.7);
+  border: 1px solid rgba(31,157,108,0.15); border-radius: 8px;
+  font-size: 12px; color: var(--text);
+}
+#property-id-screen #pid-devis-result #pid-works-ul li .wn { font-weight: 600; }
+#property-id-screen #pid-devis-result #pid-works-ul li .wz { color: var(--muted); font-size: 11px; }
+#property-id-screen #pid-devis-result #pid-works-ul li .wc { color: var(--text); font-weight: 600; font-size: 12px; }
+
+/* Score gauges */
+#property-id-screen .pid-gauges { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 20px; }
+#property-id-screen .pid-gauge-card {
+  background: #fff; border: 1px solid var(--border); border-radius: 12px;
+  padding: 22px 18px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+#property-id-screen .pid-gauge-card .gw {
+  position: relative; width: 120px; height: 120px;
+  margin: 0 auto 14px;
+}
+#property-id-screen .pid-gauge-card .gw svg { transform: rotate(-90deg); }
+#property-id-screen .pid-gauge-card .gw .gauge-bg { fill: none; stroke: #F1ECE6; stroke-width: 8; }
+#property-id-screen .pid-gauge-card .gw .gauge-fill { fill: none; stroke-width: 8; stroke-linecap: round; }
+#property-id-screen .pid-gauge-card .gw .gc {
+  position: absolute; inset: 0; display: flex;
+  align-items: center; justify-content: center;
+  font-size: 28px; font-weight: 700;
+}
+#property-id-screen .pid-gauge-card .gl { font-size: 13px; font-weight: 600; color: var(--ink); margin-bottom: 3px; }
+#property-id-screen .pid-gauge-card .ge { font-size: 11px; color: var(--muted); font-style: italic; line-height: 1.4; }
+
+/* Two column layout */
+#property-id-screen .pid-two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+
+/* Risk card */
+#property-id-screen .pid-risk-card {
+  background: #fff; border: 1px solid var(--border); border-radius: 12px;
+  padding: 22px 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+#property-id-screen .pid-risk-card .rr { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 13px; }
+#property-id-screen .pid-risk-card .rr:last-child { margin-bottom: 0; }
+#property-id-screen .pid-risk-card .rr .ll { color: var(--text); min-width: 100px; }
+#property-id-screen .pid-risk-card .rr .vv { font-weight: 600; color: var(--ink); }
+.pid-risk-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 12px; border-radius: 999px;
+  font-size: 12px; font-weight: 700; text-transform: uppercase;
+}
+.pid-risk-badge.faible { background: linear-gradient(135deg,#E4F5EC,#C8E6C9); color: var(--success); }
+.pid-risk-badge.modere { background: linear-gradient(135deg,#FBEED9,#FFECB3); color: var(--warning); }
+.pid-risk-badge.eleve { background: linear-gradient(135deg,#FDE7E2,#FFE0B2); color: #BF5E00; }
+.pid-risk-badge.critique { background: linear-gradient(135deg,#FDD8D4,#FFCDD2); color: #C0392B; }
+.pid-risk-badge.na { background: var(--surface-alt); color: var(--muted); }
+
+/* Building info */
+#property-id-screen .pid-bld-card {
+  background: #fff; border: 1px solid var(--border); border-radius: 12px;
+  padding: 22px 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+#property-id-screen .pid-bld-card .ig { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 20px; }
+#property-id-screen .pid-bld-card .ig .ii { display: flex; flex-direction: column; gap: 2px; }
+#property-id-screen .pid-bld-card .ig .ii .il { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+#property-id-screen .pid-bld-card .ig .ii .iv { font-size: 14px; color: var(--ink); font-weight: 500; }
+#property-id-screen .pid-bld-card .ig .ii .iv.na { color: var(--muted); font-style: italic; cursor: help; border-bottom: 1px dashed var(--border); width: fit-content; }
+
+/* Reco */
+#property-id-screen .pid-reco-card {
+  background: #fff; border: 1px solid var(--border); border-radius: 12px;
+  padding: 22px 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+#property-id-screen .pid-reco-item {
+  display: flex; gap: 12px; padding: 12px;
+  border-radius: 8px; transition: all 0.2s ease; cursor: default;
+}
+#property-id-screen .pid-reco-item:hover { background: var(--surface-alt); transform: translateX(4px); }
+#property-id-screen .pid-reco-item + .pid-reco-item { border-top: 1px solid var(--border); }
+#property-id-screen .pid-reco-item .ri { width: 20px; height: 20px; margin-top: 2px; flex-shrink: 0; color: var(--brand); }
+#property-id-screen .pid-reco-item .rc { flex: 1; min-width: 0; }
+#property-id-screen .pid-reco-item .rc .rt { font-size: 13px; font-weight: 600; color: var(--ink); margin-bottom: 3px; }
+#property-id-screen .pid-reco-item .rc .rm { font-size: 11px; color: var(--muted); display: flex; gap: 12px; flex-wrap: wrap; }
+.pid-zone-badge { font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; padding: 2px 7px; border-radius: 4px; background: var(--surface-alt); color: var(--text); white-space: nowrap; height: fit-content; }
+.pid-type-badge { display: inline-block; font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 4px; background: rgba(255,107,74,0.15); color: var(--brand); white-space: nowrap; text-transform: uppercase; letter-spacing: 0.03em; }
+#property-id-screen .pid-reco-item .rc .rd { font-size: 12px; color: var(--text); line-height: 1.5; margin-bottom: 4px; }
+#property-id-screen .pid-reco-item .rc .rsrc { font-size: 10px; color: var(--muted); margin-top: 4px; font-style: italic; }
+#property-id-screen .pid-reco-empty { text-align: center; padding: 32px 16px; color: var(--muted); }
+#property-id-screen .pid-reco-empty .ei { width: 40px; height: 40px; color: var(--border); margin: 0 auto 12px; display: block; }
+#property-id-screen .pid-reco-empty p { font-size: 13px; line-height: 1.5; }
+#property-id-screen .pid-reco-empty .eh { font-size: 11px; color: var(--muted); margin-top: 4px; font-style: italic; }
+
+/* Timeline */
+#property-id-screen .pid-timeline { position: relative; padding-left: 30px; }
+#property-id-screen .pid-timeline::before { content: ''; position: absolute; left: 11px; top: 8px; bottom: 8px; width: 2px; background: var(--border); border-radius: 1px; }
+#property-id-screen .pid-timeline .ti { position: relative; padding-bottom: 22px; }
+#property-id-screen .pid-timeline .ti:last-child { padding-bottom: 0; }
+#property-id-screen .pid-timeline .ti .tli { position: absolute; left: -24px; top: 0; width: 24px; height: 24px; border-radius: 50%; background: #fff; border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; z-index: 1; }
+#property-id-screen .pid-timeline .ti .tli svg { width: 12px; height: 12px; color: var(--muted); }
+#property-id-screen .pid-timeline .ti.cert .tli { border-color: #D4A017; background: linear-gradient(135deg,#FFF8E1,#FFE082); box-shadow: 0 0 0 4px rgba(212,160,23,0.12); }
+#property-id-screen .pid-timeline .ti.cert .tli svg { color: #B8860B; }
+#property-id-screen .pid-timeline .ti .tld { font-size: 11px; color: var(--muted); margin-bottom: 2px; }
+#property-id-screen .pid-timeline .ti .tle { font-size: 14px; font-weight: 600; color: var(--ink); }
+#property-id-screen .pid-timeline .ti .tldet { font-size: 12px; color: var(--text); margin-top: 2px; }
+
+/* Twin */
+#property-id-screen .pid-twin {
+  background: #fff; border: 1px solid var(--border); border-radius: 12px;
+  overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.06); margin-bottom: 20px;
+}
+#property-id-screen .pid-twin .th {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 16px 22px; border-bottom: 1px solid var(--border);
+}
+#property-id-screen .pid-twin .th .tt { font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+#property-id-screen .pid-twin .th .tb { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; padding: 3px 10px; border-radius: 5px; background: var(--success); color: #fff; }
+#property-id-screen .pid-twin .tchips { display: flex; flex-wrap: wrap; gap: 6px; padding: 16px 22px; }
+#property-id-screen .pid-twin .tchip {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 5px 12px; border-radius: 999px;
+  font-size: 11px; font-weight: 600; border: 1px solid;
+}
+#property-id-screen .pid-twin .tchip .cd { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+#property-id-screen .pid-twin .tchip.faible { background: #E4F5EC; color: var(--success); border-color: #A5D6A7; }
+#property-id-screen .pid-twin .tchip.faible .cd { background: var(--success); }
+#property-id-screen .pid-twin .tchip.modere { background: #FBEED9; color: var(--warning); border-color: #FFE082; }
+#property-id-screen .pid-twin .tchip.modere .cd { background: var(--warning); }
+#property-id-screen .pid-twin .tchip.eleve { background: #FFF3E0; color: #BF5E00; border-color: #FFCC80; }
+#property-id-screen .pid-twin .tchip.eleve .cd { background: #BF5E00; }
+#property-id-screen .pid-twin .tchip.critique { background: #FDD8D4; color: #C0392B; border-color: #EF9A9A; }
+#property-id-screen .pid-twin .tchip.critique .cd { background: #C0392B; }
+#property-id-screen .pid-twin .twin-json-btn { display: block; width: 100%; padding: 10px; border: none; border-top: 1px solid var(--border); background: #F8F5F1; cursor: pointer; font-size: 12px; font-weight: 600; color: var(--text); font-family: var(--font-body); transition: all 0.2s ease; }
+#property-id-screen .pid-twin .twin-json-btn:hover { background: var(--surface-alt); color: var(--ink); }
+#property-id-screen .pid-twin .twin-json-block { display: none; }
+#property-id-screen .pid-twin .twin-json-block.open { display: block; }
+#property-id-screen .pid-twin .twin-json-block pre { padding: 18px 22px; font-size: 11px; line-height: 1.6; overflow-x: auto; background: #F8F5F1; color: var(--text); max-height: 300px; overflow-y: auto; font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace; }
+
+/* Non-certifie state */
+#property-id-screen .pid-nc {
+  display: flex; align-items: center; gap: 18px;
+  padding: 18px 22px; background: var(--surface-alt);
+  border: 1px dashed var(--border); border-radius: 12px; margin-top: 14px;
+}
+#property-id-screen .pid-nc .nci { width: 40px; height: 40px; flex-shrink: 0; color: var(--muted); }
+#property-id-screen .pid-nc .nct { flex: 1; }
+#property-id-screen .pid-nc .nct strong { display: block; font-size: 14px; color: var(--text); margin-bottom: 2px; }
+#property-id-screen .pid-nc .nct p { font-size: 12px; color: var(--muted); line-height: 1.4; margin: 0; }
+
+/* Skeleton */
+#property-id-screen .pid-skel { display: none; }
+#property-id-screen .pid-skel.active { display: block; }
+#property-id-screen .pid-skel .shimmer {
+  background: linear-gradient(90deg, #F1ECE6 25%, #E8E4DE 50%, #F1ECE6 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.8s ease-in-out infinite;
+  border-radius: 6px;
+}
+#property-id-screen .pid-skel .shimmer.badge-sk { width: 120px; height: 140px; border-radius: 12px; }
+#property-id-screen .pid-skel .shimmer.st { height: 14px; margin-bottom: 8px; border-radius: 4px; }
+#property-id-screen .pid-skel .shimmer.st.w60 { width: 60%; }
+#property-id-screen .pid-skel .shimmer.st.w40 { width: 40%; }
+#property-id-screen .pid-skel .shimmer.st.w80 { width: 80%; }
+
+/* Fade-in */
+#property-id-screen .pid-fade { opacity: 0; transform: translateY(20px); transition: opacity 0.5s ease, transform 0.5s ease; }
+#property-id-screen .pid-fade.vis { opacity: 1; transform: translateY(0); }
+#property-id-screen .pid-fade.d1 { transition-delay: 0.05s; }
+#property-id-screen .pid-fade.d2 { transition-delay: 0.10s; }
+#property-id-screen .pid-fade.d3 { transition-delay: 0.15s; }
+#property-id-screen .pid-fade.d4 { transition-delay: 0.20s; }
+
+@keyframes pidScorePop {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.12); }
+  100% { transform: scale(1); }
+}
+.pid-score-pop { animation: pidScorePop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+
+/* Responsive */
+@media (max-width: 700px) {
+  #property-id-screen .pid-container { padding: 12px; }
+  #property-id-screen .pid-brand-bar { flex-direction: column; align-items: flex-start; gap: 8px; }
+  #property-id-screen .pid-close-btn { width: 100%; justify-content: center; }
+  #property-id-screen .pid-cert-hero { flex-direction: column; text-align: center; padding: 24px 20px; }
+  #property-id-screen .pid-cert-hero .badge-wrap svg { width: 90px; height: 105px; margin: 0 auto; }
+  #property-id-screen .pid-cert-hero .ci .cm { justify-content: center; }
+  #property-id-screen .pid-gauges { grid-template-columns: 1fr; max-width: 320px; margin: 0 auto 20px; }
+  #property-id-screen .pid-two-col { grid-template-columns: 1fr; }
+  #property-id-screen .pid-header { flex-direction: column; }
+  #property-id-screen .pid-bld-card .ig { grid-template-columns: 1fr; }
+  #property-id-screen #pid-devis-result { flex-direction: column; align-items: stretch; padding: 24px 20px; }
+  #property-id-screen #pid-devis-result .ds { gap: 16px; }
+  #property-id-screen .pid-nc { flex-direction: column; text-align: center; }
+}
+@media (max-width: 400px) {
+  #property-id-screen .pid-cert-hero .badge-wrap svg { width: 70px; height: 82px; }
+  #property-id-screen .pid-gauge-card .gw { width: 100px; height: 100px; }
+  #property-id-screen .pid-gauge-card .gw .gc { font-size: 22px; }
+}
 </style>
 </head>
 <body>
@@ -1297,6 +1647,182 @@
       </div>
     </div>
   </div>
+</div>
+
+<!-- ==================== PROPERTY ID SCREEN (fusionné) ==================== -->
+<div id="property-id-screen">
+<div class="pid-container">
+
+  <!-- Brand bar -->
+  <div class="pid-brand-bar pid-fade" id="pid-section-brand">
+    <div class="pid-logo">
+      <div class="mark" aria-label="Logo Typhoon Property ID">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2 4 5v6c0 5 3.5 9 8 11 4.5-2 8-6 8-11V5z"/>
+          <path d="m9 12 2 2 4-4"/>
+        </svg>
+      </div>
+      <div>
+        <div class="name">TYPHOON</div>
+        <div class="baseline">Property ID</div>
+      </div>
+    </div>
+    <div class="action-area">
+      <button class="pid-close-btn" id="pid-close-btn" title="Fermer le Property ID">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+        Fermer
+      </button>
+    </div>
+  </div>
+
+  <!-- Status bar -->
+  <div class="pid-status pid-fade d1" id="pid-status-bar">
+    <span class="dot" id="pid-status-dot"></span>
+    <span class="msg" id="pid-status-msg">Chargement du Property ID…</span>
+  </div>
+
+  <!-- PROPERTY HEADER -->
+  <div class="pid-header pid-fade d2" id="pid-section-header">
+    <div class="hl">
+      <span class="pid-label" id="pid-prop-id-label">PROPERTY ID</span>
+      <h2 id="pid-prop-address">—</h2>
+      <div class="addr-line" id="pid-addr-line"></div>
+      <div class="date-line" id="pid-prop-date"></div>
+    </div>
+    <div class="hr">
+      <span class="pid-cert-pill" id="pid-cert-pill" style="display:none">—</span>
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+        <polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/>
+        <line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
+      </svg>
+    </div>
+  </div>
+
+  <!-- CERTIFICATION HERO -->
+  <div class="pid-cert-hero pid-fade d2" id="pid-section-cert">
+    <div class="pid-skel active" id="pid-skel-cert">
+      <div class="shimmer badge-sk" style="margin:0 auto"></div>
+    </div>
+    <div id="pid-cert-content" style="display:none;width:100%">
+      <div class="badge-wrap" id="pid-badge-wrap">
+        <svg id="pid-badge-svg" viewBox="0 0 120 140" width="120" height="140"></svg>
+      </div>
+      <div class="ci">
+        <div class="cl" id="pid-cert-level">—</div>
+        <div class="cd" id="pid-cert-desc"></div>
+        <div class="ce" id="pid-cert-explain"></div>
+        <div class="cm">
+          <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span id="pid-cert-issued">—</span></span>
+          <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span id="pid-cert-expiry">—</span></span>
+          <span id="pid-verif-badge" style="display:none;align-items:center;gap:4px;padding:2px 10px;border-radius:999px;font-size:11px;font-weight:700;background:#E4F5EC;color:var(--success)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>VERIFIÉ</span>
+          <span class="cs" id="pid-cert-score">0<sup>/100</sup></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DEVIS RESULT (certification apres travaux) -->
+  <div id="pid-devis-result" class="pid-fade d2">
+    <div class="di">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 2 4 5v6c0 5 3.5 9 8 11 4.5-2 8-6 8-11V5z"/>
+        <path d="m9 12 2 2 4-4"/>
+      </svg>
+    </div>
+    <div class="db">
+      <div class="de">Certification obtenue après travaux</div>
+      <div class="dh" id="pid-dev-heading">Bien Climato-Résilient</div>
+      <div class="ds">
+        <div class="ds-box"><span class="dsl">Score avant</span><span class="dsv amb" id="pid-dev-before">--</span></div>
+        <span class="arrow">→</span>
+        <div class="ds-box"><span class="dsl">Score après</span><span class="dsv grn" id="pid-dev-after">--</span></div>
+        <div class="ds-box" style="border-left:1px solid var(--border);padding-left:20px;"><span class="dsl">Prime assurance</span><span class="dsv brd" id="pid-dev-prime">--</span></div>
+        <div class="ds-box" style="border-left:1px solid var(--border);padding-left:20px;"><span class="dsl">Date certification</span><span class="dsv" id="pid-dev-date" style="font-size:15px;font-weight:600;">--</span></div>
+      </div>
+      <div class="dw-title">Travaux réalisés</div>
+      <ul id="pid-works-ul"></ul>
+    </div>
+  </div>
+
+  <!-- SCORE GAUGES -->
+  <div class="pid-gauges pid-fade d3" id="pid-section-gauges">
+    <div class="pid-gauge-card">
+      <div class="gw"><svg width="120" height="120" viewBox="0 0 120 120"></svg><div class="gc" id="pid-gauge-ov">0</div></div>
+      <div class="gl">Score Global</div>
+      <div class="ge" id="pid-gauge-ov-explain">Résilience globale face aux risques climatiques et géologiques</div>
+    </div>
+    <div class="pid-gauge-card">
+      <div class="gw"><svg width="120" height="120" viewBox="0 0 120 120"></svg><div class="gc" id="pid-gauge-cl">0</div></div>
+      <div class="gl">Climat 2050</div>
+      <div class="ge">Projection des risques climatiques à horizon 2050</div>
+    </div>
+    <div class="pid-gauge-card">
+      <div class="gw"><svg width="120" height="120" viewBox="0 0 120 120"></svg><div class="gc" id="pid-gauge-in">0</div></div>
+      <div class="gl">Assurance</div>
+      <div class="ge">Score de risque pour le calcul de la prime d'assurance</div>
+    </div>
+  </div>
+
+  <!-- RISK + BUILDING -->
+  <div class="pid-two-col pid-fade d4" id="pid-section-risk-cols">
+    <div class="pid-risk-card">
+      <div class="pid-section-title">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        Résumé des risques
+      </div>
+      <div class="rr"><span class="ll">Zone la plus risquée :</span><span class="vv" id="pid-risk-highest">—</span></div>
+      <div class="rr"><span class="ll">Niveau de risque :</span><span class="pid-risk-badge na" id="pid-risk-level">—</span></div>
+      <div class="rr"><span class="ll">Aléa principal :</span><span class="vv" id="pid-risk-hazard">—</span></div>
+    </div>
+    <div class="pid-bld-card">
+      <div class="pid-section-title">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        Informations du bâtiment
+      </div>
+      <div class="ig">
+        <div class="ii"><span class="il">Construction</span><span class="iv" id="pid-bld-year">—</span></div>
+        <div class="ii"><span class="il">Type</span><span class="iv" id="pid-bld-type">—</span></div>
+        <div class="ii"><span class="il">Matériaux</span><span class="iv" id="pid-bld-materials">—</span></div>
+        <div class="ii"><span class="il">Toiture</span><span class="iv" id="pid-bld-roof">—</span></div>
+        <div class="ii"><span class="il">Étages</span><span class="iv" id="pid-bld-floors">—</span></div>
+        <div class="ii"><span class="il">Adresse</span><span class="iv" id="pid-bld-addr">—</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RECO + TIMELINE -->
+  <div class="pid-two-col pid-fade d4" id="pid-section-reco-tl">
+    <div class="pid-reco-card">
+      <div class="pid-section-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        Recommandations
+      </div>
+      <div id="pid-reco-list"></div>
+    </div>
+    <div class="pid-reco-card">
+      <div class="pid-section-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        Historique
+      </div>
+      <div class="pid-timeline" id="pid-timeline-container"></div>
+    </div>
+  </div>
+
+  <!-- DIGITAL TWIN -->
+  <div class="pid-twin pid-fade d5" id="pid-section-twin">
+    <div class="th">
+      <span class="tt"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg> Jumeau Numérique</span>
+      <span class="tb">3D</span>
+    </div>
+    <div class="tchips" id="pid-twin-chips"></div>
+    <button class="twin-json-btn" id="pid-json-btn">Afficher le JSON brut</button>
+    <div class="twin-json-block" id="pid-json-block"><pre id="pid-json-content"></pre></div>
+  </div>
+
+</div>
 </div>
 
 <!-- ==================== CHAT ASSISTANT IA ==================== -->
@@ -3340,10 +3866,509 @@ loadDataset(DEFAULT_DATA);
           }
         }
       } catch (e) { /* localStorage peut être bloqué */ }
-      window.location.href = 'property-id/';
+      // Fermer la modale devis avant d'afficher le Property ID
+      // (évite le conflit de z-index : devis=200, Property ID=175)
+      if (typeof closeDevis === 'function') closeDevis();
+      // Afficher la section Property ID dans la même page (fusion SPA)
+      pid_showPropertyID();
     });
   }
 })();
+
+/* =====================================================================
+   PROPERTY ID — Fonctions fusionnées depuis property-id/index.html
+   Utilise les données déjà en mémoire (rawData, currentGlobalScore, etc.)
+   au lieu de refaire un appel API séparé.
+   ===================================================================== */
+
+const pid_$ = id => document.getElementById(id);
+
+function pid_riskColor(score) {
+  if (score <= 25) return '#1F9D6C';
+  if (score <= 50) return '#D98A2B';
+  if (score <= 75) return '#E24E2E';
+  return '#DC4B39';
+}
+
+const pid_CERT_LEVELS = {
+  Bronze: { primary: '#CD7F32', secondary: '#A0652A', accent: '#E8C88A', label: 'Bronze',
+    desc: 'Résilience de base. Des risques significatifs sont identifiés.',
+    explain: 'Des travaux de rénovation sont fortement recommandés pour améliorer la résilience du bâtiment face aux risques climatiques.' },
+  Silver: { primary: '#A8B8C8', secondary: '#7A8A9A', accent: '#D0DCE8', label: 'Silver',
+    desc: 'Résilience satisfaisante. Des risques modérés existent.',
+    explain: 'Les risques restent dans des limites acceptables. Des travaux de mitigation sont recommandés pour renforcer le bâtiment.' },
+  Gold: { primary: '#D4A017', secondary: '#B8860B', accent: '#F5D76E', label: 'Gold',
+    desc: 'Très bonne résilience. Les risques sont faibles et bien gérés.',
+    explain: "Ce bâtiment bénéficie d'une très bonne résilience face aux risques climatiques. Les risques sont maîtrisés." },
+  Platinum: { primary: '#E5E4E2', secondary: '#B9C2D0', accent: '#FFFFFF', label: 'Platinum',
+    desc: 'Résilience exceptionnelle. Risque climatique minimal.',
+    explain: 'Ce bâtiment dépasse les normes de construction actuelles. Une référence en matière de résilience et de durabilité.' },
+};
+
+function pid_certLevel(score) {
+  if (score == null) return '—';
+  if (score <= 25) return 'Platinum';
+  if (score <= 50) return 'Gold';
+  if (score <= 75) return 'Silver';
+  return 'Bronze';
+}
+
+function pid_renderBadge(container, level, score, pid) {
+  const cfg = pid_CERT_LEVELS[level] || pid_CERT_LEVELS.Bronze;
+  const isLarge = true;
+  const shieldPath = 'M60 5 L110 25 L110 70 C110 105 85 125 60 135 C35 125 10 105 10 70 L10 25 Z';
+  const insetPath = 'M60 12 L103 30 L103 68 C103 99 82 117 60 126 C38 117 17 99 17 68 L17 30 Z';
+  const gradId = 'pid-bg-' + Date.now();
+  const glowId = 'pid-gl-' + Date.now();
+  const shineId = 'pid-sh-' + Date.now();
+
+  let svg = `<defs>
+    <linearGradient id="${gradId}" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="${cfg.accent}"/>
+      <stop offset="40%" stop-color="${cfg.primary}"/>
+      <stop offset="100%" stop-color="${cfg.secondary}"/>
+    </linearGradient>
+    <linearGradient id="${shineId}" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="rgba(255,255,255,0.4)"/>
+      <stop offset="50%" stop-color="rgba(255,255,255,0)"/>
+      <stop offset="100%" stop-color="rgba(255,255,255,0.08)"/>
+    </linearGradient>
+    <filter id="${glowId}" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>`;
+  svg += `<path d="${shieldPath}" fill="url(#${gradId})" stroke="${cfg.secondary}" stroke-width="2" filter="url(#${glowId})"/>`;
+  svg += `<path d="${insetPath}" fill="rgba(255,255,255,0.12)" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>`;
+  svg += `<path d="${shieldPath}" fill="url(#${shineId})"/>`;
+  svg += '<path d="M51 40 L69 45 L69 62 C69 76 60 84 60 88 C60 84 51 76 51 62 Z" fill="' + cfg.secondary + '" stroke="' + cfg.primary + '" stroke-width="1"/>';
+  svg += '<text x="60" y="72" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-weight="700" font-size="17" fill="' + (level === 'Platinum' ? '#4A5A7A' : '#fff') + '">' + cfg.label + '</text>';
+  svg += '<text x="60" y="92" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-weight="700" font-size="13" fill="rgba(255,255,255,0.85)">' + (score != null ? score : '—') + '/100</text>';
+  if (pid) svg += '<text x="60" y="115" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-weight="600" font-size="8" fill="rgba(255,255,255,0.5)">' + pid + '</text>';
+  svg += '<text x="60" y="131" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-weight="700" font-size="8" fill="#1F9D6C">● VERIFIÉ</text>';
+  container.innerHTML = svg;
+}
+
+function pid_renderGauge(svgEl, valueEl, score) {
+  const oldBg = svgEl.querySelector('.gauge-bg');
+  const oldFill = svgEl.querySelector('.gauge-fill');
+  if (oldBg) oldBg.remove();
+  if (oldFill) oldFill.remove();
+  const cx = 60, cy = 60, r = 48;
+  const circumference = 2 * Math.PI * r;
+  const targetOffset = circumference - (score / 100) * circumference;
+  const color = pid_riskColor(score);
+
+  const bg = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+  bg.setAttribute('class', 'gauge-bg');
+  bg.setAttribute('cx', cx); bg.setAttribute('cy', cy); bg.setAttribute('r', r);
+  svgEl.prepend(bg);
+
+  const fill = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+  fill.setAttribute('class', 'gauge-fill');
+  fill.setAttribute('cx', cx); fill.setAttribute('cy', cy); fill.setAttribute('r', r);
+  fill.setAttribute('stroke', color);
+  fill.setAttribute('stroke-dasharray', circumference);
+  fill.setAttribute('stroke-dashoffset', circumference);
+  svgEl.appendChild(fill);
+
+  requestAnimationFrame(() => {
+    fill.style.transition = 'stroke-dashoffset 0.8s cubic-bezier(0.4, 0, 0.2, 1)';
+    fill.setAttribute('stroke-dashoffset', targetOffset);
+  });
+
+  valueEl.textContent = score;
+  valueEl.style.color = color;
+  valueEl.classList.remove('pid-score-pop');
+  void valueEl.offsetWidth;
+  valueEl.classList.add('pid-score-pop');
+}
+
+function pid_fadeIn() {
+  document.querySelectorAll('#property-id-screen .pid-fade.vis').forEach(el => el.classList.remove('vis'));
+  requestAnimationFrame(() => {
+    document.querySelectorAll('#property-id-screen .pid-fade').forEach((el, i) => {
+      setTimeout(() => el.classList.add('vis'), i * 60);
+    });
+  });
+}
+
+function pid_renderPropertyID(data) {
+  /* Header */
+  const pid = data.property_id || '—';
+  pid_$('pid-prop-id-label').textContent = 'PROPERTY ID ' + pid;
+  const addr = (data.building && data.building.address) || '—';
+  pid_$('pid-prop-address').textContent = addr;
+  pid_$('pid-addr-line').textContent = '';
+  pid_$('pid-prop-date').textContent = data.generated_at
+    ? 'Généré le ' + new Date(data.generated_at).toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+    : '—';
+
+  /* Certification */
+  const cert = data.certification;
+  const bdgSvg = pid_$('pid-badge-svg');
+  if (cert && cert.level && cert.level !== '—') {
+    const level = cert.level;
+    const cfg = pid_CERT_LEVELS[level] || pid_CERT_LEVELS.Bronze;
+    pid_renderBadge(bdgSvg, level, cert.score, data.property_id);
+    pid_$('pid-cert-level').textContent = 'Typhoon ' + cfg.label;
+    pid_$('pid-cert-level').className = 'cl ' + level.toLowerCase();
+    pid_$('pid-cert-desc').textContent = cfg.desc;
+    pid_$('pid-cert-explain').textContent = cfg.explain;
+    pid_$('pid-cert-issued').textContent = cert.issued_at ? new Date(cert.issued_at).toLocaleDateString('fr-FR') : '—';
+    pid_$('pid-cert-expiry').textContent = cert.expires_at ? new Date(cert.expires_at).toLocaleDateString('fr-FR') : '—';
+    pid_$('pid-verif-badge').style.display = 'inline-flex';
+    pid_$('pid-cert-score').innerHTML = (cert.score != null ? cert.score : '—') + '<sup>/100</sup>';
+    pid_$('pid-cert-pill').style.display = 'inline-flex';
+    pid_$('pid-cert-pill').textContent = cfg.label;
+    pid_$('pid-cert-pill').className = 'pid-cert-pill ' + level.toLowerCase();
+    /* Révéler le contenu et cacher le skeleton */
+    pid_$('pid-skel-cert').classList.remove('active');
+    pid_$('pid-cert-content').style.display = 'flex';
+  } else {
+    bdgSvg.innerHTML = '';
+    pid_$('pid-cert-level').textContent = 'Aucune certification disponible';
+    pid_$('pid-cert-level').className = 'cl pending';
+    pid_$('pid-cert-desc').textContent = 'Un diagnostic initial a été réalisé. La certification sera délivrée après validation des travaux recommandés.';
+    pid_$('pid-cert-explain').textContent = '';
+    pid_$('pid-cert-issued').textContent = '—';
+    pid_$('pid-cert-expiry').textContent = '—';
+    pid_$('pid-verif-badge').style.display = 'none';
+    pid_$('pid-cert-score').textContent = '—';
+    pid_$('pid-cert-pill').style.display = 'none';
+    /* Révéler le contenu et cacher le skeleton */
+    pid_$('pid-skel-cert').classList.remove('active');
+    pid_$('pid-cert-content').style.display = 'flex';
+  }
+
+  /* Gauges */
+  const scores = data.scores || {};
+  pid_renderGauge(pid_$('pid-section-gauges').querySelectorAll('.gw svg')[0], pid_$('pid-gauge-ov'), scores.overall || 0);
+  pid_renderGauge(pid_$('pid-section-gauges').querySelectorAll('.gw svg')[1], pid_$('pid-gauge-cl'), scores.climate || 0);
+  pid_renderGauge(pid_$('pid-section-gauges').querySelectorAll('.gw svg')[2], pid_$('pid-gauge-in'), scores.insurance || 0);
+
+  /* Risk summary */
+  const rs = data.risk_summary || {};
+  pid_$('pid-risk-highest').textContent = rs.highest_risk || '—';
+  const rl = (rs.risk_level || '—').toLowerCase();
+  const rb = pid_$('pid-risk-level');
+  rb.textContent = rs.risk_level || '—';
+  const nl = rl.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[èéêë]/g, 'e');
+  rb.className = 'pid-risk-badge ' + (['faible', 'modere', 'eleve', 'critique'].includes(nl) ? nl : 'na');
+  pid_$('pid-risk-hazard').textContent = rs.main_hazard || '—';
+
+  /* Building info */
+  const bld = data.building || {};
+  function cleanRoof(r) { if (!r) return null; const c = r.replace(/\s*\(None\)\s*/g, '').trim(); return c || null; }
+  function fmtNA(val, el) {
+    const display = val != null ? String(val) : null;
+    el.textContent = display || '—';
+    el.className = 'iv' + (display === null ? ' na' : '');
+    if (display === null) el.setAttribute('title', "Donnée non disponible pour cette adresse — cela n'affecte pas votre certification.");
+    return display;
+  }
+  fmtNA(bld.construction_year, pid_$('pid-bld-year'));
+  fmtNA(bld.building_type, pid_$('pid-bld-type'));
+  fmtNA(bld.materials, pid_$('pid-bld-materials'));
+  fmtNA(cleanRoof(bld.roof), pid_$('pid-bld-roof'));
+  fmtNA(bld.floors, pid_$('pid-bld-floors'));
+  pid_$('pid-bld-addr').textContent = bld.address || '—';
+
+  /* Recommendations */
+  const recos = data.recommendations || [];
+  const recoList = pid_$('pid-reco-list');
+  recoList.innerHTML = '';
+  if (recos.length === 0) {
+    recoList.innerHTML = '<div class="pid-reco-empty"><svg class="ei" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg><p>Aucune recommandation disponible pour cette adresse.</p><p class="eh">Les recommandations de travaux apparaîtront une fois la base documentaire RAG configurée et l\'index généré.</p></div>';
+  } else {
+    recos.forEach(r => {
+      const div = document.createElement('div');
+      div.className = 'pid-reco-item';
+      const mesure = r.mesure || r.travaux || r.title || 'Travaux recommandés';
+      const typeName = r.type || '';
+      const zoneName = r.zone ? r.zone.replace(/_/g, ' ') : '';
+      const sources = r.sources || [];
+      const coutText = r.cout_estime ? (typeof r.cout_estime === 'object' ? r.cout_estime.montant_min || '' : r.cout_estime) : '';
+      div.innerHTML = '<svg class="ri" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>'
+        + '<div class="rc">'
+        + '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px">'
+        + '<div class="rt">' + mesure.slice(0, 120) + (mesure.length > 120 ? '...' : '') + '</div>'
+        + (zoneName ? '<span class="pid-zone-badge">' + zoneName + '</span>' : '')
+        + (typeName ? '<span class="pid-type-badge">' + typeName.replace(/_/g, ' ') + '</span>' : '')
+        + '</div>'
+        + (r.explication ? '<div class="rd">' + r.explication.slice(0, 300) + '</div>' : '')
+        + '<div class="rm">'
+        + (coutText ? '<span>💰 ' + coutText + '</span>' : '')
+        + (r.gain_resilience ? '<span>📈 Résilience +' + r.gain_resilience + '</span>' : '')
+        + (sources.length > 0 ? '<span>📄 ' + sources.length + ' source(s)</span>' : '')
+        + '</div>'
+        + (sources.length > 0 ? '<div class="rsrc">Sources : ' + sources.map(s => s.source_id || '').filter(Boolean).join(', ') + '</div>' : '')
+        + '</div>';
+      recoList.appendChild(div);
+    });
+  }
+
+  /* Timeline */
+  const timeline = data.timeline || [];
+  const tl = pid_$('pid-timeline-container');
+  tl.innerHTML = '';
+  if (timeline.length === 0) {
+    tl.innerHTML = '<div class="pid-reco-empty"><p style="font-size:13px">Aucun événement enregistré.</p></div>';
+  } else {
+    timeline.forEach(evt => {
+      const div = document.createElement('div');
+      const isCert = evt.event && evt.event.toLowerCase().includes('certification');
+      div.className = 'pid-timeline ti' + (isCert ? ' cert' : '');
+      const d = evt.date ? new Date(evt.date).toLocaleDateString('fr-FR', { year: 'numeric', month: 'short', day: 'numeric' }) : '—';
+      let iconSvg;
+      if (isCert) iconSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>';
+      else if (evt.event && (evt.event.toLowerCase().includes('diagnostic') || evt.event.toLowerCase().includes('inspection')))
+        iconSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
+      else if (evt.event && (evt.event.toLowerCase().includes('renovation') || evt.event.toLowerCase().includes('travaux')))
+        iconSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>';
+      else iconSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
+      let details = '';
+      if (evt.details) {
+        if (evt.details.level) details = 'Niveau : ' + evt.details.level;
+        else if (evt.details.property_id) details = 'ID : ' + evt.details.property_id;
+        else if (evt.details.score != null) details = 'Score : ' + evt.details.score;
+      }
+      div.innerHTML = '<div class="tli">' + iconSvg + '</div><div class="tld">' + d + '</div><div class="tle">' + (evt.event || 'Événement') + '</div>' + (details ? '<div class="tldet">' + details + '</div>' : '');
+      tl.appendChild(div);
+    });
+  }
+
+  /* Twin chips */
+  const zones = data.risk_summary && data.risk_summary.zones ? data.risk_summary.zones : {};
+  const twinChips = pid_$('pid-twin-chips');
+  twinChips.innerHTML = '';
+  if (Object.keys(zones).length > 0) {
+    Object.entries(zones).forEach(([key, val]) => {
+      const score = val.score != null ? val.score : 0;
+      const level = score <= 25 ? 'faible' : score <= 50 ? 'modere' : score <= 75 ? 'eleve' : 'critique';
+      const chip = document.createElement('span');
+      chip.className = 'tchip ' + level;
+      chip.innerHTML = '<span class="cd"></span> ' + key.replace(/_/g, ' ');
+      twinChips.appendChild(chip);
+    });
+  } else {
+    twinChips.innerHTML = '<span style="color:var(--muted);font-size:12px;">Aucune zone de risque disponible</span>';
+  }
+  pid_$('pid-json-content').textContent = JSON.stringify(data, null, 2);
+
+  /* Fade in */
+  pid_fadeIn();
+
+  /* Status */
+  pid_setStatus('Property ID ' + (data.property_id || '') + ' — toutes les données ont été chargées avec succès.');
+}
+
+function pid_setStatus(msg, kind) {
+  const dot = pid_$('pid-status-dot');
+  const msgEl = pid_$('pid-status-msg');
+  if (!dot || !msgEl) return;
+  msgEl.textContent = msg;
+  msgEl.className = 'msg' + (kind ? ' ' + kind : '');
+  dot.className = 'dot' + (kind ? ' ' + kind : '');
+}
+
+function pid_applyDevisOverrides(currentAddress) {
+  const devisSection = pid_$('pid-devis-result');
+  if (!devisSection) return;
+  devisSection.style.display = 'none';
+
+  let stored;
+  try {
+    const raw = localStorage.getItem('typhoon_devis_result');
+    if (!raw) return;
+    stored = JSON.parse(raw);
+    if (!stored || !stored.certifie) return;
+  } catch (e) { return; }
+
+  if (currentAddress && stored.adresse && currentAddress.toLowerCase() !== stored.adresse.toLowerCase()) return;
+
+  devisSection.style.display = 'flex';
+  devisSection.classList.remove('vis');
+  requestAnimationFrame(() => devisSection.classList.add('vis'));
+
+  pid_$('pid-dev-before').textContent = stored.score_avant;
+  pid_$('pid-dev-after').textContent = stored.score_apres;
+  pid_$('pid-dev-prime').textContent = stored.prime_percent + '%';
+  pid_$('pid-dev-date').textContent = stored.date_generation ? new Date(stored.date_generation).toLocaleDateString('fr-FR') : '—';
+
+  const ul = pid_$('pid-works-ul');
+  ul.innerHTML = '';
+  if (stored.travaux_retenus && stored.travaux_retenus.length) {
+    stored.travaux_retenus.forEach(t => {
+      const li = document.createElement('li');
+      li.innerHTML = '<span><span class="wn">' + t.travaux + '</span><span class="wz"> — ' + (t.zone ? t.zone.replace(/_/g, ' ') : '') + '</span></span><span class="wc">' + (t.cout_estime || '—') + '</span>';
+      ul.appendChild(li);
+    });
+  }
+
+  const scoreBig = pid_$('pid-cert-score');
+  if (scoreBig) scoreBig.innerHTML = stored.score_apres + '<sup style="font-size:12px;color:var(--success);"> ✓</sup>';
+
+  const gaugeLabel = pid_$('pid-gauge-ov-explain');
+  if (gaugeLabel) {
+    gaugeLabel.innerHTML = 'Score après travaux réalisés <span style="color:var(--success);font-weight:600;">(−' + Math.round((1 - stored.score_apres / stored.score_avant) * 100) + '%)</span>';
+  }
+}
+
+/* ===== ENTRY POINT — Construit les données depuis la mémoire SPA et affiche le Property ID ===== */
+function pid_showPropertyID() {
+  const screen = pid_$('property-id-screen');
+  if (!screen) return;
+
+  // --- Lire les données depuis les variables en mémoire de la SPA ---
+  // Note : currentZones est une variable locale (let), pas window.currentZones
+  const zones = (typeof currentZones !== 'undefined' && currentZones) ? currentZones : {};
+  const overallScore = (typeof window.currentGlobalScore !== 'undefined' && window.currentGlobalScore != null)
+    ? window.currentGlobalScore
+    : (rawData ? rawData.score_global : 0) || 0;
+
+  // --- Construire les recommandations depuis les zones ---
+  const recos = [];
+  Object.entries(zones).forEach(([zoneName, zoneData]) => {
+    const zoneRecos = zoneData.recommandations || [];
+    zoneRecos.forEach(r => {
+      if (typeof r === 'object') { r.zone = zoneName; recos.push(r); }
+    });
+  });
+
+  // --- Trouver la zone la plus risquée (champ = risque, pas score) ---
+  let highestZone = null;
+  let highestScore = -1;
+  Object.entries(zones).forEach(([zoneName, zoneData]) => {
+    const sc = zoneData.risque || zoneData.score || 0;
+    if (sc > highestScore) { highestScore = sc; highestZone = zoneName; }
+  });
+
+  const riskZoneData = highestZone ? (zones[highestZone] || {}) : {};
+
+  // --- Score Climat 2050 (chemin correct : rawData.projection_2050.score_global) ---
+  const climateScore = (rawData && rawData.projection_2050 && rawData.projection_2050.score_global) || 0;
+
+  // --- Adresse ---
+  const addr = (rawData && rawData.adresse)
+    ? rawData.adresse
+    : (document.getElementById('f-adresse') ? document.getElementById('f-adresse').value : '—');
+
+  // --- Building info : les données sont dans rawData.bien + rawData.geometry, pas rawData.building ---
+  const bien = (rawData && rawData.bien) || {};
+  const geometry = (rawData && rawData.geometry) || {};
+
+  // Formater la toiture (éviter le "(None)")
+  let roofStr = null;
+  if (geometry.roof_shape) {
+    roofStr = geometry.roof_shape;
+    if (geometry.materiau_toiture) roofStr += ' (' + geometry.materiau_toiture + ')';
+  }
+
+  // --- Certification ---
+  const certLevel = pid_certLevel(overallScore);
+
+  const data = {
+    property_id: 'TY-' + new Date().getFullYear() + '-' + String(Math.floor(Math.random() * 999999)).padStart(6, '0'),
+    generated_at: new Date().toISOString(),
+    building: {
+      address: addr,
+      construction_year: bien.annee_construction || null,
+      building_type: bien.type || null,
+      materials: geometry.materiau_mur || null,
+      floors: geometry.floors_count || null,
+      roof: roofStr,
+    },
+    certification: {
+      level: certLevel !== '—' ? certLevel : null,
+      score: overallScore,
+      issued_at: new Date().toISOString(),
+      expires_at: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
+    },
+    scores: {
+      overall: overallScore,
+      climate: climateScore,
+      insurance: overallScore,
+      zones: zones,
+    },
+    risk_summary: {
+      highest_risk: highestZone ? highestZone.replace(/_/g, ' ') : '—',
+      risk_level: riskZoneData.niveau || 'N/A',
+      main_hazard: riskZoneData.alea_principal || 'N/A',
+      zones: zones,
+    },
+    recommendations: recos,
+    timeline: [
+      { date: new Date().toISOString(), event: 'Property ID généré', details: { score: overallScore } },
+    ],
+    contract: { zones: zones },
+  };
+
+  // Afficher l'écran
+  screen.style.display = 'block';
+  document.body.style.overflow = 'hidden'; // Empêcher le scroll du fond
+
+  // Rendre le Property ID
+  pid_renderPropertyID(data);
+
+  // Appliquer les overrides du devis si présents
+  pid_applyDevisOverrides(addr);
+
+  pid_setStatus('Property ID affiché avec succès.');
+}
+
+/* Fermer le Property ID */
+var pidCloseBtn = pid_$('pid-close-btn');
+if (pidCloseBtn) {
+  pidCloseBtn.addEventListener('click', function() {
+    pid_$('property-id-screen').style.display = 'none';
+    document.body.style.overflow = '';
+  });
+}
+
+/* JSON toggle */
+var pidJsonBtn = pid_$('pid-json-btn');
+if (pidJsonBtn) {
+  pidJsonBtn.addEventListener('click', function() {
+    var block = pid_$('pid-json-block');
+    if (block) {
+      var open = block.classList.toggle('open');
+      this.textContent = open ? 'Masquer le JSON brut' : 'Afficher le JSON brut';
+    }
+  });
+}
+
+/* Ajouter un gestionnaire pour le lien nav vers Property ID */
+document.querySelectorAll('#home-nav a').forEach(function(a) {
+  if (a.textContent.trim() === 'Property ID') {
+    a.addEventListener('click', function(e) {
+      e.preventDefault();
+      if (typeof window.currentGlobalScore !== 'undefined' && window.currentGlobalScore !== null) {
+        pid_showPropertyID();
+      } else {
+        var navEmpty = pid_$('property-id-screen');
+        if (navEmpty) {
+          navEmpty.style.display = 'block';
+          document.body.style.overflow = 'hidden';
+          pid_$('pid-prop-address').textContent = 'Aucun diagnostic disponible';
+          pid_$('pid-cert-level').textContent = 'Aucune donnée';
+          pid_$('pid-cert-level').className = 'cl pending';
+          pid_$('pid-cert-desc').textContent = 'Lancez un diagnostic depuis la page d\'accueil Typhoon pour générer un Property ID.';
+          pid_$('pid-cert-explain').textContent = '';
+          pid_$('pid-verif-badge').style.display = 'none';
+          pid_$('pid-cert-score').textContent = '—';
+          pid_$('pid-cert-pill').style.display = 'none';
+          pid_$('pid-reco-list').innerHTML = '<div class="pid-reco-empty"><p style="font-size:13px">Lancez un diagnostic pour voir les recommandations.</p></div>';
+          pid_$('pid-timeline-container').innerHTML = '<div class="pid-reco-empty"><p style="font-size:13px">Aucun historique disponible.</p></div>';
+          pid_$('pid-twin-chips').innerHTML = '<span style="color:var(--muted);font-size:12px;">Aucune donnée de jumeau numérique disponible.</span>';
+          pid_setStatus('Aucune adresse trouvée. Veuillez d\'abord lancer un diagnostic.', null);
+          pid_fadeIn();
+        }
+      }
+    });
+  }
+});
+
 </script>
 </body>
 </html>

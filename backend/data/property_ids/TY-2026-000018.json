@@ -1,0 +1,630 @@
+{
+  "property_id": "TY-2026-000018",
+  "generated_at": "2026-07-29T09:31:39.295084+00:00",
+  "building": {
+    "address": "8 Allée du Port Maillard 44000 Nantes",
+    "construction_year": 1870,
+    "building_type": "Résidentiel collectif",
+    "materials": "pierre_de_taille",
+    "floors": 5,
+    "roof": "deux_pans (ardoises)",
+    "geometry": {
+      "footprint_shape": "rectangulaire",
+      "largeur_m": 10.68,
+      "longueur_m": 15.21,
+      "orientation_deg": 76.1,
+      "floors_count": 5,
+      "hauteur_sous_plafond_m": 3.4,
+      "roof_shape": "deux_pans",
+      "pente_toit_deg": 42.0,
+      "materiau_mur": "pierre_de_taille",
+      "materiau_toiture": "ardoises",
+      "has_basement": true,
+      "has_cellar": false,
+      "has_garage": false,
+      "has_garden": false
+    }
+  },
+  "scores": {
+    "overall": 38,
+    "climate": 43,
+    "insurance": 38
+  },
+  "risk_summary": {
+    "highest_risk": "sous_sol",
+    "risk_level": "eleve",
+    "main_hazard": "Inondation / remontée de nappe"
+  },
+  "recommendations": [
+    {
+      "mesure": "Restaurer les éléments architecturaux de la façade en pierre",
+      "explication": "Lors d’un ravalement de façade, il est important de restaurer et préserver les éléments architecturaux comme les corniches, soubassements, bandeaux d’étages, encadrements de fenêtres, chaînes d’angles, moulures et ferronneries. Ces éléments contribuent à la solidité et à l’étanchéité de la façade, ce qui la rend plus résistante aux intempéries comme les tempêtes. Pour les câbles apparents (électricité, télécommunications), il est recommandé de les intégrer visuellement en les peignant de la même couleur que la façade et en les plaçant sous des saillies (corniches, rebords) pour les dissimuler et éviter qu’ils ne soient endommagés par le vent.",
+      "type": "recommandation_source",
+      "cout_estime": null,
+      "aide": null,
+      "sources": [
+        {
+          "fiche_id": "REF-0416",
+          "source_id": "S09",
+          "extrait_exact": "Les corniches et les soubassements, les bandeaux d’étages ou d’angles, les encadrements, souvent marqués par une texture et une couleur différentes, seront maintenus. Ils seront simulés par la couleur et positionnés sous corniche ou autre saillie capable de les faire visuellement disparaître."
+        }
+      ],
+      "zone": "murs_ouest"
+    },
+    {
+      "mesure": "Respecter les techniques locales pour les travaux sur la façade",
+      "explication": "Si vous envisagez des travaux modifiant la façade de votre maison, il est essentiel de respecter les techniques de construction spécifiques à votre région et à l’époque de construction (1870 dans votre cas). Ces techniques ont été adaptées aux conditions climatiques locales et contribuent à la résistance de la façade face aux tempêtes. Une analyse préalable des caractéristiques architecturales locales est nécessaire pour garantir que les travaux préservent la valeur patrimoniale et la solidité de la façade. Cette mesure est particulièrement importante pour les maisons anciennes comme la vôtre.",
+      "type": "recommandation_source",
+      "cout_estime": null,
+      "aide": null,
+      "sources": [
+        {
+          "fiche_id": "REF-0362",
+          "source_id": "S09",
+          "extrait_exact": "Selon les régions et en fonction des époques, des techniques de construction spécifiques et adaptées au contexte local ont été employées. Il importe de les respecter, voire de les remettre à jour dans le cas où elles auraient été effacées."
+        }
+      ],
+      "zone": "murs_ouest"
+    },
+    {
+      "mesure": "Restaurer les éléments architecturaux de la façade en pierre",
+      "explication": "Lors d’un ravalement de façade, il est important de restaurer et préserver les éléments architecturaux comme les corniches, soubassements, bandeaux d’étages, encadrements de fenêtres, chaînes d’angles, moulures et ferronneries. Ces éléments contribuent à la solidité et à l’étanchéité de la façade, ce qui la rend plus résistante aux intempéries comme les tempêtes. Pour les câbles apparents (électricité, télécommunications), il est recommandé de les intégrer visuellement en les peignant de la même couleur que la façade et en les plaçant sous des saillies (corniches, rebords) pour les dissimuler et éviter qu’ils ne soient endommagés par le vent.",
+      "type": "recommandation_source",
+      "cout_estime": null,
+      "aide": null,
+      "sources": [
+        {
+          "fiche_id": "REF-0416",
+          "source_id": "S09",
+          "extrait_exact": "Les corniches et les soubassements, les bandeaux d’étages ou d’angles, les encadrements, souvent marqués par une texture et une couleur différentes, seront maintenus. Ils seront simulés par la couleur et positionnés sous corniche ou autre saillie capable de les faire visuellement disparaître."
+        }
+      ],
+      "zone": "murs_ouest"
+    },
+    {
+      "mesure": "Respecter les techniques locales pour les travaux sur la façade",
+      "explication": "Si vous envisagez des travaux modifiant la façade de votre maison, il est essentiel de respecter les techniques de construction spécifiques à votre région et à l’époque de construction (1870 dans votre cas). Ces techniques ont été adaptées aux conditions climatiques locales et contribuent à la résistance de la façade face aux tempêtes. Une analyse préalable des caractéristiques architecturales locales est nécessaire pour garantir que les travaux préservent la valeur patrimoniale et la solidité de la façade. Cette mesure est particulièrement importante pour les maisons anciennes comme la vôtre.",
+      "type": "recommandation_source",
+      "cout_estime": null,
+      "aide": null,
+      "sources": [
+        {
+          "fiche_id": "REF-0362",
+          "source_id": "S09",
+          "extrait_exact": "Selon les régions et en fonction des époques, des techniques de construction spécifiques et adaptées au contexte local ont été employées. Il importe de les respecter, voire de les remettre à jour dans le cas où elles auraient été effacées."
+        }
+      ],
+      "zone": "murs_ouest"
+    },
+    {
+      "mesure": "Restaurer les éléments architecturaux de la façade en pierre",
+      "explication": "Lors d’un ravalement de façade, il est important de restaurer et préserver les éléments architecturaux comme les corniches, soubassements, bandeaux d’étages, encadrements de fenêtres, chaînes d’angles, moulures et ferronneries. Ces éléments contribuent à la solidité et à l’étanchéité de la façade, ce qui la rend plus résistante aux intempéries comme les tempêtes. Pour les câbles apparents (électricité, télécommunications), il est recommandé de les intégrer visuellement en les peignant de la même couleur que la façade et en les plaçant sous des saillies (corniches, rebords) pour les dissimuler et éviter qu’ils ne soient endommagés par le vent.",
+      "type": "recommandation_source",
+      "cout_estime": null,
+      "aide": null,
+      "sources": [
+        {
+          "fiche_id": "REF-0416",
+          "source_id": "S09",
+          "extrait_exact": "Les corniches et les soubassements, les bandeaux d’étages ou d’angles, les encadrements, souvent marqués par une texture et une couleur différentes, seront maintenus. Ils seront simulés par la couleur et positionnés sous corniche ou autre saillie capable de les faire visuellement disparaître."
+        }
+      ],
+      "zone": "murs_ouest"
+    },
+    {
+      "mesure": "Respecter les techniques locales pour les travaux sur la façade",
+      "explication": "Si vous envisagez des travaux modifiant la façade de votre maison, il est essentiel de respecter les techniques de construction spécifiques à votre région et à l’époque de construction (1870 dans votre cas). Ces techniques ont été adaptées aux conditions climatiques locales et contribuent à la résistance de la façade face aux tempêtes. Une analyse préalable des caractéristiques architecturales locales est nécessaire pour garantir que les travaux préservent la valeur patrimoniale et la solidité de la façade. Cette mesure est particulièrement importante pour les maisons anciennes comme la vôtre.",
+      "type": "recommandation_source",
+      "cout_estime": null,
+      "aide": null,
+      "sources": [
+        {
+          "fiche_id": "REF-0362",
+          "source_id": "S09",
+          "extrait_exact": "Selon les régions et en fonction des époques, des techniques de construction spécifiques et adaptées au contexte local ont été employées. Il importe de les respecter, voire de les remettre à jour dans le cas où elles auraient été effacées."
+        }
+      ],
+      "zone": "murs_ouest"
+    },
+    {
+      "mesure": "Restaurer les éléments architecturaux de la façade en pierre",
+      "explication": "Lors d’un ravalement de façade, il est important de restaurer et préserver les éléments architecturaux comme les corniches, soubassements, bandeaux d’étages, encadrements de fenêtres, chaînes d’angles, moulures et ferronneries. Ces éléments contribuent à la solidité et à l’étanchéité de la façade, ce qui la rend plus résistante aux intempéries comme les tempêtes. Pour les câbles apparents (électricité, télécommunications), il est recommandé de les intégrer visuellement en les peignant de la même couleur que la façade et en les plaçant sous des saillies (corniches, rebords) pour les dissimuler et éviter qu’ils ne soient endommagés par le vent.",
+      "type": "recommandation_source",
+      "cout_estime": null,
+      "aide": null,
+      "sources": [
+        {
+          "fiche_id": "REF-0416",
+          "source_id": "S09",
+          "extrait_exact": "Les corniches et les soubassements, les bandeaux d’étages ou d’angles, les encadrements, souvent marqués par une texture et une couleur différentes, seront maintenus. Ils seront simulés par la couleur et positionnés sous corniche ou autre saillie capable de les faire visuellement disparaître."
+        }
+      ],
+      "zone": "murs_ouest"
+    },
+    {
+      "mesure": "Respecter les techniques locales pour les travaux sur la façade",
+      "explication": "Si vous envisagez des travaux modifiant la façade de votre maison, il est essentiel de respecter les techniques de construction spécifiques à votre région et à l’époque de construction (1870 dans votre cas). Ces techniques ont été adaptées aux conditions climatiques locales et contribuent à la résistance de la façade face aux tempêtes. Une analyse préalable des caractéristiques architecturales locales est nécessaire pour garantir que les travaux préservent la valeur patrimoniale et la solidité de la façade. Cette mesure est particulièrement importante pour les maisons anciennes comme la vôtre.",
+      "type": "recommandation_source",
+      "cout_estime": null,
+      "aide": null,
+      "sources": [
+        {
+          "fiche_id": "REF-0362",
+          "source_id": "S09",
+          "extrait_exact": "Selon les régions et en fonction des époques, des techniques de construction spécifiques et adaptées au contexte local ont été employées. Il importe de les respecter, voire de les remettre à jour dans le cas où elles auraient été effacées."
+        }
+      ],
+      "zone": "murs_ouest"
+    },
+    {
+      "mesure": "Contrôler les installations d’assainissement et conduites enterrées",
+      "explication": "Avant et pendant des épisodes de fortes pluies ou inondations, faites vérifier par un professionnel l’état des séparateurs de graisses, fosses septiques, pompes de relevage et clapets anticrue situés dans votre sous-sol. Ces contrôles permettent de détecter d’éventuels bouchons, fuites ou dysfonctionnements qui pourraient aggraver les risques d’inondation en empêchant l’évacuation normale des eaux. Un entretien régulier (nettoyage des filtres, vidange, vérification de l’étanchéité) est nécessaire selon les prescriptions du fabricant ou en cas d’accumulation de débris (feuilles, boues). Cette mesure réduit directement le risque d’inondation en assurant le bon fonctionnement des dispositifs de gestion des eaux.",
+      "type": "recommandation_source",
+      "cout_estime": null,
+      "aide": null,
+      "sources": [
+        {
+          "fiche_id": "REF-0001",
+          "source_id": "S01",
+          "extrait_exact": "En cas de conditions météorologiques extrêmes, il est nécessaire de procéder à un contrôle supplémentaire. examen visuel de l’état du dispositif de fermeture et de son étanchéité, des canalisations pénétrant dans l’appareil et les éventuels dispositifs d’accès. vidange et nettoyage (ﬁltre et ﬂotteur éventuel en particulier). Contrôle des pompes automatiques de relevage des eaux: contrôler le fonctionnement automatique, l’étanchéité des raccords, l’état de la station et des vannes. Contrôle de leur fonctionnement. Curage des appareils. Vériﬁcation de leur étanchéité."
+        }
+      ],
+      "zone": "sous_sol"
+    },
+    {
+      "mesure": "Vérifier l’étanchéité des fosses septiques et raccordements",
+      "explication": "Faites inspecter régulièrement l’étanchéité de votre fosse septique et de ses raccordements aux canalisations, surtout avant la saison des pluies. Une fosse non étanche peut laisser entrer l’eau en cas d’inondation ou provoquer des fuites polluantes, aggravant les risques pour votre sous-sol. Un professionnel doit vérifier l’état du bac de décantation et des joints pour s’assurer qu’ils ne sont pas fissurés ou corrodés. Cette vérification est essentielle pour éviter les infiltrations d’eau et les refoulements dans votre sous-sol lors de fortes pluies.",
+      "type": "recommandation_source",
+      "cout_estime": null,
+      "aide": null,
+      "sources": [
+        {
+          "fiche_id": "REF-0004",
+          "source_id": "S01",
+          "extrait_exact": "vériﬁcation de l’étanchéité de la fosse. vériﬁer l’état du bac de décantation et des raccords avec les canalisations"
+        }
+      ],
+      "zone": "sous_sol"
+    },
+    {
+      "mesure": "Inspecter le sol près des réseaux d’égout pour détecter les affouillements",
+      "explication": "Après des épisodes de pluies intenses, examinez visuellement le sol autour des réseaux d’égout enterrés près de votre maison. Recherchez des signes d’affouillements (creusements ou effondrements du sol) qui pourraient fragiliser les canalisations et augmenter les risques d’inondation ou de ruissellement vers votre sous-sol. Si vous observez des anomalies, faites appel à un professionnel pour évaluer les risques et effectuer les réparations nécessaires. Cette inspection simple permet d’agir rapidement avant que les dégâts ne s’aggravent.",
+      "type": "recommandation_source",
+      "cout_estime": null,
+      "aide": null,
+      "sources": [
+        {
+          "fiche_id": "REF-0005",
+          "source_id": "S01",
+          "extrait_exact": "L’état du sol au voisinage du réseau d’égout est contrôlé aﬁn de déceler les éventuels affouillements."
+        }
+      ],
+      "zone": "sous_sol"
+    },
+    {
+      "mesure": "Vérifier l’état des canalisations et entonnoirs d’évacuation des eaux",
+      "explication": "Faites contrôler régulièrement l’état, l’étanchéité et les fixations des canalisations et entonnoirs qui évacuent les eaux pluviales et usées de votre sous-sol. Un professionnel doit vérifier qu’il n’y a pas d’obstructions (feuilles, boues) ou de détériorations (fissures, joints défectueux) qui pourraient empêcher l’eau de s’écouler correctement. En cas de forte pluie, des canalisations bouchées ou endommagées peuvent provoquer des refoulements ou des infiltrations dans votre sous-sol. Un curage préventif peut être nécessaire pour éviter ces problèmes.",
+      "type": "recommandation_source",
+      "cout_estime": null,
+      "aide": null,
+      "sources": [
+        {
+          "fiche_id": "REF-0272",
+          "source_id": "S01",
+          "extrait_exact": "Vériﬁcation de l’état, de l’étanchéité, des ﬁxations et scellements des canalisations et entonnoirs. Contrôle et curage éventuel des canalisations et accessoires."
+        }
+      ],
+      "zone": "sous_sol"
+    }
+  ],
+  "digital_twin": {
+    "adresse": "8 Allée du Port Maillard 44000 Nantes",
+    "bien": {
+      "type": "Résidentiel collectif",
+      "annee_construction": 1870,
+      "coordonnees": {
+        "lat": 47.214972,
+        "lon": -1.551503
+      }
+    },
+    "geometry": {
+      "footprint_shape": "rectangulaire",
+      "largeur_m": 10.68,
+      "longueur_m": 15.21,
+      "orientation_deg": 76.1,
+      "floors_count": 5,
+      "hauteur_sous_plafond_m": 3.4,
+      "roof_shape": "deux_pans",
+      "pente_toit_deg": 42.0,
+      "materiau_mur": "pierre_de_taille",
+      "materiau_toiture": "ardoises",
+      "has_basement": true,
+      "has_cellar": false,
+      "has_garage": false,
+      "has_garden": false
+    },
+    "score_global": 38,
+    "zones": {
+      "fondations": {
+        "risque": 24,
+        "niveau": "faible",
+        "alea_principal": "Mouvement de terrain",
+        "justification": "• Aléa retrait-gonflement des argiles = « Faible » (BDNB, au niveau du bâtiment).\n• 0 cavité(s) souterraine(s) recensée(s), 0 mouvement(s) de terrain référencé(s) à proximité, 1 arrêté(s) CATNAT correspondant(s).\n• Zone de sismicité 3 (Géorisques).",
+        "recommandations": []
+      },
+      "murs_nord": {
+        "risque": 36,
+        "niveau": "modere",
+        "alea_principal": "Exposition climatique (façade)",
+        "justification": "• 719 mm/an de précipitations moyennes projetées (Open-Meteo).\n• 1.5 jours de chaleur extrême/an projetés (Open-Meteo).\n• Zone de sismicité 3 (Géorisques).",
+        "recommandations": [
+          {
+            "mesure": "Restaurer les éléments architecturaux de la façade en pierre",
+            "explication": "Lors d’un ravalement de façade, il est important de restaurer et préserver les éléments architecturaux comme les corniches, soubassements, bandeaux d’étages, encadrements de fenêtres, chaînes d’angles, moulures et ferronneries. Ces éléments contribuent à la solidité et à l’étanchéité de la façade, ce qui la rend plus résistante aux intempéries comme les tempêtes. Pour les câbles apparents (électricité, télécommunications), il est recommandé de les intégrer visuellement en les peignant de la même couleur que la façade et en les plaçant sous des saillies (corniches, rebords) pour les dissimuler et éviter qu’ils ne soient endommagés par le vent.",
+            "type": "recommandation_source",
+            "cout_estime": null,
+            "aide": null,
+            "sources": [
+              {
+                "fiche_id": "REF-0416",
+                "source_id": "S09",
+                "extrait_exact": "Les corniches et les soubassements, les bandeaux d’étages ou d’angles, les encadrements, souvent marqués par une texture et une couleur différentes, seront maintenus. Ils seront simulés par la couleur et positionnés sous corniche ou autre saillie capable de les faire visuellement disparaître."
+              }
+            ],
+            "zone": "murs_ouest"
+          },
+          {
+            "mesure": "Respecter les techniques locales pour les travaux sur la façade",
+            "explication": "Si vous envisagez des travaux modifiant la façade de votre maison, il est essentiel de respecter les techniques de construction spécifiques à votre région et à l’époque de construction (1870 dans votre cas). Ces techniques ont été adaptées aux conditions climatiques locales et contribuent à la résistance de la façade face aux tempêtes. Une analyse préalable des caractéristiques architecturales locales est nécessaire pour garantir que les travaux préservent la valeur patrimoniale et la solidité de la façade. Cette mesure est particulièrement importante pour les maisons anciennes comme la vôtre.",
+            "type": "recommandation_source",
+            "cout_estime": null,
+            "aide": null,
+            "sources": [
+              {
+                "fiche_id": "REF-0362",
+                "source_id": "S09",
+                "extrait_exact": "Selon les régions et en fonction des époques, des techniques de construction spécifiques et adaptées au contexte local ont été employées. Il importe de les respecter, voire de les remettre à jour dans le cas où elles auraient été effacées."
+              }
+            ],
+            "zone": "murs_ouest"
+          }
+        ]
+      },
+      "murs_sud": {
+        "risque": 36,
+        "niveau": "modere",
+        "alea_principal": "Exposition climatique (façade)",
+        "justification": "• 719 mm/an de précipitations moyennes projetées (Open-Meteo).\n• 1.5 jours de chaleur extrême/an projetés (Open-Meteo).\n• Zone de sismicité 3 (Géorisques).",
+        "recommandations": [
+          {
+            "mesure": "Restaurer les éléments architecturaux de la façade en pierre",
+            "explication": "Lors d’un ravalement de façade, il est important de restaurer et préserver les éléments architecturaux comme les corniches, soubassements, bandeaux d’étages, encadrements de fenêtres, chaînes d’angles, moulures et ferronneries. Ces éléments contribuent à la solidité et à l’étanchéité de la façade, ce qui la rend plus résistante aux intempéries comme les tempêtes. Pour les câbles apparents (électricité, télécommunications), il est recommandé de les intégrer visuellement en les peignant de la même couleur que la façade et en les plaçant sous des saillies (corniches, rebords) pour les dissimuler et éviter qu’ils ne soient endommagés par le vent.",
+            "type": "recommandation_source",
+            "cout_estime": null,
+            "aide": null,
+            "sources": [
+              {
+                "fiche_id": "REF-0416",
+                "source_id": "S09",
+                "extrait_exact": "Les corniches et les soubassements, les bandeaux d’étages ou d’angles, les encadrements, souvent marqués par une texture et une couleur différentes, seront maintenus. Ils seront simulés par la couleur et positionnés sous corniche ou autre saillie capable de les faire visuellement disparaître."
+              }
+            ],
+            "zone": "murs_ouest"
+          },
+          {
+            "mesure": "Respecter les techniques locales pour les travaux sur la façade",
+            "explication": "Si vous envisagez des travaux modifiant la façade de votre maison, il est essentiel de respecter les techniques de construction spécifiques à votre région et à l’époque de construction (1870 dans votre cas). Ces techniques ont été adaptées aux conditions climatiques locales et contribuent à la résistance de la façade face aux tempêtes. Une analyse préalable des caractéristiques architecturales locales est nécessaire pour garantir que les travaux préservent la valeur patrimoniale et la solidité de la façade. Cette mesure est particulièrement importante pour les maisons anciennes comme la vôtre.",
+            "type": "recommandation_source",
+            "cout_estime": null,
+            "aide": null,
+            "sources": [
+              {
+                "fiche_id": "REF-0362",
+                "source_id": "S09",
+                "extrait_exact": "Selon les régions et en fonction des époques, des techniques de construction spécifiques et adaptées au contexte local ont été employées. Il importe de les respecter, voire de les remettre à jour dans le cas où elles auraient été effacées."
+              }
+            ],
+            "zone": "murs_ouest"
+          }
+        ]
+      },
+      "murs_est": {
+        "risque": 36,
+        "niveau": "modere",
+        "alea_principal": "Exposition climatique (façade)",
+        "justification": "• 719 mm/an de précipitations moyennes projetées (Open-Meteo).\n• 1.5 jours de chaleur extrême/an projetés (Open-Meteo).\n• Zone de sismicité 3 (Géorisques).",
+        "recommandations": [
+          {
+            "mesure": "Restaurer les éléments architecturaux de la façade en pierre",
+            "explication": "Lors d’un ravalement de façade, il est important de restaurer et préserver les éléments architecturaux comme les corniches, soubassements, bandeaux d’étages, encadrements de fenêtres, chaînes d’angles, moulures et ferronneries. Ces éléments contribuent à la solidité et à l’étanchéité de la façade, ce qui la rend plus résistante aux intempéries comme les tempêtes. Pour les câbles apparents (électricité, télécommunications), il est recommandé de les intégrer visuellement en les peignant de la même couleur que la façade et en les plaçant sous des saillies (corniches, rebords) pour les dissimuler et éviter qu’ils ne soient endommagés par le vent.",
+            "type": "recommandation_source",
+            "cout_estime": null,
+            "aide": null,
+            "sources": [
+              {
+                "fiche_id": "REF-0416",
+                "source_id": "S09",
+                "extrait_exact": "Les corniches et les soubassements, les bandeaux d’étages ou d’angles, les encadrements, souvent marqués par une texture et une couleur différentes, seront maintenus. Ils seront simulés par la couleur et positionnés sous corniche ou autre saillie capable de les faire visuellement disparaître."
+              }
+            ],
+            "zone": "murs_ouest"
+          },
+          {
+            "mesure": "Respecter les techniques locales pour les travaux sur la façade",
+            "explication": "Si vous envisagez des travaux modifiant la façade de votre maison, il est essentiel de respecter les techniques de construction spécifiques à votre région et à l’époque de construction (1870 dans votre cas). Ces techniques ont été adaptées aux conditions climatiques locales et contribuent à la résistance de la façade face aux tempêtes. Une analyse préalable des caractéristiques architecturales locales est nécessaire pour garantir que les travaux préservent la valeur patrimoniale et la solidité de la façade. Cette mesure est particulièrement importante pour les maisons anciennes comme la vôtre.",
+            "type": "recommandation_source",
+            "cout_estime": null,
+            "aide": null,
+            "sources": [
+              {
+                "fiche_id": "REF-0362",
+                "source_id": "S09",
+                "extrait_exact": "Selon les régions et en fonction des époques, des techniques de construction spécifiques et adaptées au contexte local ont été employées. Il importe de les respecter, voire de les remettre à jour dans le cas où elles auraient été effacées."
+              }
+            ],
+            "zone": "murs_ouest"
+          }
+        ]
+      },
+      "murs_ouest": {
+        "risque": 36,
+        "niveau": "modere",
+        "alea_principal": "Exposition climatique (façade)",
+        "justification": "• 719 mm/an de précipitations moyennes projetées (Open-Meteo).\n• 1.5 jours de chaleur extrême/an projetés (Open-Meteo).\n• Zone de sismicité 3 (Géorisques).",
+        "recommandations": [
+          {
+            "mesure": "Restaurer les éléments architecturaux de la façade en pierre",
+            "explication": "Lors d’un ravalement de façade, il est important de restaurer et préserver les éléments architecturaux comme les corniches, soubassements, bandeaux d’étages, encadrements de fenêtres, chaînes d’angles, moulures et ferronneries. Ces éléments contribuent à la solidité et à l’étanchéité de la façade, ce qui la rend plus résistante aux intempéries comme les tempêtes. Pour les câbles apparents (électricité, télécommunications), il est recommandé de les intégrer visuellement en les peignant de la même couleur que la façade et en les plaçant sous des saillies (corniches, rebords) pour les dissimuler et éviter qu’ils ne soient endommagés par le vent.",
+            "type": "recommandation_source",
+            "cout_estime": null,
+            "aide": null,
+            "sources": [
+              {
+                "fiche_id": "REF-0416",
+                "source_id": "S09",
+                "extrait_exact": "Les corniches et les soubassements, les bandeaux d’étages ou d’angles, les encadrements, souvent marqués par une texture et une couleur différentes, seront maintenus. Ils seront simulés par la couleur et positionnés sous corniche ou autre saillie capable de les faire visuellement disparaître."
+              }
+            ],
+            "zone": "murs_ouest"
+          },
+          {
+            "mesure": "Respecter les techniques locales pour les travaux sur la façade",
+            "explication": "Si vous envisagez des travaux modifiant la façade de votre maison, il est essentiel de respecter les techniques de construction spécifiques à votre région et à l’époque de construction (1870 dans votre cas). Ces techniques ont été adaptées aux conditions climatiques locales et contribuent à la résistance de la façade face aux tempêtes. Une analyse préalable des caractéristiques architecturales locales est nécessaire pour garantir que les travaux préservent la valeur patrimoniale et la solidité de la façade. Cette mesure est particulièrement importante pour les maisons anciennes comme la vôtre.",
+            "type": "recommandation_source",
+            "cout_estime": null,
+            "aide": null,
+            "sources": [
+              {
+                "fiche_id": "REF-0362",
+                "source_id": "S09",
+                "extrait_exact": "Selon les régions et en fonction des époques, des techniques de construction spécifiques et adaptées au contexte local ont été employées. Il importe de les respecter, voire de les remettre à jour dans le cas où elles auraient été effacées."
+              }
+            ],
+            "zone": "murs_ouest"
+          }
+        ]
+      },
+      "toiture": {
+        "risque": 28,
+        "niveau": "faible",
+        "alea_principal": "Canicule / stress thermique",
+        "justification": "• 1.5 jours de chaleur extrême/an projetés (Open-Meteo).\n• 719 mm/an de précipitations moyennes projetées (Open-Meteo).\n• Aucun aléa feu de forêt recensé par Géorisques pour cette commune.\n• Toiture antérieure à 1970 : majoration de +10 points.",
+        "recommandations": []
+      },
+      "sous_sol": {
+        "risque": 68,
+        "niveau": "eleve",
+        "alea_principal": "Inondation / remontée de nappe",
+        "justification": "• 9 arrêté(s) CATNAT inondation recensé(s) sur la commune ; aléa inondation présent dans le référentiel Géorisques communal ; atlas des zones inondables (Géorisques) indisponible pour cette commune (erreur API), non pris en compte dans le score.\n• Potentiel radon classe 3/3 (Géorisques).",
+        "recommandations": [
+          {
+            "mesure": "Contrôler les installations d’assainissement et conduites enterrées",
+            "explication": "Avant et pendant des épisodes de fortes pluies ou inondations, faites vérifier par un professionnel l’état des séparateurs de graisses, fosses septiques, pompes de relevage et clapets anticrue situés dans votre sous-sol. Ces contrôles permettent de détecter d’éventuels bouchons, fuites ou dysfonctionnements qui pourraient aggraver les risques d’inondation en empêchant l’évacuation normale des eaux. Un entretien régulier (nettoyage des filtres, vidange, vérification de l’étanchéité) est nécessaire selon les prescriptions du fabricant ou en cas d’accumulation de débris (feuilles, boues). Cette mesure réduit directement le risque d’inondation en assurant le bon fonctionnement des dispositifs de gestion des eaux.",
+            "type": "recommandation_source",
+            "cout_estime": null,
+            "aide": null,
+            "sources": [
+              {
+                "fiche_id": "REF-0001",
+                "source_id": "S01",
+                "extrait_exact": "En cas de conditions météorologiques extrêmes, il est nécessaire de procéder à un contrôle supplémentaire. examen visuel de l’état du dispositif de fermeture et de son étanchéité, des canalisations pénétrant dans l’appareil et les éventuels dispositifs d’accès. vidange et nettoyage (ﬁltre et ﬂotteur éventuel en particulier). Contrôle des pompes automatiques de relevage des eaux: contrôler le fonctionnement automatique, l’étanchéité des raccords, l’état de la station et des vannes. Contrôle de leur fonctionnement. Curage des appareils. Vériﬁcation de leur étanchéité."
+              }
+            ],
+            "zone": "sous_sol"
+          },
+          {
+            "mesure": "Vérifier l’étanchéité des fosses septiques et raccordements",
+            "explication": "Faites inspecter régulièrement l’étanchéité de votre fosse septique et de ses raccordements aux canalisations, surtout avant la saison des pluies. Une fosse non étanche peut laisser entrer l’eau en cas d’inondation ou provoquer des fuites polluantes, aggravant les risques pour votre sous-sol. Un professionnel doit vérifier l’état du bac de décantation et des joints pour s’assurer qu’ils ne sont pas fissurés ou corrodés. Cette vérification est essentielle pour éviter les infiltrations d’eau et les refoulements dans votre sous-sol lors de fortes pluies.",
+            "type": "recommandation_source",
+            "cout_estime": null,
+            "aide": null,
+            "sources": [
+              {
+                "fiche_id": "REF-0004",
+                "source_id": "S01",
+                "extrait_exact": "vériﬁcation de l’étanchéité de la fosse. vériﬁer l’état du bac de décantation et des raccords avec les canalisations"
+              }
+            ],
+            "zone": "sous_sol"
+          },
+          {
+            "mesure": "Inspecter le sol près des réseaux d’égout pour détecter les affouillements",
+            "explication": "Après des épisodes de pluies intenses, examinez visuellement le sol autour des réseaux d’égout enterrés près de votre maison. Recherchez des signes d’affouillements (creusements ou effondrements du sol) qui pourraient fragiliser les canalisations et augmenter les risques d’inondation ou de ruissellement vers votre sous-sol. Si vous observez des anomalies, faites appel à un professionnel pour évaluer les risques et effectuer les réparations nécessaires. Cette inspection simple permet d’agir rapidement avant que les dégâts ne s’aggravent.",
+            "type": "recommandation_source",
+            "cout_estime": null,
+            "aide": null,
+            "sources": [
+              {
+                "fiche_id": "REF-0005",
+                "source_id": "S01",
+                "extrait_exact": "L’état du sol au voisinage du réseau d’égout est contrôlé aﬁn de déceler les éventuels affouillements."
+              }
+            ],
+            "zone": "sous_sol"
+          },
+          {
+            "mesure": "Vérifier l’état des canalisations et entonnoirs d’évacuation des eaux",
+            "explication": "Faites contrôler régulièrement l’état, l’étanchéité et les fixations des canalisations et entonnoirs qui évacuent les eaux pluviales et usées de votre sous-sol. Un professionnel doit vérifier qu’il n’y a pas d’obstructions (feuilles, boues) ou de détériorations (fissures, joints défectueux) qui pourraient empêcher l’eau de s’écouler correctement. En cas de forte pluie, des canalisations bouchées ou endommagées peuvent provoquer des refoulements ou des infiltrations dans votre sous-sol. Un curage préventif peut être nécessaire pour éviter ces problèmes.",
+            "type": "recommandation_source",
+            "cout_estime": null,
+            "aide": null,
+            "sources": [
+              {
+                "fiche_id": "REF-0272",
+                "source_id": "S01",
+                "extrait_exact": "Vériﬁcation de l’état, de l’étanchéité, des ﬁxations et scellements des canalisations et entonnoirs. Contrôle et curage éventuel des canalisations et accessoires."
+              }
+            ],
+            "zone": "sous_sol"
+          }
+        ]
+      }
+    },
+    "projection_2050": {
+      "score_global": 43,
+      "zones": {
+        "fondations": {
+          "risque": 31,
+          "niveau": "modere",
+          "alea_principal": "Retrait-gonflement des argiles",
+          "justification": "• Aléa retrait-gonflement des argiles = « Faible » (BDNB, au niveau du bâtiment) ; +12 pts pour horizon 2050 (sécheresses plus fréquentes, cf. littérature BRGM/CCR).\n• 0 cavité(s) souterraine(s) recensée(s), 0 mouvement(s) de terrain référencé(s) à proximité, 1 arrêté(s) CATNAT correspondant(s).\n• Zone de sismicité 3 (Géorisques).",
+          "recommandations": []
+        },
+        "murs_nord": {
+          "risque": 40,
+          "niveau": "modere",
+          "alea_principal": "Exposition climatique (façade)",
+          "justification": "• 706 mm/an de précipitations moyennes projetées (Open-Meteo).\n• 3.2 jours de chaleur extrême/an projetés (Open-Meteo).\n• Zone de sismicité 3 (Géorisques).",
+          "recommandations": []
+        },
+        "murs_sud": {
+          "risque": 40,
+          "niveau": "modere",
+          "alea_principal": "Exposition climatique (façade)",
+          "justification": "• 706 mm/an de précipitations moyennes projetées (Open-Meteo).\n• 3.2 jours de chaleur extrême/an projetés (Open-Meteo).\n• Zone de sismicité 3 (Géorisques).",
+          "recommandations": []
+        },
+        "murs_est": {
+          "risque": 40,
+          "niveau": "modere",
+          "alea_principal": "Exposition climatique (façade)",
+          "justification": "• 706 mm/an de précipitations moyennes projetées (Open-Meteo).\n• 3.2 jours de chaleur extrême/an projetés (Open-Meteo).\n• Zone de sismicité 3 (Géorisques).",
+          "recommandations": []
+        },
+        "murs_ouest": {
+          "risque": 40,
+          "niveau": "modere",
+          "alea_principal": "Exposition climatique (façade)",
+          "justification": "• 706 mm/an de précipitations moyennes projetées (Open-Meteo).\n• 3.2 jours de chaleur extrême/an projetés (Open-Meteo).\n• Zone de sismicité 3 (Géorisques).",
+          "recommandations": []
+        },
+        "toiture": {
+          "risque": 37,
+          "niveau": "modere",
+          "alea_principal": "Canicule / stress thermique",
+          "justification": "• 3.2 jours de chaleur extrême/an projetés (Open-Meteo).\n• 706 mm/an de précipitations moyennes projetées (Open-Meteo).\n• Aucun aléa feu de forêt recensé par Géorisques pour cette commune.\n• Toiture antérieure à 1970 : majoration de +10 points.",
+          "recommandations": []
+        },
+        "sous_sol": {
+          "risque": 70,
+          "niveau": "eleve",
+          "alea_principal": "Inondation / remontée de nappe",
+          "justification": "• 9 arrêté(s) CATNAT inondation recensé(s) sur la commune ; aléa inondation présent dans le référentiel Géorisques communal ; atlas des zones inondables (Géorisques) indisponible pour cette commune (erreur API), non pris en compte dans le score.\n• Potentiel radon classe 3/3 (Géorisques).",
+          "recommandations": []
+        }
+      }
+    },
+    "climat": {
+      "2050": {
+        "temperature_max_projetee_c": 43.6,
+        "temperature_max_moyenne_c": 17.7,
+        "precipitation_annuelle_moyenne_mm": 706.0,
+        "jours_chaleur_extreme_par_an": 3.2
+      },
+      "reference_2015_2024": {
+        "temperature_max_absolue_c": 41.2,
+        "temperature_max_moyenne_c": 16.4,
+        "precipitation_annuelle_moyenne_mm": 719.0,
+        "jours_chaleur_extreme_par_an": 1.5
+      },
+      "source": "Open-Meteo Climate API — moyenne des modèles climatiques, projection 2041-2050 — référence 2015-2024 : 16.4°C"
+    },
+    "marche": {
+      "dvf_disponible": false
+    },
+    "_geometry_build_report": {
+      "champs_ok": [
+        "largeur_m",
+        "longueur_m",
+        "orientation_deg",
+        "floors_count",
+        "hauteur_sous_plafond_m",
+        "materiau_mur",
+        "materiau_toiture",
+        "roof_shape",
+        "pente_toit_deg"
+      ],
+      "champs_manquants_bdnb": [
+        "has_basement",
+        "has_cellar",
+        "has_garage",
+        "has_garden"
+      ]
+    },
+    "_sources": {
+      "climat_open_meteo": true,
+      "climat_copernicus": false,
+      "dvf_local": false
+    },
+    "_erreurs_collecte": [
+      {
+        "source": "copernicus",
+        "erreur": "Exception: Missing/incomplete configuration file: C:\\Users\\Makrembz/.cdsapirc"
+      }
+    ]
+  },
+  "timeline": [
+    {
+      "date": "2026-07-29T09:31:39.295084+00:00",
+      "event": "Property ID créé",
+      "details": {
+        "property_id": "TY-2026-000018",
+        "adresse": "8 Allée du Port Maillard 44000 Nantes"
+      }
+    },
+    {
+      "date": "2026-07-29T09:31:39.295160+00:00",
+      "event": "Certification Gold",
+      "details": {
+        "level": "Gold",
+        "score": 38,
+        "status": "ACTIVE"
+      }
+    }
+  ],
+  "certification": {
+    "level": "Gold",
+    "score": 38,
+    "issued_at": "2026-07-29T09:31:39.295160+00:00",
+    "expires_at": "2027-07-29T09:31:39.295160+00:00",
+    "status": "ACTIVE",
+    "badge": {
+      "name": "Typhoon Gold",
+      "version": "1.0",
+      "icon_svg_path": "M12 2L2 7v10l10 5 10-5V7L12 2zM12 6v12M8 9l4-3 4 3M8 15l4 3 4-3",
+      "style": {
+        "primary_color": "#D4A017",
+        "secondary_color": "#B8860B",
+        "accent_color": "#F5D76E",
+        "label": "Gold",
+        "description": "Très bonne résilience. Les risques sont faibles et bien gérés. Quelques améliorations mineures peuvent être envisagées."
+      }
+    }
+  },
+  "future_modules": {
+    "bank": null,
+    "real_estate": null,
+    "artisan": null,
+    "certifications": null
+  }
+}
