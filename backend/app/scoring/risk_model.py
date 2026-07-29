@@ -340,7 +340,7 @@ def _build_zone(risque: int, alea_principal: str, justifications: list[str]) -> 
     }
 
 
-def _compute_zones_for_period(building_data: dict[str, Any], climat_block: dict[str, Any] | None, is_projection: bool) -> dict[str, dict[str, Any]]:
+def _compute_zones_for_period(building_data: dict[str, Any], climat_block: dict[str, Any] | None, is_projection: bool) -> tuple[dict[str, dict[str, Any]], dict[str, dict[str, Any]]]:
     georisques = building_data.get("georisques")
     bdnb = building_data.get("bdnb")
 
@@ -360,6 +360,23 @@ def _compute_zones_for_period(building_data: dict[str, Any], climat_block: dict[
     precip_score, precip_src = _precipitation_subscore(climat_block)
     feu_foret_score, feu_foret_src = _feu_foret_subscore(georisques)
     roof_age_bonus = _roof_age_modifier(bdnb)
+
+    # Sous-scores par ALEA NOMME (pas par partie du batiment) — exposes tels
+    # quels pour les consommateurs qui veulent un vrai decoupage par peril
+    # (ex. zone_insurer, cf. app/agents/zone_insurer/aggregator_agent.py) au
+    # lieu de la vue structurelle "zones" ci-dessous, qui melange plusieurs
+    # perils par partie de batiment et n'a de sens que pour le jumeau
+    # numerique d'un batiment unique.
+    perils: dict[str, dict[str, Any]] = {
+        "rga_argile": {"score": argile_score, "niveau": _niveau(argile_score), "justification": argile_src},
+        "inondation": {"score": inondation_score, "niveau": _niveau(inondation_score), "justification": inondation_src},
+        "mouvement_terrain": {"score": mvt_score, "niveau": _niveau(mvt_score), "justification": mvt_src},
+        "sismique": {"score": sismique_score, "niveau": _niveau(sismique_score), "justification": sismique_src},
+        "radon": {"score": radon_score, "niveau": _niveau(radon_score), "justification": radon_src},
+        "feu_foret": {"score": feu_foret_score, "niveau": _niveau(feu_foret_score), "justification": feu_foret_src},
+        "canicule": {"score": canicule_score, "niveau": _niveau(canicule_score), "justification": canicule_src},
+        "precipitation": {"score": precip_score, "niveau": _niveau(precip_score), "justification": precip_src},
+    }
 
     zones: dict[str, dict[str, Any]] = {}
 
@@ -398,7 +415,7 @@ def _compute_zones_for_period(building_data: dict[str, Any], climat_block: dict[
     for zone_name in ZONE_NAMES:
         logger.info("  [%s] risque=%d (%s)", zone_name, zones[zone_name]["risque"], zones[zone_name]["niveau"])
 
-    return zones
+    return zones, perils
 
 
 def _score_global(zones: dict[str, dict[str, Any]]) -> int:
@@ -412,11 +429,31 @@ def _score_global(zones: dict[str, dict[str, Any]]) -> int:
     return _clamp(total)
 
 
+def catnat_summary(georisques: dict[str, Any] | None) -> dict[str, int]:
+    """Vue publique du nombre d'arretes CATNAT historiques par categorie
+    d'alea (historique de sinistres declares, signal fort pour un
+    assureur), pour un consommateur qui veut ce chiffre brut sans
+    recalculer un sous-score de risque — cf. zone_insurer/aggregator_agent.py.
+    """
+    return {
+        "inondation": _count_catnat(georisques, "inondation"),
+        "secheresse": _count_catnat(georisques, "sécheresse") or _count_catnat(georisques, "secheresse"),
+        "mouvement_terrain": _count_catnat(georisques, "mouvement de terrain"),
+        "total": len(_data_list(georisques, "catnat")),
+    }
+
+
 def compute_risk_scores(building_data: dict[str, Any]) -> dict[str, Any]:
     """Point d'entree du scoring_agent.
 
-    Retourne {"score_global", "zones", "projection_2050": {"score_global", "zones"}}
-    — exactement la forme attendue par le contrat digital_twin_agent.
+    Retourne {"score_global", "zones", "perils", "projection_2050": {"score_global", "zones", "perils"}}.
+    "zones"/"score_global" restent exactement la forme attendue par le contrat
+    digital_twin_agent (inchangee). "perils" est un ajout additif : le
+    decoupage par ALEA NOMME (rga_argile, inondation, mouvement_terrain,
+    sismique, radon, feu_foret, canicule, precipitation), utile a un
+    consommateur qui raisonne par peril plutot que par partie de batiment
+    (ex. zone_insurer pour un rapport assurance — cf.
+    app/agents/zone_insurer/aggregator_agent.py).
     """
     logger.info("scoring_agent -- calcul des scores (aujourd'hui + projection 2050)")
 
@@ -425,20 +462,22 @@ def compute_risk_scores(building_data: dict[str, Any]) -> dict[str, Any]:
     projection = climat.get("projection_2041_2050")
 
     logger.info("periode reference (2025) :")
-    zones_2025 = _compute_zones_for_period(building_data, reference, is_projection=False)
+    zones_2025, perils_2025 = _compute_zones_for_period(building_data, reference, is_projection=False)
     score_2025 = _score_global(zones_2025)
     logger.info("  -> score_global = %d", score_2025)
 
     logger.info("periode projection (2050) :")
-    zones_2050 = _compute_zones_for_period(building_data, projection or reference, is_projection=True)
+    zones_2050, perils_2050 = _compute_zones_for_period(building_data, projection or reference, is_projection=True)
     score_2050 = _score_global(zones_2050)
     logger.info("  -> score_global = %d", score_2050)
 
     return {
         "score_global": score_2025,
         "zones": zones_2025,
+        "perils": perils_2025,
         "projection_2050": {
             "score_global": score_2050,
             "zones": zones_2050,
+            "perils": perils_2050,
         },
     }

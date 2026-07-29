@@ -1,26 +1,29 @@
-# Téléchargements / caches volumineux (Copernicus CDS, etc.)
+# --- Downloads / large caches ---
 *.zip
 backend/data/lookup/copernicus/
 backend/out/
 backend/recommendation_travaux-main/data
-.tmp/
-.pip-cache
-# Python
+
+# --- Python ---
 __pycache__/
 *.pyc
 .venv/
 venv/
+.pytest_cache/
+*.db
 
-# Secrets
+# --- Secrets ---
+# .env matches any file named .env in any subdirectory (single source of truth)
 .env
-backend/.env
-*.env
 
-# Node
+# --- Node ---
 node_modules/
 
-# OS / éditeurs
+# --- OS / editors ---
 .DS_Store
 Thumbs.db
 
+# --- caches ---
+.tmp/
+.pip-cache
 .freebuff/

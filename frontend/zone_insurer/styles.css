@@ -201,6 +201,37 @@ details[open] .rp-section-chevron { transform: rotate(180deg); }
 .rp-meta-row .rp-meta-value { color: var(--ink); font-family: monospace; font-size: 0.7rem; }
 .rp-footer { padding: 7px 14px; font-size: 0.65rem; color: var(--muted); background: var(--surface-alt); border-top: 1px solid var(--border); text-align: center; }
 
+/* ===== Narrative (AI summary) ===== */
+.rp-narrative {
+  margin: 0 14px 12px; padding: 10px 12px;
+  background: linear-gradient(135deg, rgba(20,184,166,0.08), rgba(59,130,246,0.06));
+  border: 1px solid var(--border); border-left: 3px solid #14b8a6;
+  border-radius: 8px; font-size: 0.76rem; line-height: 1.45; color: var(--text);
+}
+
+/* ===== CATNAT grid ===== */
+.catnat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+.catnat-item {
+  padding: 8px 10px; border-radius: 8px; background: var(--surface-alt);
+  border: 1px solid var(--border); text-align: center;
+}
+.catnat-item .catnat-value { font-size: 1.1rem; font-weight: 800; color: var(--ink); display: block; }
+.catnat-item .catnat-label { font-size: 0.6rem; color: var(--muted); text-transform: uppercase; }
+.catnat-item.total { grid-column: 1 / -1; background: rgba(6,182,212,0.08); border-color: #06b6d4; }
+
+/* ===== Insurer context (DVF / DRIAS) ===== */
+.rp-subsection { margin-bottom: 10px; }
+.rp-subsection:last-child { margin-bottom: 0; }
+.rp-subsection-title { font-size: 0.62rem; font-weight: 700; color: var(--muted); text-transform: uppercase; margin-bottom: 5px; }
+.rp-subsection .empty-hint { font-size: 0.7rem; color: var(--muted); font-style: italic; }
+.dvf-row, .drias-row {
+  display: flex; justify-content: space-between; font-size: 0.7rem;
+  padding: 3px 0; border-bottom: 1px dashed var(--surface-alt);
+}
+.drias-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
+.drias-cell { background: var(--surface-alt); border-radius: 6px; padding: 6px 8px; font-size: 0.68rem; }
+.drias-cell .drias-cell-value { font-weight: 800; color: var(--ink); }
+
 /* ===== Map ===== */
 #map-container { flex: 1; position: relative; }
 #map { width: 100%; height: 100%; }

@@ -98,7 +98,14 @@ async def _fetch_bdnb_avec_repli(client: httpx.AsyncClient, address: str, label_
         return await bdnb_connector.fetch_bdnb(client, address)
 
 
-async def collect(address: str, enable_copernicus: bool = True, enable_dvf: bool | None = None) -> dict:
+async def collect(
+    address: str,
+    enable_copernicus: bool = True,
+    enable_dvf: bool | None = None,
+    enable_georisques_v2: bool | None = None,
+    enable_wfs: bool | None = None,
+    enable_drias: bool | None = None,
+) -> dict:
     """Point d'entree principal : lance la collecte complete pour une adresse.
 
     Parameters
@@ -118,9 +125,28 @@ async def collect(address: str, enable_copernicus: bool = True, enable_dvf: bool
         DVF_ENABLED dans son .env plutot que de passer ce parametre a
         chaque appel - voir settings.dvf_enabled).
         Si None (defaut), suit settings.dvf_enabled.
+    enable_georisques_v2 : bool | None
+        Si True, interroge Georisques v2 /rga (authentifie, jeton requis —
+        voir settings.georisques_v2_token). Si None (defaut), suit
+        settings.georisques_v2_enabled. Meme logique "desactive -> None
+        sans erreur" que dvf/copernicus.
+    enable_wfs : bool | None
+        Si True, interroge IGN WFS pour la distance au cours d'eau/foret
+        le(s) plus proche(s) (voir connectors/wfs.py). Si None (defaut),
+        suit settings.wfs_enabled.
+    enable_drias : bool | None
+        Si True, lit le lookup DRIAS local (projections climatiques
+        departementales — voir connectors/drias_lookup.py). Si None
+        (defaut), suit settings.drias_enabled.
     """
     if enable_dvf is None:
         enable_dvf = settings.dvf_enabled
+    if enable_georisques_v2 is None:
+        enable_georisques_v2 = settings.georisques_v2_enabled
+    if enable_wfs is None:
+        enable_wfs = settings.wfs_enabled
+    if enable_drias is None:
+        enable_drias = settings.drias_enabled
 
     logger.info(
         "collector_agent -- debut collecte pour %r (enable_copernicus=%s, enable_dvf=%s)",
@@ -201,6 +227,37 @@ async def collect(address: str, enable_copernicus: bool = True, enable_dvf: bool
         else:
             logger.info("  copernicus desactive (flag=False) -> climat_copernicus = None")
 
+        if enable_georisques_v2:
+            from app.connectors import georisques_v2 as _georisques_v2
+
+            tasks["georisques_v2"] = _safe_call(
+                "georisques_v2",
+                _georisques_v2.fetch_rga_v2(client, geocode.lat, geocode.lon),
+                erreurs,
+            )
+        else:
+            logger.info("  georisques_v2 desactive (flag=False) -> georisques_v2 = None")
+
+        if enable_wfs:
+            from app.connectors import wfs as _wfs
+
+            tasks["wfs_distances"] = _safe_call(
+                "wfs_distances",
+                _wfs.fetch_distances(client, geocode.lat, geocode.lon),
+                erreurs,
+            )
+        else:
+            logger.info("  wfs desactive (flag=False) -> distances = None")
+
+        if enable_drias:
+            from app.connectors import drias_lookup as _drias
+
+            tasks["drias"] = _safe_call(
+                "drias_local", asyncio.to_thread(_drias.lookup_drias, geocode.citycode), erreurs
+            )
+        else:
+            logger.info("  drias desactive (flag=False) -> drias_local = None")
+
         keys = list(tasks.keys())
         results = await asyncio.gather(*(tasks[k] for k in keys))
         resolved = dict(zip(keys, results))
@@ -211,6 +268,9 @@ async def collect(address: str, enable_copernicus: bool = True, enable_dvf: bool
         climat = resolved["climat"]
         dvf_data = resolved.get("dvf")
         climat_copernicus = resolved.get("copernicus")
+        georisques_v2_data = resolved.get("georisques_v2")
+        wfs_distances = resolved.get("wfs_distances")
+        drias_data = resolved.get("drias")
 
     # Etape 3 - fan-in : assemblage du building_data final
     logger.info("etape 3/3 -- assemblage building_data (%d erreur(s) de source)", len(erreurs))
@@ -233,6 +293,9 @@ async def collect(address: str, enable_copernicus: bool = True, enable_dvf: bool
         "climat_open_meteo": _climate_to_dict(climat),
         "climat_copernicus": climat_copernicus,
         "dvf_local": dvf_data,
+        "georisques_v2": georisques_v2_data,
+        "distances": wfs_distances,
+        "drias_local": drias_data,
         "erreurs": erreurs,
         "genere_le": datetime.now(timezone.utc).isoformat(),
     }

@@ -102,84 +102,54 @@ Principes retenus :
 
 ```
 typhoon/
+├── .env                     # single source of truth (secrets)
+├── .env.example             # template (no secrets)
 ├── README.md
-├── docker-compose.yml
-├── .env.example
 │
-├── backend/
+├── backend/                              # main orchestrator (colleagues)
 │   ├── app/
-│   │   ├── main.py                     # entrypoint FastAPI
-│   │   ├── api/
-│   │   │   └── routes/
-│   │   │       ├── diagnostic.py       # POST /diagnostic (commun aux 3 cas d'usage)
-│   │   │       ├── assurance.py        # endpoints spécifiques assurance (devis, seuil de refus)
-│   │   │       ├── banque.py           # endpoints spécifiques banque (score prêt)
-│   │   │       ├── immobilier.py       # endpoints agents/promoteurs (recherche, argumentaire)
-│   │   │       └── health.py
-│   │   │
-│   │   ├── agents/                     # orchestration LangGraph
-│   │   │   ├── graph.py                # définition du StateGraph et des edges
-│   │   │   ├── state.py                # schéma TyphoonState (état partagé inter-agents)
-│   │   │   ├── collector_agent.py      # agent de collecte (live APIs + lookups locaux)
-│   │   │   ├── scoring_agent.py        # agent de scoring de risque
-│   │   │   ├── rag_agent.py            # agent de recommandations (RAG)
-│   │   │   └── digital_twin_agent.py   # agent jumeau numérique (assemble le contrat 3D)
-│   │   │
-│   │   ├── connectors/                 # clients des sources externes
-│   │   │   ├── bdnb.py
-│   │   │   ├── georisques.py
-│   │   │   ├── ign_altitude.py
-│   │   │   ├── open_meteo.py
-│   │   │   ├── catnat.py
-│   │   │   ├── copernicus.py           # cache climatique PACA (API CDS, remplace DRIAS)
-│   │   │   └── lookup/
-│   │   │       ├── lookup.py           # DVF
-│   │   │       └── departments.json
-│   │   │
-│   │   ├── rag/
-│   │   │   ├── ingestion.py            # pipeline d'ingestion documentaire (MRN, BRGM, CEPRI, ...)
-│   │   │   ├── vectorstore.py          # wrapper base vectorielle
-│   │   │   └── retriever.py
-│   │   │
-│   │   ├── scoring/
-│   │   │   └── risk_model.py           # méthode de calcul du score par aléa / partie du bâtiment
-│   │   │
-│   │   ├── digital_twin/
-│   │   │   ├── geometry_builder.py     # dérive la géométrie (forme, étages, toit, cave, jardin...)
-│   │   │   └── contract.py             # sérialisation du contrat JSON consommé par Three.js
-│   │   │
-│   │   ├── schemas/                    # modèles Pydantic (contrats API)
-│   │   │   ├── property.py
-│   │   │   ├── diagnostic.py
-│   │   │   ├── recommendation.py
-│   │   │   └── house_geometry.py       # schéma de la géométrie du jumeau numérique
-│   │   │
-│   │   ├── core/
-│   │   │   ├── config.py               # settings (clés API, endpoints, seuils)
-│   │   │   └── logging.py
-│   │   │
-│   │   └── db/
-│   │       ├── models.py               # persistance diagnostics / checkpoints LangGraph
-│   │       └── session.py
+│   │   ├── main.py / mvp_main.py         # entrypoints FastAPI
+│   │   ├── api/routes/                   # health, diagnostic, mvp, zone_insurer
+│   │   ├── agents/                       # LangGraph orchestration
+│   │   │   └── zone_insurer/             # zone-insurer sub-agent pipeline
+│   │   ├── connectors/                   # BDNB, Géorisques, IGN, Open-Meteo, Copernicus, DVF, DRIAS
+│   │   ├── scoring/                      # risk_model, mvp_model, zone_scoring
+│   │   ├── services/                     # mvp_assessor, zone_assessor
+│   │   ├── recommandations/              # RAG-based renovation recommender
+│   │   ├── core/                         # config (reads root .env), logging
+│   │   ├── db/                           # SQLAlchemy models
+│   │   ├── digital_twin/                 # geometry builder & contract
+│   │   └── schemas/                      # Pydantic models
 │   │
+│   ├── zone_insurer_mvp/                 # standalone MVP backend (yours)
+│   │   ├── app/
+│   │   │   ├── main.py                   # entrypoint (port 8001)
+│   │   │   ├── api/routes/zone.py        # POST /zone/assess
+│   │   │   ├── connectors/               # BDNB, Géorisques, WFS, Open-Meteo
+│   │   │   ├── scoring/                  # zone_hazard_scores
+│   │   │   ├── services/                 # collector, aggregator, mistral
+│   │   │   ├── schemas/                  # zone, export_v2
+│   │   │   └── core/                     # config (reads root .env)
+│   │   ├── tests/
+│   │   ├── docs/                         # MVP contract, scoring, implementation plan
+│   │   ├── scripts/
+│   │   └── requirements.txt              # lightweight deps (no langgraph)
+│   │
+│   ├── recommendation_travaux-main/      # sub-project: renovation recommender
 │   ├── tests/
-│   ├── requirements.txt
-│   └── Dockerfile
+│   └── requirements.txt
 │
 ├── frontend/
-│   ├── assurance/                      # front simple — parcours assureur / assuré
-│   │   ├── index.html                  # accueil, formulaire, écran de traitement, scène 3D, devis
-│   │   └── scene/
-│   │       └── house-scene.js          # construction paramétrique de la maison Three.js
-│   ├── banque/                         # front simple — parcours banque
-│   └── agents-immobiliers/             # front simple — parcours agent / promoteur
-│
-├── data/
-│   └── rag_sources/                    # documents bruts avant ingestion (MRN, BRGM, CEPRI, ...)
+│   ├── zone_insurer/                     # risk map interface (MVP — yours)
+│   │   ├── index.html
+│   │   ├── app.js
+│   │   └── styles.css
+│   ├── jumeau_numerique/                 # digital twin 3D viewer
+│   └── promoteurs/                       # promoter / agent interface
 │
 └── docs/
-    ├── Documentation_projet_Typhoon.pdf
-    └── typhoon_site.html               # prototype front de référence (parcours assurance + scène 3D)
+    ├── Documentation_projet_Typhoon_v2-1.pdf
+    └── ...
 ```
 
 ## Les agents
@@ -270,13 +240,9 @@ Le backend est un service **FastAPI** qui expose le graphe LangGraph comme un se
 
 ## Frontend — un client par cas d'usage
 
-Un front minimal par cas d'usage, chacun consommant l'API du backend. Le parcours **assurance** dispose déjà d'un prototype de référence (`docs/typhoon_site.html`) qui sert de base à `frontend/assurance` :
-
-- **`frontend/assurance`** — vitrine, formulaire du bien (adresse, structure, toiture, sous-sol/cave...), écran de traitement qui reflète les étapes du graphe LangGraph (géocodage, Géorisques, projections climatiques, BDNB, fusion, recommandations, rendu 3D), puis la **scène 3D du jumeau numérique** : maison Three.js navigable à la souris, zones colorées par niveau de risque et cliquables (panneau de détail + recommandations), bascule de projection temporelle 2025/2050, simulation de devis à partir des travaux sélectionnés, et un assistant conversationnel branché sur `rag_agent`.
-- **`frontend/banque`** — saisie d'un bien à financer, affichage du score de risque climatique pour instruction du dossier de prêt ; peut réutiliser la même scène 3D en lecture seule.
-- **`frontend/agents-immobiliers`** — recherche de biens/parcelles avec critère de résilience climatique, génération d'un argumentaire de vente basé sur le score et les travaux réalisés/recommandés.
-
-Ces fronts restent volontairement simples à ce stade (un écran de saisie, un écran de résultat, la scène 3D) ; ils seront étoffés une fois le MVP validé. La construction de la scène 3D est paramétrique : `house-scene.js` doit lire le bloc `geometry` du contrat plutôt que les dimensions codées en dur du prototype actuel.
+- **`frontend/zone_insurer/`** (MVP — Risk Map) — carte interactive Mapbox pour l'évaluation de zones : saisie d'une adresse, affichage des aléas climatiques, scoring par zone, recommandations, historique CATNAT. Consomme l'API du backend `zone_insurer_mvp` ou du main backend.
+- **`frontend/jumeau_numerique/`** — visualisation 3D du jumeau numérique d'un bâtiment (Three.js), zones de risque colorées, diagnostics.
+- **`frontend/promoteurs/`** — interface destinée aux agents et promoteurs immobiliers.
 
 ## Sources de données du diagnostic
 
@@ -307,20 +273,23 @@ Ordre d'ingestion recommandé : MRN, puis BRGM et CEPRI, puis le reste des sourc
 
 ## Installation
 
-Prérequis : Python 3.11+, Node 18+, une base vectorielle locale ou hébergée (ex. Chroma, Qdrant), un LLM accessible via API (ex. Anthropic, OpenAI).
+Prérequis : Python 3.11+, Node 18+.
 
 ```bash
-# Backend
+# Backend principal (orchestrateur LangGraph)
 cd backend
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-cp ../.env.example .env
 uvicorn app.main:app --reload
 
-# Frontend (par cas d'usage, exemple assurance)
-cd frontend/assurance
-npm install
-npm run dev
+# Ou backend MVP zone insurer (standalone, pas de LangGraph)
+cd backend/zone_insurer_mvp
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload
+
+# Frontend (ouvrir directement dans le navigateur)
+# frontend/zone_insurer/index.html
 ```
 
 `backend/requirements.txt` (dépendances principales) :
@@ -341,23 +310,16 @@ sqlalchemy
 
 ## Variables d'environnement
 
-Extrait de `.env.example` :
+Toutes les variables d'environnement sont lues depuis le fichier **`.env`** racine (source unique). Voir `.env.example` pour le template.
 
 ```
-# LLM
-ANTHROPIC_API_KEY=
+# Géorisques v2 (RGA — argiles)
+GEORISQUES_V2_ENABLED=false
+GEORISQUES_V2_TOKEN=
 
-# Base vectorielle (RAG)
-VECTORSTORE_PATH=./data/vectorstore
-
-# Sources externes
-BDNB_API_KEY=
-GEORISQUES_BASE_URL=https://georisques.gouv.fr
-IGN_ALTITUDE_BASE_URL=https://data.geopf.fr
-OPEN_METEO_BASE_URL=https://climate-api.open-meteo.com
-
-# Persistance / checkpoints LangGraph
-DATABASE_URL=sqlite:///./typhoon.db
+# Mistral AI
+MISTRAL_API_KEY=
+MISTRAL_ENABLED=false
 ```
 
 ## Roadmap / points ouverts

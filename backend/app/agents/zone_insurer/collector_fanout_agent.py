@@ -82,7 +82,19 @@ async def process_one(candidate: dict, semaphore: asyncio.Semaphore) -> dict[str
     query = address_label if address_label else f"{lat},{lon}"
     async with semaphore:
         try:
-            building_data = await _collect_building(query)
+            # Le rapport assurance veut le maximum de signal disponible :
+            # on force ces sources a True ici (independamment des reglages
+            # globaux par defaut utilises par le diagnostic mono-batiment),
+            # chaque source restant individuellement tolerante a l'echec
+            # (jeton/fichier manquant -> None + erreur consignee, jamais de
+            # plantage - voir collector_agent.py).
+            building_data = await _collect_building(
+                query,
+                enable_dvf=True,
+                enable_georisques_v2=True,
+                enable_wfs=True,
+                enable_drias=True,
+            )
             risk_scores = compute_risk_scores(building_data)
             resolved_label = (building_data.get("adresse") or {}).get("label") or address_label
             cache_store(resolved_label, lat, lon, building_data, risk_scores)

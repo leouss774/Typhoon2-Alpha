@@ -94,6 +94,8 @@
               </div>
             </div>
 
+            <div id="rp-narrative" class="rp-narrative hidden"></div>
+
             <details class="rp-section" open>
               <summary class="rp-section-header" style="--rp-accent:#ef4444;">
                 <span>⚠️</span><span class="rp-section-label">Aléas climatiques</span>
@@ -117,7 +119,7 @@
               </summary>
               <div class="rp-section-body">
                 <table class="rp-table" id="flagged-table">
-                  <thead><tr><th>Adresse</th><th>Score</th><th>Tier</th><th>Aléa</th></tr></thead>
+                  <thead><tr><th>Adresse</th><th>Score</th><th>Tier</th><th>Aléa</th><th>Cours d'eau</th><th>Forêt</th></tr></thead>
                   <tbody></tbody>
                 </table>
               </div>
@@ -130,6 +132,33 @@
               </summary>
               <div class="rp-section-body">
                 <ul id="recommendations" class="rp-rec-list"></ul>
+              </div>
+            </details>
+
+            <details class="rp-section">
+              <summary class="rp-section-header" style="--rp-accent:#06b6d4;">
+                <span>🌊</span><span class="rp-section-label">Historique CATNAT</span>
+                <span class="rp-section-chevron">▾</span>
+              </summary>
+              <div class="rp-section-body">
+                <div id="catnat-grid" class="catnat-grid"></div>
+              </div>
+            </details>
+
+            <details class="rp-section">
+              <summary class="rp-section-header" style="--rp-accent:#14b8a6;">
+                <span>📊</span><span class="rp-section-label">Contexte assurance (DVF / DRIAS)</span>
+                <span class="rp-section-chevron">▾</span>
+              </summary>
+              <div class="rp-section-body">
+                <div class="rp-subsection">
+                  <div class="rp-subsection-title">Transactions DVF récentes</div>
+                  <div id="dvf-context">—</div>
+                </div>
+                <div class="rp-subsection">
+                  <div class="rp-subsection-title">Projection climatique DRIAS (département)</div>
+                  <div id="drias-context">—</div>
+                </div>
               </div>
             </details>
 

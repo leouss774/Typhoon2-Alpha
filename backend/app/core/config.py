@@ -22,10 +22,15 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # backend/app/core/config.py -> backend/
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
+ROOT_DIR = BASE_DIR.parent  # Typhoon2-Alpha/
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+    model_config = SettingsConfigDict(
+        env_file=str(ROOT_DIR / ".env"),
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
 
     # BDNB (aucune cle necessaire, confirme par un test reel - voir le guide)
     bdnb_api_key: str | None = None
@@ -33,6 +38,18 @@ class Settings(BaseSettings):
 
     # Georisques v1 (public, sans cle)
     georisques_base_url: str = "https://www.georisques.gouv.fr/api/v1"
+
+    # Georisques v2 (RGA — retrait-gonflement des argiles — authentifie,
+    # jeton requis). Desactive par defaut : passe a True + renseigne le
+    # jeton une fois obtenu (voir .env.example).
+    georisques_v2_enabled: bool = False
+    georisques_v2_base_url: str = "https://www.georisques.gouv.fr/api/v2"
+    georisques_v2_token: str | None = None
+
+    # IGN WFS (BD TOPO V3 troncon_hydrographique / IGNF masque foret) —
+    # distance au cours d'eau / a la foret la plus proche. Public, sans cle.
+    wfs_base_url: str = "https://data.geopf.fr/wfs/ows"
+    wfs_enabled: bool = True
 
     # Geocodage (BAN / Geoplateforme IGN, public, sans cle)
     geocoding_url: str = "https://data.geopf.fr/geocodage/search"
@@ -63,6 +80,14 @@ class Settings(BaseSettings):
     # eviter les allers-retours si plusieurs personnes partagent le repo).
     dvf_enabled: bool = False
     dvf_lookup_dir: str = str(BASE_DIR / "data" / "lookup" / "dvf")
+
+    # Lookup local DRIAS (projections climatiques departementales,
+    # ADAMONT/CMIP6 — jours de canicule, nuits tropicales, precipitations
+    # fortes, FWI...). Meme logique que DVF : fichier local, pas d'API.
+    # Un seul fichier JSON, cle par code departement (ex. {"06": {...}}),
+    # contrairement a DVF qui a un CSV par departement.
+    drias_enabled: bool = False
+    drias_lookup_path: str = str(BASE_DIR / "data" / "lookup" / "drias" / "drias.json")
 
     # Mistral (agent recommandations — RAG travaux, cf.
     # app/recommandations/ et backend/recommendation_travaux-main/)

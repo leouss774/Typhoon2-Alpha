@@ -1,0 +1,109 @@
+{
+  "address": "10 Rue de la Paix 75002 Paris",
+  "nb_points": 2,
+  "nb_ok": 2,
+  "nb_errors": 0,
+  "hazard_breakdown": [
+    {
+      "hazard": "inondation",
+      "label": "Inondation",
+      "present_count": 2,
+      "total_count": 2,
+      "pct_present": 100.0,
+      "levels": ["Present"],
+      "mean_score": 60.0,
+      "max_score": 60.0
+    },
+    {
+      "hazard": "radon",
+      "label": "Radon",
+      "present_count": 1,
+      "total_count": 2,
+      "pct_present": 50.0,
+      "levels": ["Faible"],
+      "mean_score": 25.0,
+      "max_score": 25.0
+    }
+  ],
+  "catnat_totals": {
+    "inondation": 3,
+    "secheresse": 1,
+    "mouvement_terrain": 0,
+    "total": 4
+  },
+  "buildings": [
+    {
+      "address_label": "10 Rue de la Paix 75002 Paris",
+      "lat": 48.8687,
+      "lon": 2.3312,
+      "hazards": [
+        {
+          "hazard": "inondation",
+          "label": "Inondation",
+          "level": "Present",
+          "score": 60.0
+        },
+        {
+          "hazard": "radon",
+          "label": "Radon",
+          "level": "Faible",
+          "score": 25.0
+        }
+      ],
+      "catnat_total": 4,
+      "distance_cours_eau_m": 420.0,
+      "distance_foret_m": 1250.0,
+      "bdnb_cle_interop_adr": "75102_6845_00010",
+      "bdnb_geom": null,
+      "source": "live",
+      "source_errors": [
+        { "source": "georisques", "ok": true, "error": null },
+        { "source": "wfs", "ok": true, "error": null },
+        { "source": "bdnb", "ok": true, "error": null }
+      ],
+      "data_quality": "ok",
+      "score_global": 49.5
+    },
+    {
+      "address_label": "12 Rue de la Paix 75002 Paris",
+      "lat": 48.8689,
+      "lon": 2.3314,
+      "hazards": [
+        {
+          "hazard": "inondation",
+          "label": "Inondation",
+          "level": "Present",
+          "score": 60.0
+        }
+      ],
+      "catnat_total": 4,
+      "distance_cours_eau_m": 410.0,
+      "distance_foret_m": 1240.0,
+      "bdnb_cle_interop_adr": "75102_6845_00012",
+      "bdnb_geom": null,
+      "source": "live",
+      "source_errors": [
+        { "source": "georisques", "ok": true, "error": null },
+        { "source": "wfs", "ok": true, "error": null },
+        { "source": "bdnb", "ok": true, "error": null }
+      ],
+      "data_quality": "ok",
+      "score_global": 60.0
+    }
+  ],
+  "narrative": "Zone etudiee : 2 point(s) analyse(s). Score agrégé 54.8/100 (niveau modere). Aleas presents : Inondation, Radon. Historique CATNAT : 4 arrete(s) recense(s) (inondation 3, secheresse 1, mouvement 0).",
+  "recommendations": [
+    "Risques presents mais maitrisables : suivi standard au renouvellement."
+  ],
+  "enumeration_method": "bdnb_bulk_polygon",
+  "duration_seconds": 1.15,
+  "aggregate_score": 54.8,
+  "aggregate_tier": "modere",
+  "narrative_source": "template",
+  "data_sources_ok": [
+    "bdnb",
+    "georisques",
+    "wfs"
+  ],
+  "report_schema_version": "1.0"
+}

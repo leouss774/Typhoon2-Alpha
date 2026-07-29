@@ -235,7 +235,7 @@ assessBtn.addEventListener('click', async () => {
   }
 
   try {
-    const res = await fetch(`${API_BASE}/mvp/assess`, {
+    const res = await fetch(`${API_BASE}/zone/assess`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
@@ -265,8 +265,8 @@ function renderReport(report) {
   document.getElementById('rp-coords').textContent = c;
 
   const fill = document.getElementById('rp-score-ring-fill');
-  const score = report.score_global;
-  const tier = report.tier;
+  const score = report.aggregate_score;
+  const tier = report.aggregate_tier;
   const deg = Math.min(score / 100 * 360, 360);
   const tc = TIER_CONFIG[tier]?.color || '#888';
   fill.style.background = `conic-gradient(${tc} ${deg}deg, var(--surface-alt) ${deg}deg)`;
@@ -300,11 +300,15 @@ function renderReport(report) {
   flaggedBody.innerHTML = '';
   for (const b of report.flagged_buildings) {
     const cfg = TIER_CONFIG[b.tier] || { color: '#888' };
+    const eau = b.distance_cours_eau_m != null ? `${Math.round(b.distance_cours_eau_m)} m` : '—';
+    const foret = b.distance_foret_m != null ? `${Math.round(b.distance_foret_m)} m` : '—';
     flaggedBody.innerHTML += `<tr>
       <td>${b.address_label || `${b.lat.toFixed(4)}, ${b.lon.toFixed(4)}`}</td>
       <td><strong style="color:${cfg.color}">${b.score_global}</strong></td>
       <td style="color:${cfg.color}">${b.tier}</td>
-      <td>${b.worst_peril || '—'}</td>`;
+      <td>${(b.worst_peril || '—').replace(/_/g, ' ')}</td>
+      <td>${eau}</td>
+      <td>${foret}</td>`;
   }
   document.getElementById('rp-flagged-count').textContent = `${report.flagged_buildings.length} bâtiment(s)`;
 
@@ -313,6 +317,17 @@ function renderReport(report) {
   for (const rec of report.recommendations) {
     recList.innerHTML += `<li>${rec}</li>`;
   }
+
+  const narrativeBox = document.getElementById('rp-narrative');
+  if (report.narrative) {
+    narrativeBox.textContent = report.narrative;
+    narrativeBox.classList.remove('hidden');
+  } else {
+    narrativeBox.classList.add('hidden');
+  }
+
+  renderCatnat(report.catnat_totals);
+  renderInsurerContext(report.financial_context, report.climate_projection);
 
   const now = new Date().toISOString().split('T')[0];
   document.getElementById('rp-meta-body').innerHTML = [
@@ -338,6 +353,58 @@ function renderReport(report) {
   renderMapLayers(report);
 }
 
+// ========== CATNAT / DVF / DRIAS ==========
+const CATNAT_LABELS = {
+  inondation: 'Inondation',
+  secheresse: 'Sécheresse',
+  mouvement_terrain: 'Mouvement de terrain',
+  total: 'Total arrêtés',
+};
+
+function renderCatnat(catnatTotals) {
+  const grid = document.getElementById('catnat-grid');
+  grid.innerHTML = '';
+  if (!catnatTotals) {
+    grid.innerHTML = '<div class="empty-hint">Aucune donnée CATNAT disponible.</div>';
+    return;
+  }
+  for (const key of ['inondation', 'secheresse', 'mouvement_terrain', 'total']) {
+    const val = catnatTotals[key] ?? 0;
+    const cls = key === 'total' ? 'catnat-item total' : 'catnat-item';
+    grid.innerHTML += `<div class="${cls}">
+      <span class="catnat-value">${val}</span>
+      <span class="catnat-label">${CATNAT_LABELS[key] || key}</span>
+    </div>`;
+  }
+}
+
+function renderInsurerContext(financialContext, climateProjection) {
+  const dvfBox = document.getElementById('dvf-context');
+  const driasBox = document.getElementById('drias-context');
+
+  const dvfTx = financialContext && financialContext.dvf_transactions_recentes;
+  if (dvfTx && dvfTx.length > 0) {
+    dvfBox.innerHTML = dvfTx.map(tx => {
+      const date = tx.date_mutation || tx.date || '—';
+      const valeur = tx.valeur_fonciere != null ? `${Number(tx.valeur_fonciere).toLocaleString('fr-FR')} €` : '—';
+      const type = tx.type_local || tx.nature_mutation || '';
+      return `<div class="dvf-row"><span>${date} ${type ? `· ${type}` : ''}</span><span><strong>${valeur}</strong></span></div>`;
+    }).join('');
+  } else {
+    dvfBox.innerHTML = '<div class="empty-hint">Aucune transaction DVF locale disponible.</div>';
+  }
+
+  if (climateProjection && Object.keys(climateProjection).length > 0) {
+    driasBox.innerHTML = '<div class="drias-grid">' + Object.entries(climateProjection).map(([k, v]) => `
+      <div class="drias-cell">
+        <div>${k.replace(/_/g, ' ')}</div>
+        <div class="drias-cell-value">${v}</div>
+      </div>`).join('') + '</div>';
+  } else {
+    driasBox.innerHTML = '<div class="empty-hint">Aucune projection DRIAS disponible pour ce département.</div>';
+  }
+}
+
 // ========== MAP LAYERS ==========
 function renderMapLayers(report) {
   removeMapLayers();
@@ -352,7 +419,9 @@ function renderMapLayers(report) {
       score: b.score_global, tier: b.tier,
       label: b.address_label || '',
       color: TIER_CONFIG[b.tier]?.color || '#888',
-      worst_peril: b.worst_peril || '—',
+      worst_peril: (b.worst_peril || '—').replace(/_/g, ' '),
+      distance_cours_eau_m: b.distance_cours_eau_m,
+      distance_foret_m: b.distance_foret_m,
     },
   }));
 
@@ -389,6 +458,10 @@ function renderMapLayers(report) {
             <span>Tier <strong style="color:${p.color}">${p.tier}</strong></span>
           </div>
           <div style="margin-top:2px;font-size:0.65rem;color:#888">Pire aléa : ${p.worst_peril}</div>
+          <div style="margin-top:2px;font-size:0.65rem;color:#888">
+            Cours d'eau : ${p.distance_cours_eau_m != null ? Math.round(p.distance_cours_eau_m) + ' m' : '—'}
+            · Forêt : ${p.distance_foret_m != null ? Math.round(p.distance_foret_m) + ' m' : '—'}
+          </div>
           ${recos}
           <div style="margin-top:4px;font-size:0.6rem;color:#aaa">Sources : BDNB · Géorisques · IGN · Open-Meteo</div>
         </div>

@@ -41,6 +41,9 @@ class BuildingRiskSummary(BaseModel):
     worst_peril: str | None = None
     flagged_for_review: bool = False
     source: str  # "live" | "cache"
+    catnat: dict[str, int] = Field(default_factory=dict)
+    distance_cours_eau_m: float | None = None
+    distance_foret_m: float | None = None
 
 
 class HazardBreakdown(BaseModel):
@@ -62,6 +65,10 @@ class ZoneReport(BaseModel):
     hazard_breakdown: list[HazardBreakdown]
     flagged_buildings: list[BuildingRiskSummary]
     all_buildings: list[BuildingRiskSummary]
+    catnat_totals: dict[str, int] = Field(default_factory=dict)
+    financial_context: dict[str, Any] | None = None
+    climate_projection: dict[str, Any] | None = None
+    narrative: str = ""
     recommendations: list[str]
     enumeration_method: str
     duration_seconds: float

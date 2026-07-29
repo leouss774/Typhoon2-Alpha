@@ -1,39 +1,27 @@
 """
-report_agent — assembles the final insurer-oriented report with aggregate
-risk tier, per-hazard breakdown, flagged assets, and templated recommendations.
+report_agent — assembles the final insurer-oriented report: aggregate risk
+tier, real per-hazard breakdown, flagged assets, CATNAT claims history,
+DVF/DRIAS context, and an AI-generated narrative + recommendations (with a
+deterministic fallback — see mistral_report.py).
 """
 
 from __future__ import annotations
 
 import time
 
+from app.agents.zone_insurer import mistral_report
 from app.agents.zone_insurer.state import ZoneState
 from app.core.logging import get_logger
 
 logger = get_logger(__name__)
 
-_RECOMMENDATIONS_BY_TIER = {
-    "critique": [
-        "Prioriser une inspection individuelle sur site pour chaque actif flagge avant toute souscription.",
-        "Envisager une exclusion ou surprime ciblee sur les alea(s) dominant(s) identifies.",
-    ],
-    "eleve": [
-        "Demander une etude de sol / diagnostic structurel pour les actifs proches du seuil critique.",
-        "Prevoir une clause de franchise renforcee sur l'alea dominant de la zone.",
-    ],
-    "modere": [
-        "Suivi standard suffisant ; revisiter la zone lors du prochain renouvellement.",
-    ],
-    "faible": [
-        "Aucune action specifique requise au-dela du suivi standard.",
-    ],
-}
 
-
-def run(state: ZoneState) -> dict:
+async def run(state: ZoneState) -> dict:
     aggregate = state["aggregate"]
     tier = aggregate["aggregate_tier"]
     t0 = state.get("started_at", time.perf_counter())
+
+    ai = await mistral_report.generate(aggregate)
 
     report = {
         "address": state["address"],
@@ -46,7 +34,11 @@ def run(state: ZoneState) -> dict:
         "hazard_breakdown": aggregate["hazard_breakdown"],
         "flagged_buildings": aggregate["flagged_buildings"],
         "all_buildings": aggregate["all_buildings"],
-        "recommendations": _RECOMMENDATIONS_BY_TIER.get(tier, []),
+        "catnat_totals": aggregate["catnat_totals"],
+        "financial_context": aggregate["financial_context"],
+        "climate_projection": aggregate["climate_projection"],
+        "narrative": ai["narrative"],
+        "recommendations": ai["recommendations"],
         "enumeration_method": state["enumeration_method"],
         "duration_seconds": round(time.perf_counter() - t0, 2),
     }
