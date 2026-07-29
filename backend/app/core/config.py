@@ -48,7 +48,7 @@ class Settings(BaseSettings):
     # car le premier lancement declenche un telechargement multi-gigaoctets.
     # --- CHANGEZ ICI --- passez a True pour activer Copernicus dans le workflow.
     # Vous pouvez aussi le definir via COPERNICUS_ENABLED=true dans .env.
-    copernicus_enabled: bool = False
+    copernicus_enabled: bool = True
     copernicus_cache_dir: str = str(BASE_DIR / "data" / "lookup" / "copernicus")
 
     # Lookup local DVF - meme logique de chemin absolu. Les CSV par
@@ -67,6 +67,33 @@ class Settings(BaseSettings):
     # Mistral (agent recommandations — RAG travaux, cf.
     # app/recommandations/ et backend/recommendation_travaux-main/)
     mistral_api_key: str | None = None
+
+    # Annonces immobilieres "en vente" (carte zone, marqueurs colores par
+    # score climatique - cf. app/connectors/annonces_lookup.py). Pas d'API
+    # publique GRATUITE fiable pour ca (SeLoger/LeBonCoin n'en proposent
+    # pas) : les wrappers RapidAPI testes ("Annonces Immobilieres France",
+    # "leboncoin1") sont payants a l'appel des le 1er call, meme avec une
+    # cle valide - un essai reel a facture 0,40e sans avertissement prealable.
+    #
+    # DISABLE PAR DEFAUT (securite anti-facturation) : meme si une cle/host
+    # trainent dans .env, aucun appel RapidAPI n'est fait tant que ce flag
+    # n'est pas explicitement mis a True. Sans RapidAPI, la carte retombe
+    # uniquement sur DVF (gratuit, officiel, mais ventes deja realisees -
+    # pas des annonces actuellement en ligne) : liste vide sinon, jamais de
+    # nouvel appel facturable silencieux.
+    # --- CHANGEZ ICI --- ANNONCES_RAPIDAPI_ENABLED=true dans .env UNIQUEMENT
+    # si vous acceptez consciemment le cout par appel de votre wrapper.
+    annonces_rapidapi_enabled: bool = False
+    annonces_rapidapi_key: str | None = None
+    annonces_rapidapi_host: str | None = None
+    # Path + nom du parametre de recherche : varie selon le wrapper RapidAPI
+    # souscrit (ex. "Annonces Immobilieres France" utilise un code postal,
+    # d'autres wrappers Leboncoin/SeLoger utilisent une recherche libre par
+    # ville/mots-cles). A ajuster une fois le vrai endpoint de recherche
+    # identifie (pas "/health", qui n'est qu'un endpoint de statut) - voir
+    # app/connectors/annonces_lookup.py::_call_rapidapi.
+    annonces_rapidapi_search_path: str = "/v2/leboncoin/search"
+    annonces_rapidapi_search_param: str = "query"
 
     # Divers
     http_timeout_seconds: float = 15.0

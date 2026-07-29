@@ -295,6 +295,21 @@ def _building_data_minimal(lat: float, lon: float) -> dict:
     }
 
 
+def score_point_climat(lat: float, lon: float) -> int:
+    """Score climatique global (0-100) pour un point isolé, sans requête réseau.
+
+    Réutilise la même simulation géographique déterministe que la grille de
+    zone (_building_data_minimal + compute_risk_scores) : mêmes coordonnées
+    -> même score à chaque appel, et cohérent avec l'aplat isobandes déjà
+    affiché sur la carte. Utilisé pour colorer les marqueurs d'annonces
+    (voir app/connectors/annonces_lookup.py) sans refaire une évaluation de
+    grille complète à chaque annonce.
+    """
+    building_data = _building_data_minimal(lat, lon)
+    scores = compute_risk_scores(building_data)
+    return int(round(scores.get("score_global", 0)))
+
+
 # ---------------------------------------------------------------------------
 #   Collecte et scoring d'un point (sans appels réseau)
 # ---------------------------------------------------------------------------
