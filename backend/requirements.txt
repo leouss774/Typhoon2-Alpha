@@ -31,3 +31,4 @@ numpy>=1.26.0
 # --- Divers ---
 python-dotenv
 sqlalchemy
+mistralai

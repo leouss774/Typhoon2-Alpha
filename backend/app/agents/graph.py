@@ -1,18 +1,21 @@
 """
-StateGraph LangGraph : collector_agent -> scoring_agent -> recommandations_agent
--> digital_twin_agent (cf. README racine, section "Architecture
-multi-agents", et backend/recommendation_travaux-main/PROMPT_INTEGRATION_ouss.md
-pour l'integration du noeud recommandations).
+StateGraph LangGraph :
+  collector_agent -> scoring_agent -> recommandations_agent -> digital_twin_agent
 
-recommandations_agent tourne apres scoring_agent (dont il consomme
-`risk_scores.zones`) et avant digital_twin_agent (qui assemble le contrat
-final a partir de `risk_scores`, recommandations desormais incluses) :
-`zones[*].recommandations` n'est plus une liste vide a la sortie du graphe.
+Le noeud `recommandations_agent` est insere entre scoring_agent et
+digital_twin_agent : il lit state.risk_scores (produit par scoring_agent),
+interroge la base RAG Mistral, et ecrit les recommandations directement dans
+risk_scores.zones[*].recommandations avant que digital_twin_agent n'assemble le
+contrat final. Si l'index RAG n'est pas charge (MISTRAL_API_KEY absente ou
+build_index.py pas encore lance), le noeud est un no-op : le graphe continue
+ormalement et les recommandations restent vides.
 
-Checkpointer : `MemorySaver` (en memoire, perdu au redemarrage du process)
+Checkpointer : ``MemorySaver`` (en memoire, perdu au redemarrage du process)
 pour cette etape MVP. Le README prevoit un checkpointer SQLite en local
 / Postgres en prod — a brancher quand la persistance entre redemarrages
 deviendra utile (reprise d'un diagnostic interrompu, audit).
+
+Documentation de reference : backend/recommendation_travaux-main/PROMPT_INTEGRATION_ouss.md
 """
 
 from __future__ import annotations

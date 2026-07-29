@@ -840,6 +840,7 @@
     <nav id="home-nav">
       <a href="#home-features">Nos solutions</a>
       <a href="#modes">Comment ça marche</a>
+      <a href="property-id/">Property ID</a>
       <a href="#">Nous contacter</a>
     </nav>
     <div id="home-header-actions">
@@ -1178,6 +1179,12 @@
     <button id="btn-2050">2050</button>
   </div>
   <div id="global-score">Score global : <strong id="score-value">--</strong> / 100</div>
+  <div style="margin-top:8px;">
+    <a href="property-id/" style="color:var(--brand);font-size:12px;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:4px;">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      Voir mon Property ID →
+    </a>
+  </div>
   <div id="climat-panel">
     <div style="font-size:11px;color:#FF6B4A;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px;">Projection climatique 2050</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 10px;">
@@ -1284,6 +1291,7 @@
         <div id="cert-actions">
           <button id="cert-back-btn">← Modifier ma sélection</button>
           <button id="cert-download-btn">Télécharger le devis</button>
+          <button id="cert-property-id-btn" style="background:var(--brand);color:#fff;border:none;border-radius:8px;padding:10px 20px;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;transition:background .15s;box-shadow:0 4px 14px rgba(255,107,74,0.3);width:100%;margin-top:6px;">Voir mon Property ID certifié →</button>
         </div>
         <div id="cert-footnote">Typhoon — devis indicatif non contractuel, généré automatiquement par l'agent IA de diagnostic climatique.</div>
       </div>
@@ -3280,6 +3288,27 @@ loadDataset(DEFAULT_DATA);
       ul.innerHTML = '<li>Aucun travaux sélectionné</li>';
     }
 
+    // Persister le resultat du devis dans localStorage pour que la page Property ID
+    // puisse le consommer (score apres travaux, prime, certification, travaux retenus).
+    // TODO: remplacer par une vraie persistance backend quand le schema recommandations
+    // inclura gain_resilience reel.
+    try {
+      localStorage.setItem('typhoon_devis_result', JSON.stringify({
+        score_avant: baseScore,
+        score_apres: newScore,
+        prime_percent: primePercent,
+        certifie: fullyCertified,
+        date_generation: new Date().toISOString(),
+        adresse: addr,
+        travaux_retenus: selected.map(i => ({
+          zone: i.zone,
+          travaux: i.travaux,
+          cout_estime: i.cout_estime,
+          gain_resilience: i.gain_resilience,
+        })),
+      }));
+    } catch (e) { /* localStorage peut etre bloque */ }
+
     selectView.classList.add('hide');
     resultView.classList.add('show');
   }
@@ -3293,6 +3322,27 @@ loadDataset(DEFAULT_DATA);
     selectView.classList.remove('hide');
   });
   downloadBtn.addEventListener('click', function () { window.print(); });
+
+  // Bouton "Voir mon Property ID certifié"
+  const propertyIdBtn = document.getElementById('cert-property-id-btn');
+  if (propertyIdBtn) {
+    propertyIdBtn.addEventListener('click', function () {
+      // Lire l'adresse depuis le devis déjà sauvegardé (typhoon_devis_result) plutôt que
+      // depuis le DOM — l'ID du champ formulaire (#f-adresse) est différent de #address
+      // et le devis contient l'adresse canonique exacte utilisée pour la comparaison
+      // dans applyDevisOverrides() côté Property ID.
+      try {
+        const devisRaw = localStorage.getItem('typhoon_devis_result');
+        if (devisRaw) {
+          const devisParsed = JSON.parse(devisRaw);
+          if (devisParsed && devisParsed.adresse) {
+            localStorage.setItem('typhoon_current_address', devisParsed.adresse);
+          }
+        }
+      } catch (e) { /* localStorage peut être bloqué */ }
+      window.location.href = 'property-id/';
+    });
+  }
 })();
 </script>
 </body>
