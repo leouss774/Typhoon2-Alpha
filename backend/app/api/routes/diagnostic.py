@@ -190,9 +190,10 @@ async def run_zone_prix(payload: ZonePrixRequest) -> dict:
 class ZoneAnnoncesRequest(BaseModel):
     """Requête d'annonces "en vente" sur la zone visible (carte, marqueurs
     colorés par score climatique). Voir app/connectors/annonces_lookup.py :
-    uniquement des données réelles (DVF ou RapidAPI) — si aucune des deux
-    n'est disponible, la réponse contient une liste vide plutôt qu'un
-    échec dur ou des données fabriquées."""
+    uniquement des données réelles (DVF, ou la base CSV locale
+    backend/data/annonces_maisons_france.csv) — si aucune des deux n'est
+    disponible, la réponse contient une liste vide plutôt qu'un échec dur
+    ou des données fabriquées."""
     bounds: tuple[float, float, float, float] = Field(..., min_length=4, max_length=4)
     citycode: str | None = Field(default=None, min_length=5, max_length=5)
     max_results: int = Field(default=40, ge=1, le=200)
@@ -208,8 +209,9 @@ async def run_zone_annonces(payload: ZoneAnnoncesRequest) -> dict:
     réalisées), géolocalisées à la demande si besoin (voir
     dvf_lookup.real_transactions_for_zone). Si indisponible (pas de citycode,
     DVF désactivé, géocodage en échec, aucune vente dans la zone), retombe
-    sur annonces_lookup (RapidAPI si configuré). Aucun mode démo : si aucune
-    source réelle n'est disponible, la réponse contient une liste vide.
+    sur annonces_lookup (base CSV locale d'annonces réelles). Aucun mode
+    démo, aucun appel API tiers : si aucune source réelle n'est disponible,
+    la réponse contient une liste vide.
     """
     department_code = department_code_from_citycode(payload.citycode) if payload.citycode else None
     prix_m2_base = None
@@ -221,7 +223,7 @@ async def run_zone_annonces(payload: ZoneAnnoncesRequest) -> dict:
             )
             prix_m2_base = stats.get("prix_m2_median")
         except DvfLookupUnavailable:
-            pass  # pas de donnees DVF locales -> demo retombe sur sa base par defaut
+            pass  # pas de donnees DVF locales -> prix_m2_base reste None (non utilise par la source CSV)
 
         try:
             dvf_listings = await asyncio.to_thread(
@@ -242,7 +244,7 @@ async def run_zone_annonces(payload: ZoneAnnoncesRequest) -> dict:
                 "fallback_reason": None,
             }
 
-    logger.info(">>> POST /diagnostic/zone/annonces  bounds=%s  max_results=%d (fallback rapidapi)", payload.bounds, payload.max_results)
+    logger.info(">>> POST /diagnostic/zone/annonces  bounds=%s  max_results=%d (fallback csv local)", payload.bounds, payload.max_results)
     result = await annonces_lookup.fetch_annonces_zone(
         bounds=payload.bounds,
         max_results=payload.max_results,
@@ -250,8 +252,8 @@ async def run_zone_annonces(payload: ZoneAnnoncesRequest) -> dict:
     )
     listings = result["listings"]
     if result.get("fallback_reason"):
-        # Log explicite : c'est ici qu'on voit POURQUOI rapidapi n'a rien
-        # renvoye (cle/host invalides, 401/403/404, schema inattendu...).
+        # Log explicite : c'est ici qu'on voit POURQUOI la base CSV n'a rien
+        # renvoye (fichier absent/invalide - voir annonces_lookup.py).
         logger.warning(">>> POST /diagnostic/zone/annonces -- source=%s, RAISON : %s", result["source"], result["fallback_reason"])
     logger.info(">>> POST /diagnostic/zone/annonces OK (%d annonces, source=%s)", len(listings), result["source"])
     return {
