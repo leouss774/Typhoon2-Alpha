@@ -1,0 +1,119 @@
+{
+  "_synthetic": true,
+  "_note": "FIXTURE SYNTHETIQUE DE TEST — ne represente aucun bien reel.",
+  "adresse": {
+    "label": "Cas test Cas-Protege",
+    "citycode": "30189",
+    "city": "Cas-Protege",
+    "score_geocodage": 0.97,
+    "lat": 45.0,
+    "lon": 4.0
+  },
+  "departement": "30",
+  "altitude_m": 95,
+  "bdnb": {
+    "cle_interop_adr": "30189_0001_00001",
+    "batiment": {
+      "alea_argile": "Fort",
+      "annee_construction": 1935,
+      "materiaux_structure_mur_exterieur": "moellons",
+      "mat_mur_txt": "INDETERMINE",
+      "mat_toit_txt": "tuile terre cuite",
+      "hauteur_mean": 6.0,
+      "nb_niveau": 2,
+      "nb_log": 1,
+      "surface_emprise_sol": 110,
+      "usage_principal_bdnb_open": "Residentiel individuel",
+      "type_batiment_dpe": "maison",
+      "type_energie_chauffage": "bois",
+      "type_generateur_chauffage": "poele a bois",
+      "type_generateur_ecs": "ballon electrique",
+      "type_fermeture": "volet_battant_bois",
+      "cle_interop_adr": "30189_0001_00001",
+      "cle_interop_adr_principale_ban": "30189_0001_00001",
+      "l_cle_interop_adr": [
+        "30189_0001_00001"
+      ],
+      "libelle_adr_principale_ban": "Cas test Cas-Protege",
+      "l_parcelle_id": [
+        "30189000AA0001"
+      ],
+      "fiabilite_hauteur": "BONNE",
+      "fiabilite_emprise_sol": "BONNE",
+      "fiabilite_cr_adr_niv_1": "donnees croisees a l'adresse fiables",
+      "fiabilite_cr_adr_niv_2": "batiment sans voisin a l'adresse"
+    }
+  },
+  "georisques": {
+    "erreurs": [
+      {
+        "source": "georisques.zones_inondables",
+        "erreur": "404"
+      }
+    ],
+    "risques_commune": {
+      "data": [
+        {
+          "risques_detail": [
+            {
+              "num_risque": "13",
+              "libelle_risque_long": "Seisme"
+            },
+            {
+              "num_risque": "127",
+              "libelle_risque_long": "Tassements differentiels"
+            }
+          ],
+          "code_insee": "30189"
+        }
+      ]
+    },
+    "catnat": {
+      "results": 2,
+      "total_pages": 1,
+      "data": [
+        {
+          "libelle_risque_jo": "Secheresse",
+          "date_debut_evt": "01/06/2003"
+        },
+        {
+          "libelle_risque_jo": "Secheresse",
+          "date_debut_evt": "01/07/2018"
+        }
+      ]
+    },
+    "zones_inondables": null,
+    "cavites": {
+      "results": 0,
+      "data": [],
+      "response_code": 200
+    },
+    "mouvements_de_terrain": {
+      "results": 0,
+      "data": [],
+      "response_code": 200
+    },
+    "zonage_sismique": {
+      "results": 1,
+      "data": [
+        {
+          "code_insee": "30189",
+          "code_zone": "4"
+        }
+      ]
+    },
+    "radon": {
+      "results": 1,
+      "data": [
+        {
+          "classe_potentiel": "1"
+        }
+      ]
+    }
+  },
+  "climat_open_meteo": null,
+  "climat_copernicus": null,
+  "dvf_local": null,
+  "erreurs": [],
+  "genere_le": "2026-07-28T00:00:00+00:00"
+}

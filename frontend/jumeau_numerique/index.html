@@ -1202,7 +1202,17 @@
   <h3 id="info-title">Zone</h3>
   <div class="badge" id="info-badge">Risque</div>
   <p id="info-alea"></p>
-  <p id="info-justif"></p>
+  <!-- Diagnostic compact (croisement risque + caractéristiques maison) -->
+  <div id="info-conclusion" style="margin:8px 0 4px;padding:10px 12px;background:rgba(255,107,74,0.06);border:1px solid rgba(255,107,74,0.15);border-radius:8px;display:none;">
+    <div id="info-diagnostic-header" style="font-size:12px;font-weight:700;color:#1E2A33;margin-bottom:6px;">Diagnostic & Risques</div>
+    <div id="info-etat" style="font-size:12px;color:#4B5760;line-height:1.5;margin-bottom:8px;padding:6px 8px;background:rgba(255,255,255,0.5);border-radius:6px;"></div>
+    <div id="info-facteurs-cles" style="font-size:10px;font-weight:700;color:#8B959D;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;">Facteurs Clés</div>
+    <div id="info-facteurs" style="margin-top:0;">
+      <div id="info-aggravants" style="margin-bottom:5px;"></div>
+      <div id="info-attenuants"></div>
+    </div>
+  </div>
+  <p id="info-justif" style="color:#8B959D;font-size:11px;"></p>
   <div id="info-recos"></div>
 </div>
 
@@ -2038,6 +2048,53 @@ function showZonePanel(zoneName) {
   badge.textContent = `${data.niveau.toUpperCase()} — ${data.risque}/100`;
   badge.style.background = '#' + scoreToColor(data.risque).toString(16).padStart(6, '0');
   document.getElementById('info-alea').innerHTML = `<b>Aléa principal :</b> ${escapeHtml(data.alea_principal)}`;
+
+  // Affichage du diagnostic compact (format concis)
+  const conclusionDiv = document.getElementById('info-conclusion');
+  const diagnosticHeader = document.getElementById('info-diagnostic-header');
+  const etatDiv = document.getElementById('info-etat');
+  const aggravantsDiv = document.getElementById('info-aggravants');
+  const attenuantsDiv = document.getElementById('info-attenuants');
+  if (data.conclusion) {
+    // Titre : "Diagnostic Murs & Risques"
+    let zoneLabel = zoneName.replace(/_/g, ' ').replace(/\b\w/g, function(c) { return c.toUpperCase(); });
+    diagnosticHeader.textContent = 'Diagnostic ' + zoneLabel + ' & Risques';
+
+    // Etat : conclusion concise (1 phrase)
+    etatDiv.textContent = 'Etat : ' + data.conclusion;
+    conclusionDiv.style.display = 'block';
+
+    // Facteurs aggravants (format compact à puces)
+    aggravantsDiv.innerHTML = '';
+    if (data.facteurs_aggravants && data.facteurs_aggravants.length) {
+      let html = '<div style="font-size:10.5px;font-weight:600;color:#C0392B;margin-bottom:3px;">Aggravants</div>';
+      html += '<div style="font-size:11px;color:#4B5760;line-height:1.5;">';
+      for (let i = 0; i < data.facteurs_aggravants.length; i++) {
+        html += '<div style="display:flex;align-items:flex-start;gap:5px;margin-bottom:2px;">';
+        html += '<span style="color:#C0392B;flex-shrink:0;">•</span>';
+        html += '<span>' + escapeHtml(data.facteurs_aggravants[i]) + '</span></div>';
+      }
+      html += '</div>';
+      aggravantsDiv.innerHTML = html;
+    }
+
+    // Facteurs atténuants (format compact à puces)
+    attenuantsDiv.innerHTML = '';
+    if (data.facteurs_attenuants && data.facteurs_attenuants.length) {
+      let html2 = '<div style="font-size:10.5px;font-weight:600;color:#1F9D6C;margin-bottom:3px;">Attenuants</div>';
+      html2 += '<div style="font-size:11px;color:#4B5760;line-height:1.5;">';
+      for (let j = 0; j < data.facteurs_attenuants.length; j++) {
+        html2 += '<div style="display:flex;align-items:flex-start;gap:5px;margin-bottom:2px;">';
+        html2 += '<span style="color:#1F9D6C;flex-shrink:0;">•</span>';
+        html2 += '<span>' + escapeHtml(data.facteurs_attenuants[j]) + '</span></div>';
+      }
+      html2 += '</div>';
+      attenuantsDiv.innerHTML = html2;
+    }
+  } else {
+    conclusionDiv.style.display = 'none';
+  }
+
   document.getElementById('info-justif').textContent = data.justification;
   const recosDiv = document.getElementById('info-recos');
   recosDiv.innerHTML = '';

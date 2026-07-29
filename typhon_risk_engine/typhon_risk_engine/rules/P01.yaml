@@ -1,0 +1,175 @@
+peril_id: "P01"
+name: "Inondation"
+hazard_available: true
+commune_context_codes: ["11", "113", "114"]
+
+frequency:
+  variables:
+    - key: "hazard.flood.zone"
+      raw_paths: ["georisques.zones_inondables", "georisques.ppri.zone"]
+      role: "F"
+      dominant: true
+      weight: 0.55
+      transform:
+        type: "categorical"
+        mapping: {"blanche": 0.1, "bleue": 0.6, "rouge": 1.0}
+        unmapped: null
+      direction: "increasing"
+      unit: "class"
+      physical_mechanism: >
+        Zonage reglementaire local du champ d'inondation. Seule donnee du corpus
+        approchant l'intensite subie a la parcelle.
+      min_source_rank: 2
+      allowed_scopes: ["parcel", "building", "building_group"]
+      allowed_time_horizons: ["current"]
+      on_missing: "block_indeterminate"
+      on_conflict: "keep_highest_rank"
+      evidence_level: "high"
+      references: ["PHASE1_AUDIT section 1 (P01) ; ADDENDUM section 3 : AZI en 404 sur 06088"]
+      calibration_status: "published_threshold"
+      notes: >
+        Endpoint AZI en erreur sur le run de reference : statut SOURCE_ERROR, a ne
+        JAMAIS interpreter comme une absence de zone inondable.
+
+    - key: "site.hand"
+      raw_paths: ["derive.hand"]
+      role: "F"
+      weight: 0.25
+      transform:
+        type: "linear_ramp"
+        points: [[0, 1.0], [2, 0.8], [5, 0.4], [15, 0.05]]
+      direction: "decreasing"
+      unit: "m"
+      physical_mechanism: >
+        Hauteur au-dessus du cours d'eau le plus proche (HAND). Position dans le
+        champ d'inondation potentiel. L'altitude ABSOLUE ne s'y substitue pas.
+      min_source_rank: 2
+      allowed_scopes: ["parcel", "building", "building_group"]
+      allowed_time_horizons: ["current"]
+      on_missing: "renormalize_if_dominant_present"
+      on_conflict: "keep_highest_rank"
+      evidence_level: "medium"
+      references: ["PHASE1_AUDIT section 8 risque n.8 ; ADDENDUM section 3"]
+      calibration_status: "provisional_modeling_weight"
+      notes: "Derivable de geom_groupe + IGN alti au point d'eau le plus proche. Non implemente."
+
+    - key: "climate.heavy_precipitation"
+      raw_paths: ["climat_open_meteo.derived.max5day_precip"]
+      role: "F"
+      weight: 0.20
+      transform:
+        type: "linear_ramp"
+        points: [[20, 0.0], [120, 1.0]]
+      direction: "increasing"
+      unit: "mm"
+      physical_mechanism: "Declencheur pluvial du debordement et du ruissellement."
+      min_source_rank: 4
+      allowed_scopes: ["climate_grid", "department"]
+      allowed_time_horizons: ["historical"]
+      on_missing: "renormalize_if_dominant_present"
+      on_conflict: "keep_highest_rank"
+      evidence_level: "medium"
+      references: ["Referentiel FLOOD-H* (IRL 2025) : pluies extremes comme declencheur"]
+      calibration_status: "provisional_modeling_weight"
+
+vulnerability:
+  variables:
+    - key: "building.flood.floor_height_class"
+      raw_paths: ["questionnaire.building.flood.floor_height_class"]
+      role: "V"
+      dominant: true
+      weight: 0.40
+      transform:
+        type: "categorical"
+        mapping: {"lt_0_20": 1.0, "0_20_to_0_50": 0.6, "gt_0_50": 0.25}
+        unmapped: null
+      direction: "decreasing"
+      unit: "class"
+      physical_mechanism: >
+        Hauteur du plancher bas au-dessus du terrain : determine la hauteur d'eau
+        interieure pour une meme hauteur exterieure.
+      min_source_rank: 3
+      allowed_scopes: ["dwelling", "building", "building_group"]
+      allowed_time_horizons: ["current"]
+      on_missing: "block_indeterminate"
+      on_conflict: "keep_highest_rank"
+      evidence_level: "high"
+      references:
+        - "Referentiel M51 (Hazus 7.0 + UNISDR 2017) : h_interieure = max(0, h_sol - hauteur_plancher)"
+        - "Referentiel HAZUS-V02 : sous-sol et fondation conditionnent la fonction de dommage"
+      calibration_status: "published_threshold"
+
+    - key: "building.basement"
+      raw_paths: ["questionnaire.building.basement"]
+      role: "V"
+      weight: 0.30
+      transform:
+        type: "categorical"
+        mapping: {"aucun": 0.0, "vide_sanitaire": 0.3, "cave_partielle": 0.7, "sous_sol_total": 1.0}
+        unmapped: null
+      direction: "increasing"
+      unit: "class"
+      physical_mechanism: "Volume enterre : premier atteint, et souvent siege des equipements techniques."
+      min_source_rank: 3
+      allowed_scopes: ["dwelling", "building", "building_group"]
+      allowed_time_horizons: ["current"]
+      on_missing: "renormalize_if_dominant_present"
+      on_conflict: "keep_highest_rank"
+      evidence_level: "high"
+      references: ["Referentiel HAZUS-V02 : courbes distinctes avec et sans sous-sol"]
+      calibration_status: "published_threshold"
+
+    - key: "building.flood.technical_equipment_low"
+      raw_paths: ["questionnaire.building.flood.technical_equipment_low"]
+      role: "V"
+      weight: 0.30
+      transform: {type: "boolean", true: 1.0, false: 0.0}
+      direction: "increasing"
+      unit: "bool"
+      physical_mechanism: >
+        Tableau electrique, chaudiere ou PAC au niveau le plus bas : perte
+        fonctionnelle immediate et surcout de remise en etat.
+      min_source_rank: 3
+      allowed_scopes: ["dwelling", "building", "building_group"]
+      allowed_time_horizons: ["current"]
+      on_missing: "renormalize_if_dominant_present"
+      on_conflict: "keep_highest_rank"
+      evidence_level: "medium"
+      references: ["Referentiel, grille Declencheurs & aggravants P01 : position des equipements techniques"]
+      calibration_status: "provisional_modeling_weight"
+
+    - key: "building.flood.backflow_valve"
+      raw_paths: ["questionnaire.building.flood.backflow_valve"]
+      role: "protection"
+      max_reduction: 0.15
+      weight: 0.0
+      transform: {type: "boolean", true: 1.0, false: 0.0}
+      direction: "decreasing"
+      unit: "bool"
+      physical_mechanism: "Clapet anti-retour : traite specifiquement le refoulement d'egout."
+      min_source_rank: 3
+      allowed_scopes: ["dwelling", "building", "building_group"]
+      allowed_time_horizons: ["current"]
+      on_missing: "ignore"
+      on_conflict: "keep_highest_rank"
+      evidence_level: "medium"
+      references: ["Referentiel XL-V09 : clapet anti-retour sur evacuation"]
+      calibration_status: "provisional_modeling_weight"
+
+    - key: "building.flood.barriers"
+      raw_paths: ["questionnaire.building.flood.barriers"]
+      role: "protection"
+      max_reduction: 0.20
+      weight: 0.0
+      transform: {type: "boolean", true: 1.0, false: 0.0}
+      direction: "decreasing"
+      unit: "bool"
+      physical_mechanism: "Batardeaux et protections peripheriques : retardent ou empechent l'entree d'eau."
+      min_source_rank: 3
+      allowed_scopes: ["dwelling", "building", "building_group"]
+      allowed_time_horizons: ["current"]
+      on_missing: "ignore"
+      on_conflict: "keep_highest_rank"
+      evidence_level: "low"
+      references: ["Referentiel, grille Declencheurs & aggravants P01 : protections et drainage local"]
+      calibration_status: "provisional_modeling_weight"

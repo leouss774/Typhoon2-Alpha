@@ -1,0 +1,217 @@
+# Regles du peril P05 — Vent et tempete
+# Constantes metier : ce fichier fait foi, jamais le code Python.
+peril_id: P05
+name: Vent et tempete
+hazard_available: true
+commune_context_codes: []
+frequency:
+  variables:
+  - key: climate.wind_speed_max_stat
+    raw_paths:
+    - climat_open_meteo.daily.wind_speed_10m_max
+    role: F
+    weight: 0.6
+    transform:
+      type: linear_ramp
+      points:
+      - - 15
+        - 0.0
+      - - 25
+        - 0.4
+      - - 35
+        - 0.8
+      - - 45
+        - 1.0
+    direction: increasing
+    unit: m/s
+    physical_mechanism: Regime de vitesse maximale de vent du site, statistique sur serie longue.
+    min_source_rank: 4
+    allowed_scopes:
+    - climate_grid
+    - department
+    allowed_time_horizons:
+    - historical
+    on_missing: renormalize_if_dominant_present
+    on_conflict: keep_highest_rank
+    evidence_level: medium
+    references:
+    - PHASE1_AUDIT section 5.3 (P05) ; ADDENDUM section 2
+    calibration_status: provisional_modeling_weight
+    dominant: true
+    notes: 'Variable NON demandee par le collector (daily limite a temperature_2m_max et precipitation_sum).
+      SEMANTIQUE : `wind_speed_10m_max` est une vitesse maximale a 10 m, PAS une rafale. Ne jamais l''etiqueter
+      ''rafale''.'
+  - key: hazard.wind.eurocode_zone
+    raw_paths:
+    - lookup.eurocode_wind_zone
+    role: F
+    weight: 0.4
+    transform:
+      type: categorical
+      mapping:
+        '1': 0.0
+        '2': 0.33
+        '3': 0.66
+        '4': 1.0
+      unmapped: null
+    direction: increasing
+    unit: class
+    physical_mechanism: 'Zonage reglementaire du vent : 4 regions, vitesse de reference de 22 a 28 m/s
+      par paliers de 2.'
+    min_source_rank: 3
+    allowed_scopes:
+    - commune
+    - department
+    allowed_time_horizons:
+    - current
+    on_missing: renormalize_if_dominant_present
+    on_conflict: keep_highest_rank
+    evidence_level: high
+    references:
+    - NF EN 1991-1-4/NA (mars 2008) ; PHASE1_AUDIT section 5.2
+    calibration_status: published_threshold
+    notes: Table commune -> zone non installee. Lookup versionne a fournir.
+vulnerability:
+  variables:
+  - key: questionnaire.building.roof.material
+    raw_paths:
+    - questionnaire.building.roof.material
+    - bdnb.batiment.mat_toit_txt
+    role: V
+    weight: 0.35
+    transform:
+      type: categorical
+      mapping:
+        tuile_terre_cuite: 0.35
+        ardoise: 0.6
+        fibrociment: 0.8
+        bac_acier: 0.4
+        zinc: 0.5
+        chaume: 1.0
+        tuile_beton: 0.4
+      unmapped: null
+    direction: increasing
+    unit: class
+    physical_mechanism: Le materiau de couverture conditionne la resistance a l'arrachement.
+    min_source_rank: 4
+    allowed_scopes:
+    - dwelling
+    - building
+    - building_group
+    allowed_time_horizons:
+    - current
+    on_missing: renormalize_if_dominant_present
+    on_conflict: keep_highest_rank
+    evidence_level: medium
+    references:
+    - Referentiel XL-V04 ; grille Declencheurs & aggravants P05
+    calibration_status: provisional_modeling_weight
+    dominant: true
+  - key: questionnaire.building.roof.age
+    raw_paths:
+    - questionnaire.building.roof.age
+    role: V
+    weight: 0.25
+    transform:
+      type: categorical
+      mapping:
+        lt_10: 0.2
+        10_to_30: 0.55
+        gt_30: 1.0
+      unmapped: null
+    direction: increasing
+    unit: class
+    physical_mechanism: L'anciennete de la couverture degrade les fixations.
+    min_source_rank: 3
+    allowed_scopes:
+    - dwelling
+    - building
+    - building_group
+    allowed_time_horizons:
+    - current
+    on_missing: renormalize_if_dominant_present
+    on_conflict: keep_highest_rank
+    evidence_level: medium
+    references:
+    - 'Referentiel XL-V04 : variable de vulnerabilite la plus explicative pour la famille Tempete-Grele-Neige'
+    calibration_status: provisional_modeling_weight
+  - key: questionnaire.building.roof.state
+    raw_paths:
+    - questionnaire.building.roof.state
+    role: V
+    weight: 0.25
+    transform:
+      type: categorical
+      mapping:
+        bon: 0.1
+        tuiles_deplacees: 0.7
+        degrade: 1.0
+      unmapped: null
+    direction: increasing
+    unit: class
+    physical_mechanism: 'Tuiles deplacees ou fixations degradees : amorce d''arrachement.'
+    min_source_rank: 3
+    allowed_scopes:
+    - dwelling
+    - building
+    - building_group
+    allowed_time_horizons:
+    - current
+    on_missing: renormalize_if_dominant_present
+    on_conflict: keep_highest_rank
+    evidence_level: medium
+    references:
+    - Referentiel XL-V04
+    calibration_status: provisional_modeling_weight
+  - key: questionnaire.building.roof.attachments
+    raw_paths:
+    - questionnaire.building.roof.attachments
+    role: V
+    weight: 0.15
+    transform:
+      type: boolean
+      'true': 1.0
+      'false': 0.0
+    direction: increasing
+    unit: bool
+    physical_mechanism: 'Panneaux, antennes, veranda : elements rapportes vulnerables au vent.'
+    min_source_rank: 3
+    allowed_scopes:
+    - dwelling
+    - building
+    - building_group
+    allowed_time_horizons:
+    - current
+    on_missing: renormalize_if_dominant_present
+    on_conflict: keep_highest_rank
+    evidence_level: medium
+    references:
+    - Referentiel XL-E05 ; grille Declencheurs & aggravants P05
+    calibration_status: provisional_modeling_weight
+  - key: questionnaire.site.overhanging_trees
+    raw_paths:
+    - questionnaire.site.overhanging_trees
+    role: protection
+    weight: 0.0
+    transform:
+      type: boolean
+      'true': 1.0
+      'false': 0.0
+    direction: increasing
+    unit: bool
+    physical_mechanism: 'Arbres surplombants : facteur AGGRAVANT, neutralise ici car une protection ne
+      peut que reduire V.'
+    min_source_rank: 3
+    allowed_scopes:
+    - dwelling
+    - building
+    - building_group
+    allowed_time_horizons:
+    - current
+    on_missing: ignore
+    on_conflict: keep_highest_rank
+    evidence_level: medium
+    references:
+    - Referentiel XL-V05
+    calibration_status: provisional_modeling_weight
+    max_reduction: 0.0
