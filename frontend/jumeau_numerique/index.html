@@ -864,7 +864,7 @@
   content: ''; position: absolute; top: 0; left: 0; right: 0;
   height: 3px; background: linear-gradient(90deg, var(--brand-light), var(--brand), var(--brand-light)); opacity: 0.6;
 }
-#property-id-screen .pid-cert-hero .badge-wrap { flex-shrink: 0; filter: drop-shadow(0 4px 12px rgba(0,0,0,0.10)); }
+#property-id-screen .pid-cert-hero .badge-wrap { flex-shrink: 0; filter: drop-shadow(0 4px 12px rgba(0,0,0,0.10)); padding: 12px; }
 #property-id-screen .pid-cert-hero .badge-wrap img { width: 120px; height: 140px; display: block; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.10); object-fit: contain; }
 #property-id-screen .pid-cert-hero .ci { flex: 1; }
 #property-id-screen .pid-cert-hero .ci .cl { font-size: 24px; font-weight: 700; margin-bottom: 4px; font-family: var(--font-head); }
@@ -3566,7 +3566,7 @@ function pid_renderBadge(container, level, score, pid) {
   if (!container || !container.tagName) return;
   if (container.tagName === 'IMG' || container.id === 'pid-badge-img') {
     const lvl = (level || 'Bronze').toLowerCase();
-    container.src = 'assets/badges/badge-' + lvl + '.jpg';
+    container.src = 'assets/badges/badge-' + lvl + '.png';
     container.alt = 'Badge Typhoon ' + (level || 'Bronze');
     container.style.display = '';
     return;
@@ -3838,7 +3838,7 @@ function pid_applyDevisOverrides(currentAddress) {
   if (devisBadge && stored.score_apres != null) {
     var devisLevel = pid_certLevel(stored.score_apres);
     if (devisLevel !== '—') {
-      devisBadge.src = 'assets/badges/badge-' + devisLevel.toLowerCase() + '.jpg';
+      devisBadge.src = 'assets/badges/badge-' + devisLevel.toLowerCase() + '.png';
       devisBadge.alt = 'Badge ' + devisLevel;
       devisBadge.style.display = '';
     }
