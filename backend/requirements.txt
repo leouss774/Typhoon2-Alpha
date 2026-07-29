@@ -25,7 +25,8 @@ netCDF4
 chromadb
 
 # --- Agent recommandations (RAG travaux, cf. app/recommandations/) ---
-mistralai>=1.5.0
+# La branche 2.x crée des chemins de modules dépassant MAX_PATH sous Windows.
+mistralai>=1.5.0,<2.0.0
 numpy>=1.26.0
 
 # --- Divers ---

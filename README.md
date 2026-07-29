@@ -184,6 +184,35 @@ typhoon/
 
 ## Les agents
 
+### Matching d'artisans
+
+Après génération du diagnostic, le frontend peut rechercher des entreprises
+correspondant aux travaux d'une zone via `POST /artisans/match`. Le service
+utilise exclusivement des sources publiques :
+
+- entreprises RGE : jeu de données ADEME ;
+- métiers non couverts par RGE (géotechnique, structure, radon, drainage) :
+  API officielle Recherche d'entreprises et annuaires professionnels.
+
+Le score retourné est un score objectif de correspondance (qualification
+valide, proximité, coordonnées disponibles ou ancienneté). Il ne constitue
+pas une note de qualité/prix. Une indisponibilité d'une API artisan est isolée
+et ne fait pas échouer le diagnostic climatique principal.
+
+Exemple de requête :
+
+```json
+{
+  "adresse": "12 rue des Lilas, 33000 Bordeaux",
+  "limite": 5,
+  "zones": [{
+    "zone": "toiture",
+    "risques": ["canicule"],
+    "recommandations": [{"mesure": "Isolation des combles"}]
+  }]
+}
+```
+
 ### `collector_agent`
 
 Interroge en parallèle les 5 API live (BDNB, Géorisques v1, IGN Altitude, Open-Meteo, CATNAT) via `asyncio.gather`, ainsi que le lookup local DVF et le cache régional Copernicus (projections climatiques, alimenté une fois via l'API CDS puis lu localement), et agrège le tout dans `state.building_data`. Ce périmètre de sources est amené à s'étoffer (ex. données cadastrales).

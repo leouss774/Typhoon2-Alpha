@@ -19,7 +19,7 @@ from __future__ import annotations
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.routes import diagnostic, health
+from app.api.routes import artisans, diagnostic, health
 from app.core.logging import configure_logging, get_logger
 from app.recommandations.service import load_index
 
@@ -37,6 +37,7 @@ app.add_middleware(
 
 app.include_router(health.router)
 app.include_router(diagnostic.router)
+app.include_router(artisans.router)
 
 
 @app.on_event("startup")

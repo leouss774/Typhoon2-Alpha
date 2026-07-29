@@ -74,6 +74,62 @@
   #info-panel .reco-sources { color: #A7ADB2; font-size: 10px; margin-top: 8px; line-height: 1.4; border-top: 1px solid #E7DED6; padding-top: 6px; }
   #info-panel .reco-empty { color: #A7ADB2; font-size: 12px; font-style: italic; margin-top: 6px; }
 
+  /* ---- Résultats artisans : périmètre visuel isolé ---- */
+  .artisan-search-btn {
+    width: 100%; margin-top: 14px; padding: 11px 14px; border: 0; border-radius: 9px;
+    background: #146C94; color: #FFF; font: 700 12px/1.3 var(--font-body);
+    cursor: pointer; box-shadow: 0 5px 14px rgba(20,108,148,.18); transition: .18s ease;
+  }
+  .artisan-search-btn:hover { background: #0E597C; transform: translateY(-1px); }
+  .artisan-search-btn:disabled { cursor: wait; opacity: .65; transform: none; }
+  .artisan-results { margin-top: 10px; }
+  .artisan-group {
+    padding-top: 12px; margin-top: 12px; border-top: 1px solid #E1E8EC;
+  }
+  .artisan-group-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 9px; }
+  .artisan-group-title { color: #1E2A33; font-size: 12px; font-weight: 700; line-height: 1.35; }
+  .artisan-group-badge {
+    flex: 0 0 auto; padding: 3px 7px; border-radius: 999px; background: #E7F3F8;
+    color: #146C94; font-size: 8px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase;
+  }
+  .artisan-card {
+    position: relative; margin-top: 9px; padding: 12px; overflow: hidden;
+    border: 1px solid #DFE7EB; border-radius: 10px; background: #FFF;
+    box-shadow: 0 4px 13px rgba(30,42,51,.055);
+  }
+  .artisan-card::before { content: ''; position: absolute; inset: 0 auto 0 0; width: 3px; background: #1F9D6C; }
+  .artisan-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 9px; }
+  .artisan-name { color: #1E2A33; font-size: 12px; font-weight: 750; line-height: 1.35; overflow-wrap: anywhere; }
+  .artisan-score {
+    flex: 0 0 auto; display: grid; place-items: center; width: 36px; height: 36px;
+    border-radius: 50%; background: #EAF7F2; color: #147A55; font-size: 10px; font-weight: 800;
+  }
+  .artisan-score small { display: block; margin-top: -10px; font-size: 6px; font-weight: 700; opacity: .7; }
+  .artisan-meta { display: grid; gap: 5px; margin-top: 8px; color: #5D6972; font-size: 10.5px; line-height: 1.4; }
+  .artisan-meta-row { display: grid; grid-template-columns: 15px 1fr; gap: 5px; align-items: start; overflow-wrap: anywhere; }
+  .artisan-meta-icon { color: #8C9AA3; text-align: center; }
+  .artisan-link {
+    display: flex; align-items: center; justify-content: center; margin-top: 10px; padding: 8px 10px;
+    border: 1px solid #146C94; border-radius: 7px; color: #146C94; background: #F5FAFC;
+    text-decoration: none; font-size: 10.5px; font-weight: 700; transition: .15s ease;
+  }
+  .artisan-link:hover { background: #146C94; color: #FFF; }
+  .artisan-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; margin-top: 10px; }
+  .artisan-action {
+    display: flex; align-items: center; justify-content: center; min-height: 34px; padding: 7px 8px;
+    border: 1px solid #CBD6DC; border-radius: 7px; color: #334E5D; background: #F8FAFB;
+    text-decoration: none; text-align: center; font-size: 10px; font-weight: 700; line-height: 1.2;
+  }
+  .artisan-action:hover { border-color: #146C94; color: #146C94; background: #F5FAFC; }
+  .artisan-action.primary { border-color: #146C94; color: #FFF; background: #146C94; }
+  .artisan-action.primary:hover { background: #0E597C; color: #FFF; }
+  .artisan-site-missing { margin-top: 9px; color: #8B959D; font-size: 9.5px; font-style: italic; }
+  .artisan-note { display: block; margin-top: 10px; color: #8B959D; font-size: 9px; line-height: 1.4; }
+  .artisan-empty, .artisan-error {
+    padding: 10px; border-radius: 8px; background: #F6F8F9; color: #68757E; font-size: 11px; line-height: 1.4;
+  }
+  .artisan-error { background: #FFF0EC; color: #A43E2E; }
+
   #hint { position: absolute; bottom: 16px; left: 20px; color: #A7ADB2; font-size: 12px; z-index: 10; }
 
   /* ==================== ECRAN 0 : SITE VITRINE / ACCUEIL ==================== */
@@ -1046,7 +1102,7 @@
         <div id="form-advanced-body">
           <div class="adv-row">
             <label for="api-base-input">API</label>
-            <input id="api-base-input" type="text" value="http://localhost:8000" autocomplete="off">
+            <input id="api-base-input" type="text" value="http://127.0.0.1:8765" autocomplete="off">
           </div>
           <p class="adv-hint">Charger directement un diagnostic déjà généré (.json), sans appeler le serveur :</p>
           <div class="adv-row">
@@ -1949,6 +2005,147 @@ function recoCostRange(r) {
 }
 function recoGain(r) { return typeof r.gain_resilience === 'number' ? r.gain_resilience : 10; }
 
+async function rechercherArtisans(zoneName, data, container, button) {
+  const apiBaseInput = document.getElementById('api-base-input');
+  const apiBase = (apiBaseInput && apiBaseInput.value || 'http://127.0.0.1:8765').trim();
+  button.disabled = true;
+  button.textContent = 'Recherche dans les annuaires officiels…';
+  container.innerHTML = '';
+  try {
+    const response = await fetch(apiBase + '/artisans/match', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        adresse: rawData.adresse || '',
+        limite: 5,
+        zones: [{
+          zone: zoneName,
+          risques: [data.alea_principal || ''],
+          recommandations: data.recommandations || []
+        }]
+      })
+    });
+    const payload = await response.json();
+    if (!response.ok) throw new Error(payload.detail || `Erreur HTTP ${response.status}`);
+    const groupes = payload.recommandations_traitees || [];
+    if (!groupes.length) {
+      container.className = 'artisan-results artisan-empty';
+      container.textContent = 'Aucun métier n’a pu être associé automatiquement à ces recommandations.';
+      return;
+    }
+    groupes.forEach(groupe => {
+      const section = document.createElement('div');
+      section.className = 'artisan-group';
+      const heading = document.createElement('div');
+      heading.className = 'artisan-group-head';
+      const title = document.createElement('div');
+      title.className = 'artisan-group-title';
+      title.textContent = groupe.libelle || groupe.domaine_recherche || groupe.cle;
+      const category = document.createElement('span');
+      category.className = 'artisan-group-badge';
+      category.textContent = groupe.categorie === 'rge' ? 'RGE' : 'Métier local';
+      heading.appendChild(title);
+      heading.appendChild(category);
+      section.appendChild(heading);
+      if (groupe.erreur) {
+        const error = document.createElement('div');
+        error.className = 'artisan-error';
+        error.textContent = groupe.erreur;
+        section.appendChild(error);
+      }
+      (groupe.entreprises || []).forEach(entreprise => {
+        const card = document.createElement('div');
+        card.className = 'artisan-card';
+        const cardTop = document.createElement('div');
+        cardTop.className = 'artisan-card-top';
+        const name = document.createElement('div');
+        name.className = 'artisan-name';
+        name.textContent = entreprise.nom_entreprise || 'Entreprise';
+        const score = document.createElement('div');
+        score.className = 'artisan-score';
+        score.innerHTML = `${Number(entreprise.score_objectif_sur_100) || 0}<small>/100</small>`;
+        cardTop.appendChild(name);
+        cardTop.appendChild(score);
+        card.appendChild(cardTop);
+
+        const meta = document.createElement('div');
+        meta.className = 'artisan-meta';
+        const addressText = [entreprise.adresse, entreprise.code_postal, entreprise.commune].filter(Boolean).join(' ');
+        if (addressText) {
+          const row = document.createElement('div');
+          row.className = 'artisan-meta-row';
+          row.innerHTML = `<span class="artisan-meta-icon">⌖</span><span>${escapeHtml(addressText)}</span>`;
+          meta.appendChild(row);
+        }
+        if (entreprise.telephone || entreprise.email) {
+          const row = document.createElement('div');
+          row.className = 'artisan-meta-row';
+          row.innerHTML = `<span class="artisan-meta-icon">✆</span><span>${escapeHtml([entreprise.telephone, entreprise.email].filter(Boolean).join(' · '))}</span>`;
+          meta.appendChild(row);
+        }
+        card.appendChild(meta);
+
+        const actions = document.createElement('div');
+        actions.className = 'artisan-actions';
+        if (entreprise.telephone) {
+          const phone = document.createElement('a');
+          phone.href = `tel:${String(entreprise.telephone).replace(/[^\d+]/g, '')}`;
+          phone.className = 'artisan-action primary';
+          phone.textContent = '✆ Appeler';
+          actions.appendChild(phone);
+        }
+        if (entreprise.email) {
+          const email = document.createElement('a');
+          email.href = `mailto:${entreprise.email}`;
+          email.className = 'artisan-action';
+          email.textContent = '✉ Envoyer un e-mail';
+          actions.appendChild(email);
+        }
+        if (addressText) {
+          const directions = document.createElement('a');
+          directions.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addressText)}`;
+          directions.target = '_blank';
+          directions.rel = 'noopener';
+          directions.className = 'artisan-action';
+          directions.textContent = '⌖ Itinéraire';
+          actions.appendChild(directions);
+        }
+        if (entreprise.site_officiel) {
+          const site = document.createElement('a');
+          site.href = entreprise.site_officiel;
+          site.target = '_blank';
+          site.rel = 'noopener';
+          site.className = 'artisan-action';
+          site.textContent = '↗ Site officiel';
+          actions.appendChild(site);
+        }
+        if (actions.childElementCount) card.appendChild(actions);
+
+        if (!entreprise.site_officiel) {
+          const missing = document.createElement('div');
+          missing.className = 'artisan-site-missing';
+          missing.textContent = entreprise.telephone || entreprise.email
+            ? 'Contact direct disponible sans site officiel.'
+            : 'Aucun contact direct vérifiable trouvé pour cette entreprise.';
+          card.appendChild(missing);
+        }
+        section.appendChild(card);
+      });
+      container.appendChild(section);
+    });
+    const warning = document.createElement('small');
+    warning.className = 'artisan-note';
+    warning.textContent = [payload.avertissement_score, payload.avertissement_sites].filter(Boolean).join(' ');
+    container.appendChild(warning);
+  } catch (error) {
+    container.className = 'artisan-results artisan-error';
+    container.textContent = `Recherche indisponible : ${error.message}`;
+  } finally {
+    button.disabled = false;
+    button.textContent = 'Rechercher des artisans correspondants';
+  }
+}
+
 function showZonePanel(zoneName) {
   const data = currentZones[zoneName]; if (!data) return;
   const panel = document.getElementById('info-panel');
@@ -2011,6 +2208,16 @@ function showZonePanel(zoneName) {
     }
     recosDiv.appendChild(div);
   });
+
+  const artisanButton = document.createElement('button');
+  artisanButton.type = 'button';
+  artisanButton.className = 'artisan-search-btn';
+  artisanButton.textContent = 'Rechercher des artisans correspondants';
+  const artisanResults = document.createElement('div');
+  artisanResults.className = 'artisan-results';
+  artisanButton.addEventListener('click', () => rechercherArtisans(zoneName, data, artisanResults, artisanButton));
+  recosDiv.appendChild(artisanButton);
+  recosDiv.appendChild(artisanResults);
 }
 
 // ---------- 10. BOUCLE DE RENDU ----------
@@ -2065,7 +2272,7 @@ loadDataset(DEFAULT_DATA);
   }
 
   // ==================== CARTE INTERACTIVE ZONE (simplifiée + heatmap) ====================
-  const ZONE_BACKEND = 'http://localhost:8000';
+  const ZONE_BACKEND = 'http://127.0.0.1:8765';
   const zoneOverlay = document.getElementById('zone-overlay');
   const zoneCloseBtn = document.getElementById('zone-close-btn');
   const zoneResults = document.getElementById('zone-results');
@@ -2554,7 +2761,7 @@ loadDataset(DEFAULT_DATA);
     e.preventDefault();
     const adresse = document.getElementById('f-adresse').value.trim();
     if (!adresse) return;
-    const apiBase = (document.getElementById('api-base-input').value || 'http://localhost:8000').trim();
+    const apiBase = (document.getElementById('api-base-input').value || 'http://127.0.0.1:8765').trim();
 
     formScreen.style.display = 'none';
     loadingScreen.style.display = 'flex';
