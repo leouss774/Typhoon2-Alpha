@@ -1,0 +1,34 @@
+# --- Backend / orchestrateur ---
+fastapi
+uvicorn[standard]
+pydantic>=2
+pydantic-settings
+
+# --- Orchestration multi-agents (prochaine etape) ---
+langgraph
+langchain
+langchain-anthropic
+langchain-community
+
+# --- Appels API / HTTP ---
+httpx
+
+# --- Lookup local DVF ---
+pandas
+
+# --- Copernicus Climate Data Store (projections climatiques) ---
+cdsapi
+xarray
+netCDF4
+
+# --- RAG (prochaine etape) ---
+chromadb
+
+# --- Agent recommandations (RAG travaux, cf. app/recommandations/) ---
+# La branche 2.x crée des chemins de modules dépassant MAX_PATH sous Windows.
+mistralai>=1.5.0,<2.0.0
+numpy>=1.26.0
+
+# --- Divers ---
+python-dotenv
+sqlalchemy

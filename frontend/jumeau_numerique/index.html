@@ -1,0 +1,3171 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Typhoon — Diagnostic Climatique Immobilier</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet" />
+<!-- turf.js : génération des isobandes (aplats de risque lissés, cf. #zone-map isoband-fill) -->
+<script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
+<style>
+  :root {
+    --brand: #FF6B4A;
+    --brand-dark: #E24E2E;
+    --brand-light: #FFE4DA;
+    --ink: #1E2A33;
+    --text: #4B5760;
+    --muted: #8B959D;
+    --border: #E7DED6;
+    --surface: #FFFFFF;
+    --surface-alt: #FAF6F2;
+    --success: #1F9D6C;
+    --warning: #D98A2B;
+    --danger: #DC4B39;
+    --font-head: 'Source Serif 4', Georgia, 'Times New Roman', serif;
+    --font-body: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  }
+  html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; background: #FFFFFF; font-family: var(--font-body); color: var(--ink); }
+  h1, h2, h3, .typhoon-logo .name, #loading-title, #cert-heading, #devis-modal h2 { font-family: var(--font-head); }
+  #scene-container { width: 100vw; height: 100vh; display: block; cursor: grab; }
+  #scene-container:active { cursor: grabbing; }
+
+  /* ---- Panneaux du jumeau numérique (écran 3) ---- */
+  #toggle-panel {
+    position: absolute; top: 20px; left: 20px;
+    background: rgba(255, 255, 255, 0.96); border: 1px solid #E7DED6; border-radius: 10px;
+    padding: 14px 18px; color: #3E4850; z-index: 10; backdrop-filter: blur(8px);
+    box-shadow: 0 0 20px rgba(255, 107, 74, 0.15); width: 280px;
+  }
+  #toggle-panel h3 { margin: 0 0 8px 0; font-size: 12px; font-weight: 600; color: #FF6B4A; text-transform: uppercase; letter-spacing: 0.08em; }
+  #toggle-panel .addr-line { font-size: 12.5px; color: #7C8791; margin: 0 0 10px 0; line-height: 1.4; }
+  #toggle-buttons button {
+    background: rgba(250, 246, 242, 0.8); border: 1px solid #E7DED6; color: #3E4850; padding: 8px 16px;
+    border-radius: 6px; cursor: pointer; font-size: 13px; margin-right: 6px; transition: all .15s;
+  }
+  #toggle-buttons button.active { background: #FF6B4A; border-color: #FF6B4A; color: #FFFFFF; font-weight: 700; }
+  #global-score { margin-top: 10px; font-size: 12px; color: #7C8791; }
+  #global-score strong { color: #1E2A33; font-size: 22px; text-shadow: 0 0 12px rgba(255,107,74,0.6); }
+  #climat-panel { display: none; }
+
+  #info-panel {
+    position: absolute; top: 20px; right: 20px; width: 320px; max-height: 78vh; overflow-y: auto;
+    background: rgba(255, 255, 255, 0.97); border: 1px solid #E7DED6; border-radius: 10px;
+    padding: 18px; color: #3E4850; z-index: 10; display: none; backdrop-filter: blur(8px);
+    box-shadow: 0 0 20px rgba(255, 107, 74, 0.15);
+  }
+  #info-panel::-webkit-scrollbar { width: 5px; }
+  #info-panel::-webkit-scrollbar-thumb { background: #FFC9B3; border-radius: 999px; }
+  #info-panel h3 { margin: 0 0 4px 0; font-size: 16px; text-transform: capitalize; color: #1E2A33; }
+  #info-panel .badge { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; margin-bottom: 10px; color: #FFFFFF; }
+  #info-panel p { font-size: 13px; line-height: 1.5; color: #4B5760; margin: 6px 0; }
+  #info-panel p#info-alea { color: #1E2A33; }
+  #info-panel .reco { background: rgba(250, 246, 242, 0.8); border: 1px solid #E7DED6; border-radius: 8px; padding: 10px 12px; margin-top: 8px; font-size: 12px; }
+  #info-panel .reco b { color: #1E2A33; }
+  #info-panel .reco-count { font-size: 11px; color: #8B959D; text-transform: uppercase; letter-spacing: 0.06em; margin: 12px 0 6px; border-top: 1px solid #E7DED6; padding-top: 10px; font-weight: 700; }
+  #info-panel .reco-type { display: inline-block; font-size: 9px; text-transform: uppercase; letter-spacing: 0.04em; color: #FF6B4A; background: #FFE4DA; border-radius: 4px; padding: 1px 6px; margin-bottom: 5px; font-weight: 700; }
+  #info-panel .reco-explication { color: #4B5760; margin-top: 5px; line-height: 1.5; font-size: 12px; }
+  #info-panel .reco-meta { color: #3E4850; margin-top: 8px; line-height: 1.4; }
+  #info-panel .reco-meta-sub { color: #8B959D; font-size: 11px; margin-top: 2px; }
+  #info-panel .reco-aide { color: #B96A18; margin-top: 8px; background: #FBEED9; border-radius: 6px; padding: 6px 8px; }
+  #info-panel .reco-sources { color: #A7ADB2; font-size: 10px; margin-top: 8px; line-height: 1.4; border-top: 1px solid #E7DED6; padding-top: 6px; }
+  #info-panel .reco-empty { color: #A7ADB2; font-size: 12px; font-style: italic; margin-top: 6px; }
+
+  /* ---- Résultats artisans : périmètre visuel isolé ---- */
+  .artisan-search-btn {
+    width: 100%; margin-top: 14px; padding: 11px 14px; border: 0; border-radius: 9px;
+    background: #146C94; color: #FFF; font: 700 12px/1.3 var(--font-body);
+    cursor: pointer; box-shadow: 0 5px 14px rgba(20,108,148,.18); transition: .18s ease;
+  }
+  .artisan-search-btn:hover { background: #0E597C; transform: translateY(-1px); }
+  .artisan-search-btn:disabled { cursor: wait; opacity: .65; transform: none; }
+  .artisan-results { margin-top: 10px; }
+  .artisan-group {
+    padding-top: 12px; margin-top: 12px; border-top: 1px solid #E1E8EC;
+  }
+  .artisan-group-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 9px; }
+  .artisan-group-title { color: #1E2A33; font-size: 12px; font-weight: 700; line-height: 1.35; }
+  .artisan-group-badge {
+    flex: 0 0 auto; padding: 3px 7px; border-radius: 999px; background: #E7F3F8;
+    color: #146C94; font-size: 8px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase;
+  }
+  .artisan-card {
+    position: relative; margin-top: 9px; padding: 12px; overflow: hidden;
+    border: 1px solid #DFE7EB; border-radius: 10px; background: #FFF;
+    box-shadow: 0 4px 13px rgba(30,42,51,.055);
+  }
+  .artisan-card::before { content: ''; position: absolute; inset: 0 auto 0 0; width: 3px; background: #1F9D6C; }
+  .artisan-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 9px; }
+  .artisan-name { color: #1E2A33; font-size: 12px; font-weight: 750; line-height: 1.35; overflow-wrap: anywhere; }
+  .artisan-score {
+    flex: 0 0 auto; display: grid; place-items: center; width: 36px; height: 36px;
+    border-radius: 50%; background: #EAF7F2; color: #147A55; font-size: 10px; font-weight: 800;
+  }
+  .artisan-score small { display: block; margin-top: -10px; font-size: 6px; font-weight: 700; opacity: .7; }
+  .artisan-meta { display: grid; gap: 5px; margin-top: 8px; color: #5D6972; font-size: 10.5px; line-height: 1.4; }
+  .artisan-meta-row { display: grid; grid-template-columns: 15px 1fr; gap: 5px; align-items: start; overflow-wrap: anywhere; }
+  .artisan-meta-icon { color: #8C9AA3; text-align: center; }
+  .artisan-link {
+    display: flex; align-items: center; justify-content: center; margin-top: 10px; padding: 8px 10px;
+    border: 1px solid #146C94; border-radius: 7px; color: #146C94; background: #F5FAFC;
+    text-decoration: none; font-size: 10.5px; font-weight: 700; transition: .15s ease;
+  }
+  .artisan-link:hover { background: #146C94; color: #FFF; }
+  .artisan-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; margin-top: 10px; }
+  .artisan-action {
+    display: flex; align-items: center; justify-content: center; min-height: 34px; padding: 7px 8px;
+    border: 1px solid #CBD6DC; border-radius: 7px; color: #334E5D; background: #F8FAFB;
+    text-decoration: none; text-align: center; font-size: 10px; font-weight: 700; line-height: 1.2;
+  }
+  .artisan-action:hover { border-color: #146C94; color: #146C94; background: #F5FAFC; }
+  .artisan-action.primary { border-color: #146C94; color: #FFF; background: #146C94; }
+  .artisan-action.primary:hover { background: #0E597C; color: #FFF; }
+  .artisan-site-missing { margin-top: 9px; color: #8B959D; font-size: 9.5px; font-style: italic; }
+  .artisan-note { display: block; margin-top: 10px; color: #8B959D; font-size: 9px; line-height: 1.4; }
+  .artisan-empty, .artisan-error {
+    padding: 10px; border-radius: 8px; background: #F6F8F9; color: #68757E; font-size: 11px; line-height: 1.4;
+  }
+  .artisan-error { background: #FFF0EC; color: #A43E2E; }
+
+  #hint { position: absolute; bottom: 16px; left: 20px; color: #A7ADB2; font-size: 12px; z-index: 10; }
+
+  /* ==================== ECRAN 0 : SITE VITRINE / ACCUEIL ==================== */
+  #home-screen {
+    position: fixed; inset: 0; z-index: 150;
+    background: #FFFFFF; overflow-y: auto; -webkit-overflow-scrolling: touch;
+  }
+  #home-header {
+    position: sticky; top: 0; z-index: 5; background: rgba(255,255,255,0.92); backdrop-filter: blur(10px);
+    border-bottom: 1px solid #E7DED6; padding: 16px 5vw;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  #home-nav { display: flex; align-items: center; gap: 30px; }
+  #home-nav a {
+    color: #4B5760; text-decoration: none; font-size: 14px; font-weight: 600;
+  }
+  #home-nav a:hover { color: #FF6B4A; }
+  #home-header-actions { display: flex; align-items: center; gap: 14px; }
+  .btn-ghost {
+    background: none; border: 1px solid #E7DED6; color: #1E2A33; font-family: var(--font-body);
+    font-weight: 700; font-size: 13.5px; padding: 10px 18px; border-radius: 8px; cursor: pointer; transition: border-color .15s, color .15s;
+  }
+  .btn-ghost:hover { border-color: #FF6B4A; color: #FF6B4A; }
+  .btn-primary {
+    background: #FF6B4A; border: none; color: #FFFFFF; font-family: var(--font-body);
+    font-weight: 700; font-size: 13.5px; padding: 10px 20px; border-radius: 8px; cursor: pointer;
+    transition: background .15s, transform .1s; box-shadow: 0 6px 18px rgba(255,107,74,0.3);
+  }
+  .btn-primary:hover { background: #E24E2E; }
+  .btn-primary:active { transform: scale(0.98); }
+
+  #home-hero {
+    display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 40px; align-items: center;
+    padding: 70px 5vw 60px; max-width: 1280px; margin: 0 auto;
+  }
+  #home-hero .eyebrow {
+    display: inline-flex; align-items: center; gap: 6px; color: #FF6B4A; background: #FFE4DA;
+    font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em;
+    padding: 6px 14px; border-radius: 999px; margin-bottom: 18px;
+  }
+  #home-hero h1 { font-size: 44px; line-height: 1.14; color: #1E2A33; margin: 0 0 18px 0; font-weight: 700; letter-spacing: -0.01em; }
+  #home-hero h1 em { color: #FF6B4A; font-style: normal; }
+  #home-hero .lead { color: #4B5760; font-size: 16px; line-height: 1.6; max-width: 480px; margin: 0 0 30px 0; }
+  #home-hero .hero-ctas { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  #home-hero .hero-ctas .btn-primary { font-size: 15px; padding: 15px 26px; }
+  #home-hero .hero-link { color: #1E2A33; font-weight: 700; font-size: 14px; text-decoration: none; border-bottom: 2px solid #E7DED6; padding-bottom: 2px; }
+  #home-hero .hero-link:hover { border-color: #FF6B4A; color: #FF6B4A; }
+
+  #home-hero-visual {
+    position: relative; border: 1px solid #E7DED6; border-radius: 8px; padding: 28px;
+    min-height: 400px; display: flex; flex-direction: column; justify-content: flex-end;
+    overflow: hidden; background: #1E2A33 url('photo-maison.jpg') center/cover no-repeat;
+  }
+  #home-hero-visual::before {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(180deg, rgba(30,42,51,0.05) 0%, rgba(30,42,51,0.45) 55%, rgba(30,42,51,0.78) 100%);
+  }
+  #home-hero-visual .hv-stack { position: relative; z-index: 1; }
+  #home-hero-visual .hv-card {
+    background: rgba(255,255,255,0.97); border: 1px solid #E7DED6; border-radius: 6px; padding: 14px 18px;
+    box-shadow: 0 10px 26px rgba(20,15,10,0.18); margin-bottom: 10px;
+  }
+  #home-hero-visual .hv-card:last-child { margin-bottom: 0; }
+  #home-hero-visual .hv-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  #home-hero-visual .hv-label { color: #8B959D; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; }
+  #home-hero-visual .hv-value { color: #1E2A33; font-size: 15px; font-weight: 800; }
+  #home-hero-visual .hv-badge { font-size: 10.5px; font-weight: 800; padding: 3px 10px; border-radius: 999px; }
+  #home-hero-visual .hv-badge.risk-high { background: #FDE7E2; color: #DC4B39; }
+  #home-hero-visual .hv-badge.risk-mod { background: #FBEED9; color: #D98A2B; }
+  #home-hero-visual .hv-badge.risk-low { background: #E4F5EC; color: #1F9D6C; }
+  #home-hero-visual .hv-bar-track { height: 6px; border-radius: 999px; background: #F1ECE6; overflow: hidden; margin-top: 8px; }
+  #home-hero-visual .hv-bar-fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, #FFB89C, #FF6B4A); }
+
+  #home-trustbar {
+    border-top: 1px solid #E7DED6; border-bottom: 1px solid #E7DED6; background: #FAF6F2;
+    padding: 22px 5vw; display: flex; flex-wrap: wrap; justify-content: center; gap: 42px;
+  }
+  #home-trustbar .trust-stat { text-align: center; }
+  #home-trustbar .trust-stat .num { color: #1E2A33; font-size: 22px; font-weight: 700; font-family: var(--font-head); }
+  #home-trustbar .trust-stat .lbl { color: #8B959D; font-size: 12px; margin-top: 2px; }
+
+  #zone-explorer { max-width: 1180px; margin: 0 auto; padding: 76px 5vw 20px; text-align: center; }
+  #zone-explorer .section-eyebrow { color: #FF6B4A; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px; }
+  #zone-explorer h2 { font-size: 30px; color: #1E2A33; margin: 0 0 12px 0; font-weight: 700; }
+  #zone-explorer .section-lead { color: #4B5760; font-size: 15px; max-width: 640px; margin: 0 auto 40px; line-height: 1.6; }
+
+  /* ===== Modale exploration de zone interactive ===== */
+  #zone-overlay {
+    position: fixed; inset: 0; z-index: 185;
+    display: none; align-items: center; justify-content: center;
+    padding: 24px; background: rgba(2, 6, 12, 0.72); backdrop-filter: blur(6px);
+    overflow-y: auto;
+  }
+  #zone-overlay.open { display: flex; }
+  #zone-modal {
+    width: 100%; max-width: 1280px; min-height: 0; height: 90vh; position: relative;
+    background: rgba(255, 255, 255, 0.97); border: 1px solid #E7DED6; border-radius: 18px;
+    box-shadow: 0 24px 70px rgba(10, 18, 32, 0.30);
+    display: flex; flex-direction: column;
+  }
+  #zone-close-btn {
+    position: absolute; top: 14px; right: 14px; z-index: 20;
+    width: 34px; height: 34px; border-radius: 50%; border: 1px solid #E7DED6;
+    background: rgba(255,255,255,0.9); color: #7C8791; cursor: pointer; font-size: 15px;
+  }
+  #zone-close-btn:hover { color: #1E2A33; border-color: #FF6B4A; }
+  #zone-modal-header {
+    padding: 14px 50px 10px 24px; border-bottom: 1px solid #E7DED6; flex-shrink: 0;
+    display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  }
+  #zone-modal-header .modal-title {
+    font-family: var(--font-head); font-size: 16px; font-weight: 700; color: var(--ink);
+  }
+  #zone-modal-header .modal-sub {
+    color: var(--muted); font-size: 12px;
+  }
+  #zone-modal-body {
+    flex: 1; display: flex; overflow: hidden; min-height: 0;
+  }
+  #zone-sidebar {
+    width: 380px; min-width: 380px; border-right: 1px solid var(--border);
+    display: flex; flex-direction: column; overflow: hidden; flex-shrink: 0;
+  }
+  #zone-sidebar-content {
+    flex: 1; overflow-y: auto; padding: 16px 18px;
+  }
+  #zone-map-container {
+    flex: 1; position: relative; background: #f0ebe6;
+  }
+  #zone-map { width: 100%; height: 100%; }
+  .zone-section-label {
+    font-size: 11px; font-weight: 700; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px;
+  }
+  #zone-search-wrapper { position: relative; margin-bottom: 8px; }
+  #zone-city-input {
+    width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px;
+    font-size: 13px; color: var(--ink); background: var(--surface);
+    font-family: var(--font-body); outline: none; box-sizing: border-box;
+  }
+  #zone-city-input:focus { border-color: var(--brand); box-shadow: 0 0 0 3px rgba(255,107,74,0.12); }
+  #zone-city-input::placeholder { color: var(--muted); }
+  #zone-suggestions {
+    position: absolute; top: 100%; left: 0; right: 0; z-index: 50;
+    background: #fff; border: 1px solid var(--border); border-radius: 0 0 8px 8px;
+    max-height: 200px; overflow-y: auto; box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+    display: none;
+  }
+  #zone-suggestions:empty { display: none; }
+  #zone-suggestions:not(:empty) { display: block; }
+  .ban-suggestion {
+    padding: 9px 12px; font-size: 12.5px; color: var(--text); cursor: pointer;
+    border-bottom: 1px solid #f0ebe6; transition: background .1s;
+  }
+  .ban-suggestion:last-child { border-bottom: none; }
+  .ban-suggestion:hover { background: var(--brand-light); color: var(--brand-dark); }
+  #zone-assess-btn {
+    width: 100%; padding: 12px 16px; border-radius: 10px;
+    background: var(--brand); color: #fff; border: none;
+    font-weight: 700; font-size: 13px; cursor: pointer;
+    transition: background .15s; font-family: var(--font-body); margin-bottom: 14px;
+  }
+  #zone-assess-btn:hover { background: var(--brand-dark); }
+  #zone-assess-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* ---- Loading ---- */
+  #zone-loading { display: none; margin-bottom: 14px; }
+  #zone-loading.visible { display: block; }
+  .zone-loading-bar { height: 4px; border-radius: 999px; background: rgba(231,222,214,0.4); overflow: hidden; margin-bottom: 6px; }
+  .zone-loading-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #FFD6C2, var(--brand)); border-radius: 999px; transition: width .3s ease; }
+  .zone-loading-text { color: var(--muted); font-size: 11px; text-align: center; }
+
+  /* ---- Results ---- */
+  #zone-results { display: none; }
+  #zone-results.visible { display: block; }
+  .zone-rating-card {
+    background: linear-gradient(135deg, rgba(255,107,74,0.08), rgba(31,157,108,0.05));
+    border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; margin-bottom: 14px;
+  }
+  .zone-rating-row { display: flex; justify-content: space-between; align-items: center; }
+  .zone-rating-label { color: var(--muted); font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
+  .zone-rating-value { font-size: 22px; font-weight: 800; }
+  .zone-rating-badge { font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 999px; }
+  .badge-faible { background: #E4F5EC; color: #1F9D6C; }
+  .badge-modere { background: #FBEED9; color: #D98A2B; }
+  .badge-eleve { background: #FDE7E2; color: #DC4B39; }
+  .badge-critique { background: #FDD8D4; color: #C0392B; }
+  .zone-rating-meta { color: var(--text); font-size: 11px; margin-top: 6px; }
+
+  .zone-peril-item { margin-bottom: 10px; }
+  .zone-peril-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+  .zone-peril-name { font-size: 12px; font-weight: 600; color: var(--ink); }
+  .zone-peril-score { font-size: 13px; font-weight: 700; }
+  .zone-peril-bar { height: 5px; border-radius: 999px; background: rgba(231,222,214,0.5); overflow: hidden; }
+  .zone-peril-fill { height: 100%; border-radius: 999px; transition: width .6s ease; }
+  .zone-worst-banner {
+    background: rgba(220,75,57,0.08); border: 1px solid rgba(220,75,57,0.2);
+    border-radius: 8px; padding: 10px 12px; margin-bottom: 14px;
+    font-size: 11px; color: var(--text); line-height: 1.4;
+  }
+  .zone-worst-banner strong { color: var(--danger); }
+
+  #zone-coords-info { color: var(--muted); font-size: 11px; margin: 6px 0 12px; }
+  #zone-sample-info { font-size: 10px; color: var(--muted); text-align: center; padding: 6px; border-top: 1px solid var(--border); flex-shrink: 0; }
+
+  /* ---- Auto-raffinement au zoom/pan ---- */
+  #zone-autorefine-row {
+    display: flex; align-items: center; justify-content: space-between;
+    margin: 10px 0 4px; padding: 8px 10px; background: var(--surface-alt);
+    border: 1px solid var(--border); border-radius: 8px;
+  }
+  #zone-autorefine-row label { font-size: 11.5px; color: var(--text); font-weight: 600; cursor: pointer; }
+  #zone-autorefine-row .hint { font-size: 10px; color: var(--muted); margin-top: 2px; }
+  .toggle-switch { position: relative; width: 34px; height: 19px; flex-shrink: 0; margin-left: 10px; }
+  .toggle-switch input { opacity: 0; width: 0; height: 0; }
+  .toggle-switch .track {
+    position: absolute; inset: 0; background: #D8CFC6; border-radius: 999px;
+    cursor: pointer; transition: background .15s;
+  }
+  .toggle-switch .track::before {
+    content: ''; position: absolute; width: 15px; height: 15px; left: 2px; top: 2px;
+    background: #fff; border-radius: 50%; transition: transform .15s;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.25);
+  }
+  .toggle-switch input:checked + .track { background: var(--brand); }
+  .toggle-switch input:checked + .track::before { transform: translateX(15px); }
+
+  #zone-refine-status {
+    display: none; align-items: center; gap: 6px; font-size: 10.5px; color: var(--brand-dark);
+    margin: 4px 0 0; font-weight: 600;
+  }
+  #zone-refine-status.visible { display: flex; }
+  #zone-refine-status .dot {
+    width: 6px; height: 6px; border-radius: 50%; background: var(--brand);
+    animation: refine-pulse 1s ease-in-out infinite;
+  }
+  @keyframes refine-pulse { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
+
+  /* ---- Légende choroplèthe (calquée sur les cartes d'étages bioclimatiques) ---- */
+  #zone-legend {
+    position: absolute; left: 14px; bottom: 14px; z-index: 3;
+    background: rgba(255,255,255,0.94); border: 1px solid var(--border);
+    border-radius: 8px; padding: 8px 10px; font-family: var(--font-body);
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+  }
+  #zone-legend .zone-legend-title { font-size: 9.5px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 5px; }
+  #zone-legend .zone-legend-row { display: flex; align-items: center; gap: 6px; font-size: 10.5px; color: var(--text); margin-bottom: 2px; }
+  #zone-legend .zone-legend-swatch { width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0; }
+  #zone-precision-badge {
+    position: absolute; right: 14px; top: 14px; z-index: 3;
+    background: rgba(30,42,51,0.85); color: #fff; font-size: 10.5px; font-weight: 600;
+    padding: 5px 10px; border-radius: 999px; font-family: var(--font-body);
+  }
+
+  @media (max-width: 860px) {
+    #zone-modal-body { flex-direction: column; }
+    #zone-sidebar { width: 100%; min-width: unset; max-height: 50vh; border-right: none; border-bottom: 1px solid var(--border); }
+  }
+
+  #home-features { max-width: 1180px; margin: 0 auto; padding: 70px 5vw; text-align: center; }
+  #home-features .section-eyebrow { color: #FF6B4A; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px; }
+  #home-features h2 { font-size: 30px; color: #1E2A33; margin: 0 0 12px 0; font-weight: 700; }
+  #home-features .section-lead { color: #4B5760; font-size: 15px; max-width: 620px; margin: 0 auto 46px; line-height: 1.6; }
+  #home-feature-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; text-align: left; }
+  .feature-card {
+    background: #FFFFFF; border: 1px solid #E7DED6; border-radius: 6px; padding: 26px 24px;
+    transition: box-shadow .2s, transform .2s;
+  }
+  .feature-card:hover { box-shadow: 0 16px 34px rgba(30,20,15,0.08); transform: translateY(-3px); }
+  .feature-card .fc-icon {
+    width: 46px; height: 46px; border-radius: 6px; background: #FFE4DA; color: #FF6B4A;
+    display: flex; align-items: center; justify-content: center; font-size: 22px; margin-bottom: 16px;
+  }
+  .feature-card h3 { font-size: 17px; color: #1E2A33; margin: 0 0 8px 0; font-weight: 700; }
+  .feature-card p { font-size: 13.5px; color: #4B5760; line-height: 1.55; margin: 0; }
+
+  /* ---- Section "deux modes" ---- */
+  #home-modes { max-width: 1180px; margin: 0 auto; padding: 6px 5vw 76px; }
+  .modes-head { text-align: center; max-width: 620px; margin: 0 auto 40px; }
+  #mode-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+  .mode-card {
+    position: relative; border-radius: 12px; overflow: hidden; min-height: 430px;
+    display: flex; flex-direction: column; justify-content: flex-end;
+    padding: 30px 30px 28px; isolation: isolate;
+  }
+  .mode-card h3 { color: #FFFFFF; font-size: 23px; margin: 0 0 9px 0; font-weight: 700; }
+  .mode-card p { color: rgba(255,255,255,0.82); font-size: 13.5px; line-height: 1.6; margin: 0; max-width: 420px; }
+  .mode-card ul { list-style: none; margin: 16px 0 24px; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+  .mode-card li { display: flex; align-items: flex-start; gap: 8px; color: rgba(255,255,255,0.92); font-size: 12.5px; line-height: 1.4; }
+  .mode-card li svg { margin-top: 2px; flex-shrink: 0; }
+  .mode-kicker {
+    position: relative; z-index: 2; display: inline-flex; align-self: flex-start; width: fit-content;
+    color: #FFFFFF; background: rgba(255,107,74,0.9); font-size: 11px; font-weight: 800;
+    text-transform: uppercase; letter-spacing: 0.08em; padding: 6px 13px; border-radius: 999px; margin-bottom: 14px;
+  }
+  .mode-kicker-b { background: rgba(93,178,255,0.16); color: #8fd0ff; border: 1px solid rgba(93,178,255,0.4); }
+
+  .mode-card.mode-a { background: #1E2A33 url('photo_famille.jpg') center/cover no-repeat; }
+  .mode-card.mode-a::before {
+    content: ''; position: absolute; inset: 0; z-index: 1;
+    background: linear-gradient(180deg, rgba(30,42,51,0.15) 0%, rgba(30,42,51,0.55) 55%, rgba(20,15,12,0.88) 100%);
+  }
+  .mode-card.mode-a > *:not(.mode-kicker) { position: relative; z-index: 2; }
+  .mode-card.mode-a h3, .mode-card.mode-a p, .mode-card.mode-a ul { position: relative; z-index: 2; }
+
+  .mode-card.mode-b { background: linear-gradient(165deg, #030509 0%, #0a1c38 55%, #123a6e 130%); }
+  .mode-card.mode-b .map-fx {
+    position: absolute; inset: 0; z-index: 1;
+    background-image:
+      linear-gradient(rgba(93,178,255,0.16) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(93,178,255,0.16) 1px, transparent 1px);
+    background-size: 34px 34px;
+    -webkit-mask-image: radial-gradient(ellipse 85% 85% at 50% 40%, #000 45%, transparent 100%);
+    mask-image: radial-gradient(ellipse 85% 85% at 50% 40%, #000 45%, transparent 100%);
+  }
+  .mode-card.mode-b .pin {
+    position: absolute; width: 10px; height: 10px; border-radius: 50%; z-index: 1;
+  }
+  .mode-card.mode-b .pin::after {
+    content: ''; position: absolute; inset: -6px; border-radius: 50%; border: 1px solid currentColor; opacity: 0.55;
+  }
+  .mode-card.mode-b .pin.low { background: #3FE28F; color: #3FE28F; box-shadow: 0 0 10px #3FE28F; }
+  .mode-card.mode-b .pin.mod { background: #FFB25C; color: #FFB25C; box-shadow: 0 0 10px #FFB25C; }
+  .mode-card.mode-b .pin.high { background: #FF6B57; color: #FF6B57; box-shadow: 0 0 10px #FF6B57; }
+  .mode-card.mode-b h3, .mode-card.mode-b p, .mode-card.mode-b ul, .mode-card.mode-b .mode-kicker-b, .mode-btn-b { position: relative; z-index: 2; }
+  .mode-btn-b { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.35); color: #FFFFFF; }
+  .mode-btn-b:hover { border-color: #7FCBFF; color: #7FCBFF; }
+
+  #home-trust { max-width: 1180px; margin: 0 auto; padding: 20px 5vw 76px; text-align: center; }
+  #home-trust .section-eyebrow { color: #FF6B4A; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px; }
+  #home-trust h2 { font-size: 28px; color: #1E2A33; margin: 0 0 12px 0; font-weight: 700; }
+  #home-trust .section-lead { color: #4B5760; font-size: 15px; max-width: 620px; margin: 0 auto 40px; line-height: 1.6; }
+  #trust-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; text-align: left; }
+  .trust-card {
+    background: var(--surface-alt); border: 1px solid var(--border); border-radius: 14px;
+    padding: 26px 24px; transition: box-shadow .15s, transform .15s;
+  }
+  .trust-card:hover { box-shadow: 0 16px 34px rgba(30,20,15,0.08); transform: translateY(-3px); }
+  .trust-logos { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+  .trust-logo {
+    font-family: var(--font-head); font-size: 12.5px; font-weight: 600; color: #8B959D;
+    background: #FFFFFF; border: 1px solid var(--border); border-radius: 999px; padding: 5px 12px;
+  }
+  .trust-icon {
+    width: 42px; height: 42px; border-radius: 10px; background: var(--brand-light); color: var(--brand-dark);
+    display: flex; align-items: center; justify-content: center; margin-bottom: 14px;
+  }
+  .trust-sector { color: #1E2A33; font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+  .trust-usecase { color: #4B5760; font-size: 13.5px; line-height: 1.55; margin: 0; }
+
+  @media (max-width: 880px) {
+    #trust-grid { grid-template-columns: 1fr; }
+  }
+
+  #home-footer { border-top: 1px solid #E7DED6; padding: 30px 5vw; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+  #home-footer .footer-note { color: #8B959D; font-size: 12px; }
+  #home-footer .footer-links { display: flex; gap: 20px; }
+  #home-footer .footer-links a { color: #8B959D; font-size: 12.5px; text-decoration: none; }
+  #home-footer .footer-links a:hover { color: #FF6B4A; }
+
+  @media (max-width: 880px) {
+    #home-hero { grid-template-columns: 1fr; padding-top: 40px; }
+    #home-hero-visual { min-height: 280px; }
+    #home-feature-grid { grid-template-columns: 1fr; }
+    #home-nav { display: none; }
+    #home-hero h1 { font-size: 32px; }
+  }
+
+  /* ==================== ECRAN 1 : FORMULAIRE ==================== */
+  #form-screen {
+    position: fixed; inset: 0; z-index: 100;
+    display: none; align-items: center; justify-content: center;
+    background: radial-gradient(circle at 50% 18%, #FFF2EC 0%, #FFFFFF 65%);
+    overflow-y: auto; padding: 40px 20px;
+  }
+  #form-card {
+    width: 100%; max-width: 560px;
+    background: rgba(255, 255, 255, 0.85); border: 1px solid #E7DED6; border-radius: 16px;
+    padding: 36px 40px 30px; box-shadow: 0 0 40px rgba(255, 107, 74, 0.15);
+    backdrop-filter: blur(8px);
+  }
+  #form-card form { max-height: 66vh; overflow-y: auto; padding-right: 6px; margin-right: -6px; }
+  #form-card form::-webkit-scrollbar { width: 6px; }
+  #form-card form::-webkit-scrollbar-thumb { background: #FFC9B3; border-radius: 999px; }
+  #form-card .eyebrow {
+    color: #FF6B4A; font-size: 12px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.12em; margin-bottom: 8px;
+  }
+  #form-card h1 {
+    color: #1E2A33; font-size: 26px; margin: 0 0 6px 0; font-weight: 700;
+  }
+  #form-card .subtitle {
+    color: #7C8791; font-size: 13.5px; line-height: 1.5; margin: 0 0 28px 0;
+  }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px 18px; }
+  .form-field { display: flex; flex-direction: column; gap: 6px; }
+  .form-field.full { grid-column: 1 / -1; }
+  .form-field label { color: #8B959D; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+  .form-field input, .form-field select {
+    background: rgba(250, 246, 242, 0.7); border: 1px solid #E7DED6; border-radius: 8px;
+    color: #1E2A33; font-size: 14px; padding: 10px 12px; font-family: inherit;
+    outline: none; transition: border-color .15s, box-shadow .15s;
+  }
+  .form-field input:focus, .form-field select:focus {
+    border-color: #FF6B4A; box-shadow: 0 0 0 3px rgba(255, 107, 74, 0.15);
+  }
+  .form-field input::placeholder { color: #B7BEC3; }
+  .form-grid-simple { grid-template-columns: 1fr; }
+  .field-hint { color: #A7ADB2; font-size: 11.5px; }
+  #form-submit {
+    margin-top: 20px; width: 100%; background: #FF6B4A; border: none; color: #FFFFFF;
+    font-weight: 700; font-size: 14.5px; padding: 14px 20px; border-radius: 10px;
+    cursor: pointer; letter-spacing: 0.02em; transition: background .15s, transform .1s;
+  }
+  #form-submit:hover { background: #FF8563; }
+  #form-submit:active { transform: scale(0.99); }
+  #form-disclaimer { margin-top: 14px; color: #A7ADB2; font-size: 11px; text-align: center; }
+
+  /* ---- Options avancées (dev) sur l'écran formulaire ---- */
+  #form-advanced { margin-top: 16px; }
+  #form-advanced summary { cursor: pointer; color: #A7ADB2; font-size: 11.5px; font-weight: 600; list-style: none; user-select: none; }
+  #form-advanced summary::-webkit-details-marker { display: none; }
+  #form-advanced summary::before { content: '⚙ '; }
+  #form-advanced[open] summary { color: #7C8791; margin-bottom: 10px; }
+  #form-advanced-body { display: flex; flex-direction: column; gap: 10px; padding: 12px; margin-top: 4px; background: rgba(250,246,242,0.6); border: 1px dashed #E7DED6; border-radius: 10px; }
+  #form-advanced-body .adv-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  #form-advanced-body label { color: #8B959D; font-size: 11px; font-weight: 600; white-space: nowrap; text-transform: none; letter-spacing: 0; }
+  #form-advanced-body input[type=text] { flex: 1; min-width: 160px; font-size: 12px; padding: 6px 9px; background: #FFFFFF; border: 1px solid #E7DED6; border-radius: 6px; color: #3E4850; }
+  #form-advanced-body input[type=file] { font-size: 11px; color: #8B959D; flex: 1; min-width: 160px; }
+  #form-advanced-body .btn-ghost { padding: 7px 12px; font-size: 12px; }
+  #form-advanced-body .adv-hint { color: #A7ADB2; font-size: 11px; margin: 0; }
+
+  /* ==================== ECRAN 2 : TRAITEMENT / ORCHESTRATION ==================== */
+  #loading-screen {
+    position: fixed; inset: 0; z-index: 100; display: none;
+    align-items: center; justify-content: center;
+    background: radial-gradient(circle at 50% 25%, #FFF2EC 0%, #FFFFFF 65%);
+  }
+  #loading-card { width: 100%; max-width: 560px; padding: 0 20px; }
+  #loading-card .eyebrow {
+    color: #FF6B4A; font-size: 12px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.12em; margin-bottom: 10px; text-align: center;
+  }
+  #loading-title { color: #1E2A33; font-size: 20px; font-weight: 700; text-align: center; margin: 0 0 32px 0; }
+  #loading-steps { display: flex; flex-direction: column; gap: 14px; }
+  .step {
+    display: flex; align-items: center; gap: 12px; color: #A7ADB2; font-size: 14px;
+    opacity: 0.35; transform: translateX(-6px);
+    transition: opacity .35s ease, transform .35s ease, color .35s ease;
+  }
+  .step.active { opacity: 1; color: #3E4850; transform: translateX(0); }
+  .step.done { opacity: 0.75; color: #7C8791; transform: translateX(0); }
+  .step .icon {
+    width: 20px; height: 20px; border-radius: 50%; border: 2px solid #E7DED6;
+    flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+    font-size: 11px; color: #FF6B4A; position: relative;
+  }
+  .step.active .icon { border-color: #FF6B4A; }
+  .step.active .icon::after {
+    content: ''; position: absolute; inset: -4px; border-radius: 50%;
+    border: 2px solid transparent; border-top-color: #FF6B4A; animation: spin 0.9s linear infinite;
+  }
+  .step.done .icon { border-color: #1F9D6C; background: rgba(31, 157, 108, 0.15); }
+  .step.done .icon::before { content: '✓'; color: #1F9D6C; font-weight: 700; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  #loading-bar-track {
+    margin-top: 30px; height: 4px; border-radius: 999px; background: rgba(231, 222, 214, 0.35); overflow: hidden;
+  }
+  #loading-bar-fill {
+    height: 100%; width: 0%; background: linear-gradient(90deg, #FFD6C2, #FF6B4A);
+    border-radius: 999px; transition: width .4s ease;
+  }
+  #loading-error { display: none; margin-top: 24px; background: #FDE7E2; border: 1px solid #DC4B39; border-radius: 10px; padding: 14px 16px; color: #8A2E22; font-size: 12.5px; line-height: 1.5; }
+  #loading-error.show { display: block; }
+  #loading-error button { margin-top: 10px; }
+
+  #app-ui { opacity: 0; transition: opacity .8s ease; }
+  #app-ui.visible { opacity: 1; }
+
+  /* ==================== CHAT ASSISTANT IA ==================== */
+  #chat-toggle-btn {
+    position: absolute; bottom: 24px; right: 24px; z-index: 30;
+    width: 56px; height: 56px; border-radius: 50%; border: 1px solid #FF6B4A;
+    background: #FF6B4A; color: #FFFFFF; cursor: pointer; display: flex;
+    align-items: center; justify-content: center; box-shadow: 0 0 20px rgba(255,107,74,0.35);
+    transition: transform .15s, background .15s;
+  }
+  #chat-toggle-btn:hover { transform: scale(1.06); background: #E24E2E; }
+  #chat-toggle-btn svg { width: 24px; height: 24px; }
+  #chat-toggle-btn .dot {
+    position: absolute; top: 8px; right: 8px; width: 10px; height: 10px; border-radius: 50%;
+    background: #1F9D6C; box-shadow: 0 0 6px #1F9D6C; animation: pulse-dot 1.6s ease-in-out infinite;
+  }
+  @keyframes pulse-dot { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
+
+  #chat-panel {
+    position: absolute; bottom: 92px; right: 24px; z-index: 30;
+    width: 380px; max-width: calc(100vw - 48px); height: 520px; max-height: calc(100vh - 140px);
+    background: rgba(255, 255, 255, 0.94); border: 1px solid #E7DED6; border-radius: 14px;
+    box-shadow: 0 10px 40px rgba(20,20,20,0.12), 0 0 30px rgba(255, 107, 74, 0.15);
+    backdrop-filter: blur(10px); display: none; flex-direction: column; overflow: hidden;
+  }
+  #chat-panel.open { display: flex; }
+  #chat-header {
+    display: flex; align-items: center; gap: 10px; padding: 14px 16px;
+    border-bottom: 1px solid #E7DED6; background: rgba(250, 246, 242, 0.5); flex-shrink: 0;
+  }
+  #chat-header .avatar {
+    width: 32px; height: 32px; border-radius: 50%; background: #FFE4DA; border: 1px solid #FFB89C;
+    display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0;
+  }
+  #chat-header .title { color: #1E2A33; font-size: 13.5px; font-weight: 700; line-height: 1.3; }
+  #chat-header .subtitle { color: #FF6B4A; font-size: 11px; display: flex; align-items: center; gap: 5px; }
+  #chat-header .subtitle::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: #1F9D6C; display: inline-block; }
+  #chat-close { margin-left: auto; background: none; border: none; color: #7C8791; font-size: 18px; cursor: pointer; padding: 4px 8px; line-height: 1; }
+  #chat-close:hover { color: #1E2A33; }
+
+  #chat-messages { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+  #chat-messages::-webkit-scrollbar { width: 5px; }
+  #chat-messages::-webkit-scrollbar-thumb { background: #FFC9B3; border-radius: 999px; }
+  .msg { max-width: 85%; font-size: 13px; line-height: 1.5; padding: 10px 13px; border-radius: 12px; opacity: 0; transform: translateY(6px); animation: msg-in .3s ease forwards; white-space: pre-line; }
+  @keyframes msg-in { to { opacity: 1; transform: translateY(0); } }
+  .msg.bot { align-self: flex-start; background: rgba(250, 246, 242, 0.85); border: 1px solid #E7DED6; color: #3E4850; border-bottom-left-radius: 3px; }
+  .msg.user { align-self: flex-end; background: #FF6B4A; color: #FFFFFF; font-weight: 500; border-bottom-right-radius: 3px; }
+  .msg.typing { display: flex; gap: 4px; align-items: center; padding: 12px 15px; }
+  .msg.typing span { width: 6px; height: 6px; border-radius: 50%; background: #FF6B4A; animation: typing-bounce 1s infinite ease-in-out; }
+  .msg.typing span:nth-child(2) { animation-delay: 0.15s; }
+  .msg.typing span:nth-child(3) { animation-delay: 0.3s; }
+  @keyframes typing-bounce { 0%, 60%, 100% { transform: translateY(0); opacity: 0.5; } 30% { transform: translateY(-4px); opacity: 1; } }
+
+  #chat-chips { display: flex; gap: 6px; padding: 0 16px 10px; flex-wrap: wrap; flex-shrink: 0; }
+  .chip {
+    background: rgba(250, 246, 242, 0.7); border: 1px solid #E7DED6; color: #8B959D; font-size: 11.5px;
+    padding: 6px 12px; border-radius: 999px; cursor: pointer; transition: all .15s; white-space: nowrap;
+  }
+  .chip:hover { border-color: #FF6B4A; color: #1E2A33; background: rgba(255,107,74,0.12); }
+
+  #chat-input-row { display: flex; gap: 8px; padding: 12px 14px; border-top: 1px solid #E7DED6; flex-shrink: 0; }
+  #chat-input {
+    flex: 1; background: rgba(250, 246, 242, 0.7); border: 1px solid #E7DED6; border-radius: 999px;
+    color: #1E2A33; font-size: 13px; padding: 9px 15px; outline: none; font-family: inherit;
+  }
+  #chat-input:focus { border-color: #FF6B4A; }
+  #chat-input::placeholder { color: #B7BEC3; }
+  #chat-send {
+    width: 36px; height: 36px; border-radius: 50%; background: #FF6B4A; border: none; color: #FFFFFF;
+    cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: background .15s;
+  }
+  #chat-send:hover { background: #FF8563; }
+  #chat-send svg { width: 16px; height: 16px; }
+
+  /* ==================== MARQUE TYPHOON ==================== */
+  .typhoon-logo {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 22px;
+  }
+  .typhoon-logo .mark {
+    width: 38px; height: 38px; border-radius: 10px; flex-shrink: 0;
+    background: linear-gradient(135deg, #FF9269, #FF6B4A);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 19px; box-shadow: 0 0 18px rgba(255,107,74,0.45);
+  }
+  .typhoon-logo .name { color: #1E2A33; font-size: 19px; font-weight: 700; letter-spacing: 0.02em; line-height: 1.1; }
+  .typhoon-logo .baseline { color: #FF6B4A; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; }
+
+  #brand-watermark {
+    position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
+    z-index: 10; display: flex; align-items: center; gap: 8px; cursor: pointer;
+    color: #3E4850; font-size: 13px; font-weight: 800; letter-spacing: 0.06em;
+    background: rgba(255, 255, 255, 0.7); border: 1px solid #E7DED6; border-radius: 999px;
+    padding: 7px 16px 7px 10px; backdrop-filter: blur(8px); transition: border-color .15s;
+  }
+  #brand-watermark:hover { border-color: #FF6B4A; color: #FF6B4A; }
+  #brand-watermark .mark {
+    width: 22px; height: 22px; border-radius: 6px;
+    background: linear-gradient(135deg, #FF9269, #FF6B4A);
+    display: flex; align-items: center; justify-content: center; font-size: 12px;
+  }
+
+  /* ==================== BOUTON CTA DEVIS ==================== */
+  #devis-cta {
+    position: absolute; bottom: 24px; left: 24px; z-index: 30;
+    display: flex; align-items: center; gap: 10px;
+    background: linear-gradient(135deg, #FF9269, #FF6B4A); border: none; color: #FFFFFF;
+    font-weight: 800; font-size: 13.5px; padding: 14px 20px; border-radius: 999px;
+    cursor: pointer; box-shadow: 0 6px 24px rgba(255,107,74,0.4); transition: transform .15s, box-shadow .15s;
+  }
+  #devis-cta:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(255,107,74,0.55); }
+  #devis-cta svg { width: 18px; height: 18px; flex-shrink: 0; }
+
+  /* ==================== MODALE DEVIS ==================== */
+  #devis-overlay {
+    position: fixed; inset: 0; z-index: 200; display: none;
+    align-items: center; justify-content: center; padding: 30px 16px;
+    background: rgba(2, 6, 12, 0.72); backdrop-filter: blur(6px);
+  }
+  #devis-overlay.open { display: flex; }
+  #devis-modal {
+    width: 100%; max-width: 720px; max-height: 88vh; overflow-y: auto;
+    background: rgba(255, 255, 255, 0.96); border: 1px solid #E7DED6; border-radius: 16px;
+    padding: 32px 34px 28px; box-shadow: 0 20px 60px rgba(20,20,20,0.12), 0 0 40px rgba(255,107,74,0.15);
+  }
+  #devis-modal::-webkit-scrollbar { width: 6px; }
+  #devis-modal::-webkit-scrollbar-thumb { background: #FFC9B3; border-radius: 999px; }
+  #devis-close-btn {
+    float: right; background: rgba(250,246,242,0.7); border: 1px solid #E7DED6; color: #8B959D;
+    width: 30px; height: 30px; border-radius: 50%; cursor: pointer; font-size: 15px; line-height: 1;
+  }
+  #devis-close-btn:hover { color: #1E2A33; border-color: #FF6B4A; }
+  #devis-modal h2 { color: #1E2A33; font-size: 21px; margin: 0 0 4px 0; }
+  #devis-modal .devis-sub { color: #7C8791; font-size: 13px; line-height: 1.5; margin: 0 0 22px 0; }
+
+  #devis-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 8px; }
+  .devis-item {
+    display: flex; align-items: flex-start; gap: 12px;
+    background: rgba(250, 246, 242, 0.55); border: 1px solid #E7DED6; border-radius: 10px;
+    padding: 12px 14px; cursor: pointer; transition: border-color .15s, background .15s;
+  }
+  .devis-item:hover { border-color: #FF6B4A; }
+  .devis-item.checked { background: rgba(255,107,74,0.1); border-color: #FF6B4A; }
+  .devis-item input { margin-top: 3px; width: 16px; height: 16px; accent-color: #FF6B4A; flex-shrink: 0; cursor: pointer; }
+  .devis-item .devis-item-body { flex: 1; }
+  .devis-item .devis-item-title { color: #1E2A33; font-size: 13.5px; font-weight: 700; }
+  .devis-item .devis-item-zone { color: #FF6B4A; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 2px; }
+  .devis-item .devis-item-meta { color: #7C8791; font-size: 12px; margin-top: 4px; }
+
+  #devis-summary {
+    margin-top: 20px; padding: 16px 18px; border-radius: 12px;
+    background: rgba(250,246,242,0.5); border: 1px solid #E7DED6;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 12px 20px;
+  }
+  #devis-summary .sum-block .label { color: #7C8791; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 700; }
+  #devis-summary .sum-block .value { color: #1E2A33; font-size: 19px; font-weight: 800; margin-top: 3px; }
+  #devis-summary .sum-block .value.accent { color: #1F9D6C; }
+
+  #devis-generate-btn {
+    margin-top: 22px; width: 100%; background: #FF6B4A; border: none; color: #FFFFFF;
+    font-weight: 800; font-size: 14.5px; padding: 14px 20px; border-radius: 10px;
+    cursor: pointer; transition: background .15s, transform .1s, opacity .15s;
+  }
+  #devis-generate-btn:hover { background: #FF8563; }
+  #devis-generate-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* ---- Résultat / certificat ---- */
+  #devis-result { display: none; }
+  #devis-result.show { display: block; }
+  #devis-select-view.hide { display: none; }
+
+  #cert-card {
+    position: relative; border-radius: 14px; padding: 30px 28px 26px; text-align: center;
+    background: radial-gradient(circle at 50% 0%, rgba(255,107,74,0.16), transparent 65%), rgba(255, 255, 255, 0.8);
+    border: 1px solid #E7DED6; overflow: hidden;
+  }
+  #cert-card::before {
+    content: ''; position: absolute; inset: 0; pointer-events: none;
+    background: repeating-linear-gradient(135deg, rgba(255,107,74,0.035) 0 2px, transparent 2px 14px);
+  }
+  #cert-shield { font-size: 44px; margin-bottom: 6px; }
+  #cert-title { color: #1F9D6C; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 8px; }
+  #cert-title.partial { color: #D98A2B; }
+  #cert-heading { color: #1E2A33; font-size: 24px; font-weight: 700; margin: 0 0 6px 0; }
+  #cert-property { color: #7C8791; font-size: 13px; margin: 0 0 22px 0; }
+
+  #cert-scores { display: flex; align-items: center; justify-content: center; gap: 22px; margin-bottom: 24px; }
+  .cert-score-box { text-align: center; }
+  .cert-score-box .cert-score-label { color: #7C8791; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 700; }
+  .cert-score-box .cert-score-value { font-size: 30px; font-weight: 800; margin-top: 4px; }
+  .cert-arrow { color: #FF6B4A; font-size: 22px; }
+
+  #cert-prime {
+    background: linear-gradient(135deg, rgba(31,157,108,0.16), rgba(255,107,74,0.1));
+    border: 1px solid #1F9D6C; border-radius: 12px; padding: 18px 20px; margin-bottom: 22px;
+  }
+  #cert-prime .prime-label { color: #2E8F63; font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; }
+  #cert-prime .prime-value { color: #1F9D6C; font-size: 34px; font-weight: 800; margin: 4px 0; text-shadow: 0 0 18px rgba(31,157,108,0.4); }
+  #cert-prime .prime-detail { color: #3E4850; font-size: 12.5px; }
+
+  #cert-works-list { text-align: left; margin-bottom: 20px; }
+  #cert-works-list .cert-works-title { color: #FF6B4A; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 10px; }
+  #cert-works-list ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 7px; }
+  #cert-works-list li { color: #3E4850; font-size: 13px; display: flex; justify-content: space-between; gap: 10px; background: rgba(250,246,242,0.5); border: 1px solid #E7DED6; border-radius: 8px; padding: 9px 12px; }
+  #cert-works-list li span.cost { color: #7C8791; font-size: 12px; flex-shrink: 0; }
+
+  #cert-actions { display: flex; gap: 10px; }
+  #cert-actions button {
+    flex: 1; padding: 13px 16px; border-radius: 10px; font-weight: 700; font-size: 13.5px; cursor: pointer; border: none;
+  }
+  #cert-back-btn { background: rgba(250,246,242,0.8); border: 1px solid #E7DED6 !important; color: #3E4850; }
+  #cert-back-btn:hover { border-color: #FF6B4A !important; }
+  #cert-download-btn { background: #FF6B4A; color: #FFFFFF; }
+  #cert-download-btn:hover { background: #FF8563; }
+  #cert-footnote { margin-top: 16px; color: #A7ADB2; font-size: 10.5px; }
+</style>
+</head>
+<body>
+
+<!-- ==================== ECRAN 0 : SITE VITRINE / ACCUEIL ==================== -->
+<div id="home-screen">
+  <header id="home-header">
+    <div class="typhoon-logo" style="margin-bottom:0;">
+      <div class="mark"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5 3.5 9 8 11 4.5-2 8-6 8-11V5z"/><path d="m9 12 2 2 4-4"/></svg></div>
+      <div>
+        <div class="name">TYPHOON</div>
+        <div class="baseline">Diagnostic Climatique Immobilier</div>
+      </div>
+    </div>
+    <nav id="home-nav">
+      <a href="#home-features">Nos solutions</a>
+      <a href="#modes">Comment ça marche</a>
+      <a href="#">Nous contacter</a>
+    </nav>
+    <div id="home-header-actions">
+      <button class="btn-ghost" type="button">Espace professionnel</button>
+    </div>
+  </header>
+
+  <section id="home-hero">
+    <div>
+      <div class="eyebrow">Diagnostic climatique immobilier</div>
+      <h1>Le diagnostic climatique qui éclaire <em>chaque décision immobilière</em></h1>
+      <p class="lead">Assureurs, banques, agents et promoteurs : évaluez en quelques minutes la résilience climatique d'un bien ou d'un terrain, à partir de sa seule adresse. Jumeau numérique, score de risque et recommandations de travaux chiffrées — toutes les données sont récupérées automatiquement via la BDNB, Géorisques et Copernicus, sans aucune saisie manuelle.</p>
+    </div>
+    <div id="home-hero-visual">
+      <div class="hv-stack">
+        <div class="hv-card">
+          <div class="hv-row">
+            <span class="hv-label">Score de résilience</span>
+            <span class="hv-badge risk-mod">Risque modéré</span>
+          </div>
+          <div class="hv-row" style="margin-top:6px;">
+            <span class="hv-value">58 / 100</span>
+          </div>
+          <div class="hv-bar-track"><div class="hv-bar-fill" style="width:58%;"></div></div>
+        </div>
+        <div class="hv-card">
+          <div class="hv-row">
+            <span class="hv-label">Fondations</span>
+            <span class="hv-badge risk-high">Aléa élevé</span>
+          </div>
+        </div>
+        <div class="hv-card">
+          <div class="hv-row">
+            <span class="hv-label">Toiture</span>
+            <span class="hv-badge risk-low">Aléa faible</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div id="home-trustbar">
+    <div class="trust-stat"><div class="num">12 400+</div><div class="lbl">biens et parcelles diagnostiqués</div></div>
+    <div class="trust-stat"><div class="num">3</div><div class="lbl">métiers accompagnés : assurance, banque, immobilier</div></div>
+    <div class="trust-stat"><div class="num">100%</div><div class="lbl">des données récupérées automatiquement (BDNB)</div></div>
+    <div class="trust-stat"><div class="num">3 min</div><div class="lbl">pour un diagnostic complet</div></div>
+  </div>
+
+  <section id="modes" aria-label="Les deux modes de Typhoon">
+    <div id="home-modes">
+      <div class="modes-head">
+        <div class="section-eyebrow">Deux façons d'utiliser Typhoon</div>
+        <h2>Un même moteur de diagnostic, deux usages</h2>
+        <p class="section-lead">Que vous ayez une adresse précise à instruire ou tout un secteur à prospecter, Typhoon s'adapte à la décision que vous devez prendre.</p>
+      </div>
+      <div id="mode-grid">
+        <div class="mode-card mode-a">
+          <div class="mode-kicker">Mode diagnostic approfondi</div>
+          <h3>Vérifier un bien</h3>
+          <p>Une adresse précise. Jumeau numérique 3D, score de risque zone par zone et simulateur « si je fais ces travaux ». Le mode qui convainc un assuré, un emprunteur ou un acquéreur.</p>
+          <ul>
+            <li><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#FF9269" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Diagnostic zone par zone en jumeau numérique 3D</li>
+            <li><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#FF9269" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Simulateur d'impact des travaux sur le score</li>
+            <li><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#FF9269" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Devis et certification personnalisés</li>
+          </ul>
+          <button class="btn-primary" id="home-cta-mode-a" type="button">Vérifier une adresse →</button>
+        </div>
+        <div class="mode-card mode-b">
+          <div class="map-fx" aria-hidden="true">
+            <span class="pin low" style="left:22%; top:34%;"></span>
+            <span class="pin mod" style="left:38%; top:58%;"></span>
+            <span class="pin high" style="left:52%; top:28%;"></span>
+            <span class="pin low" style="left:64%; top:46%;"></span>
+            <span class="pin mod" style="left:76%; top:66%;"></span>
+            <span class="pin high" style="left:30%; top:74%;"></span>
+            <span class="pin low" style="left:58%; top:70%;"></span>
+          </div>
+          <div class="mode-kicker mode-kicker-b">Mode prospection</div>
+          <h3>Chercher un bien ou un terrain</h3>
+          <p>Une zone géographique entière. Vue carte, tri et filtre par score de risque. Le mode décision rapide, pour repérer en un coup d'œil les biens et parcelles les plus résilients d'un secteur.</p>
+          <ul>
+            <li><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#7FCBFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Recherche par ville, code postal ou secteur</li>
+            <li><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#7FCBFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Carte interactive, tri et filtre par score</li>
+            <li><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#7FCBFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Bascule vers le diagnostic approfondi en un clic</li>
+          </ul>
+          <button class="btn-ghost mode-btn-b" id="home-cta-mode-b" type="button">Explorer une zone →</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="home-features">
+    <div class="section-eyebrow">Comment ça marche</div>
+    <h2>Le moteur derrière les deux modes</h2>
+    <p class="section-lead">Notre orchestrateur multi-agents croise l'adresse ou la zone recherchée avec les bases de risques climatiques (Géorisques, Copernicus, BDNB) pour construire le jumeau numérique et calculer le score de résilience — sans aucune saisie manuelle.</p>
+    <div id="home-feature-grid">
+      <div class="feature-card">
+        <div class="fc-icon"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12l9-9 9 9"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/></svg></div>
+        <h3>Jumeau numérique du bien</h3>
+        <p>Une reconstitution 3D de votre maison qui visualise, zone par zone, son exposition aux risques climatiques actuels et futurs.</p>
+      </div>
+      <div class="feature-card">
+        <div class="fc-icon"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94z"/></svg></div>
+        <h3>Recommandations de travaux</h3>
+        <p>Des préconisations concrètes et chiffrées pour renforcer les zones les plus vulnérables de votre bien, classées par impact.</p>
+      </div>
+      <div class="feature-card">
+        <div class="fc-icon"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5 3.5 9 8 11 4.5-2 8-6 8-11V5z"/><path d="m9 12 2 2 4-4"/></svg></div>
+        <h3>Certification &amp; prime réduite</h3>
+        <p>Engagez les travaux recommandés et obtenez la certification Climato-Résilient Typhoon, ouvrant droit à une prime sur votre cotisation.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="home-trust" aria-label="Ils nous ont fait confiance">
+    <div class="section-eyebrow">Ils nous ont fait confiance</div>
+    <h2>Un diagnostic pensé pour trois métiers, trois décisions</h2>
+    <p class="section-lead">Banques, assureurs, agents et promoteurs utilisent Typhoon au moment précis où la résilience climatique d'un bien devient un critère de décision.</p>
+    <div id="trust-grid">
+      <div class="trust-card">
+        <div class="trust-logos">
+          <span class="trust-logo">Crédit&nbsp;Foncier</span>
+          <span class="trust-logo">BanquePop</span>
+        </div>
+        <div class="trust-icon"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M4 21V9l8-6 8 6v12"/><path d="M9 21v-6h6v6"/></svg></div>
+        <div class="trust-sector">Banques</div>
+        <p class="trust-usecase">Évaluez le risque climatique avant d'accorder un prêt immobilier.</p>
+      </div>
+      <div class="trust-card">
+        <div class="trust-logos">
+          <span class="trust-logo">Alea&nbsp;Assurances</span>
+          <span class="trust-logo">Groupe&nbsp;Sécuria</span>
+        </div>
+        <div class="trust-icon"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5 3.5 9 8 11 4.5-2 8-6 8-11V5z"/><path d="m9 12 2 2 4-4"/></svg></div>
+        <div class="trust-sector">Assurance</div>
+        <p class="trust-usecase">Identifiez les biens à haut risque avant de les souscrire.</p>
+      </div>
+      <div class="trust-card">
+        <div class="trust-logos">
+          <span class="trust-logo">Nexity&nbsp;Partners</span>
+          <span class="trust-logo">Agences&nbsp;du&nbsp;Littoral</span>
+        </div>
+        <div class="trust-icon"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V11l7-6 7 6v10"/><path d="M9 21v-5h6v5"/><path d="M9 11h.01M15 11h.01"/></svg></div>
+        <div class="trust-sector">Agents &amp; promoteurs</div>
+        <p class="trust-usecase">Faites de la résilience climatique un argument de vente.</p>
+      </div>
+    </div>
+  </section>
+
+  <footer id="home-footer">
+    <div class="footer-note">© 2026 Typhoon — Diagnostics et devis indicatifs non contractuels.</div>
+    <div class="footer-links">
+      <a href="#">Mentions légales</a>
+      <a href="#">Confidentialité</a>
+      <a href="#">Contact</a>
+    </div>
+  </footer>
+</div>
+
+<!-- ==================== MODALE EXPLORATION DE ZONE (carte interactive connectée au backend) ==================== -->
+<div id="zone-overlay" aria-hidden="true">
+  <div id="zone-modal" role="dialog" aria-modal="true" aria-labelledby="zone-modal-title">
+    <button id="zone-close-btn" type="button" aria-label="Fermer la fenêtre">✕</button>
+    <div id="zone-modal-header">
+      <span class="modal-title" id="zone-modal-title">Carte interactive des risques</span>
+      <span class="modal-sub">Sélectionnez une commune ou dessinez une zone sur la carte</span>
+    </div>
+    <div id="zone-modal-body">
+      <!-- Sidebar -->
+      <div id="zone-sidebar">
+        <div id="zone-sidebar-content">
+          <div class="zone-section-label">1. Choisir une ville</div>
+          <div id="zone-search-wrapper">
+            <input id="zone-city-input" type="text" placeholder="ex. Paris, Marseille, Lyon, Nice…" autocomplete="off" />
+            <div id="zone-suggestions"></div>
+          </div>
+          <div id="zone-coords-info">Tapez le nom d'une ville française</div>
+          <button id="zone-assess-btn" disabled>Analyser cette ville</button>
+
+          <div id="zone-autorefine-row">
+            <div>
+              <label for="zone-autorefine-toggle">Affiner en zoomant</label>
+              <div class="hint">Grille plus fine à chaque zoom/déplacement</div>
+            </div>
+            <div class="toggle-switch">
+              <input type="checkbox" id="zone-autorefine-toggle" checked>
+              <label class="track" for="zone-autorefine-toggle"></label>
+            </div>
+          </div>
+          <div id="zone-refine-status"><span class="dot"></span><span id="zone-refine-status-text">Raffinement de la zone visible…</span></div>
+
+          <div id="zone-loading">
+            <div class="zone-loading-bar"><div class="zone-loading-fill"></div></div>
+            <div class="zone-loading-text">Calcul en cours…</div>
+          </div>
+
+          <div id="zone-results">
+            <div class="zone-section-label">3. Résultats</div>
+            <div class="zone-rating-card" id="zm-rating-card">
+              <div class="zone-rating-row">
+                <span class="zone-rating-label">Score global</span>
+                <span class="zone-rating-badge" id="zm-badge">—</span>
+              </div>
+              <div class="zone-rating-row">
+                <span class="zone-rating-value" id="zm-score">—</span>
+                <span style="font-size:11px;color:var(--muted);">/ 100</span>
+              </div>
+              <div class="zone-rating-meta" id="zm-meta"></div>
+            </div>
+
+            <div class="zone-worst-banner" id="zm-worst" style="display:none;">
+              ⚠️ Point chaud : <strong id="zm-worst-peril">—</strong> (<strong id="zm-worst-score">—</strong>/100)
+            </div>
+
+            <div class="zone-section-label">Détail par péril</div>
+            <div id="zm-perils"></div>
+          </div>
+        </div>
+        <div id="zone-sample-info"></div>
+      </div>
+
+      <!-- Map -->
+      <div id="zone-map-container">
+        <div id="zone-map"></div>
+        <div id="zone-legend">
+          <div class="zone-legend-title">Niveau de risque</div>
+          <div class="zone-legend-row"><span class="zone-legend-swatch" style="background:#1F9D6C;"></span>Faible (0–19)</div>
+          <div class="zone-legend-row"><span class="zone-legend-swatch" style="background:#5ADB8A;"></span>Modéré bas (20–39)</div>
+          <div class="zone-legend-row"><span class="zone-legend-swatch" style="background:#F5C542;"></span>Modéré (40–59)</div>
+          <div class="zone-legend-row"><span class="zone-legend-swatch" style="background:#E27B2E;"></span>Élevé (60–79)</div>
+          <div class="zone-legend-row"><span class="zone-legend-swatch" style="background:#C0392B;"></span>Critique (80–100)</div>
+        </div>
+        <div id="zone-precision-badge">zoom 13 · grille 500 m</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== ECRAN 1 : FORMULAIRE (diagnostic du bien) ==================== -->
+<div id="form-screen">
+  <div id="form-card">
+    <div class="typhoon-logo">
+      <div class="mark"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5 3.5 9 8 11 4.5-2 8-6 8-11V5z"/><path d="m9 12 2 2 4-4"/></svg></div>
+      <div>
+        <div class="name">TYPHOON</div>
+        <div class="baseline">Diagnostic Climatique Immobilier</div>
+      </div>
+    </div>
+    <h1>Créez le jumeau numérique de votre bien</h1>
+    <p class="subtitle">Indiquez simplement l'adresse du bien. Notre orchestrateur IA récupère automatiquement toutes ses caractéristiques via la BDNB, Géorisques et Copernicus — aucune saisie manuelle n'est nécessaire.</p>
+    <form id="property-form">
+      <div class="form-grid form-grid-simple">
+        <div class="form-field full">
+          <label for="f-adresse">Adresse du bien</label>
+          <input id="f-adresse" type="text" placeholder="8 Allée du Port Maillard, 44000 Nantes" value="8 Allée du Port Maillard, 44000 Nantes" required autocomplete="off">
+          <span class="field-hint">Numéro, voie, code postal, ville</span>
+        </div>
+      </div>
+
+      <details id="form-advanced">
+        <summary>Options avancées (dev)</summary>
+        <div id="form-advanced-body">
+          <div class="adv-row">
+            <label for="api-base-input">API</label>
+            <input id="api-base-input" type="text" value="http://127.0.0.1:8765" autocomplete="off">
+          </div>
+          <p class="adv-hint">Charger directement un diagnostic déjà généré (.json), sans appeler le serveur :</p>
+          <div class="adv-row">
+            <input id="json-input" type="file" accept="application/json">
+          </div>
+          <div class="adv-row">
+            <button type="button" class="btn-ghost" id="demo-data-btn">Essayer avec un exemple (sans backend)</button>
+          </div>
+        </div>
+      </details>
+
+      <button type="submit" id="form-submit">Lancer le diagnostic climatique</button>
+      <div id="form-disclaimer">Seule l'adresse est nécessaire : structure, toiture, sous-sol et exposition aux risques sont déterminés automatiquement via la BDNB, Géorisques et Copernicus. Diagnostic et recommandations fournis à titre indicatif, non contractuels.</div>
+    </form>
+  </div>
+</div>
+
+<!-- ==================== ECRAN 2 : ORCHESTRATION / TRAITEMENT ==================== -->
+<div id="loading-screen">
+  <div id="loading-card">
+    <div class="typhoon-logo" style="justify-content:center;">
+      <div class="mark"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5 3.5 9 8 11 4.5-2 8-6 8-11V5z"/><path d="m9 12 2 2 4-4"/></svg></div>
+      <div>
+        <div class="name">TYPHOON</div>
+        <div class="baseline">Diagnostic Climatique Immobilier</div>
+      </div>
+    </div>
+    <div class="eyebrow">Analyse en cours</div>
+    <div id="loading-title">Construction du jumeau numérique…</div>
+    <div id="loading-steps">
+      <div class="step" data-step="0"><div class="icon"></div><span>Géocodage de l'adresse et localisation de la parcelle</span></div>
+      <div class="step" data-step="1"><div class="icon"></div><span>Croisement avec Géorisques (aléas retrait-gonflement, inondation)</span></div>
+      <div class="step" data-step="2"><div class="icon"></div><span>Interrogation Copernicus (projections climatiques 2050)</span></div>
+      <div class="step" data-step="3"><div class="icon"></div><span>Consultation BDNB (caractéristiques du bâti)</span></div>
+      <div class="step" data-step="4"><div class="icon"></div><span>Fusion des données de risque et calcul des scores</span></div>
+      <div class="step" data-step="5"><div class="icon"></div><span>Génération des recommandations par l'agent IA</span></div>
+      <div class="step" data-step="6"><div class="icon"></div><span>Rendu du jumeau numérique 3D</span></div>
+    </div>
+    <div id="loading-bar-track"><div id="loading-bar-fill"></div></div>
+    <div id="loading-error">
+      <div id="loading-error-msg"></div>
+      <button type="button" class="btn-ghost" id="loading-retry-btn">← Modifier l'adresse et réessayer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== ECRAN 3 : JUMEAU NUMERIQUE 3D (moteur réel) ==================== -->
+<div id="app-ui">
+<div id="scene-container"></div>
+<div id="loading-msg" style="position:absolute;inset:0;display:none;align-items:center;justify-content:center;color:#FF6B4A;font-size:14px;z-index:20;"></div>
+
+<div id="toggle-panel">
+  <h3>Jumeau numérique — Diagnostic</h3>
+  <div class="addr-line" id="addr-line">—</div>
+  <div id="toggle-buttons">
+    <button id="btn-2025" class="active">2025</button>
+    <button id="btn-2050">2050</button>
+  </div>
+  <div id="global-score">Score global : <strong id="score-value">--</strong> / 100</div>
+  <div id="climat-panel">
+    <div style="font-size:11px;color:#FF6B4A;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px;">Projection climatique 2050</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 10px;">
+      <div><span style="color:#8B959D;font-size:10.5px;">🔥 Pic de chaleur max</span><br><strong id="temp-value" style="color:#DC4B39;font-size:15px;">—</strong></div>
+      <div><span style="color:#8B959D;font-size:10.5px;">Précipitations</span><br><strong id="precip-value" style="color:#1F9D6C;font-size:15px;">—</strong></div>
+      <div><span style="color:#8B959D;font-size:10.5px;">Jours canicule/an</span><br><strong id="canicule-value" style="color:#D98A2B;font-size:15px;">—</strong></div>
+      <div><span style="color:#8B959D;font-size:10.5px;">Sources</span><br><span id="climat-sources-badge" style="font-size:10px;color:#A7ADB2;">—</span></div>
+    </div>
+    <div id="copernicus-badge" style="display:none;margin-top:6px;background:#FFE4DA;color:#FF6B4A;font-size:10px;padding:3px 8px;border-radius:999px;font-weight:700;">☁ Données Copernicus disponibles</div>
+    <div id="dvf-badge" style="display:none;margin-top:4px;background:#E4F5EC;color:#1F9D6C;font-size:10px;padding:3px 8px;border-radius:999px;font-weight:700;">📊 Données de marché (DVF) disponibles</div>
+  </div>
+</div>
+
+<div id="info-panel">
+  <h3 id="info-title">Zone</h3>
+  <div class="badge" id="info-badge">Risque</div>
+  <p id="info-alea"></p>
+  <p id="info-justif"></p>
+  <div id="info-recos"></div>
+</div>
+
+<div id="hint">Glisser = orbiter · Molette = zoom · Clic sur une zone = détails</div>
+
+<div id="brand-watermark" title="Retour à l'accueil">
+  <div class="mark"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5 3.5 9 8 11 4.5-2 8-6 8-11V5z"/><path d="m9 12 2 2 4-4"/></svg></div>
+  <span>TYPHOON</span>
+</div>
+
+<button id="devis-cta">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="15" x2="15" y2="15"/><line x1="9" y1="11" x2="11" y2="11"/></svg>
+  Réaliser mon devis personnalisé
+</button>
+
+<!-- ==================== MODALE DEVIS PERSONNALISÉ ==================== -->
+<div id="devis-overlay">
+  <div id="devis-modal">
+    <button id="devis-close-btn">✕</button>
+
+    <div id="devis-select-view">
+      <div class="typhoon-logo" style="margin-bottom:14px;">
+        <div class="mark"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5 3.5 9 8 11 4.5-2 8-6 8-11V5z"/><path d="m9 12 2 2 4-4"/></svg></div>
+        <div>
+          <div class="name" style="font-size:15px;">TYPHOON</div>
+          <div class="baseline">Devis Climat-Résilience</div>
+        </div>
+      </div>
+      <h2>Composez votre plan de travaux</h2>
+      <p class="devis-sub">Sélectionnez les travaux que vous souhaitez engager. Chaque travaux réduit l'exposition climatique de votre bien et augmente votre éligibilité à la certification <strong>Climato-Résilient Typhoon</strong>, ouvrant droit à une prime sur votre cotisation d'assurance.</p>
+
+      <div id="devis-list"></div>
+
+      <div id="devis-summary">
+        <div class="sum-block">
+          <div class="label">Travaux sélectionnés</div>
+          <div class="value" id="sum-count">0</div>
+        </div>
+        <div class="sum-block">
+          <div class="label">Coût estimé</div>
+          <div class="value" id="sum-cost">0€</div>
+        </div>
+        <div class="sum-block">
+          <div class="label">Gain de résilience</div>
+          <div class="value accent" id="sum-gain">+0%</div>
+        </div>
+        <div class="sum-block">
+          <div class="label">Prime estimée</div>
+          <div class="value accent" id="sum-prime">0%</div>
+        </div>
+      </div>
+
+      <button id="devis-generate-btn" disabled>Générer mon devis de certification</button>
+    </div>
+
+    <div id="devis-result">
+      <div id="cert-card">
+        <div id="cert-shield"><svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="#1F9D6C" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5 3.5 9 8 11 4.5-2 8-6 8-11V5z"/><path d="m9 12 2 2 4-4"/></svg></div>
+        <div id="cert-title">Certification Typhoon</div>
+        <h2 id="cert-heading">Bien Climato-Résilient</h2>
+        <p id="cert-property">—</p>
+
+        <div id="cert-scores">
+          <div class="cert-score-box">
+            <div class="cert-score-label">Score avant</div>
+            <div class="cert-score-value" id="cert-score-before" style="color:#D98A2B;">--</div>
+          </div>
+          <div class="cert-arrow">→</div>
+          <div class="cert-score-box">
+            <div class="cert-score-label">Score après travaux</div>
+            <div class="cert-score-value" id="cert-score-after" style="color:#1F9D6C;">--</div>
+          </div>
+        </div>
+
+        <div id="cert-prime">
+          <div class="prime-label">Prime sur votre cotisation</div>
+          <div class="prime-value" id="cert-prime-value">0%</div>
+          <div class="prime-detail" id="cert-prime-detail">Réduction annuelle grâce à la réduction de votre exposition au risque climatique</div>
+        </div>
+
+        <div id="cert-works-list">
+          <div class="cert-works-title">Travaux retenus dans ce devis</div>
+          <ul id="cert-works-ul"></ul>
+        </div>
+
+        <div id="cert-actions">
+          <button id="cert-back-btn">← Modifier ma sélection</button>
+          <button id="cert-download-btn">Télécharger le devis</button>
+        </div>
+        <div id="cert-footnote">Typhoon — devis indicatif non contractuel, généré automatiquement par l'agent IA de diagnostic climatique.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== CHAT ASSISTANT IA ==================== -->
+<button id="chat-toggle-btn" aria-label="Ouvrir l'assistant IA">
+  <span class="dot"></span>
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+</button>
+
+<div id="chat-panel">
+  <div id="chat-header">
+    <div class="avatar"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#FF6B4A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12l9-9 9 9"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/></svg></div>
+    <div>
+      <div class="title">Assistant Jumeau Numérique</div>
+      <div class="subtitle">En ligne</div>
+    </div>
+    <button id="chat-close" aria-label="Fermer">✕</button>
+  </div>
+  <div id="chat-messages"></div>
+  <div id="chat-chips">
+    <button class="chip" data-intent="synthese">Synthèse des travaux</button>
+    <button class="chip" data-intent="risque">Risque prioritaire</button>
+    <button class="chip" data-intent="budget">Budget &amp; aides</button>
+  </div>
+  <div id="chat-input-row">
+    <input id="chat-input" type="text" placeholder="Posez votre question…" autocomplete="off">
+    <button id="chat-send" aria-label="Envoyer">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+    </button>
+  </div>
+</div>
+</div><!-- /#app-ui -->
+
+<!-- Uniquement le coeur de Three.js. Pas de THREE.OrbitControls (peu fiable
+     sur les CDN) : contrôle caméra personnalisé plus bas. -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+if (typeof THREE === 'undefined') {
+  document.body.innerHTML = '<div style="color:#1E2A33;background:#FFF5F3;padding:30px;font-family:sans-serif;max-width:600px;margin:60px auto;border-radius:10px;border:1px solid #F3D9D2;">' +
+    '<h2 style="color:#DC4B39;">Three.js ne s\'est pas chargé</h2>' +
+    '<p>Vérifiez votre connexion internet ou essayez un autre réseau.</p></div>';
+  throw new Error('THREE non chargé');
+}
+</script>
+<script>
+/* =========================================================================
+   TYPHOON — JUMEAU NUMÉRIQUE 3D — moteur réel (diagnostic du bien)
+   Consomme le contrat JSON produit par digital_twin_agent :
+   { adresse, bien, geometry, score_global, zones{7}, projection_2050, climat_2050 }
+   Rendu : effet scan holographique (remplissage translucide + wireframe bleu),
+   couleur des zones = niveau de risque, effets visuels (fissures / montée des
+   eaux / auréoles d'humidité) pilotés par une fonction de mapping pure
+   risque -> paramètres visuels. Cet écran est affiché uniquement une fois
+   qu'un diagnostic (réel ou exemple) a été chargé — voir le script
+   d'orchestration plus bas.
+   ========================================================================= */
+
+// ---------- 0. DONNÉES D'EXEMPLE (utilisées par le bouton "essayer sans backend") ----------
+const DEFAULT_DATA = {
+  "adresse": "12 rue des Lilas, 33000 Bordeaux",
+  "bien": { "type": "maison individuelle", "annee_construction": 1975, "coordonnees": { "lat": 44.8378, "lon": -0.5792 } },
+  "geometry": {
+    "footprint_shape": "rectangulaire",
+    "largeur_m": 8.5, "longueur_m": 10.2, "orientation_deg": 15,
+    "floors_count": 2, "hauteur_sous_plafond_m": 2.6,
+    "roof_shape": "deux_pans", "pente_toit_deg": 35,
+    "materiau_mur": "parpaing_enduit", "materiau_toiture": "tuiles_terre_cuite",
+    "has_basement": true, "has_cellar": false,
+    "has_garage": true, "garage_position": "ouest",
+    "has_garden": true, "garden_surface_m2": 250
+  },
+  "score_global": 58,
+  "zones": {
+    "fondations": { "risque": 78, "niveau": "eleve", "alea_principal": "Retrait-gonflement des argiles", "justification": "Sol argileux identifié en zone d'aléa fort, aggravé par l'alternance sécheresse/humidité.", "recommandations": [
+      { "travaux": "Renforcement des fondations par micropieux", "cout_estime": "9000-16000€", "gain_resilience": 30 },
+      { "travaux": "Drainage périphérique", "cout_estime": "3000-6000€", "gain_resilience": 15 }
+    ]},
+    "murs_nord": { "risque": 35, "niveau": "modere", "alea_principal": "Infiltration", "justification": "Exposition nord avec humidité résiduelle plus fréquente.", "recommandations": [
+      { "travaux": "Traitement hydrofuge de façade", "cout_estime": "1500-3000€", "gain_resilience": 12 }
+    ]},
+    "murs_sud": { "risque": 20, "niveau": "faible", "alea_principal": "Stress thermique", "justification": "Exposition sud correcte, matériaux jugés stables.", "recommandations": [] },
+    "murs_est": { "risque": 28, "niveau": "faible", "alea_principal": "Vent", "justification": "Exposition modérée aux vents dominants.", "recommandations": [] },
+    "murs_ouest": { "risque": 42, "niveau": "modere", "alea_principal": "Intempéries", "justification": "Façade la plus exposée aux intempéries selon l'historique CATNAT local.", "recommandations": [
+      { "travaux": "Renforcement bardage", "cout_estime": "2000-4000€", "gain_resilience": 10 }
+    ]},
+    "toiture": { "risque": 55, "niveau": "modere", "alea_principal": "Canicule / stress thermique", "justification": "Isolation actuelle insuffisante face à l'augmentation prévue des épisodes caniculaires.", "recommandations": [
+      { "travaux": "Isolation thermique renforcée", "cout_estime": "6000-11000€", "gain_resilience": 22 }
+    ]},
+    "sous_sol": { "risque": 65, "niveau": "eleve", "alea_principal": "Inondation / remontée de nappe", "justification": "Proximité d'un cours d'eau avec historique d'inondation dans le secteur.", "recommandations": [
+      { "travaux": "Pose de batardeaux et clapet anti-retour", "cout_estime": "2500-5000€", "gain_resilience": 20 }
+    ]}
+  },
+  "projection_2050": {
+    "score_global": 81,
+    "zones": {
+      "fondations": { "risque": 92, "niveau": "critique", "alea_principal": "RGA aggravé", "justification": "Sécheresses prolongées prévues en 2050, risque de fissuration majeure.", "recommandations": [{ "travaux": "Renforcement fondations + surveillance annuelle", "cout_estime": "9000-16000€", "gain_resilience": 35 }] },
+      "murs_nord":  { "risque": 48, "niveau": "modere", "alea_principal": "Infiltration accrue", "justification": "Augmentation des précipitations intenses en hiver.", "recommandations": [{ "travaux": "Traitement hydrofuge de façade", "cout_estime": "1500-3000€", "gain_resilience": 15 }] },
+      "murs_sud":   { "risque": 40, "niveau": "modere", "alea_principal": "Stress thermique", "justification": "Canicules plus longues, exposition sud plus sensible.", "recommandations": [{ "travaux": "Volets isolants", "cout_estime": "1200-2500€", "gain_resilience": 10 }] },
+      "murs_est":   { "risque": 38, "niveau": "modere", "alea_principal": "Vent renforcé", "justification": "Intensification des épisodes de vent fort.", "recommandations": [] },
+      "murs_ouest": { "risque": 60, "niveau": "eleve", "alea_principal": "Intempéries renforcées", "justification": "Façade la plus exposée, aggravation attendue.", "recommandations": [{ "travaux": "Renforcement bardage renforcé", "cout_estime": "2000-4000€", "gain_resilience": 18 }] },
+      "toiture":    { "risque": 80, "niveau": "eleve", "alea_principal": "Canicule prolongée", "justification": "Périodes de canicule estimées à plusieurs mois en 2050.", "recommandations": [{ "travaux": "Isolation thermique renforcée + ventilation", "cout_estime": "6000-11000€", "gain_resilience": 30 }] },
+      "sous_sol":   { "risque": 85, "niveau": "critique", "alea_principal": "Inondation aggravée", "justification": "Augmentation de 30% des sinistres climatiques attendue d'ici 2050.", "recommandations": [{ "travaux": "Batardeaux + pompe de relevage", "cout_estime": "3500-7000€", "gain_resilience": 28 }] }
+    }
+  },
+  "climat_2050": { "temperature_max_projetee_c": 41.5, "source": "Copernicus" }
+};
+
+const ZONE_NAMES = ["fondations", "murs_nord", "murs_sud", "murs_est", "murs_ouest", "toiture", "sous_sol"];
+
+// ---------- 1. FONCTION DE MAPPING RISQUE -> EFFET VISUEL (pure, déterministe) ----------
+function mapRiskToEffect(zoneName, score) {
+  const s = Math.max(0, Math.min(100, score));
+  if (zoneName === "fondations") {
+    let opacity = 0, layers = 0;
+    if (s >= 60) { opacity = 0.55 + (s - 60) / 40 * 0.40; layers = s >= 85 ? 3 : 2; }
+    else if (s >= 30) { opacity = 0.12 + (s - 30) / 30 * 0.35; layers = 1; }
+    return { crackOpacity: Math.min(opacity, 0.95), crackLayers: layers };
+  }
+  if (zoneName === "sous_sol") {
+    let ratio = 0;
+    if (s >= 60) ratio = 0.5 + (s - 60) / 40 * 0.5;
+    else if (s >= 30) ratio = (s - 30) / 30 * 0.5;
+    return { waterHeightRatio: Math.min(ratio, 1) };
+  }
+  if (zoneName === "toiture") {
+    let wear = 0;
+    if (s >= 60) wear = 0.4 + (s - 60) / 40 * 0.6;
+    else if (s >= 30) wear = (s - 30) / 30 * 0.4;
+    return { tileWear: Math.min(wear, 1) };
+  }
+  if (zoneName.startsWith("murs_")) {
+    let stain = 0;
+    if (s >= 70) stain = 0.3 + (s - 70) / 30 * 0.5;
+    else if (s >= 40) stain = (s - 40) / 30 * 0.3;
+    return { humidityOpacity: Math.min(stain, 0.85) };
+  }
+  return {};
+}
+
+// ---------- 2. SCÈNE THREE.JS ----------
+const container = document.getElementById('scene-container');
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x04070c);
+scene.fog = new THREE.Fog(0x04070c, 20, 55);
+
+const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(window.devicePixelRatio);
+container.appendChild(renderer.domElement);
+
+scene.add(new THREE.HemisphereLight(0x3a7bd5, 0x04070c, 0.7));
+const rim = new THREE.DirectionalLight(0x4da6ff, 0.5); rim.position.set(-8, 10, -6); scene.add(rim);
+const key = new THREE.DirectionalLight(0xbfe0ff, 0.4); key.position.set(8, 12, 8); scene.add(key);
+
+const grid = new THREE.GridHelper(60, 60, 0x1560ff, 0x0d2647);
+grid.material.transparent = true; grid.material.opacity = 0.32;
+scene.add(grid);
+
+const ringGeo = new THREE.RingGeometry(6.5, 6.7, 64);
+const ringMat = new THREE.MeshBasicMaterial({ color: 0x4da6ff, transparent: true, opacity: 0.5, side: THREE.DoubleSide });
+const scanRing = new THREE.Mesh(ringGeo, ringMat);
+scanRing.rotation.x = -Math.PI / 2; scanRing.position.y = 0.01;
+scene.add(scanRing);
+
+const WIRE_COLOR = 0x5fb2ff;
+function makeWireMat() { return new THREE.LineBasicMaterial({ color: WIRE_COLOR, transparent: true, opacity: 0.85 }); }
+function makeFillMat(color, opacity) {
+  return new THREE.MeshBasicMaterial({ color, transparent: true, opacity: opacity ?? 0.16, side: THREE.DoubleSide, blending: THREE.AdditiveBlending, depthWrite: false });
+}
+function addPart(group, geometry, position, fillColor, opacity) {
+  const fill = new THREE.Mesh(geometry, makeFillMat(fillColor, opacity));
+  if (position) fill.position.copy(position);
+  group.add(fill);
+  const wire = new THREE.LineSegments(new THREE.EdgesGeometry(geometry), makeWireMat());
+  if (position) wire.position.copy(position);
+  group.add(wire);
+  return fill;
+}
+function addRawPart(group, bufferGeometry, fillColor, opacity) {
+  bufferGeometry.computeVertexNormals();
+  const fill = new THREE.Mesh(bufferGeometry, makeFillMat(fillColor, opacity));
+  group.add(fill);
+  const wire = new THREE.LineSegments(new THREE.EdgesGeometry(bufferGeometry), makeWireMat());
+  group.add(wire);
+  return fill;
+}
+
+// ---------- 3. CANEVAS PROCÉDURAUX (fissures / auréoles) ----------
+function makeCrackTexture(layers) {
+  const c = document.createElement('canvas'); c.width = 512; c.height = 512;
+  const ctx = c.getContext('2d');
+  ctx.clearRect(0, 0, 512, 512);
+  ctx.strokeStyle = 'rgba(255,255,255,0.95)';
+  ctx.shadowColor = 'rgba(255,80,60,0.9)'; ctx.shadowBlur = 4;
+  const rand = mulberry32(42);
+  for (let l = 0; l < Math.max(1, layers); l++) {
+    let x = 80 + rand() * 350, y = 40;
+    ctx.lineWidth = 2 + rand() * 2;
+    ctx.beginPath(); ctx.moveTo(x, y);
+    for (let i = 0; i < 14; i++) {
+      x += (rand() - 0.5) * 70;
+      y += 30 + rand() * 20;
+      ctx.lineTo(x, Math.min(y, 500));
+      if (rand() > 0.6) {
+        const bx = x + (rand() - 0.5) * 60, by = y + rand() * 40;
+        ctx.moveTo(x, y); ctx.lineTo(bx, Math.min(by, 500)); ctx.moveTo(x, y);
+      }
+    }
+    ctx.stroke();
+  }
+  return new THREE.CanvasTexture(c);
+}
+function makeStainTexture() {
+  const c = document.createElement('canvas'); c.width = 512; c.height = 512;
+  const ctx = c.getContext('2d');
+  const grd = ctx.createRadialGradient(256, 380, 10, 256, 380, 260);
+  grd.addColorStop(0, 'rgba(140,180,255,0.85)');
+  grd.addColorStop(0.5, 'rgba(100,140,220,0.35)');
+  grd.addColorStop(1, 'rgba(100,140,220,0)');
+  ctx.fillStyle = grd; ctx.fillRect(0, 0, 512, 512);
+  return new THREE.CanvasTexture(c);
+}
+function mulberry32(seed) {
+  return function () {
+    seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+const crackTextures = { 1: makeCrackTexture(1), 2: makeCrackTexture(2), 3: makeCrackTexture(3) };
+const stainTexture = makeStainTexture();
+
+// ---------- 4. CONSTRUCTION PARAMÉTRIQUE DE LA MAISON ----------
+let house = null, zoneGroups = {}, zoneFillMeshes = {}, interactiveMeshes = [];
+let crackMesh = null, waterMesh = null, stainMeshes = {};
+let houseDims = {};
+let labelSprites = {}, leaderLines = {};
+
+function disposeHouse() {
+  if (house) scene.remove(house);
+  house = null; zoneGroups = {}; zoneFillMeshes = {}; interactiveMeshes = [];
+  crackMesh = null; waterMesh = null; stainMeshes = {};
+  labelSprites = {}; leaderLines = {};
+}
+
+function registerFill(zoneName, fillMesh) {
+  fillMesh.userData.zoneName = zoneName;
+  zoneFillMeshes[zoneName].push(fillMesh);
+  interactiveMeshes.push(fillMesh);
+}
+
+function buildHouse(geometry) {
+  disposeHouse();
+  const g = geometry || {};
+  const W = clamp(g.largeur_m ?? 8, 3, 35);
+  const D = clamp(g.longueur_m ?? 8, 3, 35);
+  const floors = Math.max(1, Math.min(6, Math.round(g.floors_count ?? 1)));
+  const levelH = clamp(g.hauteur_sous_plafond_m ?? 2.6, 2.0, 3.5);
+  const roofShape = (g.roof_shape || 'deux_pans').toLowerCase();
+  const penteDeg = clamp(g.pente_toit_deg ?? 35, 12, 55);
+  const hasBasement = g.has_basement !== false;
+  const hasGarage = !!g.has_garage;
+  const garagePos = g.garage_position || 'ouest';
+  const hasGarden = !!g.has_garden;
+  const orientationDeg = g.orientation_deg ?? 0;
+
+  house = new THREE.Group();
+  scene.add(house);
+
+  ZONE_NAMES.forEach(name => {
+    const grp = new THREE.Group(); grp.name = name;
+    house.add(grp); zoneGroups[name] = grp; zoneFillMeshes[name] = [];
+  });
+
+  const basementTopY = 0.4;
+  const basementH = hasBasement ? 1.6 : 0.35;
+  const basementCenterY = basementTopY - basementH / 2;
+  const fondY = basementTopY + 0.15;
+  const wallsStartY = basementTopY + 0.3;
+  const eavesY = wallsStartY + floors * levelH;
+
+  registerFill("sous_sol", addPart(zoneGroups.sous_sol,
+    new THREE.BoxGeometry(W + 0.3, basementH, D + 0.3),
+    new THREE.Vector3(0, basementCenterY, 0), 0x3fb950, 0.18));
+
+  registerFill("fondations", addPart(zoneGroups.fondations,
+    new THREE.BoxGeometry(W + 0.4, 0.3, D + 0.4),
+    new THREE.Vector3(0, fondY, 0), 0x3fb950, 0.18));
+
+  const wallThickness = 0.2;
+  function buildWallLevels(zoneName, sizeFn, posFn) {
+    for (let i = 0; i < floors; i++) {
+      const y = wallsStartY + i * levelH + levelH / 2;
+      registerFill(zoneName, addPart(zoneGroups[zoneName], sizeFn(), posFn(y), 0x3fb950, 0.16));
+    }
+  }
+  buildWallLevels("murs_nord", () => new THREE.BoxGeometry(W, levelH, wallThickness), y => new THREE.Vector3(0, y, -D / 2));
+  buildWallLevels("murs_sud",  () => new THREE.BoxGeometry(W, levelH, wallThickness), y => new THREE.Vector3(0, y, D / 2));
+  buildWallLevels("murs_est",  () => new THREE.BoxGeometry(wallThickness, levelH, D), y => new THREE.Vector3(W / 2, y, 0));
+  buildWallLevels("murs_ouest",() => new THREE.BoxGeometry(wallThickness, levelH, D), y => new THREE.Vector3(-W / 2, y, 0));
+
+  for (let i = 1; i < floors; i++) {
+    const bandY = wallsStartY + i * levelH;
+    const bandGeo = new THREE.BoxGeometry(W + 0.15, 0.06, D + 0.15);
+    const bandFill = new THREE.Mesh(bandGeo, makeFillMat(0x5fb2ff, 0.25));
+    bandFill.position.set(0, bandY, 0); house.add(bandFill);
+    const bandWire = new THREE.LineSegments(new THREE.EdgesGeometry(bandGeo), makeWireMat());
+    bandWire.position.copy(bandFill.position); house.add(bandWire);
+  }
+
+  const roofOverhang = 0.35;
+  const roofHalfSpan = D / 2 + roofOverhang;
+  let ridgeY = eavesY;
+
+  if (roofShape === 'plat' || roofShape === 'toit_plat') {
+    const slabGeo = new THREE.BoxGeometry(W + 0.6, 0.25, D + 0.6);
+    registerFill("toiture", addPart(zoneGroups.toiture, slabGeo, new THREE.Vector3(0, eavesY + 0.15, 0), 0x3fb950, 0.16));
+    ridgeY = eavesY + 0.25;
+  } else if (roofShape === 'quatre_pans' || roofShape === 'croupe') {
+    const penteRad = penteDeg * Math.PI / 180;
+    const rise = roofHalfSpan * Math.tan(penteRad);
+    ridgeY = eavesY + rise;
+    const ridgeLen = Math.max(0.6, W - D);
+    const ov = roofOverhang;
+    const NW = [-(W / 2 + ov), eavesY, -(D / 2 + ov)], NE = [(W / 2 + ov), eavesY, -(D / 2 + ov)];
+    const SW = [-(W / 2 + ov), eavesY, (D / 2 + ov)], SE = [(W / 2 + ov), eavesY, (D / 2 + ov)];
+    const Rw = [-ridgeLen / 2, ridgeY, 0], Re = [ridgeLen / 2, ridgeY, 0];
+    registerFill("toiture", addRawPart(zoneGroups.toiture, quadGeo(NW, NE, Re, Rw), 0x3fb950, 0.16));
+    registerFill("toiture", addRawPart(zoneGroups.toiture, quadGeo(SE, SW, Rw, Re), 0x3fb950, 0.16));
+    registerFill("toiture", addRawPart(zoneGroups.toiture, triGeo(NW, SW, Rw), 0x3fb950, 0.16));
+    registerFill("toiture", addRawPart(zoneGroups.toiture, triGeo(SE, NE, Re), 0x3fb950, 0.16));
+  } else {
+    const penteRad = penteDeg * Math.PI / 180;
+    const rise = roofHalfSpan * Math.tan(penteRad);
+    ridgeY = eavesY + rise;
+    const roofSlopeLength = Math.sqrt(roofHalfSpan * roofHalfSpan + rise * rise);
+    const roofAngle = Math.atan2(rise, roofHalfSpan);
+    function makeSlope(sign) {
+      const geo = new THREE.BoxGeometry(W + 0.7, 0.12, roofSlopeLength);
+      const mesh = new THREE.Mesh(geo, makeFillMat(0x3fb950, 0.16));
+      mesh.rotation.x = sign * roofAngle;
+      mesh.position.set(0, (eavesY + ridgeY) / 2, sign * (roofHalfSpan / 2));
+      zoneGroups.toiture.add(mesh);
+      const wire = new THREE.LineSegments(new THREE.EdgesGeometry(geo), makeWireMat());
+      wire.rotation.copy(mesh.rotation); wire.position.copy(mesh.position);
+      zoneGroups.toiture.add(wire);
+      return mesh;
+    }
+    registerFill("toiture", makeSlope(1));
+    registerFill("toiture", makeSlope(-1));
+    function makeGable(zSide) {
+      const halfW = W / 2;
+      const geo = triGeo([-halfW, eavesY, zSide], [halfW, eavesY, zSide], [0, ridgeY, zSide]);
+      registerFill("toiture", addRawPart(zoneGroups.toiture, geo, 0x3fb950, 0.16));
+    }
+    makeGable(-D / 2); makeGable(D / 2);
+  }
+
+  const decor = new THREE.Group(); house.add(decor);
+  function addDecorPanel(geometry, position, rotationY) {
+    const fill = new THREE.Mesh(geometry, makeFillMat(0x5fb2ff, 0.22));
+    fill.position.copy(position); if (rotationY) fill.rotation.y = rotationY;
+    decor.add(fill);
+    const wire = new THREE.LineSegments(new THREE.EdgesGeometry(geometry), makeWireMat());
+    wire.position.copy(position); if (rotationY) wire.rotation.y = rotationY;
+    decor.add(wire);
+  }
+  for (let i = 0; i < floors; i++) {
+    const y = wallsStartY + i * levelH + levelH / 2;
+    [-W * 0.22, W * 0.22].forEach(x => addDecorPanel(new THREE.BoxGeometry(0.9, levelH * 0.42, 0.06), new THREE.Vector3(x, y, D / 2 + 0.02)));
+  }
+  addDecorPanel(new THREE.BoxGeometry(0.9, 1.9, 0.06), new THREE.Vector3(0, wallsStartY - 0.3 + 1.0, D / 2 + 0.02));
+  if (hasBasement) {
+    [-W * 0.28, W * 0.28].forEach(x => addDecorPanel(new THREE.BoxGeometry(0.6, 0.35, 0.06), new THREE.Vector3(x, basementTopY - 0.25, D / 2 + 0.16)));
+  }
+  if (hasGarage) {
+    const garageW = 3.0, garageD = 4.2, garageH = 2.4;
+    let gx = 0, gz = 0;
+    if (garagePos === 'ouest') { gx = -W / 2 - garageW / 2 - 0.05; }
+    else if (garagePos === 'est') { gx = W / 2 + garageW / 2 + 0.05; }
+    else if (garagePos === 'nord') { gz = -D / 2 - garageD / 2 - 0.05; }
+    else { gz = D / 2 + garageD / 2 + 0.05; }
+    addDecorPanel(new THREE.BoxGeometry(garageW, garageH, garageD), new THREE.Vector3(gx, wallsStartY - 0.3 + garageH / 2, gz));
+    addDecorPanel(new THREE.BoxGeometry(garageW + 0.3, 0.1, garageD + 0.3), new THREE.Vector3(gx, wallsStartY - 0.3 + garageH + 0.05, gz));
+  }
+  if (hasGarden) {
+    const side = hasGarage && (garagePos === 'ouest') ? 1 : -1;
+    const size = Math.sqrt(clamp(g.garden_surface_m2 ?? 100, 20, 2000));
+    const gardenGeo = new THREE.PlaneGeometry(size, size);
+    const gardenMat = new THREE.MeshBasicMaterial({ color: 0x3fb950, transparent: true, opacity: 0.08, side: THREE.DoubleSide });
+    const gardenMesh = new THREE.Mesh(gardenGeo, gardenMat);
+    gardenMesh.rotation.x = -Math.PI / 2;
+    gardenMesh.position.set(side * (W / 2 + size / 2 + 1.2), 0.02, 0);
+    house.add(gardenMesh);
+  }
+
+  house.rotation.y = orientationDeg * Math.PI / 180;
+
+  houseDims = { W, D, floors, levelH, wallsStartY, eavesY, ridgeY, basementCenterY, fondY };
+  buildLabels();
+  buildEffectMeshes();
+}
+
+function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
+function quadGeo(a, b, c, d) {
+  const geo = new THREE.BufferGeometry();
+  const verts = new Float32Array([...a, ...b, ...c, ...a, ...c, ...d]);
+  geo.setAttribute('position', new THREE.BufferAttribute(verts, 3));
+  return geo;
+}
+function triGeo(a, b, c) {
+  const geo = new THREE.BufferGeometry();
+  const verts = new Float32Array([...a, ...b, ...c]);
+  geo.setAttribute('position', new THREE.BufferAttribute(verts, 3));
+  return geo;
+}
+
+// ---------- 5. EFFETS VISUELS PILOTÉS PAR LE RISQUE ----------
+function buildEffectMeshes() {
+  const { W, D, fondY, basementCenterY } = houseDims;
+
+  const crackGeo = new THREE.PlaneGeometry(W * 0.8, 0.5);
+  const crackMat = new THREE.MeshBasicMaterial({ map: crackTextures[1], transparent: true, opacity: 0, depthWrite: false });
+  crackMesh = new THREE.Mesh(crackGeo, crackMat);
+  crackMesh.position.set(0, fondY, D / 2 + 0.22);
+  house.add(crackMesh);
+
+  const waterGeo = new THREE.CircleGeometry(Math.max(W, D) * 0.9, 48);
+  const waterMat = new THREE.MeshBasicMaterial({ color: 0x2fa9ff, transparent: true, opacity: 0.32, side: THREE.DoubleSide, depthWrite: false });
+  waterMesh = new THREE.Mesh(waterGeo, waterMat);
+  waterMesh.rotation.x = -Math.PI / 2;
+  waterMesh.position.y = basementCenterY - 5;
+  waterMesh.userData.baseY = basementCenterY;
+  waterMesh.userData.targetRatio = 0;
+  house.add(waterMesh);
+
+  stainMeshes = {};
+  const stainDefs = {
+    murs_nord: { pos: new THREE.Vector3(0, houseDims.wallsStartY + houseDims.levelH / 2, -D / 2 - 0.03), rot: 0 },
+    murs_sud:  { pos: new THREE.Vector3(0, houseDims.wallsStartY + houseDims.levelH / 2, D / 2 + 0.03), rot: 0 },
+    murs_est:  { pos: new THREE.Vector3(W / 2 + 0.03, houseDims.wallsStartY + houseDims.levelH / 2, 0), rot: Math.PI / 2 },
+    murs_ouest:{ pos: new THREE.Vector3(-W / 2 - 0.03, houseDims.wallsStartY + houseDims.levelH / 2, 0), rot: Math.PI / 2 }
+  };
+  Object.entries(stainDefs).forEach(([zone, def]) => {
+    const geo = new THREE.PlaneGeometry(1.6, 1.6);
+    const mat = new THREE.MeshBasicMaterial({ map: stainTexture, transparent: true, opacity: 0, depthWrite: false });
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.position.copy(def.pos); mesh.rotation.y = def.rot;
+    house.add(mesh);
+    stainMeshes[zone] = mesh;
+  });
+}
+
+function applyZoneEffect(zoneName, score) {
+  const effect = mapRiskToEffect(zoneName, score);
+  if (zoneName === "fondations" && crackMesh) {
+    crackMesh.material.opacity = effect.crackOpacity || 0;
+    crackMesh.material.map = crackTextures[Math.max(1, effect.crackLayers || 1)];
+    crackMesh.material.needsUpdate = true;
+  }
+  if (zoneName === "sous_sol" && waterMesh) {
+    waterMesh.userData.targetRatio = effect.waterHeightRatio || 0;
+  }
+  if (zoneName.startsWith("murs_") && stainMeshes[zoneName]) {
+    stainMeshes[zoneName].material.opacity = effect.humidityOpacity || 0;
+  }
+}
+
+const maxWaterRise = 2.4;
+function animateEffects(dt, elapsed) {
+  if (waterMesh) {
+    const target = waterMesh.userData.baseY + waterMesh.userData.targetRatio * maxWaterRise;
+    const bob = waterMesh.userData.targetRatio > 0.01 ? Math.sin(elapsed * 1.4) * 0.04 : 0;
+    const hiddenY = waterMesh.userData.baseY - 5;
+    const wantedY = waterMesh.userData.targetRatio > 0.01 ? target + bob : hiddenY;
+    waterMesh.position.y += (wantedY - waterMesh.position.y) * 0.08;
+  }
+}
+
+// ---------- 6. SCORE -> COULEUR + LABELS ----------
+function scoreToColor(score) {
+  if (score < 30) return 0x3fb950;
+  if (score < 60) return 0xd29922;
+  if (score < 80) return 0xdb6d28;
+  return 0xda3633;
+}
+const ROOF_WEAR_COLOR = new THREE.Color(0x8a5a2b);
+function animateColor(mesh, targetHex, duration = 500) {
+  const mat = mesh.material;
+  const startColor = mat.color.clone();
+  const targetColor = new THREE.Color(targetHex);
+  const startTime = performance.now();
+  function step(now) {
+    const t = Math.min((now - startTime) / duration, 1);
+    mat.color.lerpColors(startColor, targetColor, t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t);
+    if (t < 1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+function updateZoneColor(zoneName, score, animated = true) {
+  const meshes = zoneFillMeshes[zoneName];
+  if (!meshes || !meshes.length) return;
+  let color = new THREE.Color(scoreToColor(score));
+  if (zoneName === 'toiture') {
+    const wear = mapRiskToEffect('toiture', score).tileWear || 0;
+    color = color.clone().lerp(ROOF_WEAR_COLOR, wear * 0.7);
+  }
+  const targetHex = color.getHex();
+  meshes.forEach(m => animated ? animateColor(m, targetHex) : m.material.color.set(targetHex));
+  updateZoneLabel(zoneName, score);
+  applyZoneEffect(zoneName, score);
+}
+
+function buildLabels() {
+  const { W, D, wallsStartY, levelH, floors, ridgeY, basementCenterY } = houseDims;
+  const topY = wallsStartY + floors * levelH;
+  const anchors = {
+    fondations: new THREE.Vector3(W / 2 + 0.3, houseDims.fondY, D / 2 + 0.3),
+    murs_nord:  new THREE.Vector3(0, topY - levelH / 2, -D / 2),
+    murs_sud:   new THREE.Vector3(0, topY - levelH / 2, D / 2),
+    murs_est:   new THREE.Vector3(W / 2, wallsStartY + levelH / 2, 0),
+    murs_ouest: new THREE.Vector3(-W / 2, wallsStartY + levelH / 2, 0),
+    toiture:    new THREE.Vector3(0, ridgeY, 0),
+    sous_sol:   new THREE.Vector3(-W / 2 - 0.3, basementCenterY, D / 2 + 0.3)
+  };
+  const offsets = {
+    fondations: new THREE.Vector3(1.8, 0.6, 1.8), murs_nord: new THREE.Vector3(0, 1.6, -1.4),
+    murs_sud: new THREE.Vector3(0, 1.6, 1.4), murs_est: new THREE.Vector3(2.4, 1.2, 0),
+    murs_ouest: new THREE.Vector3(-2.4, 1.2, 0), toiture: new THREE.Vector3(0, 1.6, 0),
+    sous_sol: new THREE.Vector3(-1.8, 0.3, 1.8)
+  };
+  ZONE_NAMES.forEach(name => {
+    const texture = makeLabelCanvasTexture(name, 0);
+    const material = new THREE.SpriteMaterial({ map: texture, transparent: true, depthTest: false });
+    const sprite = new THREE.Sprite(material);
+    const anchor = anchors[name].clone().add(offsets[name]);
+    sprite.position.copy(anchor); sprite.scale.set(1.8, 0.55, 1);
+    house.add(sprite); labelSprites[name] = sprite;
+    const lineGeo = new THREE.BufferGeometry().setFromPoints([anchors[name], anchor]);
+    const line = new THREE.Line(lineGeo, new THREE.LineBasicMaterial({ color: WIRE_COLOR, transparent: true, opacity: 0.5 }));
+    house.add(line); leaderLines[name] = line;
+  });
+}
+function makeLabelCanvasTexture(title, score) {
+  const canvas = document.createElement('canvas'); canvas.width = 300; canvas.height = 90;
+  const ctx = canvas.getContext('2d');
+  const color = '#' + scoreToColor(score).toString(16).padStart(6, '0');
+  ctx.fillStyle = 'rgba(10,16,26,0.9)'; ctx.strokeStyle = color; ctx.lineWidth = 3;
+  roundRect(ctx, 4, 4, canvas.width - 8, canvas.height - 8, 12); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = '#cfe4ff'; ctx.font = '600 22px Segoe UI, sans-serif';
+  ctx.fillText(title.replace('_', ' '), 20, 36);
+  ctx.fillStyle = color; ctx.font = '700 26px Segoe UI, sans-serif';
+  ctx.fillText(score + ' / 100', 20, 70);
+  return new THREE.CanvasTexture(canvas);
+}
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath(); ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+}
+function updateZoneLabel(zoneName, score) {
+  const sprite = labelSprites[zoneName]; if (!sprite) return;
+  sprite.material.map = makeLabelCanvasTexture(zoneName, score);
+  sprite.material.needsUpdate = true;
+}
+
+// ---------- 7. CONTRÔLE CAMÉRA (glisser = tourner, molette = zoom) ----------
+const cameraTarget = new THREE.Vector3(0, 2.2, 0);
+let radius = 17, theta = Math.PI / 4, phi = Math.PI / 3;
+let targetTheta = theta, targetPhi = phi, targetRadius = radius;
+let isDragging = false, lastX = 0, lastY = 0, idleTime = 0;
+
+function updateCameraPosition(dt) {
+  if (!isDragging) { idleTime += dt; if (idleTime > 2) targetTheta += dt * 0.05; }
+  theta += (targetTheta - theta) * 0.1; phi += (targetPhi - phi) * 0.1; radius += (targetRadius - radius) * 0.1;
+  camera.position.x = cameraTarget.x + radius * Math.sin(phi) * Math.sin(theta);
+  camera.position.y = cameraTarget.y + radius * Math.cos(phi);
+  camera.position.z = cameraTarget.z + radius * Math.sin(phi) * Math.cos(theta);
+  camera.lookAt(cameraTarget);
+}
+renderer.domElement.addEventListener('mousedown', e => { isDragging = true; idleTime = 0; lastX = e.clientX; lastY = e.clientY; });
+window.addEventListener('mouseup', () => { isDragging = false; idleTime = 0; });
+window.addEventListener('mousemove', e => {
+  if (!isDragging) return;
+  const dx = e.clientX - lastX, dy = e.clientY - lastY; lastX = e.clientX; lastY = e.clientY;
+  targetTheta -= dx * 0.006; targetPhi = Math.max(0.35, Math.min(Math.PI / 2.1, targetPhi - dy * 0.006));
+});
+renderer.domElement.addEventListener('wheel', e => { e.preventDefault(); targetRadius = Math.max(6, Math.min(60, targetRadius + e.deltaY * 0.01)); }, { passive: false });
+function fitCameraToHouse() {
+  const span = Math.max(houseDims.W || 8, houseDims.D || 8);
+  const fit = clamp(span * 1.9, 12, 55);
+  radius = fit; targetRadius = fit;
+}
+
+// ---------- 8. RAYCASTING (survol + clic) ----------
+const raycaster = new THREE.Raycaster();
+const mouse = new THREE.Vector2();
+let hoveredGroup = null;
+function getIntersects(event) {
+  mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+  mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+  raycaster.setFromCamera(mouse, camera);
+  return raycaster.intersectObjects(interactiveMeshes);
+}
+renderer.domElement.addEventListener('mousemove', event => {
+  if (isDragging) return;
+  const intersects = getIntersects(event);
+  const newGroup = intersects.length ? intersects[0].object.parent : null;
+  if (hoveredGroup && hoveredGroup !== newGroup) { hoveredGroup.scale.set(1, 1, 1); hoveredGroup = null; renderer.domElement.style.cursor = 'grab'; }
+  if (newGroup && newGroup !== hoveredGroup) { hoveredGroup = newGroup; hoveredGroup.scale.set(1.02, 1.02, 1.02); renderer.domElement.style.cursor = 'pointer'; }
+});
+renderer.domElement.addEventListener('click', event => {
+  const intersects = getIntersects(event);
+  if (intersects.length) showZonePanel(intersects[0].object.userData.zoneName);
+});
+
+// ---------- 9. ÉTAT APPLICATIF ----------
+let rawData = null;
+let currentZones = null;
+let currentYear = 2025;
+
+function loadDataset(data) {
+  rawData = data;
+  buildHouse(data.geometry);
+  fitCameraToHouse();
+  document.getElementById('addr-line').textContent = data.adresse || '—';
+  const climat = data.climat;
+  const climPanel = document.getElementById('climat-panel');
+  if (climat && climat['2050']) {
+    const p2050 = climat['2050'];
+    // Le pic absolu (temperature_max_projetee_c = temperature_max_absolue_c de l'API) a la priorite
+    const picTemp = p2050.temperature_max_projetee_c;
+    if (typeof picTemp === 'number') {
+      document.getElementById('temp-value').textContent = picTemp.toFixed(1) + ' °C';
+    } else if (typeof p2050.temperature_max_moyenne_c === 'number') {
+      document.getElementById('temp-value').textContent = p2050.temperature_max_moyenne_c.toFixed(1) + ' °C (moy.)';
+    }
+    if (typeof p2050.precipitation_annuelle_moyenne_mm === 'number') {
+      document.getElementById('precip-value').textContent = p2050.precipitation_annuelle_moyenne_mm.toFixed(0) + ' mm/an';
+    } else {
+      document.getElementById('precip-value').textContent = 'N/C';
+    }
+    if (typeof p2050.jours_chaleur_extreme_par_an === 'number') {
+      document.getElementById('canicule-value').textContent = p2050.jours_chaleur_extreme_par_an.toFixed(1) + ' j/an';
+    } else {
+      document.getElementById('canicule-value').textContent = 'N/C';
+    }
+    document.getElementById('climat-sources-badge').textContent = climat.source || 'source —';
+    climPanel.style.display = 'block';
+    climPanel.style.marginTop = '10px';
+    climPanel.style.paddingTop = '10px';
+    climPanel.style.borderTop = '1px solid #E7DED6';
+    climPanel.style.fontSize = '12px';
+    climPanel.style.color = '#7C8791';
+    climPanel.style.lineHeight = '1.5';
+  }
+
+  // Badges sources conditionnelles
+  if (data._sources && data._sources.climat_copernicus) {
+    document.getElementById('copernicus-badge').style.display = 'block';
+  }
+  if (data.marche && data.marche.dvf_disponible) {
+    document.getElementById('dvf-badge').style.display = 'block';
+  }
+  document.getElementById('info-panel').style.display = 'none';
+  setYear(2025, true);
+}
+
+function setYear(year, force) {
+  if (year === currentYear && !force) return;
+  currentYear = year;
+  document.getElementById('btn-2025').classList.toggle('active', year === 2025);
+  document.getElementById('btn-2050').classList.toggle('active', year === 2050);
+  const source = year === 2050 ? rawData.projection_2050.zones : rawData.zones;
+  const scoreGlobal = year === 2050 ? rawData.projection_2050.score_global : rawData.score_global;
+  currentZones = JSON.parse(JSON.stringify(source));
+  document.getElementById('score-value').textContent = scoreGlobal;
+  window.currentGlobalScore = scoreGlobal;
+  ZONE_NAMES.forEach(name => { if (currentZones[name]) updateZoneColor(name, currentZones[name].risque, !force); });
+  const infoPanel = document.getElementById('info-panel');
+  if (infoPanel.style.display === 'block' && infoPanel.dataset.zone) showZonePanel(infoPanel.dataset.zone);
+}
+document.getElementById('btn-2025').addEventListener('click', () => setYear(2025));
+document.getElementById('btn-2050').addEventListener('click', () => setYear(2050));
+
+// Echappe le texte libre produit par le LLM avant insertion via innerHTML.
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+// Construit la phrase "coût estimé" complète à partir de l'objet
+// cout_estime produit par l'agent recommandations : montant_min/max/devise/unite
+// + infos de contexte (date_estimation, zone_geo, hypotheses).
+function formatCoutEstime(cout) {
+  if (!cout || (cout.montant_min == null && cout.montant_max == null)) return null;
+  const min = cout.montant_min, max = cout.montant_max, dev = cout.devise || '€';
+  const range = (min != null && max != null && min !== max) ? `entre ${min} et ${max}` : `environ ${min ?? max}`;
+  let txt = `💶 <b>Coût estimé : ${range} ${escapeHtml(dev)}</b>${cout.unite ? ' ' + escapeHtml(cout.unite) : ''}`;
+  const contexte = [];
+  if (cout.zone_geo) contexte.push(escapeHtml(cout.zone_geo));
+  if (cout.date_estimation) contexte.push(`estimation ${escapeHtml(cout.date_estimation)}`);
+  if (contexte.length) txt += ` <span class="reco-meta-sub">(${contexte.join(', ')})</span>`;
+  if (cout.hypotheses) txt += `<div class="reco-meta-sub">Hypothèses : ${escapeHtml(cout.hypotheses)}</div>`;
+  return txt;
+}
+
+// Helpers partagés (chat + devis) pour lire indifféremment le schéma réel
+// (mesure/cout_estime objet/aide/sources) et le schéma d'exemple
+// (travaux/cout_estime chaîne/gain_resilience).
+function recoLabel(r) { return r.mesure || r.travaux || 'Travaux recommandés'; }
+function recoCostRange(r) {
+  const c = r.cout_estime;
+  if (c && typeof c === 'object') {
+    const min = c.montant_min, max = c.montant_max;
+    if (min == null && max == null) return { min: 0, max: 0, label: '—' };
+    const dev = c.devise || '€';
+    const label = (min != null && max != null && min !== max) ? `${min}–${max} ${dev}` : `environ ${min ?? max} ${dev}`;
+    return { min: min ?? max ?? 0, max: max ?? min ?? 0, label };
+  }
+  if (typeof c === 'string') {
+    const parts = c.replace(/€/g, '').split('-').map(n => parseInt(n, 10));
+    if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) return { min: parts[0], max: parts[1], label: c };
+    return { min: 0, max: 0, label: c || '—' };
+  }
+  return { min: 0, max: 0, label: '—' };
+}
+function recoGain(r) { return typeof r.gain_resilience === 'number' ? r.gain_resilience : 10; }
+
+async function rechercherArtisans(zoneName, data, container, button) {
+  const apiBaseInput = document.getElementById('api-base-input');
+  const apiBase = (apiBaseInput && apiBaseInput.value || 'http://127.0.0.1:8765').trim();
+  button.disabled = true;
+  button.textContent = 'Recherche dans les annuaires officiels…';
+  container.innerHTML = '';
+  try {
+    const response = await fetch(apiBase + '/artisans/match', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        adresse: rawData.adresse || '',
+        limite: 5,
+        zones: [{
+          zone: zoneName,
+          risques: [data.alea_principal || ''],
+          recommandations: data.recommandations || []
+        }]
+      })
+    });
+    const payload = await response.json();
+    if (!response.ok) throw new Error(payload.detail || `Erreur HTTP ${response.status}`);
+    const groupes = payload.recommandations_traitees || [];
+    if (!groupes.length) {
+      container.className = 'artisan-results artisan-empty';
+      container.textContent = 'Aucun métier n’a pu être associé automatiquement à ces recommandations.';
+      return;
+    }
+    groupes.forEach(groupe => {
+      const section = document.createElement('div');
+      section.className = 'artisan-group';
+      const heading = document.createElement('div');
+      heading.className = 'artisan-group-head';
+      const title = document.createElement('div');
+      title.className = 'artisan-group-title';
+      title.textContent = groupe.libelle || groupe.domaine_recherche || groupe.cle;
+      const category = document.createElement('span');
+      category.className = 'artisan-group-badge';
+      category.textContent = groupe.categorie === 'rge' ? 'RGE' : 'Métier local';
+      heading.appendChild(title);
+      heading.appendChild(category);
+      section.appendChild(heading);
+      if (groupe.erreur) {
+        const error = document.createElement('div');
+        error.className = 'artisan-error';
+        error.textContent = groupe.erreur;
+        section.appendChild(error);
+      }
+      (groupe.entreprises || []).forEach(entreprise => {
+        const card = document.createElement('div');
+        card.className = 'artisan-card';
+        const cardTop = document.createElement('div');
+        cardTop.className = 'artisan-card-top';
+        const name = document.createElement('div');
+        name.className = 'artisan-name';
+        name.textContent = entreprise.nom_entreprise || 'Entreprise';
+        const score = document.createElement('div');
+        score.className = 'artisan-score';
+        score.innerHTML = `${Number(entreprise.score_objectif_sur_100) || 0}<small>/100</small>`;
+        cardTop.appendChild(name);
+        cardTop.appendChild(score);
+        card.appendChild(cardTop);
+
+        const meta = document.createElement('div');
+        meta.className = 'artisan-meta';
+        const addressText = [entreprise.adresse, entreprise.code_postal, entreprise.commune].filter(Boolean).join(' ');
+        if (addressText) {
+          const row = document.createElement('div');
+          row.className = 'artisan-meta-row';
+          row.innerHTML = `<span class="artisan-meta-icon">⌖</span><span>${escapeHtml(addressText)}</span>`;
+          meta.appendChild(row);
+        }
+        if (entreprise.telephone || entreprise.email) {
+          const row = document.createElement('div');
+          row.className = 'artisan-meta-row';
+          row.innerHTML = `<span class="artisan-meta-icon">✆</span><span>${escapeHtml([entreprise.telephone, entreprise.email].filter(Boolean).join(' · '))}</span>`;
+          meta.appendChild(row);
+        }
+        card.appendChild(meta);
+
+        const actions = document.createElement('div');
+        actions.className = 'artisan-actions';
+        if (entreprise.telephone) {
+          const phone = document.createElement('a');
+          phone.href = `tel:${String(entreprise.telephone).replace(/[^\d+]/g, '')}`;
+          phone.className = 'artisan-action primary';
+          phone.textContent = '✆ Appeler';
+          actions.appendChild(phone);
+        }
+        if (entreprise.email) {
+          const email = document.createElement('a');
+          email.href = `mailto:${entreprise.email}`;
+          email.className = 'artisan-action';
+          email.textContent = '✉ Envoyer un e-mail';
+          actions.appendChild(email);
+        }
+        if (addressText) {
+          const directions = document.createElement('a');
+          directions.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addressText)}`;
+          directions.target = '_blank';
+          directions.rel = 'noopener';
+          directions.className = 'artisan-action';
+          directions.textContent = '⌖ Itinéraire';
+          actions.appendChild(directions);
+        }
+        if (entreprise.site_officiel) {
+          const site = document.createElement('a');
+          site.href = entreprise.site_officiel;
+          site.target = '_blank';
+          site.rel = 'noopener';
+          site.className = 'artisan-action';
+          site.textContent = '↗ Site officiel';
+          actions.appendChild(site);
+        }
+        if (actions.childElementCount) card.appendChild(actions);
+
+        if (!entreprise.site_officiel) {
+          const missing = document.createElement('div');
+          missing.className = 'artisan-site-missing';
+          missing.textContent = entreprise.telephone || entreprise.email
+            ? 'Contact direct disponible sans site officiel.'
+            : 'Aucun contact direct vérifiable trouvé pour cette entreprise.';
+          card.appendChild(missing);
+        }
+        section.appendChild(card);
+      });
+      container.appendChild(section);
+    });
+    const warning = document.createElement('small');
+    warning.className = 'artisan-note';
+    warning.textContent = [payload.avertissement_score, payload.avertissement_sites].filter(Boolean).join(' ');
+    container.appendChild(warning);
+  } catch (error) {
+    container.className = 'artisan-results artisan-error';
+    container.textContent = `Recherche indisponible : ${error.message}`;
+  } finally {
+    button.disabled = false;
+    button.textContent = 'Rechercher des artisans correspondants';
+  }
+}
+
+function showZonePanel(zoneName) {
+  const data = currentZones[zoneName]; if (!data) return;
+  const panel = document.getElementById('info-panel');
+  panel.style.display = 'block'; panel.dataset.zone = zoneName;
+  document.getElementById('info-title').textContent = zoneName.replace('_', ' ');
+  const badge = document.getElementById('info-badge');
+  badge.textContent = `${data.niveau.toUpperCase()} — ${data.risque}/100`;
+  badge.style.background = '#' + scoreToColor(data.risque).toString(16).padStart(6, '0');
+  document.getElementById('info-alea').innerHTML = `<b>Aléa principal :</b> ${escapeHtml(data.alea_principal)}`;
+  document.getElementById('info-justif').textContent = data.justification;
+  const recosDiv = document.getElementById('info-recos');
+  recosDiv.innerHTML = '';
+  const recos = data.recommandations || [];
+
+  const countLabel = document.createElement('div');
+  countLabel.className = 'reco-count';
+  countLabel.textContent = recos.length
+    ? `Recommandations de travaux (${recos.length})`
+    : 'Recommandations de travaux';
+  recosDiv.appendChild(countLabel);
+
+  if (!recos.length) {
+    const empty = document.createElement('div');
+    empty.className = 'reco-empty';
+    empty.textContent = 'Aucune recommandation sourcée pour cette zone (risque faible, ou aucune fiche pertinente trouvée).';
+    recosDiv.appendChild(empty);
+    return;
+  }
+
+  recos.forEach(r => {
+    const div = document.createElement('div');
+    div.className = 'reco';
+
+    if (r.mesure !== undefined) {
+      let html = '';
+      if (r.type) html += `<span class="reco-type">${escapeHtml(r.type.replace(/_/g, ' '))}</span><br/>`;
+      html += `<b>${escapeHtml(r.mesure) || '—'}</b>`;
+
+      if (r.explication) {
+        html += `<div class="reco-explication">${escapeHtml(r.explication)}</div>`;
+      }
+
+      const coutHtml = formatCoutEstime(r.cout_estime);
+      if (coutHtml) html += `<div class="reco-meta">${coutHtml}</div>`;
+
+      if (r.aide && (r.aide.dispositif || r.aide.conditions)) {
+        html += `<div class="reco-aide">🏛️ <b>${escapeHtml(r.aide.dispositif) || 'Aide potentielle'}</b>`
+          + (r.aide.conditions ? `<div class="reco-meta-sub">${escapeHtml(r.aide.conditions)}</div>` : '')
+          + (r.aide.statut ? `<div class="reco-meta-sub">Statut : ${escapeHtml(r.aide.statut.replace(/_/g, ' '))} — à vérifier auprès de l'organisme, pas une éligibilité garantie.</div>` : '')
+          + `</div>`;
+      }
+
+      if (Array.isArray(r.sources) && r.sources.length) {
+        const srcTxt = r.sources.map(s => s.source_id || s.fiche_id).filter(Boolean).join(', ');
+        html += `<div class="reco-sources">Sources documentaires : ${escapeHtml(srcTxt) || '—'}</div>`;
+      }
+      div.innerHTML = html;
+    } else {
+      div.innerHTML = `<b>${escapeHtml(r.travaux)}</b><br/>${escapeHtml(r.cout_estime)} · gain résilience +${r.gain_resilience}`;
+    }
+    recosDiv.appendChild(div);
+  });
+
+  const artisanButton = document.createElement('button');
+  artisanButton.type = 'button';
+  artisanButton.className = 'artisan-search-btn';
+  artisanButton.textContent = 'Rechercher des artisans correspondants';
+  const artisanResults = document.createElement('div');
+  artisanResults.className = 'artisan-results';
+  artisanButton.addEventListener('click', () => rechercherArtisans(zoneName, data, artisanResults, artisanButton));
+  recosDiv.appendChild(artisanButton);
+  recosDiv.appendChild(artisanResults);
+}
+
+// ---------- 10. BOUCLE DE RENDU ----------
+let lastTime = performance.now();
+function animate(now) {
+  requestAnimationFrame(animate);
+  const dt = Math.min((now - lastTime) / 1000, 0.1); lastTime = now;
+  const elapsed = now / 1000;
+  updateCameraPosition(dt);
+  animateEffects(dt, elapsed);
+  renderer.render(scene, camera);
+}
+requestAnimationFrame(animate);
+
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+// ---------- 11. DÉMARRAGE ----------
+loadDataset(DEFAULT_DATA);
+</script>
+
+<script>
+/* =========================================================================
+   ORCHESTRATION — accueil -> formulaire -> traitement (appel réel au
+   backend /diagnostic) -> jumeau 3D. Le mode "prospection par zone/ville"
+   reste ici un aperçu front (voir commentaire sur #zone-overlay) : son
+   backend sera branché plus tard par un autre développeur.
+   ========================================================================= */
+(function () {
+  const homeScreen = document.getElementById('home-screen');
+  const formScreen = document.getElementById('form-screen');
+  const loadingScreen = document.getElementById('loading-screen');
+  const appUI = document.getElementById('app-ui');
+  const form = document.getElementById('property-form');
+  const steps = Array.from(document.querySelectorAll('#loading-steps .step'));
+  const barFill = document.getElementById('loading-bar-fill');
+  const loadingError = document.getElementById('loading-error');
+  const loadingErrorMsg = document.getElementById('loading-error-msg');
+  const loadingRetryBtn = document.getElementById('loading-retry-btn');
+  const jsonInput = document.getElementById('json-input');
+  const demoDataBtn = document.getElementById('demo-data-btn');
+  const brandWatermark = document.getElementById('brand-watermark');
+
+  let stepTimers = [];
+
+  function openDiagnosticForm() {
+    homeScreen.style.display = 'none';
+    formScreen.style.display = 'flex';
+    formScreen.scrollTop = 0;
+  }
+
+  // ==================== CARTE INTERACTIVE ZONE (simplifiée + heatmap) ====================
+  const ZONE_BACKEND = 'http://127.0.0.1:8765';
+  const zoneOverlay = document.getElementById('zone-overlay');
+  const zoneCloseBtn = document.getElementById('zone-close-btn');
+  const zoneResults = document.getElementById('zone-results');
+  const zoneAssessBtn = document.getElementById('zone-assess-btn');
+  const zoneCoordsInfo = document.getElementById('zone-coords-info');
+  const zoneLoading = document.getElementById('zone-loading');
+  const zoneLoadingFill = zoneLoading.querySelector('.zone-loading-fill');
+  const zoneLoadingText = zoneLoading.querySelector('.zone-loading-text');
+  const zoneCityInput = document.getElementById('zone-city-input');
+  const zoneSuggestions = document.getElementById('zone-suggestions');
+  const zoneAutorefineToggle = document.getElementById('zone-autorefine-toggle');
+  const zoneRefineStatus = document.getElementById('zone-refine-status');
+  const zonePrecisionBadge = document.getElementById('zone-precision-badge');
+
+  let zoneMap = null;
+  let zoneBounds = null;
+  let selectedCity = null;
+  let banTimeout = null;
+
+  // ---- Raffinement au zoom/pan ----
+  let hasFirstResult = false;   // n'active l'auto-raffinement qu'après la 1ère analyse explicite
+  let moveDebounce = null;      // timer de debounce sur moveend
+  let requestSeq = 0;           // compteur pour ignorer les réponses obsolètes (zoom rapide)
+  let activeController = null;  // AbortController de la requête en cours
+
+  // Palier de finesse de grille en fonction du niveau de zoom : plus on zoome,
+  // plus spacing_km diminue -> plus de points -> plus de précision locale.
+  function spacingForZoom(zoom) {
+    if (zoom < 11) return 1.2;
+    if (zoom < 13) return 0.6;
+    if (zoom < 15) return 0.3;
+    return 0.15;
+  }
+
+  // Calcule spacing_km + max_points en s'assurant que la grille rectangulaire
+  // (mêmes formules que _generer_grille_rectangulaire côté backend) tient
+  // entière dans la limite de l'API (max_points <= 200) : sinon le backend
+  // tronque la grille à mi-ligne et les isobandes de turf cassent.
+  function computeGridParams(bounds, targetSpacingKm) {
+    const [latMin, lonMin, latMax, lonMax] = bounds;
+    const latMoy = (latMin + latMax) / 2;
+    const degPerKmLat = 1.0 / 111.0;
+    const degPerKmLon = 1.0 / (111.0 * Math.cos(latMoy * Math.PI / 180));
+    let spacing = targetSpacingKm;
+    let rows, cols, total;
+    for (let i = 0; i < 20; i++) {
+      const stepLat = spacing * degPerKmLat;
+      const stepLon = spacing * degPerKmLon;
+      rows = Math.floor((latMax - latMin) / stepLat) + 1;
+      cols = Math.floor((lonMax - lonMin) / stepLon) + 1;
+      total = rows * cols;
+      if (total <= 195) break;
+      spacing *= 1.15; // trop de points -> grille plus lâche
+    }
+    return { spacingKm: spacing, maxPoints: Math.min(200, total + 2), rows, cols };
+  }
+
+  const PERIL_NAMES = {
+    inondation: { fr: 'Inondation', emoji: '🌊' },
+    rga: { fr: 'RGA (Argiles)', emoji: '🧱' },
+    tempete: { fr: 'Tempête', emoji: '💨' },
+    incendie: { fr: 'Incendie', emoji: '🔥' },
+    seisme: { fr: 'Séisme', emoji: '🌋' }
+  };
+
+  // === BAN Geocoding — toutes les villes de France ===
+  async function searchCity(query) {
+    if (query.length < 2) { zoneSuggestions.innerHTML = ''; return; }
+    try {
+      const resp = await fetch(`https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(query)}&type=municipality&limit=6`);
+      const data = await resp.json();
+      zoneSuggestions.innerHTML = '';
+      data.features.forEach(f => {
+        const city = f.properties.city || f.properties.name;
+        const ctx = f.properties.context || '';
+        const div = document.createElement('div');
+        div.className = 'ban-suggestion';
+        div.textContent = `${city} — ${ctx}`;
+        div.onclick = () => selectCity({
+          label: `${city} (${ctx.split(',')[0] || ''})`,
+          lat: f.geometry.coordinates[1],
+          lon: f.geometry.coordinates[0],
+          city: city
+        });
+        zoneSuggestions.appendChild(div);
+      });
+    } catch (e) { /* silencieux */ }
+  }
+
+  function selectCity(city) {
+    selectedCity = city;
+    zoneCityInput.value = city.label || city.city;
+    zoneSuggestions.innerHTML = '';
+    const lat = city.lat, lon = city.lon;
+    const d = 0.025;
+    zoneBounds = { lat_min: lat - d, lon_min: lon - d, lat_max: lat + d, lon_max: lon + d };
+    zoneAssessBtn.disabled = false;
+    zoneCoordsInfo.textContent = `${city.city} — ${lat.toFixed(4)}°N, ${lon.toFixed(4)}°E`;
+    zoneMap.flyTo({ center: [lon, lat], zoom: 13, duration: 1200 });
+  }
+
+  function initZoneMap() {
+    if (zoneMap) return;
+    zoneMap = new maplibregl.Map({
+      container: 'zone-map',
+      style: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
+      center: [2.35, 48.85], // Paris — toute la France
+      zoom: 5
+    });
+    zoneMap.addControl(new maplibregl.NavigationControl(), 'bottom-right');
+    zoneMap.addControl(new maplibregl.ScaleControl({ unit: 'metric' }));
+
+    zoneMap.on('load', () => {
+      // Source des points d'échantillonnage (garde les points bruts, utile
+      // pour debug/inspection au clic, mais n'est plus l'aplat visuel principal)
+      zoneMap.addSource('sample-points', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+
+      // AVANT : gros cercles translucides qui se chevauchaient pour simuler un aplat.
+      // MAINTENANT : vraies isobandes (turf.isobands) calculées sur la grille régulière
+      // renvoyée par le backend -> polygones lissés par palier de risque, comme une
+      // carte d'étages bioclimatiques. Voir buildIsobands().
+      zoneMap.addSource('risk-isobands', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+      zoneMap.addLayer({
+        id: 'risk-isobands-fill',
+        type: 'fill',
+        source: 'risk-isobands',
+        paint: {
+          'fill-color': ['get', 'fillColor'],
+          'fill-opacity': 0.55
+        }
+      });
+      // Fine frontière entre bandes pour une lecture nette (façon carte imprimée)
+      zoneMap.addLayer({
+        id: 'risk-isobands-line',
+        type: 'line',
+        source: 'risk-isobands',
+        paint: { 'line-color': 'rgba(255,255,255,0.25)', 'line-width': 0.5 }
+      });
+
+      // Points individuels par-dessus : uniquement visibles en zoomant sur la ville,
+      // servent de repère précis (l'échantillon exact que le backend a scoré)
+      zoneMap.addLayer({
+        id: 'sample-dots',
+        type: 'circle',
+        source: 'sample-points',
+        minzoom: 13,
+        paint: {
+          'circle-radius': ['interpolate', ['linear'], ['zoom'],
+            13, 1.5,
+            15, 2.5,
+            17, 3.5,
+            18, 5
+          ],
+          'circle-color': [
+            'step', ['get', 'score'],
+            '#1F9D6C',
+            20, '#5ADB8A',
+            40, '#F5C542',
+            60, '#E27B2E',
+            80, '#C0392B'
+          ],
+          'circle-opacity': 0.85,
+          'circle-stroke-color': '#fff',
+          'circle-stroke-width': 1
+        }
+      });
+    });
+
+    // ---- Auto-raffinement : à chaque zoom/pan terminé, on relance une
+    // évaluation sur la zone visible avec une grille adaptée au niveau de zoom.
+    zoneMap.on('moveend', () => {
+      if (!hasFirstResult || !zoneAutorefineToggle.checked) return;
+      clearTimeout(moveDebounce);
+      moveDebounce = setTimeout(runAutoRefine, 550);
+    });
+  }
+
+  // Construit les isobandes (aplats lissés) à partir de la grille de points
+  // scorés. RISK_BREAKS/RISK_COLORS reprennent exactement les seuils déjà
+  // utilisés pour les scores individuels (faible/modéré/élevé/critique).
+  const RISK_BREAKS = [0, 20, 40, 60, 80, 100.01];
+  const RISK_COLORS = ['#1F9D6C', '#5ADB8A', '#F5C542', '#E27B2E', '#C0392B'];
+
+  function buildIsobands(points) {
+    // points: [{lat, lon, score}], doit former une grille rectangulaire complète
+    // (voir computeGridParams) sinon turf.isobands peut produire un résultat vide.
+    if (!window.turf || points.length < 4) return { type: 'FeatureCollection', features: [] };
+    try {
+      const fc = turf.featureCollection(
+        points.map(p => turf.point([p.lon, p.lat], { score: p.score }))
+      );
+      const bands = turf.isobands(fc, RISK_BREAKS, { zProperty: 'score' });
+      bands.features.forEach((f, i) => {
+        f.properties.fillColor = RISK_COLORS[Math.min(i, RISK_COLORS.length - 1)];
+      });
+      return bands;
+    } catch (e) {
+      console.warn('isobands: grille insuffisante pour lisser (', e.message, ')');
+      return { type: 'FeatureCollection', features: [] };
+    }
+  }
+
+  function openZoneExplorer() {
+    zoneOverlay.classList.add('open');
+    zoneOverlay.setAttribute('aria-hidden', 'false');
+    zoneResults.classList.remove('visible');
+    setTimeout(() => {
+      initZoneMap();
+      zoneMap.resize();
+    }, 250);
+  }
+
+  function closeZoneExplorer() {
+    zoneOverlay.classList.remove('open');
+    zoneOverlay.setAttribute('aria-hidden', 'true');
+  }
+
+  // === Autocomplete BAN pour la recherche de ville ===
+  zoneCityInput.oninput = () => {
+    clearTimeout(banTimeout);
+    const q = zoneCityInput.value.trim();
+    if (q.length < 2) { zoneSuggestions.innerHTML = ''; return; }
+    banTimeout = setTimeout(() => searchCity(q), 250);
+  };
+  zoneCityInput.onblur = () => {
+    setTimeout(() => { zoneSuggestions.innerHTML = ''; }, 200);
+  };
+  zoneCityInput.onkeydown = (e) => {
+    if (e.key === 'Enter' && zoneSuggestions.children.length > 0) {
+      zoneSuggestions.children[0].click();
+    }
+  };
+
+  // === Cœur unique d'appel au backend, partagé par le bouton "Analyser" et
+  // par l'auto-raffinement au zoom/pan. `opts.silent` évite de rejouer toute
+  // l'animation de chargement à chaque pan (juste un petit badge discret).
+  async function runAssessment(boundsArr, spacingKm, maxPoints, opts = {}) {
+    const seq = ++requestSeq;
+    if (activeController) activeController.abort();
+    activeController = new AbortController();
+
+    if (opts.silent) {
+      zoneRefineStatus.classList.add('visible');
+    } else {
+      zoneAssessBtn.disabled = true;
+      zoneLoading.classList.add('visible');
+      zoneLoadingFill.style.width = '30%';
+      zoneLoadingText.textContent = 'Appel au backend Typhoon…';
+      zoneResults.classList.remove('visible');
+    }
+
+    try {
+      const response = await fetch(`${ZONE_BACKEND}/diagnostic/zone`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          bounds: boundsArr,
+          spacing_km: spacingKm,
+          max_points: maxPoints,
+          land_only: false
+        }),
+        signal: activeController.signal
+      });
+
+      if (!response.ok) {
+        const errText = await response.text();
+        throw new Error(`Erreur ${response.status}: ${errText}`);
+      }
+      const data = await response.json();
+
+      // Une réponse plus lente arrivée après une plus récente (zoom rapide) : on jette.
+      if (seq !== requestSeq) return;
+
+      if (!opts.silent) {
+        zoneLoadingFill.style.width = '100%';
+        zoneLoadingText.textContent = 'Terminé ✓';
+      }
+      displayZoneResults(data, opts);
+      hasFirstResult = true;
+    } catch (err) {
+      if (err.name === 'AbortError') return; // requête remplacée, rien à signaler
+      if (opts.silent) {
+        console.warn('auto-raffinement: échec silencieux —', err.message);
+      } else {
+        zoneLoadingText.textContent = 'Erreur: ' + err.message;
+        zoneAssessBtn.disabled = false;
+        setTimeout(() => zoneLoading.classList.remove('visible'), 3000);
+      }
+    } finally {
+      if (seq === requestSeq) {
+        zoneRefineStatus.classList.remove('visible');
+        if (!opts.silent) {
+          setTimeout(() => {
+            zoneLoading.classList.remove('visible');
+            zoneAssessBtn.disabled = false;
+          }, 400);
+        }
+      }
+    }
+  }
+
+  // === Bouton "Analyser cette ville" : première évaluation explicite ===
+  zoneAssessBtn.onclick = () => {
+    if (!zoneBounds) return;
+    const boundsArr = [zoneBounds.lat_min, zoneBounds.lon_min, zoneBounds.lat_max, zoneBounds.lon_max];
+    const { spacingKm, maxPoints } = computeGridParams(boundsArr, 0.3);
+    runAssessment(boundsArr, spacingKm, maxPoints, { silent: false });
+  };
+
+  // === Auto-raffinement : rejoue l'évaluation sur la zone VISIBLE du zoom
+  // courant, avec une grille adaptée (plus fine en zoomant, cf. spacingForZoom) ===
+  function runAutoRefine() {
+    if (!zoneMap) return;
+    const b = zoneMap.getBounds();
+    const zoom = zoneMap.getZoom();
+    const boundsArr = [b.getSouth(), b.getWest(), b.getNorth(), b.getEast()];
+    const target = spacingForZoom(zoom);
+    const { spacingKm, maxPoints } = computeGridParams(boundsArr, target);
+    zonePrecisionBadge.textContent = `zoom ${zoom.toFixed(1)} · grille ${Math.round(spacingKm * 1000)} m`;
+    runAssessment(boundsArr, spacingKm, maxPoints, { silent: true });
+  }
+
+  zoneAutorefineToggle.onchange = () => {
+    if (zoneAutorefineToggle.checked && hasFirstResult) runAutoRefine();
+  };
+
+  function displayZoneResults(data, opts = {}) {
+    zoneResults.classList.add('visible');
+
+    const zmScore = document.getElementById('zm-score');
+    const zmBadge = document.getElementById('zm-badge');
+    const zmMeta = document.getElementById('zm-meta');
+    const zmWorst = document.getElementById('zm-worst');
+    const zmWorstPeril = document.getElementById('zm-worst-peril');
+    const zmWorstScore = document.getElementById('zm-worst-score');
+    const zmPerils = document.getElementById('zm-perils');
+    const zmSampleInfo = document.getElementById('zone-sample-info');
+
+    zmScore.textContent = data.score_moyen != null ? Math.round(data.score_moyen) : '—';
+    zmBadge.textContent = data.rating_global || '—';
+    zmBadge.className = 'zone-rating-badge badge-' + (data.rating_global || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    zmMeta.textContent = `${data.nb_points_valides || 0}/${data.nb_points} points valides`;
+    zmSampleInfo.textContent = `${data.nb_points} points · ${data.nb_points_valides || 0} valides · ${data.nb_points_erreur || 0} erreurs`;
+
+    if (data.worst_case_score && data.worst_case_score >= 50) {
+      zmWorst.style.display = 'block';
+      zmWorstPeril.textContent = data.worst_case_peril || '—';
+      zmWorstScore.textContent = Math.round(data.worst_case_score);
+    } else {
+      zmWorst.style.display = 'none';
+    }
+
+    zmPerils.innerHTML = '';
+    if (data.perils) {
+      for (const [key, peril] of Object.entries(data.perils)) {
+        const info = PERIL_NAMES[key] || { fr: key, emoji: '📊' };
+        const score = peril.moyenne || 0;
+        const color = score < 20 ? '#1F9D6C' : score < 45 ? '#D98A2B' : score < 70 ? '#E24E2E' : '#C0392B';
+        const div = document.createElement('div');
+        div.className = 'zone-peril-item';
+        div.innerHTML = `
+          <div class="zone-peril-header">
+            <span class="zone-peril-name">${info.emoji} ${info.fr}</span>
+            <span class="zone-peril-score" style="color:${color}">${Math.round(score)}</span>
+          </div>
+          <div class="zone-peril-bar"><div class="zone-peril-fill" style="width:${score}%;background:${color}"></div></div>
+        `;
+        zmPerils.appendChild(div);
+      }
+    }
+
+    // Points bruts (repères précis, visibles à partir du zoom 13)
+    const ptsSource = zoneMap && zoneMap.getSource('sample-points');
+    const validPoints = (data.points_echantillon || [])
+      .filter(p => p.lat != null && p.lon != null)
+      .map(p => ({ lat: p.lat, lon: p.lon, score: p.score ? p.score.score_global : 50 }));
+
+    if (ptsSource) {
+      const features = validPoints.map(p => ({
+        type: 'Feature',
+        geometry: { type: 'Point', coordinates: [p.lon, p.lat] },
+        properties: { score: p.score }
+      }));
+      ptsSource.setData({ type: 'FeatureCollection', features });
+    }
+
+    // Isobandes : l'aplat coloré principal, recalculé à chaque évaluation
+    // (initiale ou auto-raffinée) sur la grille de points reçue.
+    const isoSource = zoneMap && zoneMap.getSource('risk-isobands');
+    if (isoSource) {
+      isoSource.setData(buildIsobands(validPoints));
+    }
+  }
+
+  const verifyAddrBtn = document.getElementById('home-cta-mode-a');
+  if (verifyAddrBtn) verifyAddrBtn.addEventListener('click', openDiagnosticForm);
+
+  const exploreZoneBtn = document.getElementById('home-cta-mode-b');
+  if (exploreZoneBtn) exploreZoneBtn.addEventListener('click', openZoneExplorer);
+
+  zoneCloseBtn.addEventListener('click', closeZoneExplorer);
+  zoneOverlay.addEventListener('click', function (e) {
+    if (e.target === zoneOverlay) closeZoneExplorer();
+  });
+  window.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && zoneOverlay.classList.contains('open')) closeZoneExplorer();
+  });
+
+  if (brandWatermark) {
+    brandWatermark.addEventListener('click', function () { location.reload(); });
+  }
+
+  function clearStepTimers() {
+    stepTimers.forEach(id => clearTimeout(id));
+    stepTimers = [];
+  }
+
+  function resetSteps() {
+    steps.forEach(s => s.classList.remove('active', 'done'));
+    barFill.style.width = '0%';
+    loadingError.classList.remove('show');
+  }
+
+  // Anime les étapes jusqu'à l'avant-dernière, puis laisse la dernière
+  // "active" (en rotation) jusqu'à ce que finishSteps() soit appelé : la
+  // durée réelle de l'appel réseau est inconnue, donc l'animation ne doit
+  // pas se terminer avant que la réponse soit arrivée.
+  function startStepAnimation() {
+    resetSteps();
+    const delayPerStep = 550;
+    const last = steps.length - 1;
+    steps.forEach((step, i) => {
+      if (i === last) return;
+      stepTimers.push(setTimeout(() => {
+        steps.forEach(s => s.classList.remove('active'));
+        step.classList.add('active');
+        barFill.style.width = Math.round(((i + 0.5) / steps.length) * 100) + '%';
+      }, i * delayPerStep));
+      stepTimers.push(setTimeout(() => {
+        step.classList.remove('active');
+        step.classList.add('done');
+        barFill.style.width = Math.round(((i + 1) / steps.length) * 100) + '%';
+      }, i * delayPerStep + delayPerStep - 120));
+    });
+    stepTimers.push(setTimeout(() => {
+      steps[last].classList.add('active');
+      barFill.style.width = '92%';
+    }, last * delayPerStep));
+  }
+
+  function finishSteps(cb) {
+    clearStepTimers();
+    steps.forEach(s => { s.classList.remove('active'); s.classList.add('done'); });
+    barFill.style.width = '100%';
+    setTimeout(cb, 350);
+  }
+
+  function showLoadingError(message) {
+    clearStepTimers();
+    loadingErrorMsg.textContent = message;
+    loadingError.classList.add('show');
+  }
+
+  function showAppUI() {
+    loadingScreen.style.display = 'none';
+    appUI.classList.add('visible');
+    window.dispatchEvent(new Event('resize'));
+  }
+
+  function goStraightToTwin(data) {
+    // Utilisé par le chargeur de JSON et le bouton "exemple sans backend" :
+    // on saute l'appel réseau mais on garde une transition cohérente.
+    homeScreen.style.display = 'none';
+    formScreen.style.display = 'none';
+    loadingScreen.style.display = 'flex';
+    resetSteps();
+    steps.forEach(s => s.classList.add('done'));
+    barFill.style.width = '100%';
+    setTimeout(() => {
+      loadDataset(data);
+      showAppUI();
+    }, 500);
+  }
+
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    const adresse = document.getElementById('f-adresse').value.trim();
+    if (!adresse) return;
+    const apiBase = (document.getElementById('api-base-input').value || 'http://127.0.0.1:8765').trim();
+
+    formScreen.style.display = 'none';
+    loadingScreen.style.display = 'flex';
+    startStepAnimation();
+
+    fetch(apiBase + '/diagnostic', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ adresse }),
+    })
+      .then(async response => {
+        if (!response.ok) {
+          const bodyText = await response.text();
+          throw new Error(`${response.status} ${response.statusText} — ${bodyText.slice(0, 300)}`);
+        }
+        return response.json();
+      })
+      .then(contract => {
+        finishSteps(() => {
+          loadDataset(contract);
+          showAppUI();
+        });
+      })
+      .catch(err => {
+        console.error('Échec du diagnostic :', err);
+        showLoadingError(`Erreur : ${err.message} — vérifie que le serveur tourne (uvicorn app.main:app) sur ${apiBase} et qu'il est joignable depuis cette page.`);
+      });
+  });
+
+  loadingRetryBtn.addEventListener('click', function () {
+    loadingScreen.style.display = 'none';
+    loadingError.classList.remove('show');
+    formScreen.style.display = 'flex';
+  });
+
+  if (jsonInput) {
+    jsonInput.addEventListener('change', function (e) {
+      const file = e.target.files[0]; if (!file) return;
+      const reader = new FileReader();
+      reader.onload = evt => {
+        try {
+          const data = JSON.parse(evt.target.result);
+          goStraightToTwin(data);
+        } catch (err) {
+          alert('JSON invalide : ' + err.message);
+        }
+      };
+      reader.readAsText(file);
+    });
+  }
+
+  if (demoDataBtn) {
+    demoDataBtn.addEventListener('click', function () { goStraightToTwin(DEFAULT_DATA); });
+  }
+})();
+</script>
+
+<script>
+/* =========================================================================
+   ASSISTANT IA — CONVERSATION SIMULÉE DANS LE WIDGET DE CHAT
+   (100% côté front : aucun appel réseau, réponses générées à partir du
+   dataset actuellement affiché — 2025 ou projection 2050)
+   ========================================================================= */
+(function () {
+  const toggleBtn  = document.getElementById('chat-toggle-btn');
+  const panel      = document.getElementById('chat-panel');
+  const closeBtn   = document.getElementById('chat-close');
+  const messagesEl = document.getElementById('chat-messages');
+  const inputEl    = document.getElementById('chat-input');
+  const sendBtn    = document.getElementById('chat-send');
+  const chips      = document.querySelectorAll('#chat-chips .chip');
+
+  let hasGreeted = false;
+  let busy = false;
+
+  function scrollToBottom() {
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  }
+
+  function addMessage(text, who) {
+    const el = document.createElement('div');
+    el.className = 'msg ' + who;
+    el.textContent = text;
+    messagesEl.appendChild(el);
+    scrollToBottom();
+    return el;
+  }
+
+  function showTyping() {
+    const el = document.createElement('div');
+    el.className = 'msg bot typing';
+    el.innerHTML = '<span></span><span></span><span></span>';
+    messagesEl.appendChild(el);
+    scrollToBottom();
+    return el;
+  }
+
+  function botReply(getText) {
+    busy = true;
+    const typingEl = showTyping();
+    const delay = 700 + Math.random() * 700;
+    setTimeout(() => {
+      typingEl.remove();
+      addMessage(getText(), 'bot');
+      busy = false;
+    }, delay);
+  }
+
+  function getDataset() {
+    return (typeof currentZones !== 'undefined' && currentZones) ? currentZones : DEFAULT_DATA.zones;
+  }
+
+  function zoneLabel(name) {
+    return name.replace(/_/g, ' ');
+  }
+
+  function reponseSynthese() {
+    const zones = getDataset();
+    const lignes = [];
+    Object.keys(zones).forEach(name => {
+      (zones[name].recommandations || []).forEach(r => {
+        lignes.push(Object.assign({ zone: name }, r));
+      });
+    });
+    if (!lignes.length) {
+      return "D'après le diagnostic actuel, aucun travaux urgent n'est identifié sur ce bien.";
+    }
+    lignes.sort((a, b) => recoGain(b) - recoGain(a));
+    let out = "Voici la synthèse des travaux recommandés, classés par gain de résilience estimé :\n\n";
+    lignes.forEach((r, i) => {
+      out += (i + 1) + ". " + recoLabel(r) + " — " + zoneLabel(r.zone) + "\n";
+      out += "   " + recoCostRange(r).label + " · +" + recoGain(r) + "% résilience\n";
+    });
+    const totalGain = lignes.reduce((s, r) => s + recoGain(r), 0);
+    out += "\nEn cumulant ces travaux, le gain de résilience estimé avoisine " + totalGain + "%, ce qui réduirait significativement l'exposition du bien aux sinistres climatiques.";
+    return out;
+  }
+
+  function reponseRisquePrioritaire() {
+    const zones = getDataset();
+    let pire = null;
+    Object.keys(zones).forEach(name => {
+      const z = zones[name];
+      if (!pire || z.risque > pire.risque) pire = Object.assign({ name: name }, z);
+    });
+    if (!pire) return "Aucune zone à risque significatif n'a été détectée sur ce bien.";
+    let out = "La zone la plus critique est : " + zoneLabel(pire.name) + " (" + pire.risque + "/100 — niveau " + pire.niveau + ").\n\n";
+    out += "Aléa principal : " + pire.alea_principal + ".\n" + pire.justification;
+    if (pire.recommandations && pire.recommandations.length) {
+      const top = pire.recommandations[0];
+      out += "\n\nRecommandation prioritaire : " + recoLabel(top) + " (" + recoCostRange(top).label + "), soit +" + recoGain(top) + "% de résilience.";
+    }
+    return out;
+  }
+
+  function reponseBudget() {
+    const zones = getDataset();
+    let min = 0, max = 0, count = 0;
+    Object.keys(zones).forEach(name => {
+      (zones[name].recommandations || []).forEach(r => {
+        const cost = recoCostRange(r);
+        if (cost.min || cost.max) { min += cost.min; max += cost.max; count++; }
+      });
+    });
+    if (!count) return "Aucun budget travaux n'est nécessaire pour le moment sur ce bien.";
+    let out = "Le budget global estimé pour l'ensemble des travaux recommandés se situe entre " + min.toLocaleString('fr-FR') + "€ et " + max.toLocaleString('fr-FR') + "€.\n\n";
+    out += "Ce bien pourrait être éligible à certaines aides à la rénovation (MaPrimeRénov', aides locales de prévention des risques naturels) selon la nature exacte des travaux engagés. Je peux vous transmettre un dossier détaillé zone par zone si besoin.";
+    return out;
+  }
+
+  function reponseDefaut() {
+    return "Je peux vous détailler la synthèse des travaux recommandés, le risque le plus prioritaire ou le budget estimé — n'hésitez pas à me le demander, ou cliquez directement sur une zone du jumeau numérique pour son analyse détaillée.";
+  }
+
+  const INTENT_RESPONSES = {
+    synthese: reponseSynthese,
+    risque: reponseRisquePrioritaire,
+    budget: reponseBudget
+  };
+
+  const INTENT_QUESTIONS = {
+    synthese: "Fais-moi une synthèse des recommandations de travaux à réaliser.",
+    risque: "Quel est le risque le plus prioritaire sur ce bien ?",
+    budget: "Quel budget dois-je prévoir, et y a-t-il des aides disponibles ?"
+  };
+
+  function handleUserText(text, forcedResponder) {
+    if (busy || !text || !text.trim()) return;
+    addMessage(text, 'user');
+    inputEl.value = '';
+
+    let responder = forcedResponder;
+    if (!responder) {
+      const lower = text.toLowerCase();
+      if (/synth|recommand|travaux|résumé|resume/.test(lower)) responder = reponseSynthese;
+      else if (/risque|priorit|urgent|danger/.test(lower)) responder = reponseRisquePrioritaire;
+      else if (/budget|coût|cout|prix|aide|financ/.test(lower)) responder = reponseBudget;
+      else responder = reponseDefaut;
+    }
+    botReply(responder);
+  }
+
+  chips.forEach(function (chip) {
+    chip.addEventListener('click', function () {
+      const intent = chip.dataset.intent;
+      handleUserText(INTENT_QUESTIONS[intent] || chip.textContent, INTENT_RESPONSES[intent]);
+    });
+  });
+
+  sendBtn.addEventListener('click', function () { handleUserText(inputEl.value); });
+  inputEl.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') handleUserText(inputEl.value);
+  });
+
+  toggleBtn.addEventListener('click', function () {
+    panel.classList.toggle('open');
+    if (panel.classList.contains('open') && !hasGreeted) {
+      hasGreeted = true;
+      setTimeout(function () {
+        const addr = (typeof rawData !== 'undefined' && rawData && rawData.adresse) ? ' pour le bien situé au ' + rawData.adresse : '';
+        addMessage("Bonjour, je suis l'assistant du jumeau numérique" + addr + ". Je peux vous aider à comprendre les risques identifiés sur ce bien et les travaux recommandés. Que souhaitez-vous savoir ?", 'bot');
+      }, 400);
+    }
+  });
+  closeBtn.addEventListener('click', function () { panel.classList.remove('open'); });
+})();
+</script>
+
+<script>
+/* =========================================================================
+   DEVIS PERSONNALISÉ & CERTIFICATION CLIMATO-RÉSILIENTE
+   (100% simulé côté front — calculs indicatifs à partir du dataset affiché ;
+   le schéma réel des recommandations n'ayant pas de "gain_resilience"
+   numérique par poste de travaux, une valeur par défaut raisonnable est
+   utilisée via recoGain() pour garder ce simulateur utilisable.)
+   ========================================================================= */
+(function () {
+  const cta          = document.getElementById('devis-cta');
+  const overlay      = document.getElementById('devis-overlay');
+  const closeBtn     = document.getElementById('devis-close-btn');
+  const listEl       = document.getElementById('devis-list');
+  const selectView   = document.getElementById('devis-select-view');
+  const resultView   = document.getElementById('devis-result');
+  const generateBtn  = document.getElementById('devis-generate-btn');
+  const backBtn      = document.getElementById('cert-back-btn');
+  const downloadBtn  = document.getElementById('cert-download-btn');
+
+  const sumCount = document.getElementById('sum-count');
+  const sumCost  = document.getElementById('sum-cost');
+  const sumGain  = document.getElementById('sum-gain');
+  const sumPrime = document.getElementById('sum-prime');
+
+  let items = [];
+
+  function zoneLabel(name) { return name.replace(/_/g, ' '); }
+
+  function buildItems() {
+    const zones = (typeof currentZones !== 'undefined' && currentZones) ? currentZones : DEFAULT_DATA.zones;
+    const out = [];
+    Object.keys(zones).forEach(zoneName => {
+      (zones[zoneName].recommandations || []).forEach((r, idx) => {
+        const cost = recoCostRange(r);
+        const label = recoLabel(r);
+        out.push({
+          id: zoneName + '__' + idx + '__' + label.replace(/[^a-zA-Z0-9]/g, '_'),
+          zone: zoneName,
+          travaux: label,
+          cout_estime: cost.label,
+          gain_resilience: recoGain(r),
+          min: cost.min, max: cost.max,
+          checked: true
+        });
+      });
+    });
+    return out;
+  }
+
+  function renderList() {
+    listEl.innerHTML = '';
+    items.forEach(item => {
+      const row = document.createElement('label');
+      row.className = 'devis-item' + (item.checked ? ' checked' : '');
+      row.innerHTML = `
+        <input type="checkbox" data-id="${item.id}" ${item.checked ? 'checked' : ''}>
+        <div class="devis-item-body">
+          <div class="devis-item-title">${item.travaux}</div>
+          <div class="devis-item-zone">${zoneLabel(item.zone)}</div>
+          <div class="devis-item-meta">${item.cout_estime} · +${item.gain_resilience}% résilience</div>
+        </div>`;
+      listEl.appendChild(row);
+      row.querySelector('input').addEventListener('change', function (e) {
+        const it = items.find(i => i.id === e.target.dataset.id);
+        it.checked = e.target.checked;
+        row.classList.toggle('checked', it.checked);
+        updateSummary();
+      });
+    });
+  }
+
+  function computeSelection() {
+    const selected = items.filter(i => i.checked);
+    const min = selected.reduce((s, i) => s + i.min, 0);
+    const max = selected.reduce((s, i) => s + i.max, 0);
+    const gain = selected.reduce((s, i) => s + i.gain_resilience, 0);
+    return { selected, min, max, gain };
+  }
+
+  function computePrime(baseScore, gain) {
+    const reduction = Math.max(0, Math.min(baseScore - 10, gain * 0.5));
+    const newScore = Math.max(8, Math.round(baseScore - reduction));
+    let primePercent = 0;
+    if (gain > 0) {
+      primePercent = Math.round(((baseScore - newScore) / baseScore) * 60);
+      primePercent = Math.max(5, Math.min(30, primePercent));
+    }
+    return { newScore, primePercent };
+  }
+
+  function updateSummary() {
+    const { selected, min, max, gain } = computeSelection();
+    const baseScore = window.currentGlobalScore ?? DEFAULT_DATA.score_global;
+    const { primePercent } = computePrime(baseScore, gain);
+    sumCount.textContent = selected.length;
+    sumCost.textContent = selected.length ? (min.toLocaleString('fr-FR') + '€ – ' + max.toLocaleString('fr-FR') + '€') : '0€';
+    sumGain.textContent = '+' + gain + '%';
+    sumPrime.textContent = primePercent + '%';
+    generateBtn.disabled = selected.length === 0;
+  }
+
+  function openDevis() {
+    items = buildItems();
+    renderList();
+    updateSummary();
+    resultView.classList.remove('show');
+    selectView.classList.remove('hide');
+    overlay.classList.add('open');
+  }
+
+  function closeDevis() { overlay.classList.remove('open'); }
+
+  function generateCertificate() {
+    const { selected, min, max, gain } = computeSelection();
+    const baseScore = window.currentGlobalScore ?? DEFAULT_DATA.score_global;
+    const { newScore, primePercent } = computePrime(baseScore, gain);
+    const fullyCertified = newScore <= 45;
+
+    document.getElementById('cert-score-before').textContent = baseScore;
+    document.getElementById('cert-score-after').textContent = newScore;
+    document.getElementById('cert-prime-value').textContent = primePercent + '%';
+
+    const addr = (typeof rawData !== 'undefined' && rawData && rawData.adresse)
+      ? rawData.adresse
+      : (document.getElementById('f-adresse') ? document.getElementById('f-adresse').value : '—');
+    document.getElementById('cert-property').textContent = addr || '—';
+
+    const titleEl = document.getElementById('cert-title');
+    const headingEl = document.getElementById('cert-heading');
+    const detailEl = document.getElementById('cert-prime-detail');
+    const shieldEl = document.getElementById('cert-shield');
+
+    if (fullyCertified) {
+      shieldEl.innerHTML = '<svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="#1F9D6C" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5 3.5 9 8 11 4.5-2 8-6 8-11V5z"/><path d="m9 12 2 2 4-4"/></svg>';
+      titleEl.classList.remove('partial');
+      titleEl.textContent = 'Certification Typhoon obtenue';
+      headingEl.textContent = 'Bien Climato-Résilient';
+      detailEl.textContent = 'Réduction annuelle appliquée à votre cotisation grâce à la baisse durable de votre exposition au risque climatique.';
+    } else {
+      shieldEl.innerHTML = '<svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="#D98A2B" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5 3.5 9 8 11 4.5-2 8-6 8-11V5z"/><path d="M12 8v4l3 2" stroke-dasharray="1 3"/></svg>';
+      titleEl.classList.add('partial');
+      titleEl.textContent = 'Certification en cours d\'obtention';
+      headingEl.textContent = 'Résilience en progression';
+      detailEl.textContent = 'Prime provisoire appliquée dès aujourd\'hui. Complétez les travaux restants recommandés pour obtenir la certification complète et la prime maximale.';
+    }
+
+    const ul = document.getElementById('cert-works-ul');
+    ul.innerHTML = '';
+    if (selected.length) {
+      selected.forEach(i => {
+        const li = document.createElement('li');
+        li.innerHTML = `<span>${i.travaux} <em style="color:#FF6B4A;font-style:normal;">— ${zoneLabel(i.zone)}</em></span><span class="cost">${i.cout_estime}</span>`;
+        ul.appendChild(li);
+      });
+      const total = document.createElement('li');
+      total.style.borderColor = '#FF6B4A';
+      total.innerHTML = `<span><strong>Budget total estimé</strong></span><span class="cost"><strong>${min.toLocaleString('fr-FR')}€ – ${max.toLocaleString('fr-FR')}€</strong></span>`;
+      ul.appendChild(total);
+    } else {
+      ul.innerHTML = '<li>Aucun travaux sélectionné</li>';
+    }
+
+    selectView.classList.add('hide');
+    resultView.classList.add('show');
+  }
+
+  cta.addEventListener('click', openDevis);
+  closeBtn.addEventListener('click', closeDevis);
+  overlay.addEventListener('click', function (e) { if (e.target === overlay) closeDevis(); });
+  generateBtn.addEventListener('click', generateCertificate);
+  backBtn.addEventListener('click', function () {
+    resultView.classList.remove('show');
+    selectView.classList.remove('hide');
+  });
+  downloadBtn.addEventListener('click', function () { window.print(); });
+})();
+</script>
+</body>
+</html>

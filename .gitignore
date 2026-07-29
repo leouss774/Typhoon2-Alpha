@@ -1,0 +1,26 @@
+# Téléchargements / caches volumineux (Copernicus CDS, etc.)
+*.zip
+backend/data/lookup/copernicus/
+backend/out/
+backend/recommendation_travaux-main/data
+.tmp/
+.pip-cache
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Secrets
+.env
+backend/.env
+*.env
+
+# Node
+node_modules/
+
+# OS / éditeurs
+.DS_Store
+Thumbs.db
+
+.freebuff/
