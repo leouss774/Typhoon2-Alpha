@@ -3248,8 +3248,8 @@ loadDataset(DEFAULT_DATA);
         }
       });
 
-      // ---- Annonces "en vente" (données réelles uniquement : DVF ou
-      // RapidAPI, cf. backend /diagnostic/zone/annonces) : marqueurs
+      // ---- Annonces "en vente" (données réelles uniquement : DVF ou base
+      // CSV locale, cf. backend /diagnostic/zone/annonces) : marqueurs
       // clusterisés colorés par score climatique, façon dvfexplorer.fr. ----
       zoneMap.addSource('annonces', {
         type: 'geojson',
@@ -3534,8 +3534,8 @@ loadDataset(DEFAULT_DATA);
   // === Annonces "en vente" (marqueurs clusterisés, cf. sources/layers
   // 'annonces' définies dans initZoneMap). Endpoint séparé de DVF (ventes
   // passées) : /diagnostic/zone/annonces ne renvoie que des données réelles
-  // (DVF ou RapidAPI) — liste vide si aucune des deux n'est disponible,
-  // jamais de données fabriquées. ===
+  // (DVF ou base CSV locale d'annonces) — liste vide si aucune des deux
+  // n'est disponible, jamais de données fabriquées. ===
   let annoncesRequestSeq = 0;
   const DPE_COLORS = { A: '#0FA860', B: '#4CB944', C: '#A6C93B', D: '#F2C94C', E: '#E8912D', F: '#DE5B33', G: '#C0392B' };
 
@@ -3548,10 +3548,10 @@ loadDataset(DEFAULT_DATA);
         body: JSON.stringify({
           bounds: boundsArr,
           citycode: (selectedCity && selectedCity.citycode) || null,
-          // 200 = plafond backend (voir ZoneAnnoncesRequest) : la recherche
-          // RapidAPI est désormais nationale (pas restreinte à la zone
-          // visible, cf. annonces_lookup.py), donc plus on en récupère,
-          // plus il y a de chances d'en voir dans la zone affichée.
+          // 200 = plafond backend (voir ZoneAnnoncesRequest) : la base
+          // d'annonces (CSV local, cf. annonces_lookup.py) couvre toute la
+          // France, donc plus on en récupère, plus il y a de chances d'en
+          // voir dans la zone affichée.
           max_results: 200
         })
       });
@@ -3589,12 +3589,8 @@ loadDataset(DEFAULT_DATA);
       badge.textContent = `Aucune offre réelle disponible pour cette zone`;
     } else if (data.source === 'dvf') {
       badge.textContent = `✅ ${count} vente(s) DVF réelle(s)`;
-    } else if (data.source === 'rapidapi') {
-      // Neutre : l'API branchée renvoie des annonces réelles mais le type
-      // de transaction (vente/location) dépend du paramètre envoyé côté
-      // backend — voir annonces_lookup.py. Ne pas affirmer "en vente" tant
-      // que ce n'est pas confirmé.
-      badge.textContent = `🏠 ${count} bien(s) trouvé(s)`;
+    } else if (data.source === 'csv') {
+      badge.textContent = `🏠 ${count} maison(s) à vendre (PAP.fr)`;
     } else {
       badge.textContent = `🏠 ${count} bien(s) en vente`;
     }
@@ -3622,11 +3618,11 @@ loadDataset(DEFAULT_DATA);
       <div class="annonce-popup-row"><span class="apr-label">DPE</span><span class="apr-value"><span class="annonce-popup-dpe" style="background:${dpeColor}">${escapeHtml(p.dpe || '?')}</span></span></div>
       <div class="annonce-popup-row"><span class="apr-label">Score climat</span><span class="apr-value">${p.climat_score ?? '—'}/100</span></div>
       <div class="annonce-popup-actions">
+        ${p.url ? `<a href="${escapeHtml(p.url)}" target="_blank" rel="noopener">Voir l'annonce</a>` : ''}
         <a href="https://www.google.com/maps?layer=c&cbll=${lat},${lon}" target="_blank" rel="noopener">Street View</a>
         <a href="https://www.google.com/maps?q=${lat},${lon}" target="_blank" rel="noopener">Carte</a>
       </div>
       ${p.source === 'dvf' ? '<div class="annonce-popup-tag">Vente DVF réelle (transaction déjà réalisée) — pas une annonce active.</div>' : ''}
-      ${p.source === 'rapidapi' ? '<div class="annonce-popup-tag">Annonce réelle (API tierce) — type de transaction (vente/location) à vérifier.</div>' : ''}
     `;
 
     new maplibregl.Popup({ className: 'annonce-popup', closeButton: true, maxWidth: '260px' })
