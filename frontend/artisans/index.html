@@ -325,44 +325,19 @@
     </p>
   </section>
 
-  <!-- Input form -->
-  <section id="input-section">
-    <div class="form-row">
-      <div class="form-group" style="flex:2;">
-        <label>Adresse ou code postal</label>
-        <input type="text" id="adresse-input" value="12 rue des Lilas, 33000 Bordeaux"
-               placeholder="Ex: 12 rue des Lilas, 33000 Bordeaux" />
-      </div>
-      <div class="form-group" style="flex:0 0 120px;">
-        <label>Code postal</label>
-        <input type="text" id="cp-input" value="33000" placeholder="33000" />
-      </div>
-    </div>
-
-    <div class="form-row" style="margin-bottom: 8px;">
-      <div class="form-group">
-        <label>Recommandations <span style="font-weight:400;text-transform:none;color:var(--muted);">(une par ligne)</span></label>
-        <textarea id="recos-input" rows="4" placeholder="Ex: isolation_combles&#10;rga_geotechnique&#10;Ou texte libre : Isoler le toit en priorité">isolation_combles
+  <div hidden>
+    <input id="adresse-input" value="12 rue des Lilas, 33000 Bordeaux" />
+    <input id="cp-input" value="33000" />
+    <textarea id="recos-input">isolation_combles
 ventilation
 isolation_murs_exterieur
 rga_geotechnique
 sismique_structure</textarea>
-      </div>
-    </div>
-
-    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-      <button class="btn btn-primary" id="search-btn">Rechercher des artisans</button>
-      <button class="btn btn-ghost btn-sm" id="toggle-domaines-btn">+ Domaines disponibles</button>
-      <button class="btn btn-ghost btn-sm" id="reset-btn">Réinitialiser</button>
-    </div>
-
-    <!-- Quick add domaines -->
-    <div id="domaines-quick">
-      <div class="section-label">Ajouter un domaine par clic :</div>
-      <div class="domaine-grid" id="domaine-grid"></div>
-    </div>
-
-  </section>
+    <button id="search-btn"></button>
+    <button id="toggle-domaines-btn"></button>
+    <button id="reset-btn"></button>
+    <div id="domaines-quick"><div id="domaine-grid"></div></div>
+  </div>
 
   <!-- Loading -->
   <div id="loading">
