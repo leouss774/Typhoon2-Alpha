@@ -468,7 +468,152 @@ def classify_type_batiment(
 
 
 # ---------------------------------------------------------------------------
-# 6. Point d'entree
+# 6. Lambert-93 -> WGS84 (rattacher le point d'adresse au repere du polygone)
+# ---------------------------------------------------------------------------
+#
+# La BDNB renvoie `geom_groupe` en EPSG:2154 (Lambert-93), mais l'adresse
+# geocodee par la Geoplateforme IGN (`app.connectors.geocoding`) est en
+# WGS84 (lat/lon). Pour determiner de quel cote du batiment se trouve la
+# rue (donc ou placer la porte d'entree), il faut comparer le centroide du
+# polygone au point d'adresse DANS LE MEME REPERE : ceci est la conversion
+# Lambert-93 -> WGS84 standard (projection conique conforme de Lambert a
+# deux paralleles, ellipsoide GRS80), avec les constantes publiees par
+# l'IGN pour Lambert-93 (paralleles 44 deg/49 deg, origine 46.5 deg/3 deg
+# Est, fausse origine 700000/6600000).
+#
+# Ne sert qu'a rattacher UN point GPS au repere Lambert-93 du polygone : la
+# reprojection du polygone lui-meme reste geree par `extract_footprint`
+# (equirectangulaire locale, suffisante a l'echelle d'un batiment).
+
+_L93_A = 6378137.0                     # demi-grand axe, ellipsoide GRS80
+_L93_E = 0.0818191910428158            # premiere excentricite, GRS80
+_L93_LAMBDA0 = math.radians(3.0)       # meridien central : 3 deg Est
+_L93_PHI0 = math.radians(46.5)         # latitude d'origine
+_L93_PHI1 = math.radians(44.0)         # premier parallele standard
+_L93_PHI2 = math.radians(49.0)         # second parallele standard
+_L93_X0 = 700000.0                     # fausse abscisse
+_L93_Y0 = 6600000.0                    # fausse ordonnee
+
+
+def _l93_m(phi: float) -> float:
+    return math.cos(phi) / math.sqrt(1 - _L93_E ** 2 * math.sin(phi) ** 2)
+
+
+def _l93_t(phi: float) -> float:
+    return math.tan(math.pi / 4 - phi / 2) / (
+        ((1 - _L93_E * math.sin(phi)) / (1 + _L93_E * math.sin(phi))) ** (_L93_E / 2)
+    )
+
+
+_L93_N = (math.log(_l93_m(_L93_PHI1)) - math.log(_l93_m(_L93_PHI2))) / (
+    math.log(_l93_t(_L93_PHI1)) - math.log(_l93_t(_L93_PHI2))
+)
+_L93_F = _l93_m(_L93_PHI1) / (_L93_N * _l93_t(_L93_PHI1) ** _L93_N)
+_L93_RHO0 = _L93_A * _L93_F * _l93_t(_L93_PHI0) ** _L93_N
+
+
+def lambert93_to_wgs84(x: float, y: float) -> tuple[float, float]:
+    """Convertit un point Lambert-93 (EPSG:2154) en (latitude, longitude) WGS84.
+
+    Formule standard, avec correction iterative de l'excentricite
+    (6 iterations : largement suffisant, la convergence est sous le
+    millimetre des la 3e). Verifie par aller-retour (`wgs84_to_lambert93`
+    puis reciproque) dans les tests, et par comparaison avec des adresses
+    geocodees reelles dans `test_footprint.py`.
+    """
+    dx = x - _L93_X0
+    dy = _L93_RHO0 - (y - _L93_Y0)
+    rho = math.hypot(dx, dy)
+    if _L93_N < 0:
+        rho = -rho
+    theta = math.atan2(dx, dy)
+    lon = _L93_LAMBDA0 + theta / _L93_N
+    t = (rho / (_L93_A * _L93_F)) ** (1.0 / _L93_N)
+    phi = math.pi / 2 - 2 * math.atan(t)
+    for _ in range(6):
+        phi = math.pi / 2 - 2 * math.atan(
+            t * ((1 - _L93_E * math.sin(phi)) / (1 + _L93_E * math.sin(phi))) ** (_L93_E / 2)
+        )
+    return math.degrees(phi), math.degrees(lon)
+
+
+def wgs84_to_lambert93(lat: float, lon: float) -> tuple[float, float]:
+    """Sens direct — sert uniquement au test d'aller-retour de `lambert93_to_wgs84`."""
+    phi, lam = math.radians(lat), math.radians(lon)
+    t = _l93_t(phi)
+    rho = _L93_A * _L93_F * t ** _L93_N
+    theta = _L93_N * (lam - _L93_LAMBDA0)
+    x = _L93_X0 + rho * math.sin(theta)
+    y = _L93_Y0 + _L93_RHO0 - rho * math.cos(theta)
+    return x, y
+
+
+def _centroid_lambert93(geom_groupe: dict[str, Any] | None) -> Point | None:
+    """Centroide brut (Lambert-93) des sommets exterieurs, avant toute
+    reprojection locale. Distinct du centrage fait dans `extract_footprint`
+    (qui, lui, travaille deja dans le repere metrique de la scene)."""
+    if not isinstance(geom_groupe, dict):
+        return None
+    if _is_geographic(geom_groupe):
+        return None  # cas rare (WGS84) : cette estimation ne gere que Lambert-93
+    polygons = _raw_polygons(geom_groupe)
+    points: list[Point] = []
+    for exterieur, _ in polygons:
+        # GeoJSON ferme ses anneaux (dernier point == premier) : l'inclure
+        # deux fois biaiserait la moyenne vers ce sommet.
+        anneau = exterieur[:-1] if len(exterieur) >= 2 and math.dist(exterieur[0], exterieur[-1]) < 1e-6 else exterieur
+        points.extend(anneau)
+    if len(points) < 3:
+        return None
+    cx = sum(p[0] for p in points) / len(points)
+    cy = sum(p[1] for p in points) / len(points)
+    return (cx, cy)
+
+
+def estimate_street_facing_zone(
+    geom_groupe: dict[str, Any] | None,
+    adresse_lat: float | None,
+    adresse_lon: float | None,
+) -> str | None:
+    """Estime la facade cardinale (`murs_nord/sud/est/ouest`) la plus
+    probablement orientee vers la rue, a partir du point d'adresse
+    geocode.
+
+    Principe : le point d'adresse (BAN/Geoplateforme IGN) est en pratique
+    plante sur ou pres de la voie de desserte du batiment — c'est sa raison
+    d'etre pour un geocodeur d'adresse. Le vecteur du centroide du batiment
+    vers ce point pointe donc vers la rue. On ne fabrique aucune position :
+    seule la direction cardinale la plus proche de ce vecteur reel est
+    retenue.
+
+    Retourne None si l'estimation n'est pas possible (pas de polygone
+    Lambert-93 exploitable, pas d'adresse geocodee, ou point d'adresse
+    confondu avec le centroide a moins d'1 metre — aucun signal directionnel
+    fiable dans ce cas).
+    """
+    centroid = _centroid_lambert93(geom_groupe)
+    if centroid is None or adresse_lat is None or adresse_lon is None:
+        return None
+
+    lat_centroid, lon_centroid = lambert93_to_wgs84(*centroid)
+
+    # Delta local en metres (equirectangulaire, valide a l'echelle d'un
+    # batiment) entre le centroide (converti en WGS84) et le point d'adresse.
+    metres_par_deg_lat = 110540.0
+    metres_par_deg_lon = 111320.0 * math.cos(math.radians(lat_centroid))
+    d_est = (adresse_lon - lon_centroid) * metres_par_deg_lon
+    d_nord = (adresse_lat - lat_centroid) * metres_par_deg_lat
+
+    if math.hypot(d_est, d_nord) < 1.0:
+        return None
+
+    if abs(d_est) >= abs(d_nord):
+        return "murs_est" if d_est > 0 else "murs_ouest"
+    return "murs_nord" if d_nord > 0 else "murs_sud"
+
+
+# ---------------------------------------------------------------------------
+# 6bis. Point d'entree
 # ---------------------------------------------------------------------------
 
 def extract_footprint(geom_groupe: dict[str, Any] | None) -> dict[str, Any] | None:
@@ -486,7 +631,13 @@ def extract_footprint(geom_groupe: dict[str, Any] | None) -> dict[str, Any] | No
 
     # Centre de reference : centroide des sommets exterieurs. Le repere local
     # est centre dessus pour que la scene 3D reste autour de l'origine.
-    tous_points = [p for exterieur, _ in polygons_source for p in exterieur]
+    # Sommet de fermeture (dernier == premier, convention GeoJSON) exclu :
+    # sinon il compte double dans la moyenne et decale le centre (sensible
+    # sur un polygone a peu de sommets, ex. un simple rectangle).
+    tous_points: list[Point] = []
+    for exterieur, _ in polygons_source:
+        anneau = exterieur[:-1] if len(exterieur) >= 2 and math.dist(exterieur[0], exterieur[-1]) < 1e-6 else exterieur
+        tous_points.extend(anneau)
     if len(tous_points) < 3:
         return None
     cx = sum(p[0] for p in tous_points) / len(tous_points)

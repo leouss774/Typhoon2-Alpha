@@ -39,6 +39,7 @@ from typing import Any, TypedDict
 from app.digital_twin.footprint import (
     classify_type_batiment,
     convex_hull as _convex_hull,
+    estimate_street_facing_zone,
     extract_footprint,
     min_area_rect as _min_area_rect,
 )
@@ -185,10 +186,56 @@ class GeometryResult(TypedDict):
 # l'etape LLM contrainte (README §4) ou par le formulaire (priorite 1).
 _CHAMPS_A_COMPLETER = ["has_basement", "has_cellar", "has_garage", "has_garden"]
 
+_ORIENTATIONS_VALIDES = {"nord", "sud", "est", "ouest"}
+
+
+def _ouvertures_from_bdnb(batiment: dict[str, Any]) -> dict[str, Any]:
+    """Fenetres/menuiseries/balcon reels, issus du DPE du batiment (quand il
+    existe dans la BDNB — voir README section "Jumeau numerique 3D").
+
+    Champs source : `l_orientation_baie_vitree` (liste des facades qui ont
+    reellement des fenetres) et `pourcentage_surface_baie_vitree_exterieur`
+    (ratio reel de surface vitree) proviennent du DPE ; ils ne sont PAS
+    toujours renseignes (couverture DPE partielle du parc). Quand ils sont
+    absents, `disponible` reste a False et aucune fenetre n'est fabriquee —
+    conformement au principe du projet de ne jamais inventer une donnee de
+    facade qui n'existe dans aucune source.
+
+    `has_balcony` est verifie independamment (peut etre connu meme si les
+    baies vitrees ne le sont pas, ou inversement, dans quelques reponses
+    BDNB observees).
+    """
+    orientations_brutes = batiment.get("l_orientation_baie_vitree")
+    ratio = batiment.get("pourcentage_surface_baie_vitree_exterieur")
+
+    facades: list[str] = []
+    if isinstance(orientations_brutes, list):
+        facades = [
+            f"murs_{mot.strip().lower()}"
+            for mot in orientations_brutes
+            if isinstance(mot, str) and mot.strip().lower() in _ORIENTATIONS_VALIDES
+        ]
+
+    disponible = bool(facades) and isinstance(ratio, (int, float))
+
+    presence_balcon = batiment.get("presence_balcon")
+    has_balcony = bool(presence_balcon) if isinstance(presence_balcon, bool) else None
+
+    return {
+        "disponible": disponible,
+        "facades_avec_vitrage": facades if disponible else [],
+        "ratio_vitrage": round(float(ratio), 3) if disponible else None,
+        "has_balcony": has_balcony,
+        "menuiserie_materiau": batiment.get("type_materiaux_menuiserie"),
+        "fermeture_type": batiment.get("type_fermeture"),
+        "vitrage_type": batiment.get("type_vitrage"),
+    }
+
 
 def build_geometry_from_bdnb(
     batiment: dict[str, Any],
     formulaire: dict[str, Any] | None = None,
+    adresse: dict[str, Any] | None = None,
 ) -> GeometryResult:
     """Construit le bloc `geometry` du contrat digital_twin_agent.
 
@@ -198,6 +245,12 @@ def build_geometry_from_bdnb(
 
     `formulaire` : champs saisis explicitement par l'utilisateur (priorite 1
     sur l'inference BDNB, cf. README section "digital_twin_agent").
+
+    `adresse` : bloc `building_data["adresse"]` de collector_agent (label,
+    lat, lon...). Sert uniquement a estimer la facade orientee vers la rue
+    (`entree_facade`), a partir du point d'adresse geocode — voir
+    `app.digital_twin.footprint.estimate_street_facing_zone`. Aucun impact
+    sur le reste de la geometrie si absent.
     """
     formulaire = formulaire or {}
     champs_manquants: list[str] = []
@@ -268,6 +321,27 @@ def build_geometry_from_bdnb(
         champs_manquants.append("footprint")
         champs_ok.append("type_batiment")
 
+    # -- ouvertures reelles (DPE) : fenetres/balcon/menuiserie --
+    ouvertures = _ouvertures_from_bdnb(batiment)
+    if ouvertures["disponible"]:
+        champs_ok.append("ouvertures")
+    else:
+        champs_manquants.append("ouvertures")
+    if ouvertures["has_balcony"] is not None:
+        champs_ok.append("ouvertures.has_balcony")
+
+    # -- facade orientee rue, pour la porte d'entree --
+    # Estimee a partir du point d'adresse geocode (voir docstring de
+    # `estimate_street_facing_zone`) : jamais une position arbitraire, mais
+    # jamais garantie non plus (rue non determinable -> None, pas de porte).
+    entree_facade = None
+    if adresse:
+        entree_facade = estimate_street_facing_zone(geom_groupe, adresse.get("lat"), adresse.get("lon"))
+    if entree_facade:
+        champs_ok.append("entree_facade")
+    else:
+        champs_manquants.append("entree_facade")
+
     # -- champs non couverts par la BDNB : formulaire ou a completer --
     geometry: dict[str, Any] = {
         "footprint_shape": forme_emprise,
@@ -283,6 +357,8 @@ def build_geometry_from_bdnb(
         "pente_toit_deg": pente_toit_deg,
         "materiau_mur": materiau_mur,
         "materiau_toiture": materiau_toiture,
+        "ouvertures": ouvertures,
+        "entree_facade": entree_facade,
     }
 
     for champ in _CHAMPS_A_COMPLETER:

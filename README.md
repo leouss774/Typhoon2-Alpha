@@ -236,6 +236,16 @@ C'est le contrat consommé par `frontend/*/scene/house-scene.js` (Three.js) pour
     "orientation_deg": 16.1,
     "floors_count": 2,
     "roof_shape": "deux_pans",
+    "ouvertures": {
+      "disponible": true,
+      "facades_avec_vitrage": ["murs_sud"],
+      "ratio_vitrage": 0.111,
+      "has_balcony": false,
+      "menuiserie_materiau": "bois",
+      "fermeture_type": "volet battant bois",
+      "vitrage_type": "double vitrage"
+    },
+    "entree_facade": "murs_est",
     "has_basement": true,
     "has_cellar": false,
     "has_garage": true,
@@ -275,6 +285,8 @@ Points d'attention pour l'implémentation :
 - `rectangularite` (aire du polygone / aire de son rectangle englobant) mesure à quel point une modélisation en boîte serait fausse pour ce bien : 1.0 = rectangle parfait, 0.70 = 30 % de l'emprise inventée par la boîte.
 - `type_batiment` distingue `immeuble` et `maison_individuelle`. L'usage BDNB prime quand il est renseigné ; sinon la déduction se fait sur le nombre de niveaux, la hauteur et l'emprise. C'est ce champ qui bascule la toiture en terrasse plutôt qu'en pans.
 - `largeur_m` / `longueur_m` / `orientation_deg` restent renseignés dans tous les cas : ils décrivent le rectangle englobant minimal et servent de **repli** quand la BDNB ne fournit aucune géométrie exploitable (`footprint` vaut alors `null`). En présence d'un `footprint`, la scène ignore `orientation_deg` — l'orientation réelle est déjà portée par les coordonnées du polygone, la rejouer ferait tourner le bâtiment deux fois.
+- `ouvertures` porte les fenêtres/menuiserie/balcon **réels**, issus du DPE du bâtiment quand la BDNB le fournit (`l_orientation_baie_vitree`, `pourcentage_surface_baie_vitree_exterieur`, `presence_balcon`, `type_materiaux_menuiserie`, `type_fermeture`, `type_vitrage`). La couverture DPE est partielle : `disponible` vaut `false` sur une bonne partie du parc (aucun de ces champs renseigné), et dans ce cas la scène ne fabrique **aucune** fenêtre plutôt que d'en deviner une position ou un nombre — c'est le même principe que le reste du projet (« aucune donnée simulée »). Quand `disponible` vaut `true`, `facades_avec_vitrage` liste les façades qui ont réellement des fenêtres (pas nécessairement les quatre) et `ratio_vitrage` sert à en dériver un nombre plausible par étage, à partir d'une taille de fenêtre type (1,2 × 1,4 m) — seule valeur non issue de la donnée du bâtiment dans ce calcul, la BDNB donnant un ratio de surface, pas un nombre de fenêtres.
+- `entree_facade` estime la façade orientée vers la rue (`murs_nord/sud/est/ouest`), à partir du point d'adresse géocodé : le point BAN est en pratique planté sur la voie de desserte du bâtiment, donc le vecteur du centroïde du polygone vers ce point pointe vers la rue (voir `app.digital_twin.footprint.estimate_street_facing_zone`). C'est ce champ qui place la porte d'entrée côté scène 3D. Vaut `null` si l'estimation n'est pas possible (pas d'adresse géocodée, ou point d'adresse confondu avec le centroïde) — dans ce cas, aucune porte n'est modélisée.
 - Le bloc `zones` reprend exactement les 7 zones cliquables déjà modélisées côté front (`fondations`, `murs_nord`, `murs_sud`, `murs_est`, `murs_ouest`, `toiture`, `sous_sol`), chacune avec son `risque` (0-100, sert au dégradé de couleur), son `niveau`, l'`alea_principal`, une `justification` et ses `recommandations`.
 - `projection_2050` permet le bouton de bascule temporelle déjà présent dans le prototype (`2025` / `2050`).
 - Le schéma Pydantic correspondant vit dans `backend/app/schemas/house_geometry.py` (bloc `geometry`) et `diagnostic.py` (bloc `zones` / `projection_2050`).

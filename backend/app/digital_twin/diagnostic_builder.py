@@ -65,7 +65,7 @@ def build_diagnostic(
     batiment = (bdnb or {}).get("batiment") if isinstance(bdnb, dict) else {}
     batiment = batiment or {}
 
-    geometry_report = build_geometry_from_bdnb(batiment, formulaire=formulaire)
+    geometry_report = build_geometry_from_bdnb(batiment, formulaire=formulaire, adresse=adresse_info)
     geometry = geometry_report["geometry"]
     if geometry_report["champs_manquants"]:
         logger.info(

@@ -29,6 +29,7 @@ FootprintShape = Literal[
 ]
 TypeBatiment = Literal["maison_individuelle", "immeuble"]
 GaragePosition = Literal["nord", "sud", "est", "ouest"]
+ZoneMur = Literal["murs_nord", "murs_sud", "murs_est", "murs_ouest"]
 
 
 class FootprintPolygon(BaseModel):
@@ -59,6 +60,24 @@ class Footprint(BaseModel):
     source_crs: str | None = None
 
 
+class Ouvertures(BaseModel):
+    """Fenetres/menuiserie/balcon reels, issus du DPE du batiment quand il
+    existe dans la BDNB (`app.digital_twin.geometry_builder._ouvertures_from_bdnb`).
+
+    `disponible=False` signifie que la couverture DPE est absente pour ce
+    bien : aucune fenetre n'est alors a fabriquer, plutot que d'en deviner
+    une position/quantite plausible.
+    """
+
+    disponible: bool = False
+    facades_avec_vitrage: list[ZoneMur] = Field(default_factory=list)
+    ratio_vitrage: float | None = Field(default=None, ge=0, le=1)
+    has_balcony: bool | None = None
+    menuiserie_materiau: str | None = None
+    fermeture_type: str | None = None
+    vitrage_type: str | None = None
+
+
 class HouseGeometry(BaseModel):
     footprint_shape: FootprintShape = "rectangulaire"
     # None quand la BDNB ne fournit aucune geometrie exploitable pour ce
@@ -79,6 +98,13 @@ class HouseGeometry(BaseModel):
 
     materiau_mur: str | None = None
     materiau_toiture: str | None = None
+
+    ouvertures: Ouvertures = Field(default_factory=Ouvertures)
+    # Facade estimee orientee vers la rue (voir
+    # `app.digital_twin.footprint.estimate_street_facing_zone`) : sert a
+    # placer la porte d'entree. None si non determinable (pas d'adresse
+    # geocodee, ou geometrie non exploitable).
+    entree_facade: ZoneMur | None = None
 
     has_basement: bool | None = None
     has_cellar: bool | None = None
