@@ -1,0 +1,397 @@
+# Questionnaire dynamique versionne.
+# Une question n'est posee que si elle change un score. Chaque question offre
+# "Je ne sais pas" : l'absence de reponse baisse la confiance ou rend le bloc
+# indetermine, elle n'est JAMAIS assimilee au cas defavorable.
+questionnaire_version: "1.0.0"
+
+answer_basis_options:
+  - {value: "observe",    label: "Je l'ai constate moi-meme"}
+  - {value: "document",   label: "C'est ecrit sur un document (plans, diagnostic, etude de sol)"}
+  - {value: "souvenir",   label: "De memoire"}
+  - {value: "estimation", label: "J'estime, sans certitude"}
+  - {value: "inconnu",    label: "Je ne sais pas"}
+
+unknown_policy: >
+  Une reponse "Je ne sais pas" produit le statut USER_UNKNOWN. La variable est
+  exclue du calcul, jamais remplacee par une valeur defavorable. Si elle est
+  dominante, le bloc devient INDETERMINE.
+
+free_text_policy: >
+  Aucun texte libre n'entre dans le calcul. Les champs libres sont conserves en
+  piece jointe pour l'expert, sans mapping automatique.
+
+sections:
+
+  - id: "tronc_commun"
+    label: "Le bien"
+    always: true
+    questions:
+      - key: "building.typology_declared"
+        label: "De quel type de bien s'agit-il ?"
+        type: "single_choice"
+        options: ["maison_individuelle", "maison_mitoyenne", "appartement"]
+      - key: "dwelling.floor"
+        label: "A quel etage se trouve le logement ?"
+        type: "integer"
+        show_if: {"building.typology_declared": ["appartement"]}
+      - key: "building.levels"
+        label: "Combien de niveaux compte le batiment (hors sous-sol) ?"
+        type: "integer"
+      - key: "building.basement"
+        label: "Y a-t-il un volume enterre sous le logement ?"
+        type: "single_choice"
+        options: ["aucun", "vide_sanitaire", "cave_partielle", "sous_sol_total"]
+        used_by: ["P01", "P11", "P14"]
+      - key: "building.year_built"
+        label: "Annee de construction (approximative si besoin)"
+        type: "integer"
+        used_by: ["P03", "P11"]
+      - key: "building.extension"
+        label: "Une extension a-t-elle ete accolee apres la construction ?"
+        type: "boolean"
+        used_by: ["P02", "P03"]
+      - key: "building.documents_available"
+        label: "Disposez-vous de plans, d'un diagnostic structurel ou d'une etude de sol ?"
+        type: "multi_choice"
+        options: ["plans", "diagnostic_structurel", "etude_de_sol", "aucun"]
+        note: "Une reponse appuyee sur un document monte au rang de source 1."
+
+  - id: "sol_fondations"
+    label: "Sol et fondations"
+    show_if_perils: ["P02", "P04-GLI", "P04-CAV", "P04-TAS"]
+    questions:
+      - key: "questionnaire.site.soil_nature"
+        label: "Nature du sol indiquee par l'etude geotechnique, si vous en avez une"
+        type: "single_choice"
+        options: ["argile", "remblai", "roche", "sable", "limon", "heterogene"]
+        used_by: ["P04-TAS"]
+        note: >
+          Une etude geotechnique monte au rang 1. Une simple impression reste une
+          declaration de rang 3 et n'ecrase jamais la classe alea_argile publiee.
+      - key: "building.foundation.type"
+        label: "Type de fondation"
+        type: "single_choice"
+        options: ["semelles", "radier", "pieux", "micropieux", "mixte"]
+        used_by: ["P02"]
+      - key: "questionnaire.building.foundation.rigidity"
+        label: "Nature precise des semelles, si connue"
+        type: "single_choice"
+        options: ["radier", "pieux", "semelles_filantes", "semelles_isolees"]
+        used_by: ["P04-GLI"]
+      - key: "building.foundation.depth_class"
+        label: "Profondeur d'ancrage des fondations (souvent sur les plans)"
+        type: "single_choice"
+        options: ["lt_0_80", "0_80_to_1_20", "gt_1_20"]
+        used_by: ["P02"]
+      - key: "building.foundation.uniform"
+        label: "La profondeur est-elle la meme sur tout le batiment ?"
+        type: "boolean"
+        used_by: ["P02"]
+      - key: "building.rga.crack_width_class"
+        label: "Largeur de la fissure la plus large (mesurable a la regle)"
+        type: "single_choice"
+        options: ["aucune", "D1", "D2", "D3", "D4", "D5"]
+        option_labels:
+          D1: "0,1 a 1 mm — un ongle n'entre pas"
+          D2: "1 a 5 mm"
+          D3: "5 a 15 mm"
+          D4: "15 a 25 mm"
+          D5: "plus de 25 mm"
+        used_by: ["P02"]
+        source: "Echelle D1-D5, Mzungu et al. 2025 (M88 du referentiel)"
+      - key: "questionnaire.building.crack_evolution"
+        label: "Les fissures evoluent-elles ?"
+        type: "single_choice"
+        options: ["aucune", "stable", "evolutive"]
+        used_by: ["P04-TAS"]
+      - key: "site.trees_within_1_5h"
+        label: >
+          Y a-t-il un arbre a une distance inferieure a 1,5 fois sa hauteur du
+          batiment ? (un arbre de 10 m compte s'il est a moins de 15 m)
+        type: "boolean"
+        used_by: ["P02"]
+        source: "Seuil BRGM R 40355, confirme comme pratique des experts"
+      - key: "site.drainage_defect"
+        label: "Fuite de canalisation, defaut de drainage ou eau concentree pres des fondations ?"
+        type: "boolean"
+        used_by: ["P02"]
+      - key: "questionnaire.site.slope_position"
+        label: "Position du batiment sur le terrain"
+        type: "single_choice"
+        options: ["plat", "haut_de_pente", "mi_pente", "pied_de_pente"]
+        used_by: ["P04-GLI"]
+      - key: "questionnaire.site.retaining_wall_state"
+        label: "Etat du mur de soutenement, s'il y en a un"
+        type: "single_choice"
+        options: ["absent", "bon", "fissure", "degrade"]
+        used_by: ["P04-GLI"]
+      - key: "questionnaire.site.known_cavity"
+        label: "Ancien puits, cave, galerie ou cavite connue sous ou pres du bati ?"
+        type: "boolean"
+        used_by: ["P04-CAV"]
+      - key: "questionnaire.site.subsidence_signs"
+        label: "Signes d'affaissement (sol qui s'enfonce, dallage desolidarise, seuils qui bougent) ?"
+        type: "boolean"
+        used_by: ["P04-CAV"]
+      - key: "questionnaire.site.rockfall_exposure"
+        label: "Y a-t-il une paroi rocheuse ou un talus au-dessus du batiment ?"
+        type: "single_choice"
+        options: ["aucune_paroi", "paroi_lointaine", "paroi_proche", "paroi_surplombante"]
+        used_by: ["P04-BLO"]
+
+  - id: "inondation_submersion"
+    label: "Eau exterieure"
+    show_if_perils: ["P01", "P14"]
+    questions:
+      - key: "building.flood.floor_height_class"
+        label: "Hauteur du plancher du rez-de-chaussee au-dessus du terrain exterieur"
+        type: "single_choice"
+        options: ["lt_0_20", "0_20_to_0_50", "gt_0_50"]
+        used_by: ["P01", "P14"]
+      - key: "building.flood.technical_equipment_low"
+        label: "Tableau electrique, chaudiere ou PAC situes au niveau le plus bas ?"
+        type: "boolean"
+        used_by: ["P01", "P14"]
+      - key: "building.flood.backflow_valve"
+        label: "Un clapet anti-retour est-il installe sur l'evacuation ?"
+        type: "boolean"
+        used_by: ["P01"]
+      - key: "building.flood.barriers"
+        label: "Batardeaux, muret ou autre protection contre l'entree d'eau ?"
+        type: "boolean"
+        used_by: ["P01", "P14"]
+      - key: "questionnaire.building.salt_sensitive_materials"
+        label: "Nature des cloisons au niveau bas"
+        type: "single_choice"
+        options: ["maconnerie_pleine", "bois", "platre_ossature_metallique"]
+        used_by: ["P14"]
+      - key: "context.flood.past_water_entry"
+        label: "De l'eau est-elle deja entree dans le logement ? Si oui, jusqu'a quelle hauteur ?"
+        type: "text_with_boolean"
+        role: "context"
+        note: "Contexte uniquement. Aucun poids : pas de regle sourcee reliant un antecedent a une frequence."
+
+  - id: "seisme"
+    label: "Structure"
+    show_if_perils: ["P03"]
+    questions:
+      - key: "building.structure.wall_material"
+        label: "Materiau des murs porteurs"
+        type: "single_choice"
+        options: ["pierre", "moellons", "brique", "parpaing", "beton arme", "ossature bois", "acier"]
+        used_by: ["P03"]
+      - key: "building.seismic.chaining"
+        label: "Voyez-vous un chainage beton aux angles et au-dessus des ouvertures ?"
+        type: "boolean"
+        used_by: ["P03"]
+      - key: "building.seismic.soft_storey"
+        label: "Le rez-de-chaussee est-il largement ouvert (garage, poteaux, vitrines) ?"
+        type: "boolean"
+        used_by: ["P03"]
+
+  - id: "toiture"
+    label: "Toiture et enveloppe"
+    show_if_perils: ["P05", "P06", "P07"]
+    questions:
+      - key: "questionnaire.building.roof.material"
+        label: "Materiau de couverture"
+        type: "single_choice"
+        options: ["tuile_terre_cuite", "tuile_beton", "ardoise", "fibrociment", "bac_acier", "zinc", "chaume"]
+        used_by: ["P05", "P06"]
+      - key: "questionnaire.building.roof.age"
+        label: "Age de la couverture"
+        type: "single_choice"
+        options: ["lt_10", "10_to_30", "gt_30"]
+        used_by: ["P05"]
+      - key: "questionnaire.building.roof.state"
+        label: "Etat visible de la couverture"
+        type: "single_choice"
+        options: ["bon", "tuiles_deplacees", "degrade"]
+        used_by: ["P05"]
+      - key: "questionnaire.building.roof.slope_class"
+        label: "Pente du toit"
+        type: "single_choice"
+        options: ["forte_gt_40", "moyenne", "faible_lt_15", "terrasse"]
+        used_by: ["P07"]
+      - key: "questionnaire.building.roof.frame"
+        label: "Type de charpente"
+        type: "single_choice"
+        options: ["traditionnelle", "fermettes", "inconnue"]
+        used_by: ["P07"]
+      - key: "questionnaire.building.roof.accumulation"
+        label: "Noues, redans ou decrochements ou la neige peut s'accumuler ?"
+        type: "boolean"
+        used_by: ["P07"]
+      - key: "questionnaire.building.roof.attachments"
+        label: "Panneaux solaires, antenne ou autre equipement fixe en toiture ?"
+        type: "boolean"
+        used_by: ["P05"]
+      - key: "questionnaire.building.solar_panels"
+        label: "Panneaux photovoltaiques ou thermiques ?"
+        type: "boolean"
+        used_by: ["P06"]
+      - key: "questionnaire.building.glazed_roof"
+        label: "Veranda, verriere ou toiture translucide ?"
+        type: "boolean"
+        used_by: ["P06"]
+      - key: "questionnaire.building.veranda"
+        label: "Veranda ou serre accolee ?"
+        type: "boolean"
+        used_by: ["P07"]
+      - key: "questionnaire.building.shutter_type"
+        label: "Type de volets"
+        type: "single_choice"
+        options: ["volet_roulant_pvc", "volet_roulant_alu", "volet_battant_bois", "aucun"]
+        used_by: ["P06"]
+      - key: "questionnaire.site.overhanging_trees"
+        label: "Des arbres surplombent-ils la toiture ?"
+        type: "boolean"
+        used_by: ["P05"]
+
+  - id: "incendie"
+    label: "Incendie"
+    show_if_perils: ["P08"]
+    questions:
+      - key: "questionnaire.building.electrical.diagnosis_age"
+        label: "Anciennete du diagnostic electrique"
+        type: "single_choice"
+        options: ["lt_15", "ge_15", "jamais"]
+        used_by: ["P08"]
+        source: "Seuil d'opposabilite legal a 15 ans (XL-V13)"
+      - key: "questionnaire.building.heating.generator"
+        label: "Mode de chauffage principal"
+        type: "single_choice"
+        options: ["pac", "convecteur electrique", "chaudiere gaz", "chaudiere fioul",
+                  "poele a bois", "insert bois", "cheminee ouverte"]
+        used_by: ["P08"]
+      - key: "questionnaire.building.dhw.generator"
+        label: "Production d'eau chaude sanitaire"
+        type: "single_choice"
+        options: ["ballon electrique", "chaudiere gaz", "chaudiere fioul", "pac", "solaire"]
+        used_by: ["P08"]
+        note: "Question distincte du chauffage : deux sources d'ignition separees."
+      - key: "questionnaire.building.chimney.sweep_age"
+        label: "Dernier ramonage du conduit"
+        type: "single_choice"
+        options: ["sans_objet", "lt_12m", "ge_12m", "jamais"]
+        used_by: ["P08"]
+      - key: "questionnaire.building.fire.daaf"
+        label: "Detecteur de fumee (DAAF)"
+        type: "single_choice"
+        options: ["installe_teste", "installe_non_teste", "absent"]
+        used_by: ["P08"]
+      - key: "questionnaire.building.fire.compartmentation"
+        label: "Y a-t-il une separation coupe-feu connue (porte, mur) entre volumes ?"
+        type: "single_choice"
+        options: ["oui", "partielle", "non", "inconnue"]
+        used_by: ["P08"]
+      - key: "questionnaire.building.fire.converted_attic"
+        label: "Les combles sont-ils amenages en piece habitable ?"
+        type: "boolean"
+        used_by: ["P08"]
+      - key: "questionnaire.building.fire.attached_garage"
+        label: "Un garage est-il accole au logement ?"
+        type: "boolean"
+        used_by: ["P08"]
+      - key: "questionnaire.building.fire.extinguisher"
+        label: "Extincteur ou couverture anti-feu accessible ?"
+        type: "boolean"
+        used_by: ["P08"]
+
+  - id: "feu_foret"
+    label: "Feu de foret"
+    show_if_perils: ["P09"]
+    questions:
+      - key: "questionnaire.site.vegetation_within_10m"
+        label: "Vegetation dominante dans les 10 m autour du batiment"
+        type: "single_choice"
+        options: ["aucune", "herbacee", "arbustive", "resineux", "feuillus"]
+        used_by: ["P09"]
+      - key: "questionnaire.building.facade_material"
+        label: "Materiau de facade"
+        type: "single_choice"
+        options: ["mineral", "bois", "bardage_composite"]
+        used_by: ["P09"]
+      - key: "questionnaire.building.openings_protection"
+        label: "Protection des ouvertures"
+        type: "single_choice"
+        options: ["volets_metal_ou_bois_plein", "volets_pvc", "aucun"]
+        used_by: ["P09"]
+      - key: "questionnaire.site.access_for_firefighters"
+        label: "Acces des secours au batiment"
+        type: "single_choice"
+        options: ["voie_carrossable_lt_50m", "difficile", "tres_difficile"]
+        used_by: ["P09"]
+      - key: "questionnaire.site.brush_clearing"
+        label: "Debroussaillement reglementaire (OLD)"
+        type: "single_choice"
+        options: ["conforme_lt_12m", "partiel", "non_conforme", "non_soumis"]
+        used_by: ["P09"]
+      - key: "questionnaire.site.water_reserve"
+        label: "Reserve d'eau accessible (piscine, citerne, bache) ?"
+        type: "boolean"
+        used_by: ["P09"]
+
+  - id: "foudre"
+    label: "Foudre"
+    show_if_perils: ["P10"]
+    questions:
+      - key: "questionnaire.building.lightning.surge_protector"
+        label: "Parafoudre au tableau electrique"
+        type: "single_choice"
+        options: ["present_conforme", "present_non_conforme", "absent"]
+        used_by: ["P10"]
+      - key: "questionnaire.building.lightning.earthing_checked"
+        label: "La prise de terre a-t-elle ete controlee ?"
+        type: "single_choice"
+        options: ["controlee", "non_controlee"]
+        used_by: ["P10"]
+      - key: "questionnaire.building.lightning.dominant_position"
+        label: "Le batiment est-il isole ou nettement plus haut que ses voisins ?"
+        type: "boolean"
+        used_by: ["P10"]
+      - key: "questionnaire.building.lightning.overhead_supply"
+        label: "L'alimentation electrique arrive-t-elle par une ligne aerienne ?"
+        type: "boolean"
+        used_by: ["P10"]
+      - key: "questionnaire.building.lightning.rod"
+        label: "Y a-t-il un paratonnerre ?"
+        type: "boolean"
+        used_by: ["P10"]
+
+  - id: "degats_eaux"
+    label: "Degats des eaux"
+    show_if_perils: ["P11"]
+    questions:
+      - key: "questionnaire.building.plumbing.material"
+        label: "Materiau dominant des canalisations"
+        type: "single_choice"
+        options: ["cuivre", "per", "per_ancien", "multicouche", "plomb", "pvc"]
+        used_by: ["P11"]
+      - key: "questionnaire.building.plumbing.unheated_pipes"
+        label: "Y a-t-il des conduites dans un volume non chauffe (garage, comble, vide sanitaire) ?"
+        type: "single_choice"
+        options: ["aucune", "quelques_unes", "nombreuses"]
+        used_by: ["P11"]
+      - key: "questionnaire.building.plumbing.insulation"
+        label: "Ces conduites sont-elles calorifugees ?"
+        type: "boolean"
+        used_by: ["P11"]
+        show_if: {"questionnaire.building.plumbing.unheated_pipes": ["quelques_unes", "nombreuses"]}
+      - key: "questionnaire.building.plumbing.joints_state"
+        label: "Etat des joints d'etancheite (douche, baignoire, evier)"
+        type: "single_choice"
+        options: ["bon", "moyen", "degrade"]
+        used_by: ["P11"]
+      - key: "questionnaire.building.plumbing.leak_detector"
+        label: "Detecteur de fuite installe ?"
+        type: "boolean"
+        used_by: ["P11"]
+      - key: "questionnaire.building.plumbing.auto_shutoff"
+        label: "Coupure automatique d'eau en cas de fuite ?"
+        type: "boolean"
+        used_by: ["P11"]
+      - key: "questionnaire.building.flat_roof_or_walkin_shower"
+        label: "Toiture-terrasse ou douche a l'italienne ?"
+        type: "boolean"
+        used_by: ["P11"]

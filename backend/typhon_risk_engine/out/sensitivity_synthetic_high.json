@@ -1,0 +1,31 @@
+{
+  "delta": 0.1,
+  "n_provisional_weights_tested": 64,
+  "n_perturbations": 128,
+  "n_class_or_status_changes": 1,
+  "critical_weights": [
+    [
+      "P03",
+      "vulnerability",
+      "building.levels"
+    ]
+  ],
+  "details": [
+    {
+      "peril": "P03",
+      "block": "vulnerability",
+      "key": "building.levels",
+      "delta": -0.1,
+      "base_weight": 0.25,
+      "status_before": "CALCULATED",
+      "status_after": "CALCULATED",
+      "risk_before": 79,
+      "risk_after": 81,
+      "class_before": "eleve",
+      "class_after": "tres eleve",
+      "class_changed": true,
+      "status_changed": false
+    }
+  ],
+  "note": "Diagnostic uniquement. Un poids critique doit etre justifie par une source ou la variable retiree — jamais ajuste pour faire passer le test."
+}

@@ -37,3 +37,4 @@ sqlalchemy
 # --- Tests ---
 pytest
 pytest-asyncio
+mistralai

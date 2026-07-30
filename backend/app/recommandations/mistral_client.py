@@ -20,15 +20,14 @@ from mistralai import Mistral
 
 from app.core.config import settings
 
-CHAT_MODEL = "mistral-large-latest"
+CHAT_MODEL = "mistral-small-latest"
 EMBED_MODEL = "mistral-embed"
 REQUEST_TIMEOUT_MS = 300_000  # 5 minutes, cf. repo source (chunks volumineux)
-THROTTLE_SECONDS = 3  # anti rate-limit, cf. repo source
+THROTTLE_SECONDS = 0.3  # reduit : le retry backoff gere les rares 429
 
-# Plafond genereux : les recommandations detaillees (champ "explication",
-# plusieurs recommandations par reponse) tiennent sur un JSON plus long que
-# la version initiale courte -- evite une reponse tronquee (JSON invalide).
-CHAT_MAX_TOKENS = 4000
+# Limite a 1000 tokens pour forcer la concision des recommandations
+# (cf. amelioration_recommandation.md, section 2)
+CHAT_MAX_TOKENS = 1000
 
 _client: Mistral | None = None
 

@@ -1,0 +1,60 @@
+# Constantes transverses du Risk Engine Typhon.
+# AUCUNE constante metier ne doit exister ailleurs que dans rules/.
+rules_version: "1.0.0"
+schema_version: "1.0.0"
+
+combination:
+  # R = 100 * (F/100)^exponent_f * (V/100)^exponent_v
+  # Moyenne geometrique ponderee : non compensatoire (F=0 => R=0), monotone en F et V.
+  # Tracable a M01 du referentiel (agregation multiplicative INFORM).
+  exponent_f: 0.5
+  exponent_v: 0.5
+  formula_label: "R = 100 x (F/100)^0.5 x (V/100)^0.5"
+  calibration_status: "provisional_uncalibrated"
+  v_min: 10
+  protection_cap: 0.5
+  rationale: >
+    Exposants 0.5/0.5 imposes pour cette premiere implementation (decision 12).
+    Choix provisoire NON calibre, a soumettre a l'analyse de sensibilite au meme
+    titre que les poids.
+
+publication:
+  max_missing_weight: 0.5
+  rank5_confidence_cap: 40
+  rule_16: >
+    Un bloc est INDETERMINE si sa variable dominante est absente, meme si le
+    pourcentage de poids manquant est inferieur au seuil.
+  rule_17: >
+    La renormalisation des poids n'est autorisee que si la variable dominante est
+    presente ET si le seuil de publication est respecte. Une donnee manquante
+    n'est jamais imputee, ni comme favorable, ni comme defavorable.
+
+confidence:
+  components:
+    geocoding_entity: 0.20
+    completeness: 0.30
+    spatial_scale: 0.25
+    evidence_level: 0.15
+    coherence: 0.10
+  independence: >
+    Le score de confiance est calcule separement du risque. Une faible confiance
+    ne reduit jamais le score de risque.
+
+risk_classes:
+  - {min: 0,   max: 19,  label: "tres faible"}
+  - {min: 20,  max: 39,  label: "faible"}
+  - {min: 40,  max: 59,  label: "modere"}
+  - {min: 60,  max: 79,  label: "eleve"}
+  - {min: 80,  max: 100, label: "tres eleve"}
+
+scale_disclaimer: >
+  Convention de lecture interne. Ni officielle, ni actuarielle. F est un indice
+  ordinal d'alea ou d'exposition, jamais une frequence annuelle calibree.
+
+exclusions:
+  - "Aucun score global multi-perils"
+  - "Aucune valeur monetaire, AAL, perte attendue ou valeur de reconstruction"
+  - "Vol, risques technologiques et dommages electriques hors perimetre"
+  - "CatNat et booleens communaux : poids strictement nul dans F (D03)"
+  - "Valeurs par defaut (hailRisk, snowZone=A1, landUse=urban) : exclues (D04)"
+  - "Projections DRIAS/Copernicus : jamais dans F, V ou R courants (D05)"

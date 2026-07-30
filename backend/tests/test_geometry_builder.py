@@ -92,7 +92,13 @@ def test_build_geometry_flags_missing_fields_instead_of_guessing():
     remonter dans `champs_manquants` (a completer par le formulaire ou par
     l'etape LLM decrite dans la spec, pas par une heuristique cachee ici)."""
     result = build_geometry_from_bdnb(BATIMENT_BOURGUEIL)
-    assert set(result["champs_manquants"]) == {"has_basement", "has_cellar", "has_garage", "has_garden"}
+    # BATIMENT_BOURGUEIL n'a ni champs DPE (ouvertures) ni adresse fournie
+    # (entree_facade) : ces deux absences doivent aussi remonter, au meme
+    # titre que cave/sous-sol/garage/jardin.
+    assert set(result["champs_manquants"]) == {
+        "has_basement", "has_cellar", "has_garage", "has_garden",
+        "ouvertures", "entree_facade",
+    }
     for champ in ("has_basement", "has_cellar", "has_garage", "has_garden"):
         assert result["geometry"][champ] is None
     print("test_build_geometry_flags_missing_fields_instead_of_guessing OK ->", result["champs_manquants"])

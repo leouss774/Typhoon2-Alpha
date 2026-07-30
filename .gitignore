@@ -11,10 +11,15 @@ __pycache__/
 .venv/
 venv/
 
+backend/data/lookup/dvf/
+
 # Secrets
 .env
 backend/.env
 *.env
+# Explorateur Windows ajoute parfois .txt en enregistrant un .env : deja
+# arrive deux fois sur ce projet (backend/.env puis ce dossier-ci).
+*.env.txt
 
 # Node
 node_modules/

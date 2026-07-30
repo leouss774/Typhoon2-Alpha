@@ -1,0 +1,257 @@
+peril_id: "P02"
+name: "Retrait-gonflement des argiles"
+hazard_available: true
+commune_context_codes: ["127"]
+
+typology_caveats:
+  - applies_to: ["collective"]
+    message: >
+      Bien en collectif : le corpus de vulnerabilite RGA (BRGM R40355, RP-54862,
+      Mzungu 2025) est calibre sur la MAISON INDIVIDUELLE. Les facteurs
+      profondeur de fondation et distance aux arbres perdent leur validite pour
+      un immeuble a fondations profondes. Le score V doit etre lu avec prudence.
+
+frequency:
+  variables:
+    - key: "hazard.clay.exposure_class"
+      raw_paths: ["bdnb.batiment.alea_argile", "georisques.v2.rga.codesParcelle"]
+      role: "F"
+      dominant: true
+      weight: 0.70
+      transform:
+        type: "categorical"
+        mapping:
+          "Nul": 0.0
+          "Faible": 0.33
+          "Moyen": 0.66
+          "Fort": 1.0
+        unmapped: null
+      direction: "increasing"
+      unit: "class"
+      physical_mechanism: >
+        Susceptibilite du sol au retrait-gonflement, mesuree directement a la
+        parcelle par la carte d'exposition officielle. Classe publiee, consommee
+        telle quelle.
+      min_source_rank: 2
+      allowed_scopes: ["parcel", "building", "building_group"]
+      allowed_time_horizons: ["current", "historical"]
+      on_missing: "block_indeterminate"
+      on_conflict: "keep_highest_rank"
+      evidence_level: "high"
+      references:
+        - "Carte d'exposition RGA Georisques, arrete du 9 janvier 2026 actualisant la carte 2020"
+        - "Referentiel M24/M25 (BRGM/RP-55122-FR) : methode ayant PRODUIT cette carte"
+      calibration_status: "published_threshold"
+      notes: >
+        Decision D02 : ne PAS reappliquer l'algorithme BRGM (lithologie x
+        mineralogie x geotechnique) par-dessus cette classe. La classe publiee
+        resume deja ces trois notes ; le double comptage serait une faute.
+
+    - key: "climate.consecutive_dry_days"
+      raw_paths: ["climat_open_meteo.derived.consecutive_dry_days"]
+      role: "F"
+      weight: 0.30
+      transform:
+        type: "linear_ramp"
+        points: [[10, 0.0], [40, 1.0]]
+      direction: "increasing"
+      unit: "count"
+      physical_mechanism: >
+        Sequence seche declenchante : sans dessiccation prolongee, le retrait ne
+        s'amorce pas. Facteur de DECLENCHEMENT au sens de M30, distinct de la
+        predisposition du sol.
+      min_source_rank: 4
+      allowed_scopes: ["climate_grid", "department"]
+      allowed_time_horizons: ["historical"]
+      on_missing: "renormalize_if_dominant_present"
+      on_conflict: "keep_highest_rank"
+      evidence_level: "medium"
+      references:
+        - "Referentiel M30 (BRGM) : typologie predisposition / declenchement / aggravation"
+        - "Referentiel MEC-D01 : type de sequence secheresse declenchante"
+      calibration_status: "provisional_modeling_weight"
+      notes: >
+        Seuils de rampe 10-40 jours : bornes de modelisation provisoires, NON
+        publiees. Aucune etude du corpus ne publie de seuil de jours secs
+        consecutifs declenchant. A recalibrer.
+
+vulnerability:
+  variables:
+    - key: "building.foundation.type"
+      raw_paths: ["questionnaire.building.foundation.type"]
+      role: "V"
+      dominant: true
+      weight: 0.35
+      transform:
+        type: "categorical"
+        mapping:
+          "micropieux": 0.1
+          "pieux": 0.15
+          "radier": 0.3
+          "semelles": 0.8
+          "mixte": 1.0
+        unmapped: null
+      direction: "increasing"
+      unit: "class"
+      physical_mechanism: >
+        La rigidite du systeme de fondation conditionne la transmission du
+        tassement differentiel a la superstructure. Convergence independante de
+        deux sources sur deux perils distincts.
+      min_source_rank: 3
+      allowed_scopes: ["dwelling", "building", "building_group"]
+      allowed_time_horizons: ["current"]
+      on_missing: "block_indeterminate"
+      on_conflict: "keep_highest_rank"
+      evidence_level: "medium"
+      references:
+        - "Referentiel MZU-V01 (Mzungu et al. 2025, IJDRR 127:105636) : micropieux les plus performants, fondations mixtes les moins performantes"
+        - "Referentiel SFL-V02 (SafeLand D2.5 2011) : fondation rigide vs souple, meme sens sur P04"
+      calibration_status: "provisional_modeling_weight"
+      notes: >
+        Le SENS de l'effet est bien etabli et confirme par deux methodes
+        independantes. Les VALEURS d'indice sont un classement ordinal
+        provisoire : aucune des deux sources ne publie de coefficient.
+
+    - key: "building.foundation.depth_class"
+      raw_paths: ["questionnaire.building.foundation.depth_class"]
+      role: "V"
+      weight: 0.20
+      transform:
+        type: "categorical"
+        mapping:
+          "lt_0_80": 1.0
+          "0_80_to_1_20": 0.6
+          "gt_1_20": 0.2
+        unmapped: null
+      direction: "decreasing"
+      unit: "class"
+      physical_mechanism: >
+        La zone active de dessiccation atteint 1 a 2 m en regime normal et 3 a 5 m
+        en secheresse exceptionnelle. Une fondation ancree sous cette zone est
+        soustraite au mouvement.
+      min_source_rank: 3
+      allowed_scopes: ["dwelling", "building", "building_group"]
+      allowed_time_horizons: ["current"]
+      on_missing: "renormalize_if_dominant_present"
+      on_conflict: "keep_highest_rank"
+      evidence_level: "medium"
+      references:
+        - "Referentiel BRGM R 40355 (1998) : profondeur de zone active 1-2 m normal, 3-5 m en secheresse"
+        - "Referentiel BRGM/RP-54862-FR : seuil d'encastrement 1,20 m"
+      calibration_status: "published_threshold"
+      notes: >
+        Les classes de profondeur sont publiees. La frequence de 87 % de
+        fondations < 1,20 m chez les sinistres n'est PAS utilisee comme
+        coefficient : echantillon de sinistres sans groupe temoin (M33).
+
+    - key: "building.rga.crack_width_class"
+      raw_paths: ["questionnaire.building.rga.crack_width_class"]
+      role: "V"
+      weight: 0.20
+      transform:
+        type: "categorical"
+        mapping:
+          "aucune": 0.0
+          "D1": 0.2
+          "D2": 0.4
+          "D3": 0.6
+          "D4": 0.8
+          "D5": 1.0
+        unmapped: null
+      direction: "increasing"
+      unit: "class"
+      physical_mechanism: >
+        Desordre deja constitue : la fissuration observee temoigne d'une
+        sensibilite averee du couple sol-structure a l'adresse.
+      min_source_rank: 3
+      allowed_scopes: ["dwelling", "building", "building_group"]
+      allowed_time_horizons: ["current"]
+      on_missing: "renormalize_if_dominant_present"
+      on_conflict: "keep_highest_rank"
+      evidence_level: "high"
+      references:
+        - "Referentiel M88 (Mzungu et al. 2025) : echelle D1-D5, seuils de largeur 0,1-1 / 1-5 / 5-15 / 15-25 / >25 mm, calee sur 10 325 rapports d'expertise"
+      calibration_status: "published_threshold"
+      notes: >
+        Seuils de largeur publies et auto-observables par l'habitant avec une
+        simple regle. La distribution des grades (D2 = 43 %) n'est PAS utilisee
+        comme coefficient : conditionnelle au sinistre, sans temoin.
+
+    - key: "site.trees_within_1_5h"
+      raw_paths: ["questionnaire.site.trees_within_1_5h"]
+      role: "V"
+      weight: 0.15
+      transform:
+        type: "boolean"
+        true: 1.0
+        false: 0.0
+      direction: "increasing"
+      unit: "bool"
+      physical_mechanism: >
+        La vegetation arboree est le seul facteur permettant au front de
+        dessiccation de depasser 1 m de profondeur. Seuil operationnel : arbre a
+        moins de 1,5 fois sa hauteur du bati.
+      min_source_rank: 3
+      allowed_scopes: ["dwelling", "parcel", "building", "building_group"]
+      allowed_time_horizons: ["current"]
+      on_missing: "renormalize_if_dominant_present"
+      on_conflict: "keep_highest_rank"
+      evidence_level: "high"
+      references:
+        - "Referentiel BRGM-B01 (BRGM R 40355) : seuil 1,5 x hauteur"
+        - "Referentiel Mzungu 2025 2e passe : confirme comme mode operatoire reel des experts d'assurance"
+      calibration_status: "published_threshold"
+
+    - key: "building.foundation.uniform"
+      raw_paths: ["questionnaire.building.foundation.uniform"]
+      role: "V"
+      weight: 0.10
+      transform:
+        type: "boolean"
+        true: 0.0
+        false: 1.0
+      direction: "decreasing"
+      unit: "bool"
+      physical_mechanism: >
+        Des profondeurs d'ancrage multiples sur un meme batiment creent un
+        differentiel de mouvement plus endommageant qu'une profondeur unique.
+      min_source_rank: 3
+      allowed_scopes: ["dwelling", "building", "building_group"]
+      allowed_time_horizons: ["current"]
+      on_missing: "renormalize_if_dominant_present"
+      on_conflict: "keep_highest_rank"
+      evidence_level: "medium"
+      references:
+        - "Referentiel MZU-V07 (Mzungu et al. 2025) : heterogeneite de profondeur"
+        - "Referentiel BRGM/RP-54862-FR : encastrement variable dans 38 % des sinistres (frequence NON utilisee comme coefficient)"
+      calibration_status: "provisional_modeling_weight"
+
+    - key: "site.drainage_defect"
+      raw_paths: ["questionnaire.site.drainage_defect"]
+      role: "protection"
+      max_reduction: 0.0
+      weight: 0.0
+      transform:
+        type: "boolean"
+        true: 0.0
+        false: 0.0
+      direction: "increasing"
+      unit: "bool"
+      physical_mechanism: >
+        Concentration d'eau ou canalisation fuyarde a proximite des fondations.
+        Facteur AGGRAVANT, non protecteur : max_reduction nul, conserve pour
+        tracabilite et affichage.
+      min_source_rank: 3
+      allowed_scopes: ["dwelling", "parcel", "building", "building_group"]
+      allowed_time_horizons: ["current"]
+      on_missing: "ignore"
+      on_conflict: "keep_highest_rank"
+      evidence_level: "medium"
+      references:
+        - "Referentiel MEC-V07 : canalisation fuyarde, facteur aggravant dans 33 % des sinistres"
+      calibration_status: "provisional_modeling_weight"
+      notes: >
+        Volontairement neutralise (max_reduction=0) : une protection ne peut que
+        REDUIRE V. Un facteur aggravant doit devenir une variable de role V a
+        part entiere si l'on veut qu'il pese, ce qui exigerait une source
+        cas-temoin absente du corpus.
