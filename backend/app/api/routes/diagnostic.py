@@ -20,6 +20,8 @@ import uuid
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
+from app.agents import digital_twin_agent, interpretation_agent, recommandations_agent, scoring_agent
+from app.agents.collector_agent import collect
 from app.agents.graph import diagnostic_graph
 from app.connectors import annonces_lookup, dvf_lookup
 from app.connectors.dvf_lookup import DvfLookupUnavailable
@@ -75,6 +77,101 @@ async def run_diagnostic(payload: DiagnosticRequest) -> dict:
         raise HTTPException(status_code=502, detail="Le graphe n'a pas produit de contrat digital_twin.")
 
     logger.info("diagnostic OK en %.2fs (thread_id=%s)", elapsed, thread_id)
+    logger.info("=" * 70)
+    return digital_twin
+
+
+@router.post("/diagnostic/fast")
+async def run_diagnostic_fast(payload: DiagnosticRequest) -> dict:
+    """Variante rapide de /diagnostic pour l'affichage immediat du jumeau
+    numerique 3D côté front.
+
+    N'execute QUE collector_agent + scoring_agent (+ assemblage du contrat) :
+    saute recommandations_agent (RAG) et interpretation_agent, qui sont a
+    eux deux la quasi-totalite du temps de /diagnostic (plusieurs dizaines
+    de secondes, appels Mistral zone par zone). Le contrat renvoye a donc
+    les memes zones/scores/couleurs que /diagnostic, mais avec des
+    "recommandations" vides et sans "conclusion"/"facteurs_aggravants"
+    interpretes.
+
+    Le front affiche la maison tout de suite avec ce contrat, puis appelle
+    /diagnostic/recommandations en tache de fond avec le bloc "_resume"
+    ci-dessous pour recuperer les recommandations des qu'elles sont pretes,
+    SANS relancer la collecte (BDNB/Georisques/Open-Meteo... deja faite ici).
+    """
+    logger.info("=" * 70)
+    logger.info("POST /diagnostic/fast  adresse=%r", payload.adresse)
+    t0 = time.perf_counter()
+
+    try:
+        building_data = await collect(payload.adresse, enable_copernicus=payload.copernicus)
+        state: dict = {"building_data": building_data, "formulaire": payload.formulaire}
+        state.update(scoring_agent.run(state))
+        state.update(digital_twin_agent.run(state))
+    except Exception as exc:
+        logger.exception("diagnostic/fast -- echec pour %r", payload.adresse)
+        raise HTTPException(status_code=502, detail=f"{type(exc).__name__}: {exc}") from exc
+
+    digital_twin = state.get("digital_twin")
+    if digital_twin is None:
+        raise HTTPException(status_code=502, detail="Le contrat digital_twin n'a pas pu etre assemble.")
+
+    # Repasse par le front tel quel a /diagnostic/recommandations : evite de
+    # relancer la collecte reseau pour la phase 2.
+    digital_twin["_resume"] = {
+        "building_data": state["building_data"],
+        "risk_scores": state["risk_scores"],
+        "formulaire": payload.formulaire,
+    }
+
+    elapsed = time.perf_counter() - t0
+    logger.info("diagnostic/fast OK en %.2fs", elapsed)
+    logger.info("=" * 70)
+    return digital_twin
+
+
+class DiagnosticRecommandationsRequest(BaseModel):
+    building_data: dict = Field(..., description="Tel que renvoye par /diagnostic/fast (digital_twin._resume.building_data)")
+    risk_scores: dict = Field(..., description="Tel que renvoye par /diagnostic/fast (digital_twin._resume.risk_scores)")
+    formulaire: dict | None = Field(default=None)
+
+
+@router.post("/diagnostic/recommandations")
+async def run_diagnostic_recommandations(payload: DiagnosticRecommandationsRequest) -> dict:
+    """Deuxieme phase (lente) de /diagnostic/fast : recommandations RAG
+    (Mistral, par zone) + interpretation LLM, puis reassemblage du contrat
+    complet. Ne relance PAS la collecte : reutilise building_data/risk_scores
+    tels que renvoyes dans digital_twin._resume par /diagnostic/fast.
+
+    Le front appelle cette route juste apres avoir affiche la maison via
+    /diagnostic/fast, et fusionne le contrat renvoye ici (recommandations,
+    conclusion, facteurs_aggravants/attenuants par zone) dans l'etat deja
+    affiche a l'ecran des qu'il est pret.
+    """
+    logger.info("=" * 70)
+    logger.info("POST /diagnostic/recommandations")
+    t0 = time.perf_counter()
+
+    state: dict = {
+        "building_data": payload.building_data,
+        "risk_scores": payload.risk_scores,
+        "formulaire": payload.formulaire,
+    }
+
+    try:
+        state.update(await recommandations_agent.run(state))
+        state.update(await asyncio.to_thread(interpretation_agent.run, state))
+        state.update(digital_twin_agent.run(state))
+    except Exception as exc:
+        logger.exception("diagnostic/recommandations -- echec")
+        raise HTTPException(status_code=502, detail=f"{type(exc).__name__}: {exc}") from exc
+
+    digital_twin = state.get("digital_twin")
+    if digital_twin is None:
+        raise HTTPException(status_code=502, detail="Le contrat digital_twin n'a pas pu etre assemble.")
+
+    elapsed = time.perf_counter() - t0
+    logger.info("diagnostic/recommandations OK en %.2fs", elapsed)
     logger.info("=" * 70)
     return digital_twin
 
