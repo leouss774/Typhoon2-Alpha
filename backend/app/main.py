@@ -19,6 +19,7 @@ from __future__ import annotations
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.api.routes import artisans, diagnostic, health
 from app.api.routes import diagnostic, health, property_id as property_id_router
 from app.core.logging import configure_logging, get_logger
 from app.property_id.service import init_service as init_property_id_service
@@ -38,11 +39,18 @@ app.add_middleware(
 
 app.include_router(health.router)
 app.include_router(diagnostic.router)
+app.include_router(artisans.router)
+app.include_router(artisans.legacy_router)
 app.include_router(property_id_router.router)
 
 
 @app.on_event("startup")
 async def on_startup() -> None:
+    # Index de l'agent recommandations (~19 Mo, ~900 fiches) : charge une
+    # seule fois ici plutot qu'a chaque requete /diagnostic, cf.
+    # app/recommandations/service.py et PROMPT_INTEGRATION_ouss.md section 2.
+    load_index()
+    logger.info("Typhoon API demarree — routes : POST /diagnostic, GET /health, POST /api/v1/artisans/matching")
     init_property_id_service()
     # Index RAG : charge une seule fois au demarrage, pas a chaque requete
     try:
