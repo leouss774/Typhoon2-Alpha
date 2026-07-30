@@ -933,7 +933,13 @@
 #property-id-screen #pid-devis-result #pid-works-ul li .wc { color: var(--text); font-weight: 600; font-size: 12px; }
 
 /* Score gauges */
-#property-id-screen .pid-gauges { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 20px; }
+/* Two column layout for gauges + cards */
+#property-id-screen .pid-cols {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;
+}
+#property-id-screen .pid-col {
+  display: flex; flex-direction: column; gap: 16px;
+}
 #property-id-screen .pid-gauge-card {
   background: #fff; border: 1px solid var(--border); border-radius: 12px;
   padding: 22px 18px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.06);
@@ -953,14 +959,20 @@
 #property-id-screen .pid-gauge-card .gl { font-size: 13px; font-weight: 600; color: var(--ink); margin-bottom: 3px; }
 #property-id-screen .pid-gauge-card .ge { font-size: 11px; color: var(--muted); font-style: italic; line-height: 1.4; }
 
-/* Two column layout */
-#property-id-screen .pid-two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+
 
 /* Risk card */
 #property-id-screen .pid-risk-card {
   background: #fff; border: 1px solid var(--border); border-radius: 12px;
   padding: 22px 18px; box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  display: flex; flex-direction: column;
 }
+#property-id-screen .pid-risk-card .pid-section-title { flex-shrink: 0; }
+#property-id-screen .pid-risk-card .pid-risk-body {
+  flex: 1; display: flex; flex-direction: column;
+  justify-content: center; gap: 8px;
+}
+#property-id-screen .pid-risk-card .pid-risk-body .rr { margin-bottom: 0; }
 #property-id-screen .pid-risk-card .rr { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 13px; }
 #property-id-screen .pid-risk-card .rr:last-child { margin-bottom: 0; }
 #property-id-screen .pid-risk-card .rr .ll { color: var(--text); min-width: 100px; }
@@ -1106,8 +1118,7 @@
   #property-id-screen .pid-cert-hero { flex-direction: column; text-align: center; padding: 24px 20px; }
   #property-id-screen .pid-cert-hero .badge-wrap img { width: 90px; height: 105px; margin: 0 auto; }
   #property-id-screen .pid-cert-hero .ci .cm { justify-content: center; }
-  #property-id-screen .pid-gauges { grid-template-columns: 1fr; max-width: 320px; margin: 0 auto 20px; }
-  #property-id-screen .pid-two-col { grid-template-columns: 1fr; }
+  #property-id-screen .pid-cols { grid-template-columns: 1fr; }
   #property-id-screen .pid-header { flex-direction: column; }
   #property-id-screen .pid-bld-card .ig { grid-template-columns: 1fr; }
   #property-id-screen #pid-devis-result { flex-direction: column; align-items: stretch; padding: 24px 20px; }
@@ -1669,42 +1680,45 @@
     </div>
   </div>
 
-  <!-- SCORE GAUGES -->
-  <div class="pid-gauges pid-fade d3" id="pid-section-gauges">
-    <div class="pid-gauge-card">
-      <div class="gw"><svg width="120" height="120" viewBox="0 0 120 120"></svg><div class="gc" id="pid-gauge-ov">0</div></div>
-      <div class="gl">Score Global</div>
-      <div class="ge" id="pid-gauge-ov-explain">Résilience globale face aux risques climatiques et géologiques</div>
-    </div>
-    <div class="pid-gauge-card">
-      <div class="gw"><svg width="120" height="120" viewBox="0 0 120 120"></svg><div class="gc" id="pid-gauge-cl">0</div></div>
-      <div class="gl">Climat 2050</div>
-      <div class="ge">Projection des risques climatiques à horizon 2050</div>
-  </div>
-
-  <!-- RISK + BUILDING -->
-  <div class="pid-two-col pid-fade d4" id="pid-section-risk-cols">
-    <div class="pid-risk-card">
-      <div class="pid-section-title">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-        Résumé des risques
+  <!-- SCORE + RISK COLS -->
+  <div class="pid-cols pid-fade d3" id="pid-section-gauges">
+    <div class="pid-col">
+      <div class="pid-gauge-card">
+        <div class="gw"><svg width="120" height="120" viewBox="0 0 120 120"></svg><div class="gc" id="pid-gauge-ov">0</div></div>
+        <div class="gl">Score Global</div>
+        <div class="ge" id="pid-gauge-ov-explain">Résilience globale face aux risques climatiques et géologiques</div>
       </div>
-      <div class="rr"><span class="ll">Zone la plus risquée :</span><span class="vv" id="pid-risk-highest">—</span></div>
-      <div class="rr"><span class="ll">Niveau de risque :</span><span class="pid-risk-badge na" id="pid-risk-level">—</span></div>
-      <div class="rr"><span class="ll">Aléa principal :</span><span class="vv" id="pid-risk-hazard">—</span></div>
-    </div>
-    <div class="pid-bld-card">
-      <div class="pid-section-title">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-        Informations du bâtiment
+      <div class="pid-risk-card">
+        <div class="pid-section-title">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          Résumé des risques
+        </div>
+        <div class="pid-risk-body">
+          <div class="rr"><span class="ll">Zone la plus risquée :</span><span class="vv" id="pid-risk-highest">—</span></div>
+          <div class="rr"><span class="ll">Niveau de risque :</span><span class="pid-risk-badge na" id="pid-risk-level">—</span></div>
+          <div class="rr"><span class="ll">Aléa principal :</span><span class="vv" id="pid-risk-hazard">—</span></div>
+        </div>
       </div>
-      <div class="ig">
-        <div class="ii"><span class="il">Construction</span><span class="iv" id="pid-bld-year">—</span></div>
-        <div class="ii"><span class="il">Type</span><span class="iv" id="pid-bld-type">—</span></div>
-        <div class="ii"><span class="il">Matériaux</span><span class="iv" id="pid-bld-materials">—</span></div>
-        <div class="ii"><span class="il">Toiture</span><span class="iv" id="pid-bld-roof">—</span></div>
-        <div class="ii"><span class="il">Étages</span><span class="iv" id="pid-bld-floors">—</span></div>
-        <div class="ii"><span class="il">Adresse</span><span class="iv" id="pid-bld-addr">—</span></div>
+    </div>
+    <div class="pid-col">
+      <div class="pid-gauge-card">
+        <div class="gw"><svg width="120" height="120" viewBox="0 0 120 120"></svg><div class="gc" id="pid-gauge-cl">0</div></div>
+        <div class="gl">Climat 2050</div>
+        <div class="ge">Projection des risques climatiques à horizon 2050</div>
+      </div>
+      <div class="pid-bld-card">
+        <div class="pid-section-title">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          Informations du bâtiment
+        </div>
+        <div class="ig">
+          <div class="ii"><span class="il">Construction</span><span class="iv" id="pid-bld-year">—</span></div>
+          <div class="ii"><span class="il">Type</span><span class="iv" id="pid-bld-type">—</span></div>
+          <div class="ii"><span class="il">Matériaux</span><span class="iv" id="pid-bld-materials">—</span></div>
+          <div class="ii"><span class="il">Toiture</span><span class="iv" id="pid-bld-roof">—</span></div>
+          <div class="ii"><span class="il">Étages</span><span class="iv" id="pid-bld-floors">—</span></div>
+          <div class="ii"><span class="il">Adresse</span><span class="iv" id="pid-bld-addr">—</span></div>
+        </div>
       </div>
     </div>
   </div>
