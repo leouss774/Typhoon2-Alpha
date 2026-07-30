@@ -46,4 +46,4 @@ async def on_startup() -> None:
     # seule fois ici plutot qu'a chaque requete /diagnostic, cf.
     # app/recommandations/service.py et PROMPT_INTEGRATION_ouss.md section 2.
     load_index()
-    logger.info("Typhoon API demarree — routes : POST /diagnostic, GET /health")
+    logger.info("Typhoon API demarree — routes : POST /diagnostic, GET /health, POST /api/v1/artisans/matching")

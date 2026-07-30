@@ -12,6 +12,7 @@ langchain-community
 
 # --- Appels API / HTTP ---
 httpx
+requests
 
 # --- Lookup local DVF ---
 pandas

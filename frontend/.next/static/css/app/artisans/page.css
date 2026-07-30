@@ -1,0 +1,255 @@
+/*!**********************************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** css ./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[14].oneOf[5].use[2]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[14].oneOf[5].use[3]!./app/artisans/ArtisanMatcher.module.css ***!
+  \**********************************************************************************************************************************************************************************************************************************************************************************/
+/* =========================================================================
+   ArtisanMatcher — UX optimisé avec animations
+   ========================================================================= */
+
+.ArtisanMatcher_page__JfpiZ {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 24px 48px;
+}
+@media (max-width: 768px) { .ArtisanMatcher_page__JfpiZ { padding: 0 12px 36px; } }
+
+/* ── Hero ── */
+.ArtisanMatcher_hero__yLhOg {
+  background: linear-gradient(135deg, var(--ink), #2A4055);
+  color: white; border-radius: 20px; padding: 36px 40px;
+  margin-bottom: 28px; box-shadow: 0 12px 30px rgba(30,42,51,0.15);
+}
+.ArtisanMatcher_heroTitle__V1wie { margin: 0 0 8px; font-family: var(--font-head); font-size: 28px; }
+.ArtisanMatcher_heroDesc__e_zyq { margin: 0; opacity: 0.85; font-size: 14px; line-height: 1.5; max-width: 720px; }
+@media (max-width: 640px) { .ArtisanMatcher_hero__yLhOg { padding: 24px 20px; } .ArtisanMatcher_heroTitle__V1wie { font-size: 22px; } }
+
+/* ── Formulaire ── */
+.ArtisanMatcher_formSection__NyZ4T {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 24px; margin-bottom: 24px; box-shadow: var(--shadow);
+}
+.ArtisanMatcher_formRow__zMvtf { display: flex; gap: 12px; margin-bottom: 16px; align-items: flex-end; }
+.ArtisanMatcher_formGroup__EPyX7 { display: flex; flex-direction: column; gap: 5px; flex: 1 1; }
+.ArtisanMatcher_recoHint__4sTnq { font-weight: 400; text-transform: none; color: var(--muted); font-size: 11px; }
+.ArtisanMatcher_actions__RJCB6 { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 4px; }
+@media (max-width: 640px) {
+  .ArtisanMatcher_formRow__zMvtf { flex-direction: column; }
+  .ArtisanMatcher_actions__RJCB6 { flex-direction: column; }
+  .ArtisanMatcher_actions__RJCB6 button { width: 100%; }
+}
+
+/* ── Tips box ── */
+.ArtisanMatcher_tipsBox__8tJOR {
+  background: #FFFDF5; border: 1px solid #F0DDB0; border-radius: var(--radius-sm);
+  padding: 12px 14px; margin-top: 12px; font-size: 12.5px; color: var(--text); line-height: 1.5;
+}
+.ArtisanMatcher_tipsBox__8tJOR ul { margin: 6px 0 0; padding-left: 18px; }
+.ArtisanMatcher_tipsBox__8tJOR li { margin-bottom: 3px; }
+.ArtisanMatcher_tipsBox__8tJOR kbd {
+  background: #eee; border: 1px solid #ccc; border-radius: 3px; padding: 1px 5px;
+  font-size: 11px; font-family: monospace;
+}
+
+/* ── Presets ── */
+.ArtisanMatcher_presets__zbSRe { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); }
+.ArtisanMatcher_presetsLabel__Pdd4p { font-size: 11px; color: var(--muted); font-weight: 600; align-self: center; }
+.ArtisanMatcher_presetBtn___wk5L {
+  background: var(--surface-alt); border: 1px solid var(--border); border-radius: 999px;
+  padding: 6px 14px; font-size: 11.5px; color: var(--text); cursor: pointer; font-weight: 600;
+  transition: all 0.15s; font-family: var(--font-body);
+}
+.ArtisanMatcher_presetBtn___wk5L:hover { border-color: var(--brand); color: var(--brand); background: var(--brand-light); }
+
+/* ── Domaines ── */
+.ArtisanMatcher_domainesPanel__RV1G4 { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); }
+.ArtisanMatcher_domainesLabel__F4AcC { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+.ArtisanMatcher_domainesGrid__jZqiu { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); grid-gap: 6px; gap: 6px; max-height: 240px; overflow-y: auto; }
+.ArtisanMatcher_domaineChip__RZUcW { text-align: left; padding: 6px 10px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface-alt); font-size: 11.5px; color: var(--text); cursor: pointer; transition: all 0.15s; font-family: var(--font-body); }
+.ArtisanMatcher_domaineChip__RZUcW:hover { border-color: var(--brand); color: var(--brand); }
+.ArtisanMatcher_domaineTag__4PIkg { display: inline-block; font-size: 9px; font-weight: 700; padding: 1px 6px; border-radius: 4px; margin-left: 4px; }
+.ArtisanMatcher_tagRge__boz38 { background: #E4F5EC; color: var(--success); }
+.ArtisanMatcher_tagNonRge__xsXAz { background: #FBEED9; color: var(--warning); }
+
+/* ── Loading ── */
+.ArtisanMatcher_loadingSection__6hm4F { margin: 20px 0; }
+.ArtisanMatcher_loadingText__NVzXH { color: var(--muted); font-size: 13px; text-align: center; display: flex; align-items: center; justify-content: center; gap: 8px; }
+.ArtisanMatcher_spinner__pywsO {
+  width: 14px; height: 14px; border: 2px solid var(--border); border-top-color: var(--brand);
+  border-radius: 50%; animation: ArtisanMatcher_spin__V2wOR 0.6s linear infinite; display: inline-block;
+}
+@keyframes ArtisanMatcher_spin__V2wOR { to { transform: rotate(360deg); } }
+
+/* ── Skeleton ── */
+.ArtisanMatcher_skeletonSection__jy44w { margin: 20px 0; display: flex; flex-direction: column; gap: 16px; }
+.ArtisanMatcher_skeletonCard__Yf__s {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 20px; box-shadow: var(--shadow);
+}
+.ArtisanMatcher_skelLine__phjTD { height: 14px; border-radius: 8px; background: linear-gradient(90deg, #eee 25%, #f5f5f5 50%, #eee 75%); background-size: 200% 100%; animation: ArtisanMatcher_shimmer__q1kPw 1.4s infinite; margin-bottom: 10px; }
+.ArtisanMatcher_skelTable__5IXA9 { margin-top: 14px; display: flex; flex-direction: column; gap: 8px; }
+.ArtisanMatcher_skelRow__gWjd6 { height: 40px; border-radius: 6px; background: linear-gradient(90deg, #f0f0f0 25%, #fafafa 50%, #f0f0f0 75%); background-size: 200% 100%; animation: ArtisanMatcher_shimmer__q1kPw 1.4s infinite; }
+@keyframes ArtisanMatcher_shimmer__q1kPw { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+.ArtisanMatcher_errorSection__c_CmW { margin: 20px 0; }
+
+/* ── Résultats ── */
+.ArtisanMatcher_geoInfo__bLrST {
+  background: #F0F8FF; border: 1px solid #CCE5FF; border-radius: var(--radius-sm);
+  padding: 10px 14px; margin-bottom: 16px; font-size: 12.5px; color: var(--text); line-height: 1.5;
+}
+.ArtisanMatcher_geoInfo__bLrST code { font-family: 'SF Mono', monospace; font-size: 11px; color: var(--muted); }
+.ArtisanMatcher_geoWarn__hLvK8 { color: var(--warning); font-weight: 600; }
+
+/* ── Summary ── */
+.ArtisanMatcher_summary__wquhf { display: grid; grid-gap: 14px; gap: 14px; margin-bottom: 20px; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
+.ArtisanMatcher_summaryCard__OGRwC { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 20px; box-shadow: var(--shadow); }
+.ArtisanMatcher_summaryNum__t_rbu { display: block; font-size: 28px; font-weight: 800; color: var(--brand); line-height: 1; }
+.ArtisanMatcher_summaryDesc__2gCpI { font-size: 12px; color: var(--muted); margin-top: 4px; display: block; }
+.ArtisanMatcher_rgeCount__2oxeY { color: var(--success); }
+.ArtisanMatcher_nonrgeCount__AuiOY { color: var(--warning); }
+
+/* ── Toolbar ── */
+.ArtisanMatcher_toolbar__h18XQ {
+  display: flex; justify-content: space-between; align-items: center;
+  gap: 12px; margin-bottom: 16px; flex-wrap: wrap;
+}
+.ArtisanMatcher_toolbarLeft__C5mos { display: flex; gap: 6px; flex-wrap: wrap; }
+.ArtisanMatcher_toolbarRight__wBt0h { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.ArtisanMatcher_toolBtn__TF71d {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm);
+  padding: 7px 14px; font-size: 12px; font-weight: 600; color: var(--text);
+  cursor: pointer; transition: all 0.15s; font-family: var(--font-body);
+  display: flex; align-items: center; gap: 5px;
+}
+.ArtisanMatcher_toolBtn__TF71d:hover { border-color: var(--brand); color: var(--brand); }
+.ArtisanMatcher_toolActive__AH10a { background: var(--brand); border-color: var(--brand); color: white; }
+.ArtisanMatcher_toolActive__AH10a:hover { color: white; opacity: 0.9; }
+.ArtisanMatcher_toolCount__qdjOE { opacity: 0.7; font-weight: 400; font-size: 11px; }
+.ArtisanMatcher_sortLabel__0JX9U { font-size: 11px; color: var(--muted); font-weight: 600; }
+.ArtisanMatcher_sortSelect__3U_Pt {
+  font-size: 12px; padding: 6px 8px; border: 1px solid var(--border);
+  border-radius: 6px; background: var(--surface); color: var(--text);
+  font-family: var(--font-body); cursor: pointer; outline: none;
+}
+
+/* ── Carte recommandation ── */
+.ArtisanMatcher_recoCard__dMEqc {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 20px; margin-bottom: 16px; box-shadow: var(--shadow);
+  animation: ArtisanMatcher_cardFadeIn__iuUkZ 0.4s ease both;
+}
+@keyframes ArtisanMatcher_cardFadeIn__iuUkZ {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.ArtisanMatcher_cardHead__5BpGc { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 8px; flex-wrap: wrap; }
+.ArtisanMatcher_recoTitle__nSgKx { margin: 0; font-size: 16px; font-family: var(--font-head); }
+.ArtisanMatcher_recoMeta__70LS_ { font-size: 12px; color: var(--muted); margin-bottom: 12px; line-height: 1.5; }
+.ArtisanMatcher_recoMeta__70LS_ strong { color: var(--text); }
+.ArtisanMatcher_recoExtra__QlOrk {
+  margin-top: 10px; padding: 8px 10px; background: var(--surface-alt);
+  border-radius: 6px; font-size: 11.5px; color: var(--muted); line-height: 1.5;
+}
+.ArtisanMatcher_recoExtra__QlOrk strong { color: var(--text); }
+
+/* ── Desktop table ── */
+.ArtisanMatcher_tableWrap__LPjml { overflow-x: auto; }
+.ArtisanMatcher_table__Rzpa0 { width: 100%; border-collapse: collapse; font-size: 13px; }
+.ArtisanMatcher_table__Rzpa0 th {
+  padding: 10px 12px; text-align: left; font-size: 11px; font-weight: 700; color: var(--muted);
+  text-transform: uppercase; letter-spacing: 0.05em; background: var(--surface-alt);
+  border-bottom: 2px solid var(--border); white-space: nowrap;
+}
+.ArtisanMatcher_table__Rzpa0 td { padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+.ArtisanMatcher_entRow__FP_RN { transition: background 0.15s; }
+.ArtisanMatcher_entRow__FP_RN:hover td { background: #FFF8F5; }
+.ArtisanMatcher_score__QG_Z_ { font-weight: 800; font-size: 15px; }
+.ArtisanMatcher_entName__AYt5y { font-weight: 600; min-width: 140px; }
+.ArtisanMatcher_adrCell__zh0i_ { font-size: 12px; line-height: 1.4; }
+.ArtisanMatcher_commune__o4cJJ { color: var(--muted); }
+
+/* ── Score Badge ── */
+.ArtisanMatcher_scoreBadge___cHnL { min-width: 110px; display: inline-block; }
+.ArtisanMatcher_scoreBar__qjieO { height: 5px; background: var(--border); border-radius: 999px; overflow: hidden; margin-bottom: 4px; }
+.ArtisanMatcher_scoreBarFill__n4roK { height: 100%; border-radius: 999px; transition: width 0.6s ease; }
+.ArtisanMatcher_scoreRow___2RDs { display: flex; align-items: center; gap: 6px; }
+.ArtisanMatcher_scoreStars__fNYxU { font-size: 12px; letter-spacing: 1px; }
+.ArtisanMatcher_scoreNum__3nqWP { font-weight: 800; font-size: 16px; line-height: 1; }
+.ArtisanMatcher_scoreTotal__eCR5m { font-weight: 400; font-size: 10px; color: var(--muted); }
+.ArtisanMatcher_scoreCell__mk2xB { vertical-align: middle; min-width: 120px; }
+
+/* ── Ancienneté Badge ── */
+.ArtisanMatcher_ancienneteBadge__kXvan {
+  display: inline-block; padding: 2px 8px; border-radius: 999px;
+  color: white; font-size: 11px; font-weight: 700; white-space: nowrap;
+}
+.ArtisanMatcher_ancienneteCell__IVExJ { vertical-align: middle; text-align: center; white-space: nowrap; }
+
+/* ── Site Badge ── */
+.ArtisanMatcher_siteBadge__mpkMW {
+  display: inline-block; padding: 2px 8px; border-radius: 6px;
+  background: #E4F5EC; color: var(--success); font-size: 11px;
+  font-weight: 700; text-decoration: none; white-space: nowrap;
+  transition: all 0.15s;
+}
+.ArtisanMatcher_siteBadge__mpkMW:hover { background: var(--success); color: white; text-decoration: none; }
+.ArtisanMatcher_siteCell__heaMB { vertical-align: middle; text-align: center; }
+
+/* ── Tel cell ── */
+.ArtisanMatcher_telCell___W33_ { vertical-align: middle; font-size: 12px; white-space: nowrap; }
+.ArtisanMatcher_telLink__a2_B9 { color: var(--brand); text-decoration: none; font-weight: 600; }
+.ArtisanMatcher_telLink__a2_B9:hover { text-decoration: underline; }
+
+/* ── N/A badge ── */
+.ArtisanMatcher_naBadge__VW2Nj { color: var(--muted); font-size: 12px; }
+
+/* Distance badge */
+.ArtisanMatcher_distBadge__tJ_nG { display: inline-block; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 999px; margin-left: 6px; vertical-align: middle; white-space: nowrap; }
+.ArtisanMatcher_distanceClose__U7Fqj { background: #E4F5EC; color: var(--success); }
+.ArtisanMatcher_distanceMid__JFx1Z { background: #FBEED9; color: var(--warning); }
+.ArtisanMatcher_distanceFar__Ly2db { background: #FDE7E2; color: var(--danger); }
+
+/* Contact */
+.ArtisanMatcher_contactCell__f1cPG { font-size: 12px; line-height: 1.4; min-width: 120px; }
+.ArtisanMatcher_contactCell__f1cPG a { color: var(--brand); text-decoration: none; }
+.ArtisanMatcher_contactCell__f1cPG a:hover { text-decoration: underline; }
+
+/* Expand */
+.ArtisanMatcher_expandBtn__T463t { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 10px; padding: 2px 4px; margin-left: 4px; font-family: var(--font-body); transition: color 0.15s; vertical-align: middle; }
+.ArtisanMatcher_expandBtn__T463t:hover { color: var(--brand); }
+.ArtisanMatcher_detailRow__z4TS_ td { padding: 0 12px 10px; }
+.ArtisanMatcher_scoreDetail__8U_7l { background: var(--surface-alt); border-radius: 6px; padding: 8px 12px; font-size: 11.5px; color: var(--muted); line-height: 1.5; }
+.ArtisanMatcher_scoreDetail__8U_7l ul { margin: 6px 0 0; padding-left: 16px; }
+.ArtisanMatcher_scoreDetail__8U_7l li { margin-bottom: 2px; }
+.ArtisanMatcher_scoreDetail__8U_7l strong { color: var(--text); display: block; margin-bottom: 4px; }
+
+/* ── Mobile cards (visible <768px) ── */
+.ArtisanMatcher_mobileCard__AMjoM { display: none; }
+@media (max-width: 768px) {
+  .ArtisanMatcher_table__Rzpa0 thead { display: none; }
+  .ArtisanMatcher_entRow__FP_RN { display: none; }
+  .ArtisanMatcher_mobileCard__AMjoM { display: table-row; }
+  .ArtisanMatcher_mobileCard__AMjoM td { padding: 8px 0; }
+  .ArtisanMatcher_mobileEnt__cVx_j {
+    background: var(--surface-alt); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 12px 14px;
+  }
+  .ArtisanMatcher_mobileEntHeader__c2kRi { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .ArtisanMatcher_mobileScore__z5Rkm { display: flex; align-items: center; gap: 6px; }
+  .ArtisanMatcher_mobileEntBody__Nb8OJ { font-size: 12px; color: var(--text); line-height: 1.5; }
+  .ArtisanMatcher_mobileEntBody__Nb8OJ > div { margin-bottom: 4px; }
+  .ArtisanMatcher_mobileMetaRow__AVv1v { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .ArtisanMatcher_mobileMetaRow__AVv1v > span { display: inline-flex; align-items: center; gap: 4px; }
+}
+
+/* ── Result footer ── */
+.ArtisanMatcher_resultFooter__tpkJg {
+  text-align: center; font-size: 11px; color: var(--muted);
+  padding: 16px 0; border-top: 1px solid var(--border); margin-top: 8px;
+}
+
+@media (max-width: 768px) {
+  .ArtisanMatcher_summary__wquhf { grid-template-columns: repeat(2, 1fr); }
+  .ArtisanMatcher_toolbar__h18XQ { flex-direction: column; align-items: stretch; }
+  .ArtisanMatcher_toolbarLeft__C5mos, .ArtisanMatcher_toolbarRight__wBt0h { justify-content: center; }
+}
+

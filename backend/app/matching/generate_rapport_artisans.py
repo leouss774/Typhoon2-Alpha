@@ -34,7 +34,7 @@ from typing import Any
 
 import requests
 
-from match_artisans_rge import (
+from app.matching.match_artisans_rge import (
     RECOMMANDATION_VERS_DOMAINE_ADEME,
     matcher_recommandation,
 )
@@ -50,40 +50,78 @@ API_RECHERCHE_ENTREPRISES = "https://recherche-entreprises.api.gouv.fr/search"
 # qui n'atteste que de l'activite declaree, pas d'une competence).
 # ─────────────────────────────────────────────────────────────
 CATEGORIES_NON_RGE: dict[str, dict[str, Any]] = {
+    # ── Risques naturels / structure ──
     "rga_geotechnique": {
-        "libelle": "Etude et confortement geotechnique (RGA)",
-        "code_naf": "71.12B",  # Ingenierie, etudes techniques
+        "libelle": "Étude et confortement géotechnique (RGA)",
+        "code_naf": "71.12B",  # Ingénierie, études techniques
         "annuaire_reference": {
-            "organisme": "USG - Union Syndicale Geotechnique",
+            "organisme": "USG - Union Syndicale Géotechnique",
             "url": "https://www.usg.asso.fr/annuaire-des-membres/",
-            "note": "Annuaire des bureaux d'etudes geotechniques membres, gage de competence reconnue par la profession -- le NAF seul ne le garantit pas.",
+            "note": "Annuaire des bureaux d'études géotechniques membres, gage de compétence reconnue par la profession.",
         },
     },
     "sismique_structure": {
         "libelle": "Diagnostic et renforcement parasismique",
         "code_naf": "71.12B",
         "annuaire_reference": {
-            "organisme": "CINOV Construction (syndicat des bureaux d'etudes structure)",
+            "organisme": "CINOV Construction (syndicat des bureaux d'études structure)",
             "url": "https://www.cinov.fr/annuaire-cinov/",
-            "note": "Annuaire des bureaux d'ingenierie structure adherents CINOV.",
+            "note": "Annuaire des bureaux d'ingénierie structure adhérents CINOV.",
         },
     },
     "radon_etancheite": {
-        "libelle": "Etancheite et ventilation anti-radon",
-        "code_naf": "43.99C",  # Travaux d'etancheification
+        "libelle": "Étanchéité et ventilation anti-radon",
+        "code_naf": "43.99C",  # Travaux d'étanchéification
         "annuaire_reference": {
-            "organisme": "ASNR - ressources radon (pas de certification d'entreprise en France)",
+            "organisme": "ASNR — ressources radon (pas de certification d'entreprise en France)",
             "url": "https://www.asnr.fr/",
-            "note": "Aucun label d'entreprise specifique au radon en France : verifier les references de chantiers similaires directement aupres du prestataire.",
+            "note": "Aucun label d'entreprise spécifique au radon en France : vérifier les références.",
         },
     },
     "ruissellement_drainage": {
         "libelle": "Drainage et gestion du ruissellement pluvial",
         "code_naf": "43.99C",
         "annuaire_reference": {
-            "organisme": "CEPRI (guides methodologiques, pas d'annuaire d'entreprises)",
+            "organisme": "CEPRI (guides méthodologiques, pas d'annuaire d'entreprises)",
             "url": "https://cepri.net/",
-            "note": "Pas de label national pour ce poste : privilegier une entreprise VRD locale avec references verifiables.",
+            "note": "Pas de label national pour ce poste : privilégier une entreprise VRD locale.",
+        },
+    },
+    # ── Métiers du bâtiment (hors RGE) ──
+    "electricite": {
+        "libelle": "Travaux d'installation électrique",
+        "code_naf": "43.21A",
+        "annuaire_reference": {
+            "organisme": "FFIE (Fédération Française des Intégrateurs Électriciens)",
+            "url": "https://www.ffie.fr/annuaire/",
+            "note": "Annuaire des électriciens professionnels adhérents FFIE.",
+        },
+    },
+    "plomberie_chauffage": {
+        "libelle": "Travaux de plomberie et chauffage",
+        "code_naf": "43.22A",
+        "annuaire_reference": {
+            "organisme": "FFB – Union des Métiers du Génie Climatique",
+            "url": "https://umgc.ffbatiment.fr/",
+            "note": "Annuaire des professionnels du génie climatique (chauffage, plomberie, sanitaire).",
+        },
+    },
+    "couverture": {
+        "libelle": "Travaux de couverture et zinguerie",
+        "code_naf": "43.91A",
+        "annuaire_reference": {
+            "organisme": "FFB – Union des Métiers de la Couverture",
+            "url": "https://www.ffbatiment.fr/",
+            "note": "Consultez la FFB pour des recommandations de couvreurs professionnels.",
+        },
+    },
+    "maconnerie": {
+        "libelle": "Travaux de maçonnerie générale",
+        "code_naf": "43.99A",
+        "annuaire_reference": {
+            "organisme": "FFB – Fédération Française du Bâtiment",
+            "url": "https://www.ffbatiment.fr/",
+            "note": "Annuaire général des entreprises du bâtiment par région et spécialité.",
         },
     },
 }
@@ -188,7 +226,12 @@ def _extraire_priorite(recommandation: dict[str, Any]) -> str:
     return "Non renseignée (absente du JSON source)"
 
 
-def traiter_recommandation(recommandation: dict[str, Any], code_postal: str) -> dict[str, Any]:
+def traiter_recommandation(
+    recommandation: dict[str, Any],
+    code_postal: str,
+    lat: float | None = None,
+    lon: float | None = None,
+) -> dict[str, Any]:
     """Route one recommendation to the right matching path (RGE or non-RGE)
     and return a self-contained, traceable result block."""
     cle = recommandation.get("cle")
@@ -201,7 +244,7 @@ def traiter_recommandation(recommandation: dict[str, Any], code_postal: str) -> 
     }
 
     if cle in RECOMMANDATION_VERS_DOMAINE_ADEME:
-        entreprises = matcher_recommandation(code_postal, cle)
+        entreprises = matcher_recommandation(code_postal, cle, lat, lon)
         # Enrichir les liens des entreprises RGE
         for entreprise in entreprises:
             _enrichir_lien_entreprise(entreprise)

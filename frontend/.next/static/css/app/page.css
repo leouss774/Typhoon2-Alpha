@@ -1,0 +1,188 @@
+/*!***************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** css ./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[14].oneOf[5].use[2]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[14].oneOf[5].use[3]!./app/page.module.css ***!
+  \***************************************************************************************************************************************************************************************************************************************************************/
+.page_page__556_G {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 24px 48px;
+}
+
+/* ---- Hero ---- */
+.page_hero__7KFOs {
+  padding: 70px 0 50px;
+}
+
+.page_heroContent__dzLob {
+  max-width: 680px;
+}
+
+.page_eyebrow__yxIK8 {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--brand);
+  background: var(--brand-light);
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 6px 14px;
+  border-radius: 999px;
+  margin-bottom: 18px;
+}
+
+.page_heroTitle__ixXIp {
+  font-size: 44px;
+  line-height: 1.14;
+  color: var(--ink);
+  margin: 0 0 18px 0;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.page_heroTitle__ixXIp em {
+  color: var(--brand);
+  font-style: normal;
+}
+
+.page_heroLead__uZbgS {
+  color: var(--text);
+  font-size: 16px;
+  line-height: 1.6;
+  max-width: 520px;
+  margin: 0 0 30px 0;
+}
+
+.page_heroCtas__lz7_7 {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 768px) {
+  .page_hero__7KFOs { padding: 40px 0 30px; }
+  .page_heroTitle__ixXIp { font-size: 30px; }
+  .page_heroLead__uZbgS { font-size: 14px; }
+}
+
+/* ---- Section titles ---- */
+.page_sectionTitle__6ic_4 {
+  font-family: var(--font-head);
+  font-size: 28px;
+  color: var(--ink);
+  margin: 0 0 28px 0;
+  text-align: center;
+  font-weight: 700;
+}
+
+/* ---- Features ---- */
+.page_features__GdcOS {
+  padding: 30px 0 50px;
+}
+
+.page_featureGrid__QBsGp {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-gap: 20px;
+  gap: 20px;
+}
+
+.page_featureCard__swyBK {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 26px 24px;
+  transition: box-shadow 0.2s, transform 0.2s;
+}
+
+.page_featureCard__swyBK:hover {
+  box-shadow: 0 16px 34px rgba(30, 20, 15, 0.08);
+  transform: translateY(-3px);
+}
+
+.page_featureIcon__UHR_A {
+  width: 46px;
+  height: 46px;
+  border-radius: 6px;
+  background: var(--brand-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  margin-bottom: 16px;
+}
+
+.page_featureTitle__pGLZ6 {
+  font-size: 17px;
+  color: var(--ink);
+  margin: 0 0 8px 0;
+  font-weight: 700;
+}
+
+.page_featureDesc__GZakL {
+  font-size: 13.5px;
+  color: var(--text);
+  line-height: 1.55;
+  margin: 0;
+}
+
+@media (max-width: 880px) {
+  .page_featureGrid__QBsGp { grid-template-columns: 1fr; }
+}
+
+/* ---- Sources ---- */
+.page_sources__IoT_7 {
+  padding: 20px 0 40px;
+}
+
+.page_sourceGrid__AHi_I {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-gap: 20px;
+  gap: 20px;
+}
+
+.page_sourceCard__28dfT {
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  transition: box-shadow 0.15s, transform 0.15s;
+}
+
+.page_sourceCard__28dfT:hover {
+  box-shadow: 0 16px 34px rgba(30, 20, 15, 0.08);
+  transform: translateY(-3px);
+}
+
+.page_sourceName__XEkUd {
+  font-family: var(--font-head);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 8px;
+}
+
+.page_sourceDesc__7lFWQ {
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.55;
+  margin: 0 0 14px;
+}
+
+.page_sourceLink__l_eDk {
+  color: var(--brand);
+  font-weight: 600;
+  font-size: 13px;
+  text-decoration: none;
+}
+
+.page_sourceLink__l_eDk:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 768px) {
+  .page_sourceGrid__AHi_I { grid-template-columns: 1fr; }
+}
+
