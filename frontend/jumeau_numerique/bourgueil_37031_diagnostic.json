@@ -64,7 +64,17 @@
       "source_crs": "EPSG:2154"
     },
     "type_batiment": "maison_individuelle",
-    "surface_emprise_m2": 154.3
+    "surface_emprise_m2": 154.3,
+    "entree_facade": "murs_ouest",
+    "ouvertures": {
+      "disponible": false,
+      "facades_avec_vitrage": [],
+      "ratio_vitrage": null,
+      "has_balcony": null,
+      "menuiserie_materiau": null,
+      "fermeture_type": null,
+      "vitrage_type": null
+    }
   },
   "_geometry_build_report": {
     "champs_ok": [
