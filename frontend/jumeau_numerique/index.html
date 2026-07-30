@@ -13,12 +13,12 @@
 <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
 <style>
   :root {
-    --brand: #4386b1;
-    --brand-dark: #2c6690;
+    --brand: #316f96;
+    --brand-dark: #204e6d;
     --brand-light: #dceef4;
     --ink: #1E2A33;
     --text: #4B5760;
-    --muted: #8B959D;
+    --muted: #626D77;
     --border: #DCE6EC;
     --surface: #FFFFFF;
     --surface-alt: #F1F6F9;
@@ -59,44 +59,44 @@
     padding: 14px 18px; color: #3E4850; z-index: 10; backdrop-filter: blur(8px);
     box-shadow: 0 0 20px rgba(67, 134, 177, 0.15); width: 280px;
   }
-  #toggle-panel h3 { margin: 0 0 8px 0; font-size: 12px; font-weight: 600; color: #4386b1; text-transform: uppercase; letter-spacing: 0.08em; }
-  #toggle-panel .addr-line { font-size: 12.5px; color: #7C8791; margin: 0 0 10px 0; line-height: 1.4; }
+  #toggle-panel h3 { margin: 0 0 8px 0; font-size: 12px; font-weight: 600; color: #316f96; text-transform: uppercase; letter-spacing: 0.08em; }
+  #toggle-panel .addr-line { font-size: 13px; color: #4E5860; margin: 0 0 10px 0; line-height: 1.4; }
   #toggle-buttons button {
     background: rgba(241, 246, 249, 0.8); border: 1px solid #DCE6EC; color: #3E4850; padding: 8px 16px;
     border-radius: 6px; cursor: pointer; font-size: 13px; margin-right: 6px; transition: all .15s;
   }
-  #toggle-buttons button.active { background: #4386b1; border-color: #4386b1; color: #FFFFFF; font-weight: 700; }
-  #global-score { margin-top: 10px; font-size: 12px; color: #7C8791; }
+  #toggle-buttons button.active { background: #316f96; border-color: #316f96; color: #FFFFFF; font-weight: 700; }
+  #global-score { margin-top: 10px; font-size: 13px; color: #4E5860; }
   #global-score strong { color: #1E2A33; font-size: 22px; text-shadow: 0 0 12px rgba(67,134,177,0.6); }
   #climat-panel { display: none; }
 
   #info-panel {
-    position: absolute; top: 20px; right: 20px; width: 320px; max-height: 78vh; overflow-y: auto;
+    position: absolute; top: 20px; right: 20px; width: 400px; max-height: 78vh; overflow-y: auto;
     background: rgba(255, 255, 255, 0.97); border: 1px solid #DCE6EC; border-radius: 10px;
-    padding: 18px; color: #3E4850; z-index: 10; display: none; backdrop-filter: blur(8px);
-    box-shadow: 0 0 20px rgba(67, 134, 177, 0.15);
+    padding: 20px; color: #2E373F; z-index: 10; display: none; backdrop-filter: blur(8px);
+    box-shadow: 0 0 20px rgba(49, 111, 150, 0.15);
   }
   #info-panel::-webkit-scrollbar { width: 5px; }
   #info-panel::-webkit-scrollbar-thumb { background: #a9d4e6; border-radius: 999px; }
-  #info-panel h3 { margin: 0 0 4px 0; font-size: 16px; text-transform: capitalize; color: #1E2A33; }
-  #info-panel .badge { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; margin-bottom: 10px; color: #FFFFFF; }
-  #info-panel p { font-size: 13px; line-height: 1.5; color: #4B5760; margin: 6px 0; }
+  #info-panel h3 { margin: 0 0 4px 0; font-size: 18px; text-transform: capitalize; color: #1E2A33; }
+  #info-panel .badge { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; margin-bottom: 10px; color: #FFFFFF; }
+  #info-panel p { font-size: 14.5px; line-height: 1.6; color: #333E47; margin: 6px 0; }
   #info-panel p#info-alea { color: #1E2A33; }
-  #info-panel .reco { background: rgba(241, 246, 249, 0.8); border: 1px solid #DCE6EC; border-radius: 8px; padding: 10px 12px; margin-top: 8px; font-size: 12px; }
+  #info-panel .reco { background: rgba(241, 246, 249, 0.8); border: 1px solid #DCE6EC; border-radius: 8px; padding: 12px 14px; margin-top: 8px; font-size: 13.5px; }
   #info-panel .reco b { color: #1E2A33; }
-  #info-panel .reco-count { font-size: 11px; color: #8B959D; text-transform: uppercase; letter-spacing: 0.06em; margin: 12px 0 6px; border-top: 1px solid #DCE6EC; padding-top: 10px; font-weight: 700; }
-  #info-panel .reco-type { display: inline-block; font-size: 9px; text-transform: uppercase; letter-spacing: 0.04em; color: #4386b1; background: #dceef4; border-radius: 4px; padding: 1px 6px; margin-bottom: 5px; font-weight: 700; }
-  #info-panel .reco-explication { color: #4B5760; margin-top: 5px; line-height: 1.5; font-size: 12px; }
-  #info-panel .reco-meta { color: #3E4850; margin-top: 8px; line-height: 1.4; }
-  #info-panel .reco-meta-sub { color: #8B959D; font-size: 11px; margin-top: 2px; }
-  #info-panel .reco-aide { color: #B96A18; margin-top: 8px; background: #FBEED9; border-radius: 6px; padding: 6px 8px; }
-  #info-panel .reco-sources { color: #A7ADB2; font-size: 10px; margin-top: 8px; line-height: 1.4; border-top: 1px solid #DCE6EC; padding-top: 6px; }
-  #info-panel .reco-empty { color: #A7ADB2; font-size: 12px; font-style: italic; margin-top: 6px; }
+  #info-panel .reco-count { font-size: 12.5px; color: #4E5860; text-transform: uppercase; letter-spacing: 0.06em; margin: 12px 0 6px; border-top: 1px solid #DCE6EC; padding-top: 10px; font-weight: 700; }
+  #info-panel .reco-type { display: inline-block; font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em; color: #316f96; background: #dceef4; border-radius: 4px; padding: 2px 7px; margin-bottom: 5px; font-weight: 700; }
+  #info-panel .reco-explication { color: #333E47; margin-top: 5px; line-height: 1.6; font-size: 13.5px; }
+  #info-panel .reco-meta { color: #2E373F; margin-top: 8px; line-height: 1.5; font-size: 13px; }
+  #info-panel .reco-meta-sub { color: #4E5860; font-size: 12.5px; margin-top: 2px; }
+  #info-panel .reco-aide { color: #8A5A10; margin-top: 8px; background: #FBEED9; border-radius: 6px; padding: 7px 9px; font-size: 13px; }
+  #info-panel .reco-sources { color: #5C666F; font-size: 11.5px; margin-top: 8px; line-height: 1.5; border-top: 1px solid #DCE6EC; padding-top: 6px; }
+  #info-panel .reco-empty { color: #5C666F; font-size: 13.5px; font-style: italic; margin-top: 6px; }
 
   /* ---- Filtre par niveau de risque ---- */
   #info-risk-filter { display: flex; gap: 4px; margin-bottom: 10px; flex-wrap: wrap; }
   .risk-filter-btn {
-    flex: 1; min-width: 0; padding: 5px 6px; border-radius: 6px; font-size: 10.5px; font-weight: 700;
+    flex: 1; min-width: 0; padding: 6px 7px; border-radius: 6px; font-size: 11.5px; font-weight: 700;
     cursor: pointer; border: 1px solid var(--border); background: var(--surface-alt); color: var(--muted);
     transition: all .15s; font-family: inherit; white-space: nowrap;
   }
@@ -112,8 +112,8 @@
 
   /* ---- Regroupement des recommandations par type ---- */
   .reco-group-label {
-    font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
-    color: var(--muted); margin: 14px 0 6px; padding-top: 8px; border-top: 1px solid var(--border);
+    font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
+    color: #4E5860; margin: 14px 0 6px; padding-top: 8px; border-top: 1px solid var(--border);
   }
   .reco-group-label:first-child { margin-top: 0; padding-top: 0; border-top: none; }
 
@@ -137,8 +137,8 @@
     border-bottom: 1px solid var(--border); padding-bottom: 8px;
   }
   .info-zone-tab {
-    padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 600;
-    cursor: pointer; transition: all .15s; color: var(--muted);
+    padding: 5px 11px; border-radius: 6px; font-size: 12px; font-weight: 600;
+    cursor: pointer; transition: all .15s; color: #4E5860;
     background: var(--surface-alt); border: 1px solid var(--border);
     white-space: nowrap;
   }
@@ -146,8 +146,8 @@
   .info-zone-tab.active { background: var(--brand-light); color: var(--brand-dark); border-color: var(--brand); }
   .info-zone-tab .tab-count {
     display: inline-flex; align-items: center; justify-content: center;
-    width: 16px; height: 16px; border-radius: 50%; font-size: 9px; font-weight: 700;
-    background: rgba(67,134,177,0.2); color: var(--brand-dark); margin-left: 4px;
+    width: 17px; height: 17px; border-radius: 50%; font-size: 10px; font-weight: 700;
+    background: rgba(49,111,150,0.2); color: var(--brand-dark); margin-left: 4px;
   }
   .info-zone-tab.tab-empty { opacity: 0.4; cursor: default; }
 
@@ -160,10 +160,10 @@
   #info-cost-summary.visible { display: block; }
   .cost-summary-row {
     display: flex; justify-content: space-between; align-items: center;
-    font-size: 11px; color: var(--text); margin-bottom: 3px;
+    font-size: 12.5px; color: var(--text); margin-bottom: 3px;
   }
   .cost-summary-row:last-child { margin-bottom: 0; }
-  .cost-summary-row .cs-label { color: var(--muted); font-weight: 600; }
+  .cost-summary-row .cs-label { color: #4E5860; font-weight: 600; }
   .cost-summary-row .cs-value { font-weight: 700; color: var(--ink); }
   .cost-summary-row .cs-value.accent { color: var(--success); }
   .cost-summary-progress {
@@ -197,52 +197,52 @@
   .reco-card-header .reco-chevron.open { transform: rotate(90deg); }
   .reco-card-header .reco-title-wrap { flex: 1; min-width: 0; }
   .reco-card-header .reco-title {
-    font-size: 12px; font-weight: 700; color: var(--ink);
-    line-height: 1.3; display: block;
+    font-size: 13.5px; font-weight: 700; color: var(--ink);
+    line-height: 1.35; display: block;
   }
   .reco-card-header .reco-sub {
-    font-size: 10px; color: var(--muted); margin-top: 1px;
+    font-size: 11.5px; color: #4E5860; margin-top: 2px;
   }
   .reco-priority-badge {
-    display: inline-block; font-size: 8.5px; font-weight: 700;
+    display: inline-block; font-size: 9.5px; font-weight: 700;
     text-transform: uppercase; letter-spacing: 0.04em;
-    padding: 2px 6px; border-radius: 4px; flex-shrink: 0;
+    padding: 3px 7px; border-radius: 4px; flex-shrink: 0;
   }
   .reco-priority-badge.haute { background: #FDE7E2; color: #DC4B39; }
-  .reco-priority-badge.moyenne { background: #FBEED9; color: #D98A2B; }
+  .reco-priority-badge.moyenne { background: #FBEED9; color: #B96A18; }
   .reco-priority-badge.faible { background: #E4F5EC; color: #1F9D6C; }
 
   .reco-card-body {
-    display: none; padding: 8px 10px 10px;
+    display: none; padding: 10px 12px 12px;
     border-top: 1px solid var(--border);
     background: var(--surface);
   }
   .reco-card-body.open { display: block; }
   .reco-card-body .reco-explication {
-    font-size: 11.5px; line-height: 1.5; color: var(--text);
+    font-size: 13px; line-height: 1.6; color: #333E47;
     margin-bottom: 8px;
   }
   .reco-card-body .reco-meta {
-    font-size: 11px; color: var(--muted); margin-bottom: 6px;
+    font-size: 12.5px; color: #4E5860; margin-bottom: 6px;
   }
   .reco-card-body .reco-meta strong { color: var(--ink); font-weight: 600; }
   .reco-card-body .reco-aide {
-    font-size: 11px; color: #B96A18; background: #FBEED9;
-    border-radius: 6px; padding: 6px 8px; margin-bottom: 6px;
+    font-size: 12.5px; color: #8A5A10; background: #FBEED9;
+    border-radius: 6px; padding: 7px 9px; margin-bottom: 6px;
   }
-  .reco-card-body .reco-aide b { color: #8A5A10; }
+  .reco-card-body .reco-aide b { color: #6E4400; }
   .reco-card-body .reco-sources {
-    font-size: 9.5px; color: #A7ADB2; line-height: 1.4;
+    font-size: 11px; color: #5C666F; line-height: 1.5;
     border-top: 1px solid var(--border); padding-top: 6px; margin-top: 6px;
   }
   .reco-card-body .reco-risque-tag {
-    display: inline-block; font-size: 9px; font-weight: 600;
-    padding: 1px 6px; border-radius: 4px;
-    background: rgba(67,134,177,0.1); color: var(--brand-dark);
+    display: inline-block; font-size: 10px; font-weight: 600;
+    padding: 2px 7px; border-radius: 4px;
+    background: rgba(49,111,150,0.12); color: var(--brand-dark);
     margin-bottom: 6px;
   }
 
-  #hint { position: absolute; bottom: 16px; left: 20px; color: #A7ADB2; font-size: 12px; z-index: 10; }
+  #hint { position: absolute; bottom: 16px; left: 20px; color: #5C666F; font-size: 12px; z-index: 10; }
 
   /* ==================== ECRAN 0 : SITE VITRINE / ACCUEIL ==================== */
   #home-screen {
@@ -258,7 +258,7 @@
   #home-nav a {
     color: #4B5760; text-decoration: none; font-size: 14px; font-weight: 600;
   }
-  #home-nav a:hover { color: #4386b1; }
+  #home-nav a:hover { color: #316f96; }
 
   /* ---- Animation d'apparition au scroll ---- */
   .reveal { opacity: 0; transform: translateY(28px); transition: opacity .7s ease, transform .7s ease; will-change: opacity, transform; }
@@ -277,13 +277,13 @@
     background: none; border: 1px solid #DCE6EC; color: #1E2A33; font-family: var(--font-body);
     font-weight: 700; font-size: 13.5px; padding: 10px 18px; border-radius: 8px; cursor: pointer; transition: border-color .15s, color .15s;
   }
-  .btn-ghost:hover { border-color: #4386b1; color: #4386b1; }
+  .btn-ghost:hover { border-color: #316f96; color: #316f96; }
   .btn-primary {
-    background: #4386b1; border: none; color: #FFFFFF; font-family: var(--font-body);
+    background: #316f96; border: none; color: #FFFFFF; font-family: var(--font-body);
     font-weight: 700; font-size: 13.5px; padding: 10px 20px; border-radius: 8px; cursor: pointer;
     transition: background .15s, transform .1s; box-shadow: 0 6px 18px rgba(67,134,177,0.3);
   }
-  .btn-primary:hover { background: #2c6690; }
+  .btn-primary:hover { background: #204e6d; }
   .btn-primary:active { transform: scale(0.98); }
 
   #home-hero {
@@ -291,17 +291,17 @@
     padding: 70px 5vw 60px; max-width: 1280px; margin: 0 auto;
   }
   #home-hero .eyebrow {
-    display: inline-flex; align-items: center; gap: 6px; color: #4386b1; background: #dceef4;
+    display: inline-flex; align-items: center; gap: 6px; color: #316f96; background: #dceef4;
     font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em;
     padding: 6px 14px; border-radius: 999px; margin-bottom: 18px;
   }
   #home-hero h1 { font-size: 44px; line-height: 1.14; color: #1E2A33; margin: 0 0 18px 0; font-weight: 700; letter-spacing: -0.01em; }
-  #home-hero h1 em { color: #4386b1; font-style: normal; }
+  #home-hero h1 em { color: #316f96; font-style: normal; }
   #home-hero .lead { color: #4B5760; font-size: 16px; line-height: 1.6; max-width: 480px; margin: 0 0 30px 0; }
   #home-hero .hero-ctas { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
   #home-hero .hero-ctas .btn-primary { font-size: 15px; padding: 15px 26px; }
   #home-hero .hero-link { color: #1E2A33; font-weight: 700; font-size: 14px; text-decoration: none; border-bottom: 2px solid #DCE6EC; padding-bottom: 2px; }
-  #home-hero .hero-link:hover { border-color: #4386b1; color: #4386b1; }
+  #home-hero .hero-link:hover { border-color: #316f96; color: #316f96; }
 
   #home-hero-visual {
     position: relative; border: 1px solid #DCE6EC; border-radius: 8px; padding: 28px;
@@ -326,7 +326,7 @@
   #home-hero-visual .hv-badge.risk-mod { background: #FBEED9; color: #D98A2B; }
   #home-hero-visual .hv-badge.risk-low { background: #E4F5EC; color: #1F9D6C; }
   #home-hero-visual .hv-bar-track { height: 6px; border-radius: 999px; background: #E9EEF2; overflow: hidden; margin-top: 8px; }
-  #home-hero-visual .hv-bar-fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, #6fa8cc, #4386b1); }
+  #home-hero-visual .hv-bar-fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, #6fa8cc, #316f96); }
 
   #home-trustbar {
     border-top: 1px solid #DCE6EC; border-bottom: 1px solid #DCE6EC; background: #F1F6F9;
@@ -337,7 +337,7 @@
   #home-trustbar .trust-stat .lbl { color: #8B959D; font-size: 12px; margin-top: 2px; }
 
   #zone-explorer { max-width: 1180px; margin: 0 auto; padding: 76px 5vw 20px; text-align: center; }
-  #zone-explorer .section-eyebrow { color: #4386b1; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px; }
+  #zone-explorer .section-eyebrow { color: #316f96; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px; }
   #zone-explorer h2 { font-size: 30px; color: #1E2A33; margin: 0 0 12px 0; font-weight: 700; }
   #zone-explorer .section-lead { color: #4B5760; font-size: 15px; max-width: 640px; margin: 0 auto 40px; line-height: 1.6; }
 
@@ -360,7 +360,7 @@
     width: 34px; height: 34px; border-radius: 50%; border: 1px solid #DCE6EC;
     background: rgba(255,255,255,0.9); color: #7C8791; cursor: pointer; font-size: 15px;
   }
-  #zone-close-btn:hover { color: #1E2A33; border-color: #4386b1; }
+  #zone-close-btn:hover { color: #1E2A33; border-color: #316f96; }
   #zone-modal-header {
     padding: 14px 50px 10px 24px; border-bottom: 1px solid #DCE6EC; flex-shrink: 0;
     display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
@@ -387,7 +387,7 @@
   #zone-map { width: 100%; height: 100%; }
   .user-location-marker { position: relative; width: 16px; height: 16px; }
   .user-location-marker .ulm-dot {
-    position: absolute; inset: 4px; border-radius: 50%; background: #4386b1; border: 2px solid #fff;
+    position: absolute; inset: 4px; border-radius: 50%; background: #316f96; border: 2px solid #fff;
     box-shadow: 0 0 6px rgba(0,0,0,0.35);
   }
   .user-location-marker .ulm-pulse {
@@ -586,7 +586,7 @@
   }
 
   #home-features { max-width: 1180px; margin: 0 auto; padding: 70px 5vw; text-align: center; }
-  #home-features .section-eyebrow { color: #4386b1; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px; }
+  #home-features .section-eyebrow { color: #316f96; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px; }
   #home-features h2 { font-size: 30px; color: #1E2A33; margin: 0 0 12px 0; font-weight: 700; }
   #home-features .section-lead { color: #4B5760; font-size: 15px; max-width: 620px; margin: 0 auto 46px; line-height: 1.6; }
   #home-feature-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; text-align: left; }
@@ -596,7 +596,7 @@
   }
   .feature-card:hover { box-shadow: 0 16px 34px rgba(30,20,15,0.08); transform: translateY(-3px); }
   .feature-card .fc-icon {
-    width: 46px; height: 46px; border-radius: 6px; background: #dceef4; color: #4386b1;
+    width: 46px; height: 46px; border-radius: 6px; background: #dceef4; color: #316f96;
     display: flex; align-items: center; justify-content: center; font-size: 22px; margin-bottom: 16px;
   }
   .feature-card h3 { font-size: 17px; color: #1E2A33; margin: 0 0 8px 0; font-weight: 700; }
@@ -655,7 +655,7 @@
   .mode-btn-b:hover { border-color: #7FCBFF; color: #7FCBFF; }
 
   #home-trust { max-width: 1180px; margin: 0 auto; padding: 20px 5vw 76px; text-align: center; }
-  #home-trust .section-eyebrow { color: #4386b1; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px; }
+  #home-trust .section-eyebrow { color: #316f96; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px; }
   #home-trust h2 { font-size: 28px; color: #1E2A33; margin: 0 0 12px 0; font-weight: 700; }
   #home-trust .section-lead { color: #4B5760; font-size: 15px; max-width: 620px; margin: 0 auto 40px; line-height: 1.6; }
   #trust-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; text-align: left; }
@@ -684,7 +684,7 @@
   #home-footer .footer-note { color: #8B959D; font-size: 12px; }
   #home-footer .footer-links { display: flex; gap: 20px; }
   #home-footer .footer-links a { color: #8B959D; font-size: 12.5px; text-decoration: none; }
-  #home-footer .footer-links a:hover { color: #4386b1; }
+  #home-footer .footer-links a:hover { color: #316f96; }
 
   @media (max-width: 880px) {
     #home-hero { grid-template-columns: 1fr; padding-top: 40px; }
@@ -711,7 +711,7 @@
   #form-card form::-webkit-scrollbar { width: 6px; }
   #form-card form::-webkit-scrollbar-thumb { background: #a9d4e6; border-radius: 999px; }
   #form-card .eyebrow {
-    color: #4386b1; font-size: 12px; font-weight: 700; text-transform: uppercase;
+    color: #316f96; font-size: 12px; font-weight: 700; text-transform: uppercase;
     letter-spacing: 0.12em; margin-bottom: 8px;
   }
   #form-card h1 {
@@ -730,13 +730,13 @@
     outline: none; transition: border-color .15s, box-shadow .15s;
   }
   .form-field input:focus, .form-field select:focus {
-    border-color: #4386b1; box-shadow: 0 0 0 3px rgba(67, 134, 177, 0.15);
+    border-color: #316f96; box-shadow: 0 0 0 3px rgba(67, 134, 177, 0.15);
   }
   .form-field input::placeholder { color: #B7BEC3; }
   .form-grid-simple { grid-template-columns: 1fr; }
   .field-hint { color: #A7ADB2; font-size: 11.5px; }
   #form-submit {
-    margin-top: 20px; width: 100%; background: #4386b1; border: none; color: #FFFFFF;
+    margin-top: 20px; width: 100%; background: #316f96; border: none; color: #FFFFFF;
     font-weight: 700; font-size: 14.5px; padding: 14px 20px; border-radius: 10px;
     cursor: pointer; letter-spacing: 0.02em; transition: background .15s, transform .1s;
   }
@@ -766,7 +766,7 @@
   }
   #loading-card { width: 100%; max-width: 560px; padding: 0 20px; }
   #loading-card .eyebrow {
-    color: #4386b1; font-size: 12px; font-weight: 700; text-transform: uppercase;
+    color: #316f96; font-size: 12px; font-weight: 700; text-transform: uppercase;
     letter-spacing: 0.12em; margin-bottom: 10px; text-align: center;
   }
   #loading-title { color: #1E2A33; font-size: 20px; font-weight: 700; text-align: center; margin: 0 0 32px 0; }
@@ -781,12 +781,12 @@
   .step .icon {
     width: 20px; height: 20px; border-radius: 50%; border: 2px solid #DCE6EC;
     flex-shrink: 0; display: flex; align-items: center; justify-content: center;
-    font-size: 11px; color: #4386b1; position: relative;
+    font-size: 11px; color: #316f96; position: relative;
   }
-  .step.active .icon { border-color: #4386b1; }
+  .step.active .icon { border-color: #316f96; }
   .step.active .icon::after {
     content: ''; position: absolute; inset: -4px; border-radius: 50%;
-    border: 2px solid transparent; border-top-color: #4386b1; animation: spin 0.9s linear infinite;
+    border: 2px solid transparent; border-top-color: #316f96; animation: spin 0.9s linear infinite;
   }
   .step.done .icon { border-color: #1F9D6C; background: rgba(31, 157, 108, 0.15); }
   .step.done .icon::before { content: '✓'; color: #1F9D6C; font-weight: 700; }
@@ -795,7 +795,7 @@
     margin-top: 30px; height: 4px; border-radius: 999px; background: rgba(231, 222, 214, 0.35); overflow: hidden;
   }
   #loading-bar-fill {
-    height: 100%; width: 0%; background: linear-gradient(90deg, #bfe0ee, #4386b1);
+    height: 100%; width: 0%; background: linear-gradient(90deg, #bfe0ee, #316f96);
     border-radius: 999px; transition: width .4s ease;
   }
   #loading-error { display: none; margin-top: 24px; background: #FDE7E2; border: 1px solid #DC4B39; border-radius: 10px; padding: 14px 16px; color: #8A2E22; font-size: 12.5px; line-height: 1.5; }
@@ -808,12 +808,12 @@
   /* ==================== CHAT ASSISTANT IA ==================== */
   #chat-toggle-btn {
     position: absolute; bottom: 24px; right: 24px; z-index: 30;
-    width: 56px; height: 56px; border-radius: 50%; border: 1px solid #4386b1;
-    background: #4386b1; color: #FFFFFF; cursor: pointer; display: flex;
+    width: 56px; height: 56px; border-radius: 50%; border: 1px solid #316f96;
+    background: #316f96; color: #FFFFFF; cursor: pointer; display: flex;
     align-items: center; justify-content: center; box-shadow: 0 0 20px rgba(67,134,177,0.35);
     transition: transform .15s, background .15s;
   }
-  #chat-toggle-btn:hover { transform: scale(1.06); background: #2c6690; }
+  #chat-toggle-btn:hover { transform: scale(1.06); background: #204e6d; }
   #chat-toggle-btn svg { width: 24px; height: 24px; }
   #chat-toggle-btn .dot {
     position: absolute; top: 8px; right: 8px; width: 10px; height: 10px; border-radius: 50%;
@@ -838,7 +838,7 @@
     display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0;
   }
   #chat-header .title { color: #1E2A33; font-size: 13.5px; font-weight: 700; line-height: 1.3; }
-  #chat-header .subtitle { color: #4386b1; font-size: 11px; display: flex; align-items: center; gap: 5px; }
+  #chat-header .subtitle { color: #316f96; font-size: 11px; display: flex; align-items: center; gap: 5px; }
   #chat-header .subtitle::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: #1F9D6C; display: inline-block; }
   #chat-close { margin-left: auto; background: none; border: none; color: #7C8791; font-size: 18px; cursor: pointer; padding: 4px 8px; line-height: 1; }
   #chat-close:hover { color: #1E2A33; }
@@ -849,9 +849,9 @@
   .msg { max-width: 85%; font-size: 13px; line-height: 1.5; padding: 10px 13px; border-radius: 12px; opacity: 0; transform: translateY(6px); animation: msg-in .3s ease forwards; white-space: pre-line; }
   @keyframes msg-in { to { opacity: 1; transform: translateY(0); } }
   .msg.bot { align-self: flex-start; background: rgba(241, 246, 249, 0.85); border: 1px solid #DCE6EC; color: #3E4850; border-bottom-left-radius: 3px; }
-  .msg.user { align-self: flex-end; background: #4386b1; color: #FFFFFF; font-weight: 500; border-bottom-right-radius: 3px; }
+  .msg.user { align-self: flex-end; background: #316f96; color: #FFFFFF; font-weight: 500; border-bottom-right-radius: 3px; }
   .msg.typing { display: flex; gap: 4px; align-items: center; padding: 12px 15px; }
-  .msg.typing span { width: 6px; height: 6px; border-radius: 50%; background: #4386b1; animation: typing-bounce 1s infinite ease-in-out; }
+  .msg.typing span { width: 6px; height: 6px; border-radius: 50%; background: #316f96; animation: typing-bounce 1s infinite ease-in-out; }
   .msg.typing span:nth-child(2) { animation-delay: 0.15s; }
   .msg.typing span:nth-child(3) { animation-delay: 0.3s; }
   @keyframes typing-bounce { 0%, 60%, 100% { transform: translateY(0); opacity: 0.5; } 30% { transform: translateY(-4px); opacity: 1; } }
@@ -861,17 +861,17 @@
     background: rgba(241, 246, 249, 0.7); border: 1px solid #DCE6EC; color: #8B959D; font-size: 11.5px;
     padding: 6px 12px; border-radius: 999px; cursor: pointer; transition: all .15s; white-space: nowrap;
   }
-  .chip:hover { border-color: #4386b1; color: #1E2A33; background: rgba(67,134,177,0.12); }
+  .chip:hover { border-color: #316f96; color: #1E2A33; background: rgba(67,134,177,0.12); }
 
   #chat-input-row { display: flex; gap: 8px; padding: 12px 14px; border-top: 1px solid #DCE6EC; flex-shrink: 0; }
   #chat-input {
     flex: 1; background: rgba(241, 246, 249, 0.7); border: 1px solid #DCE6EC; border-radius: 999px;
     color: #1E2A33; font-size: 13px; padding: 9px 15px; outline: none; font-family: inherit;
   }
-  #chat-input:focus { border-color: #4386b1; }
+  #chat-input:focus { border-color: #316f96; }
   #chat-input::placeholder { color: #B7BEC3; }
   #chat-send {
-    width: 36px; height: 36px; border-radius: 50%; background: #4386b1; border: none; color: #FFFFFF;
+    width: 36px; height: 36px; border-radius: 50%; background: #316f96; border: none; color: #FFFFFF;
     cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: background .15s;
   }
   #chat-send:hover { background: #36749f; }
@@ -883,12 +883,12 @@
   }
   .typhoon-logo .mark {
     width: 38px; height: 38px; border-radius: 10px; flex-shrink: 0;
-    background: linear-gradient(135deg, #5da3c9, #4386b1);
+    background: linear-gradient(135deg, #5da3c9, #316f96);
     display: flex; align-items: center; justify-content: center;
     font-size: 19px; box-shadow: 0 0 18px rgba(67,134,177,0.45);
   }
   .typhoon-logo .name { color: #1E2A33; font-size: 19px; font-weight: 700; letter-spacing: 0.02em; line-height: 1.1; }
-  .typhoon-logo .baseline { color: #4386b1; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; }
+  .typhoon-logo .baseline { color: #316f96; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; }
 
   #brand-watermark {
     position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
@@ -897,10 +897,10 @@
     background: rgba(255, 255, 255, 0.7); border: 1px solid #DCE6EC; border-radius: 999px;
     padding: 7px 16px 7px 10px; backdrop-filter: blur(8px); transition: border-color .15s;
   }
-  #brand-watermark:hover { border-color: #4386b1; color: #4386b1; }
+  #brand-watermark:hover { border-color: #316f96; color: #316f96; }
   #brand-watermark .mark {
     width: 22px; height: 22px; border-radius: 6px;
-    background: linear-gradient(135deg, #5da3c9, #4386b1);
+    background: linear-gradient(135deg, #5da3c9, #316f96);
     display: flex; align-items: center; justify-content: center; font-size: 12px;
   }
 
@@ -908,7 +908,7 @@
   #devis-cta {
     position: absolute; bottom: 24px; left: 24px; z-index: 30;
     display: flex; align-items: center; gap: 10px;
-    background: linear-gradient(135deg, #5da3c9, #4386b1); border: none; color: #FFFFFF;
+    background: linear-gradient(135deg, #5da3c9, #316f96); border: none; color: #FFFFFF;
     font-weight: 800; font-size: 13.5px; padding: 14px 20px; border-radius: 999px;
     cursor: pointer; box-shadow: 0 6px 24px rgba(67,134,177,0.4); transition: transform .15s, box-shadow .15s;
   }
@@ -933,7 +933,7 @@
     float: right; background: rgba(241,246,249,0.7); border: 1px solid #DCE6EC; color: #8B959D;
     width: 30px; height: 30px; border-radius: 50%; cursor: pointer; font-size: 15px; line-height: 1;
   }
-  #devis-close-btn:hover { color: #1E2A33; border-color: #4386b1; }
+  #devis-close-btn:hover { color: #1E2A33; border-color: #316f96; }
   #devis-modal h2 { color: #1E2A33; font-size: 21px; margin: 0 0 4px 0; }
   #devis-modal .devis-sub { color: #7C8791; font-size: 13px; line-height: 1.5; margin: 0 0 22px 0; }
 
@@ -943,12 +943,12 @@
     background: rgba(241, 246, 249, 0.55); border: 1px solid #DCE6EC; border-radius: 10px;
     padding: 12px 14px; cursor: pointer; transition: border-color .15s, background .15s;
   }
-  .devis-item:hover { border-color: #4386b1; }
-  .devis-item.checked { background: rgba(67,134,177,0.1); border-color: #4386b1; }
-  .devis-item input { margin-top: 3px; width: 16px; height: 16px; accent-color: #4386b1; flex-shrink: 0; cursor: pointer; }
+  .devis-item:hover { border-color: #316f96; }
+  .devis-item.checked { background: rgba(67,134,177,0.1); border-color: #316f96; }
+  .devis-item input { margin-top: 3px; width: 16px; height: 16px; accent-color: #316f96; flex-shrink: 0; cursor: pointer; }
   .devis-item .devis-item-body { flex: 1; }
   .devis-item .devis-item-title { color: #1E2A33; font-size: 13.5px; font-weight: 700; }
-  .devis-item .devis-item-zone { color: #4386b1; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 2px; }
+  .devis-item .devis-item-zone { color: #316f96; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 2px; }
   .devis-item .devis-item-meta { color: #7C8791; font-size: 12px; margin-top: 4px; }
 
   #devis-summary {
@@ -961,7 +961,7 @@
   #devis-summary .sum-block .value.accent { color: #1F9D6C; }
 
   #devis-generate-btn {
-    margin-top: 22px; width: 100%; background: #4386b1; border: none; color: #FFFFFF;
+    margin-top: 22px; width: 100%; background: #316f96; border: none; color: #FFFFFF;
     font-weight: 800; font-size: 14.5px; padding: 14px 20px; border-radius: 10px;
     cursor: pointer; transition: background .15s, transform .1s, opacity .15s;
   }
@@ -992,7 +992,7 @@
   .cert-score-box { text-align: center; }
   .cert-score-box .cert-score-label { color: #7C8791; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 700; }
   .cert-score-box .cert-score-value { font-size: 30px; font-weight: 800; margin-top: 4px; }
-  .cert-arrow { color: #4386b1; font-size: 22px; }
+  .cert-arrow { color: #316f96; font-size: 22px; }
 
   #cert-prime {
     background: linear-gradient(135deg, rgba(31,157,108,0.16), rgba(67,134,177,0.1));
@@ -1003,7 +1003,7 @@
   #cert-prime .prime-detail { color: #3E4850; font-size: 12.5px; }
 
   #cert-works-list { text-align: left; margin-bottom: 20px; }
-  #cert-works-list .cert-works-title { color: #4386b1; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 10px; }
+  #cert-works-list .cert-works-title { color: #316f96; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 10px; }
   #cert-works-list ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 7px; }
   #cert-works-list li { color: #3E4850; font-size: 13px; display: flex; justify-content: space-between; gap: 10px; background: rgba(241,246,249,0.5); border: 1px solid #DCE6EC; border-radius: 8px; padding: 9px 12px; }
   #cert-works-list li span.cost { color: #7C8791; font-size: 12px; flex-shrink: 0; }
@@ -1013,8 +1013,8 @@
     flex: 1; padding: 13px 16px; border-radius: 10px; font-weight: 700; font-size: 13.5px; cursor: pointer; border: none;
   }
   #cert-back-btn { background: rgba(241,246,249,0.8); border: 1px solid #DCE6EC !important; color: #3E4850; }
-  #cert-back-btn:hover { border-color: #4386b1 !important; }
-  #cert-download-btn { background: #4386b1; color: #FFFFFF; }
+  #cert-back-btn:hover { border-color: #316f96 !important; }
+  #cert-download-btn { background: #316f96; color: #FFFFFF; }
   #cert-download-btn:hover { background: #36749f; }
   #cert-footnote { margin-top: 16px; color: #A7ADB2; font-size: 10.5px; }
 
@@ -1596,7 +1596,7 @@
             </div>
 
             <div class="zone-worst-banner" id="zm-worst" style="display:none;">
-              ⚠️ Point chaud : <strong id="zm-worst-peril">—</strong> (<strong id="zm-worst-score">—</strong>/100)
+              Point chaud : <strong id="zm-worst-peril">—</strong> (<strong id="zm-worst-score">—</strong>/100)
             </div>
 
             <div class="zone-section-label">Marché immobilier (DVF)</div>
@@ -1714,7 +1714,7 @@
 <!-- ==================== ECRAN 3 : JUMEAU NUMERIQUE 3D (moteur réel) ==================== -->
 <div id="app-ui">
 <div id="scene-container"></div>
-<div id="loading-msg" style="position:absolute;inset:0;display:none;align-items:center;justify-content:center;color:#4386b1;font-size:14px;z-index:20;"></div>
+<div id="loading-msg" style="position:absolute;inset:0;display:none;align-items:center;justify-content:center;color:#316f96;font-size:14px;z-index:20;"></div>
 <div id="zone-tooltip"></div>
 <div id="risk-legend">
   <div class="rl-item"><span class="rl-dot" style="background:#1F9D6C;"></span>Faible</div>
@@ -1731,8 +1731,12 @@
     <button id="btn-2050">2050</button>
   </div>
   <div id="global-score">Score global : <strong id="score-value">--</strong> / 100</div>
+  <div id="reco-status" style="display:none;align-items:center;gap:6px;margin-top:6px;font-size:11.5px;color:#4E5860;font-weight:600;">
+    <span style="width:6px;height:6px;border-radius:50%;background:var(--brand);flex-shrink:0;animation:refine-pulse 1s ease-in-out infinite;"></span>
+    Recommandations en cours de génération…
+  </div>
   <div style="margin-top:8px;">
-    <button type="button" id="btn-climat-toggle" style="background:#F1F6F9;border:1px solid #DCE6EC;color:#4386b1;padding:6px 12px;border-radius:6px;font-size:11.5px;font-weight:700;cursor:pointer;font-family:inherit;">🌡 Climat 2050</button>
+    <button type="button" id="btn-climat-toggle" style="background:#F1F6F9;border:1px solid #DCE6EC;color:#316f96;padding:6px 12px;border-radius:6px;font-size:11.5px;font-weight:700;cursor:pointer;font-family:inherit;">Climat 2050</button>
   </div>
   <div style="margin-top:8px;">
     <a href="property-id/" style="color:var(--brand);font-size:12px;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:4px;">
@@ -1741,15 +1745,14 @@
     </a>
   </div>
   <div id="climat-panel">
-    <div style="font-size:11px;color:#4386b1;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;">Projection climatique 2050</div>
+    <div style="font-size:11px;color:#316f96;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;">Projection climatique 2050</div>
     <div style="display:flex;align-items:baseline;gap:8px;">
-      <span style="font-size:22px;">🌡️</span>
       <strong id="temp-value" style="color:#DC4B39;font-size:26px;line-height:1;">—</strong>
     </div>
     <div style="color:#8B959D;font-size:10.5px;margin-top:2px;">Pic de chaleur max estimé</div>
     <div style="margin-top:6px;font-size:10px;color:#A7ADB2;">Source : <span id="climat-sources-badge">—</span></div>
-    <div id="copernicus-badge" style="display:none;margin-top:6px;background:#dceef4;color:#4386b1;font-size:10px;padding:3px 8px;border-radius:999px;font-weight:700;">☁ Données Copernicus disponibles</div>
-    <div id="dvf-badge" style="display:none;margin-top:4px;background:#E4F5EC;color:#1F9D6C;font-size:10px;padding:3px 8px;border-radius:999px;font-weight:700;">📊 Données de marché (DVF) disponibles</div>
+    <div id="copernicus-badge" style="display:none;margin-top:6px;background:#dceef4;color:#316f96;font-size:10px;padding:3px 8px;border-radius:999px;font-weight:700;">Données Copernicus disponibles</div>
+    <div id="dvf-badge" style="display:none;margin-top:4px;background:#E4F5EC;color:#1F9D6C;font-size:10px;padding:3px 8px;border-radius:999px;font-weight:700;">Données de marché (DVF) disponibles</div>
   </div>
 </div>
 
@@ -1767,13 +1770,13 @@
 
   <!-- Zone header -->
   <div id="info-zone-header" style="margin-bottom:8px;">
-    <h3 id="info-title" style="margin:0 0 2px 0;font-size:15px;text-transform:capitalize;">Zone</h3>
+    <h3 id="info-title" style="margin:0 0 2px 0;font-size:17px;text-transform:capitalize;">Zone</h3>
     <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
       <div class="badge" id="info-badge" style="margin-bottom:0;">Risque</div>
-      <p id="info-alea" style="margin:0;font-size:12px;color:#1E2A33;"></p>
+      <p id="info-alea" style="margin:0;font-size:13.5px;color:#1E2A33;"></p>
     </div>
     <div id="info-score-bar-track"><div id="info-score-bar-fill"></div></div>
-    <p id="info-justif" style="color:#8B959D;font-size:10.5px;margin:4px 0 0;"></p>
+    <p id="info-justif" style="color:#4E5860;font-size:12px;margin:4px 0 0;"></p>
   </div>
 
   <!-- Cost summary -->
@@ -1796,10 +1799,10 @@
   </div>
 
   <!-- Diagnostic compact -->
-  <div id="info-conclusion" style="margin:8px 0 4px;padding:10px 12px;background:rgba(67,134,177,0.06);border:1px solid rgba(67,134,177,0.15);border-radius:8px;display:none;">
-    <div id="info-diagnostic-header" style="font-size:12px;font-weight:700;color:#1E2A33;margin-bottom:6px;">Diagnostic & Risques</div>
-    <div id="info-etat" style="font-size:12px;color:#4B5760;line-height:1.5;margin-bottom:8px;padding:6px 8px;background:rgba(255,255,255,0.5);border-radius:6px;"></div>
-    <div id="info-facteurs-cles" style="font-size:10px;font-weight:700;color:#8B959D;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;">Facteurs Cles</div>
+  <div id="info-conclusion" style="margin:8px 0 4px;padding:10px 12px;background:rgba(49,111,150,0.06);border:1px solid rgba(49,111,150,0.15);border-radius:8px;display:none;">
+    <div id="info-diagnostic-header" style="font-size:13px;font-weight:700;color:#1E2A33;margin-bottom:6px;">Diagnostic & Risques</div>
+    <div id="info-etat" style="font-size:13.5px;color:#333E47;line-height:1.6;margin-bottom:8px;padding:6px 8px;background:rgba(255,255,255,0.5);border-radius:6px;"></div>
+    <div id="info-facteurs-cles" style="font-size:11px;font-weight:700;color:#4E5860;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;">Facteurs Cles</div>
     <div id="info-facteurs" style="margin-top:0;">
       <div id="info-aggravants" style="margin-bottom:5px;"></div>
       <div id="info-attenuants"></div>
@@ -2089,7 +2092,7 @@
 
 <div id="chat-panel">
   <div id="chat-header">
-    <div class="avatar"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#4386b1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12l9-9 9 9"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/></svg></div>
+    <div class="avatar"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#316f96" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12l9-9 9 9"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/></svg></div>
     <div>
       <div class="title">Assistant Jumeau Numérique</div>
       <div class="subtitle">En ligne</div>
@@ -2220,13 +2223,13 @@ function mapRiskToEffect(zoneName, score) {
 // ---------- 2. SCÈNE THREE.JS ----------
 const container = document.getElementById('scene-container');
 const scene = new THREE.Scene();
-// Fond legerement remonte : sur les ecrans peu contrastes, le 0x04070c
-// d'origine rendait les aretes sombres indiscernables du noir.
-const FOND_SCENE = 0x080e18;
+// Fond blanc : la scene du jumeau numerique s'aligne sur le reste de
+// l'interface (fond blanc) plutot que sur un bleu marine sombre.
+const FOND_SCENE = 0xffffff;
 scene.background = new THREE.Color(FOND_SCENE);
 // Distances recalculees par fitCameraToHouse en fonction de la taille du
 // bati : ces valeurs ne sont que l'amorce avant le premier diagnostic.
-scene.fog = new THREE.Fog(FOND_SCENE, 20, 55);
+scene.fog = new THREE.Fog(FOND_SCENE, 30, 70);
 
 const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
 const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -2248,25 +2251,30 @@ const scanRing = new THREE.Mesh(ringGeo, ringMat);
 scanRing.rotation.x = -Math.PI / 2; scanRing.position.y = 0.01;
 scene.add(scanRing);
 
-const WIRE_COLOR = 0x5fb2ff;
+const WIRE_COLOR = 0x2f6f96;
 
 // --- Réglage de la luminosité de la scène ---
-// Les volumes de la maison sont des MeshBasicMaterial en blending additif :
-// ils n'ont PAS de normales éclairées et ignorent donc complètement les
-// HemisphereLight/DirectionalLight ajoutées plus haut. Leur clarté ne dépend
-// que de leur opacité — c'est ce coefficient qu'il faut toucher pour
-// éclaircir le rendu, pas l'intensité des lumières.
-// 1.0 = rendu d'origine. Au-delà de ~2.4 les zones se superposent et les
-// couleurs de risque deviennent difficiles à distinguer les unes des autres.
-const LUMINOSITE = 1.9;
-const OPACITE_FILAIRE = 1.0;   // aretes : 0.85 a l'origine
+// Les volumes de la maison sont des MeshBasicMaterial en blending normal
+// (alpha classique) : ils n'ont PAS de normales éclairées et ignorent donc
+// completement les HemisphereLight/DirectionalLight ajoutées plus haut.
+// Leur lisibilité ne dépend que de leur opacité — c'est ce coefficient
+// qu'il faut toucher pour éclaircir/foncer le rendu, pas l'intensité des
+// lumières.
+// Le blending etait additif a l'origine (scene de fond sombre) : sur fond
+// blanc, l'additif se contente d'ajouter de la lumiere a du blanc deja
+// sature, donc les couleurs de risque disparaissaient completement. On
+// utilise maintenant un blending normal (alpha), qui teinte reellement le
+// fond blanc et reste translucide.
+const LUMINOSITE = 2.9;
+const OPACITE_FILAIRE = 0.9;   // aretes : 0.85 a l'origine
 
 function makeWireMat() { return new THREE.LineBasicMaterial({ color: WIRE_COLOR, transparent: true, opacity: OPACITE_FILAIRE }); }
 function makeFillMat(color, opacity) {
-  // Plafond a 0.9 : au-dela, l'additif sature en blanc et la couleur de
-  // risque (vert/orange/rouge) n'est plus lisible.
-  const opacite = Math.min(0.9, (opacity ?? 0.16) * LUMINOSITE);
-  return new THREE.MeshBasicMaterial({ color, transparent: true, opacity: opacite, side: THREE.DoubleSide, blending: THREE.AdditiveBlending, depthWrite: false });
+  // Plafond a 0.62 : assez couvrant pour que la couleur de risque
+  // (vert/orange/rouge) soit immediatement lisible sur fond blanc, tout en
+  // restant translucide (on voit toujours le volume/le filaire au travers).
+  const opacite = Math.min(0.62, (opacity ?? 0.16) * LUMINOSITE);
+  return new THREE.MeshBasicMaterial({ color, transparent: true, opacity: opacite, side: THREE.DoubleSide, blending: THREE.NormalBlending, depthWrite: false });
 }
 function addPart(group, geometry, position, fillColor, opacity) {
   const fill = new THREE.Mesh(geometry, makeFillMat(fillColor, opacity));
@@ -2683,7 +2691,10 @@ function buildHouse(geometry) {
   const polys = footprintPolygons(geometry);
   if (polys) buildHouseFromFootprint(geometry, polys);
   else buildHouseFromBox(geometry);
-  buildLabels();
+  // buildLabels() desactive : les etiquettes rectangulaires noires flottant
+  // au-dessus de la maison masquaient une partie du modele et faisaient
+  // double emploi avec la couleur de risque deja portee par chaque zone.
+  // Le score/detail de zone reste accessible au clic (cf. showZonePanel).
   buildEffectMeshes();
 }
 
@@ -3187,9 +3198,16 @@ renderer.domElement.addEventListener('click', event => {
 let rawData = null;
 let currentZones = null;
 let currentYear = 2025;
+// false tant que /diagnostic/fast a ete utilise et que /diagnostic/recommandations
+// n'a pas encore repondu (cf. formulaire d'adresse) : permet d'afficher
+// "Analyse en cours" plutot que "Aucune recommandation" pendant ce court
+// intervalle. true immediatement pour les jeux de donnees deja complets
+// (demo, JSON importe) qui n'ont pas de second appel a attendre.
+let recommandationsReady = true;
 
 function loadDataset(data) {
   rawData = data;
+  recommandationsReady = !data._resume;
   buildHouse(data.geometry);
   fitCameraToHouse();
   document.getElementById('scene-container').classList.add('scene-ready');
@@ -3211,7 +3229,7 @@ function loadDataset(data) {
     climPanel.style.paddingTop = '10px';
     climPanel.style.borderTop = '1px solid #DCE6EC';
     climPanel.style.fontSize = '12px';
-    climPanel.style.color = '#7C8791';
+    climPanel.style.color = '#4E5860';
     climPanel.style.lineHeight = '1.5';
     if (climToggleBtn) climToggleBtn.style.display = 'inline-block';
   } else if (climToggleBtn) {
@@ -3227,6 +3245,77 @@ function loadDataset(data) {
   }
   document.getElementById('info-panel').style.display = 'none';
   setYear(2025, true);
+}
+
+// ---- Chargement en 2 temps (maison immediate, recommandations en fond) ----
+// /diagnostic/fast renvoie la maison + les scores de risque (donc les
+// couleurs des zones) sans attendre le RAG recommandations ni
+// l'interpretation LLM, qui sont a eux deux la quasi-totalite des dizaines
+// de secondes d'un /diagnostic classique. Une fois la maison affichee, on
+// appelle /diagnostic/recommandations en tache de fond avec le bloc
+// "_resume" renvoye par /diagnostic/fast (building_data/risk_scores deja
+// collectes, pas besoin de relancer la collecte reseau) puis on fusionne
+// les recommandations des qu'elles arrivent.
+function setRecoStatus(loading) {
+  const el = document.getElementById('reco-status');
+  if (el) el.style.display = loading ? 'flex' : 'none';
+}
+
+function mergeRecommandations(fullContract) {
+  if (!fullContract || !fullContract.zones || !rawData) return;
+  Object.keys(fullContract.zones).forEach(zoneName => {
+    if (!rawData.zones[zoneName]) return;
+    const src = fullContract.zones[zoneName];
+    const dst = rawData.zones[zoneName];
+    dst.recommandations = src.recommandations || [];
+    dst.conclusion = src.conclusion || '';
+    dst.facteurs_aggravants = src.facteurs_aggravants || [];
+    dst.facteurs_attenuants = src.facteurs_attenuants || [];
+    dst.vulnerabilite = src.vulnerabilite || dst.vulnerabilite;
+  });
+  recommandationsReady = true;
+
+  // Le panneau de score global ne bouge pas (les recommandations n'altèrent
+  // pas les scores de risque) : on ne rafraîchit que la zone actuellement
+  // affichée (onglets + cartes de recommandations + diagnostic textuel).
+  if (currentYear === 2025) {
+    currentZones = JSON.parse(JSON.stringify(rawData.zones));
+    const infoPanel = document.getElementById('info-panel');
+    if (infoPanel.style.display === 'block' && infoPanel.dataset.zone) {
+      showZonePanel(infoPanel.dataset.zone);
+    }
+  }
+}
+
+function fetchRecommandations(apiBase, fastContract) {
+  const resume = fastContract && fastContract._resume;
+  if (!resume) { recommandationsReady = true; return; }
+  setRecoStatus(true);
+  fetch(apiBase + '/diagnostic/recommandations', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      building_data: resume.building_data,
+      risk_scores: resume.risk_scores,
+      formulaire: resume.formulaire,
+    }),
+  })
+    .then(async response => {
+      if (!response.ok) {
+        const bodyText = await response.text();
+        throw new Error(`${response.status} ${response.statusText} — ${bodyText.slice(0, 300)}`);
+      }
+      return response.json();
+    })
+    .then(fullContract => {
+      mergeRecommandations(fullContract);
+      setRecoStatus(false);
+    })
+    .catch(err => {
+      console.error('Échec de la récupération des recommandations :', err);
+      recommandationsReady = true;
+      setRecoStatus(false);
+    });
 }
 
 function setYear(year, force) {
@@ -3287,7 +3376,7 @@ function formatCoutEstime(cout) {
   if (!cout || (cout.montant_min == null && cout.montant_max == null)) return null;
   const min = cout.montant_min, max = cout.montant_max, dev = cout.devise || '€';
   const range = (min != null && max != null && min !== max) ? `entre ${min} et ${max}` : `environ ${min ?? max}`;
-  let txt = `💶 <b>Coût estimé : ${range} ${escapeHtml(dev)}</b>${cout.unite ? ' ' + escapeHtml(cout.unite) : ''}`;
+  let txt = `<b>Coût estimé : ${range} ${escapeHtml(dev)}</b>${cout.unite ? ' ' + escapeHtml(cout.unite) : ''}`;
   const contexte = [];
   if (cout.zone_geo) contexte.push(escapeHtml(cout.zone_geo));
   if (cout.date_estimation) contexte.push(`estimation ${escapeHtml(cout.date_estimation)}`);
@@ -3426,7 +3515,9 @@ function showZonePanel(zoneName) {
   if (!recos.length) {
     const empty = document.createElement('div');
     empty.className = 'reco-empty';
-    empty.textContent = 'Aucune recommandation pour cette zone.';
+    empty.textContent = recommandationsReady
+      ? 'Aucune recommandation pour cette zone.'
+      : 'Analyse des recommandations en cours…';
     recosDiv.appendChild(empty);
     return;
   }
@@ -3479,7 +3570,7 @@ function showZonePanel(zoneName) {
         + (r.type ? '<div class="reco-meta"><strong>Type :</strong> ' + escapeHtml(r.type.replace(/_/g, ' ')) + '</div>' : '')
         + (coutLabel ? '<div class="reco-meta"><strong>Cout estime :</strong> ' + escapeHtml(coutLabel) + '</div>' : '')
         + (r.gain_resilience ? '<div class="reco-meta"><strong>Gain resilience :</strong> +' + r.gain_resilience + '</div>' : '')
-        + (r.aide && (r.aide.dispositif || r.aide.conditions) ? '<div class="reco-aide">\U0001f3db\ufe0f <b>' + escapeHtml(r.aide.dispositif || 'Aide potentielle') + '</b>'
+        + (r.aide && (r.aide.dispositif || r.aide.conditions) ? '<div class="reco-aide"><b>' + escapeHtml(r.aide.dispositif || 'Aide potentielle') + '</b>'
           + (r.aide.conditions ? '<div style="font-size:11px;color:#8A5A10;margin-top:3px;">' + escapeHtml(r.aide.conditions) + '</div>' : '')
           + (r.aide.statut ? '<div style="font-size:10px;color:#B96A18;margin-top:2px;">Statut : ' + escapeHtml(r.aide.statut.replace(/_/g, ' ')) + '</div>' : '')
           + '</div>' : '')
@@ -3624,11 +3715,11 @@ loadDataset(DEFAULT_DATA);
   }
 
   const PERIL_NAMES = {
-    inondation: { fr: 'Inondation', emoji: '🌊' },
-    rga: { fr: 'RGA (Argiles)', emoji: '🧱' },
-    tempete: { fr: 'Tempête', emoji: '💨' },
-    incendie: { fr: 'Incendie', emoji: '🔥' },
-    seisme: { fr: 'Séisme', emoji: '🌋' }
+    inondation: { fr: 'Inondation' },
+    rga: { fr: 'RGA (Argiles)' },
+    tempete: { fr: 'Tempête' },
+    incendie: { fr: 'Incendie' },
+    seisme: { fr: 'Séisme' }
   };
 
   // === BAN Geocoding — toutes les villes de France ===
@@ -4087,12 +4178,8 @@ loadDataset(DEFAULT_DATA);
     const count = features.length;
     if (count === 0) {
       badge.textContent = `Aucune offre réelle disponible pour cette zone`;
-    } else if (data.source === 'dvf') {
-      badge.textContent = `✅ ${count} vente(s) DVF réelle(s)`;
-    } else if (data.source === 'csv') {
-      badge.textContent = `🏠 ${count} maison(s) à vendre (PAP.fr)`;
     } else {
-      badge.textContent = `🏠 ${count} bien(s) en vente`;
+      badge.textContent = `${count} bien(s)`;
     }
     badge.classList.add('visible');
   }
@@ -4122,7 +4209,6 @@ loadDataset(DEFAULT_DATA);
         <a href="https://www.google.com/maps?layer=c&cbll=${lat},${lon}" target="_blank" rel="noopener">Street View</a>
         <a href="https://www.google.com/maps?q=${lat},${lon}" target="_blank" rel="noopener">Carte</a>
       </div>
-      ${p.source === 'dvf' ? '<div class="annonce-popup-tag">Vente DVF réelle (transaction déjà réalisée) — pas une annonce active.</div>' : ''}
     `;
 
     new maplibregl.Popup({ className: 'annonce-popup', closeButton: true, maxWidth: '260px' })
@@ -4151,12 +4237,12 @@ loadDataset(DEFAULT_DATA);
 
     rows.innerHTML = '';
     entries.forEach(({ key, moyenne }) => {
-      const info = PERIL_NAMES[key] || { fr: key, emoji: '📊' };
-      const color = moyenne < 20 ? '#1F9D6C' : moyenne < 45 ? '#D98A2B' : moyenne < 70 ? '#2c6690' : '#C0392B';
+      const info = PERIL_NAMES[key] || { fr: key };
+      const color = moyenne < 20 ? '#1F9D6C' : moyenne < 45 ? '#D98A2B' : moyenne < 70 ? '#204e6d' : '#C0392B';
       const row = document.createElement('div');
       row.className = 'zone-legend-peril-row';
       row.innerHTML = `
-        <span class="plabel"><span class="pdot" style="background:${color}"></span>${info.emoji} ${info.fr}</span>
+        <span class="plabel"><span class="pdot" style="background:${color}"></span>${info.fr}</span>
         <span class="pscore" style="color:${color}">${Math.round(moyenne)}</span>
       `;
       rows.appendChild(row);
@@ -4193,14 +4279,14 @@ loadDataset(DEFAULT_DATA);
     zmPerils.innerHTML = '';
     if (data.perils) {
       for (const [key, peril] of Object.entries(data.perils)) {
-        const info = PERIL_NAMES[key] || { fr: key, emoji: '📊' };
+        const info = PERIL_NAMES[key] || { fr: key };
         const score = peril.moyenne || 0;
-        const color = score < 20 ? '#1F9D6C' : score < 45 ? '#D98A2B' : score < 70 ? '#2c6690' : '#C0392B';
+        const color = score < 20 ? '#1F9D6C' : score < 45 ? '#D98A2B' : score < 70 ? '#204e6d' : '#C0392B';
         const div = document.createElement('div');
         div.className = 'zone-peril-item';
         div.innerHTML = `
           <div class="zone-peril-header">
-            <span class="zone-peril-name">${info.emoji} ${info.fr}</span>
+            <span class="zone-peril-name">${info.fr}</span>
             <span class="zone-peril-score" style="color:${color}">${Math.round(score)}</span>
           </div>
           <div class="zone-peril-bar"><div class="zone-peril-fill" style="width:${score}%;background:${color}"></div></div>
@@ -4333,7 +4419,10 @@ loadDataset(DEFAULT_DATA);
     loadingScreen.style.display = 'flex';
     startStepAnimation();
 
-    fetch(apiBase + '/diagnostic', {
+    // /diagnostic/fast : maison + scores de risque, sans attendre le RAG
+    // recommandations ni l'interpretation LLM (cf. fetchRecommandations,
+    // appelee juste apres l'affichage, qui recupere le reste en fond).
+    fetch(apiBase + '/diagnostic/fast', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ adresse }),
@@ -4349,6 +4438,7 @@ loadDataset(DEFAULT_DATA);
         finishSteps(() => {
           loadDataset(contract);
           showAppUI();
+          fetchRecommandations(apiBase, contract);
         });
       })
       .catch(err => {
@@ -4818,11 +4908,11 @@ loadDataset(DEFAULT_DATA);
     if (selected.length) {
       selected.forEach(i => {
         const li = document.createElement('li');
-        li.innerHTML = `<span>${i.travaux} <em style="color:#4386b1;font-style:normal;">— ${zoneLabel(i.zone)}</em></span><span class="cost">${i.cout_estime}</span>`;
+        li.innerHTML = `<span>${i.travaux} <em style="color:#316f96;font-style:normal;">— ${zoneLabel(i.zone)}</em></span><span class="cost">${i.cout_estime}</span>`;
         ul.appendChild(li);
       });
       const total = document.createElement('li');
-      total.style.borderColor = '#4386b1';
+      total.style.borderColor = '#316f96';
       total.innerHTML = `<span><strong>Budget total estimé</strong></span><span class="cost"><strong>${min.toLocaleString('fr-FR')}€ – ${max.toLocaleString('fr-FR')}€</strong></span>`;
       ul.appendChild(total);
     } else {
@@ -4901,7 +4991,7 @@ const pid_$ = id => document.getElementById(id);
 function pid_riskColor(score) {
   if (score <= 25) return '#1F9D6C';
   if (score <= 50) return '#D98A2B';
-  if (score <= 75) return '#2c6690';
+  if (score <= 75) return '#204e6d';
   return '#DC4B39';
 }
 
@@ -5113,9 +5203,9 @@ function pid_renderPropertyID(data) {
         + '</div>'
         + (r.explication ? '<div class="rd">' + r.explication.slice(0, 300) + '</div>' : '')
         + '<div class="rm">'
-        + (coutText ? '<span>💰 ' + coutText + '</span>' : '')
-        + (r.gain_resilience ? '<span>📈 Résilience +' + r.gain_resilience + '</span>' : '')
-        + (sources.length > 0 ? '<span>📄 ' + sources.length + ' source(s)</span>' : '')
+        + (coutText ? '<span>' + coutText + '</span>' : '')
+        + (r.gain_resilience ? '<span>Résilience +' + r.gain_resilience + '</span>' : '')
+        + (sources.length > 0 ? '<span>' + sources.length + ' source(s)</span>' : '')
         + '</div>'
         + (sources.length > 0 ? '<div class="rsrc">Sources : ' + sources.map(s => s.source_id || '').filter(Boolean).join(', ') + '</div>' : '')
         + '</div>';
