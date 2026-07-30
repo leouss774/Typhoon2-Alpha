@@ -933,7 +933,7 @@
 #property-id-screen #pid-devis-result #pid-works-ul li .wc { color: var(--text); font-weight: 600; font-size: 12px; }
 
 /* Score gauges */
-#property-id-screen .pid-gauges { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 20px; }
+#property-id-screen .pid-gauges { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 20px; }
 #property-id-screen .pid-gauge-card {
   background: #fff; border: 1px solid var(--border); border-radius: 12px;
   padding: 22px 18px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.06);
@@ -1680,12 +1680,6 @@
       <div class="gw"><svg width="120" height="120" viewBox="0 0 120 120"></svg><div class="gc" id="pid-gauge-cl">0</div></div>
       <div class="gl">Climat 2050</div>
       <div class="ge">Projection des risques climatiques à horizon 2050</div>
-    </div>
-    <div class="pid-gauge-card">
-      <div class="gw"><svg width="120" height="120" viewBox="0 0 120 120"></svg><div class="gc" id="pid-gauge-in">0</div></div>
-      <div class="gl">Assurance</div>
-      <div class="ge">Score de risque pour le calcul de la prime d'assurance</div>
-    </div>
   </div>
 
   <!-- RISK + BUILDING -->
@@ -3657,7 +3651,6 @@ function pid_renderPropertyID(data) {
   const scores = data.scores || {};
   pid_renderGauge(pid_$('pid-section-gauges').querySelectorAll('.gw svg')[0], pid_$('pid-gauge-ov'), scores.overall || 0);
   pid_renderGauge(pid_$('pid-section-gauges').querySelectorAll('.gw svg')[1], pid_$('pid-gauge-cl'), scores.climate || 0);
-  pid_renderGauge(pid_$('pid-section-gauges').querySelectorAll('.gw svg')[2], pid_$('pid-gauge-in'), scores.insurance || 0);
 
   /* Risk summary */
   const rs = data.risk_summary || {};
@@ -3847,7 +3840,7 @@ function pid_showPropertyID() {
     scores: {
       overall: certScore,
       climate: climateScore,
-      insurance: certScore,
+
       zones: zones,
     },
     risk_summary: {
