@@ -33,3 +33,7 @@ numpy>=1.26.0
 # --- Divers ---
 python-dotenv
 sqlalchemy
+
+# --- Tests ---
+pytest
+pytest-asyncio

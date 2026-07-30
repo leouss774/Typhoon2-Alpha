@@ -38,6 +38,7 @@ app.add_middleware(
 app.include_router(health.router)
 app.include_router(diagnostic.router)
 app.include_router(artisans.router)
+app.include_router(artisans.legacy_router)
 
 
 @app.on_event("startup")

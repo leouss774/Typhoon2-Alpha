@@ -9,6 +9,7 @@ from urllib.parse import urlparse
 
 import httpx
 
+from app.artisans.classification import classer_avec_mistral, decision_regle
 from app.artisans.site_finder import enrichir_coordonnees
 
 ADEME_API = "https://data.ademe.fr/data-fair/api/v1/datasets/liste-des-entreprises-rge-2/lines"
@@ -207,17 +208,31 @@ async def rechercher_non_rge(client: httpx.AsyncClient, code_postal: str, code_n
 
 async def matcher(adresse: str, zones: list[dict[str, Any]], limite: int = 5, client: httpx.AsyncClient | None = None) -> dict[str, Any]:
     code_postal, groupes, non_classifiees = extraire_code_postal(adresse), {}, 0
+    journal_classification: list[dict[str, Any]] = []
     for zone in zones:
         risques = [str(r) for r in zone.get("risques", [])]
         for reco in zone.get("recommandations", []):
             mesure = str(reco.get("mesure") or reco.get("travaux") or "")
-            cle = classifier_recommandation(str(zone.get("zone", "")), risques, mesure)
+            zone_name = str(zone.get("zone", ""))
+            categorie_regle = classifier_recommandation(zone_name, risques, mesure)
+            decision = (
+                decision_regle(categorie_regle)
+                if categorie_regle
+                else await classer_avec_mistral(zone_name, risques, mesure)
+            )
+            cle = decision.categorie
+            journal_classification.append({
+                "zone": zone_name,
+                "mesure": mesure,
+                **decision.to_dict(),
+            })
             if not cle:
                 non_classifiees += 1
                 continue
-            groupe = groupes.setdefault(cle, {"cle": cle, "mesures": []})
+            groupe = groupes.setdefault(cle, {"cle": cle, "mesures": [], "classifications": []})
             if mesure and mesure not in groupe["mesures"]:
                 groupe["mesures"].append(mesure)
+            groupe["classifications"].append(decision.to_dict())
 
     owns_client = client is None
     if client is None:
@@ -258,5 +273,7 @@ async def matcher(adresse: str, zones: list[dict[str, Any]], limite: int = 5, cl
             "Sites issus des donnees publiques ou recherches par Mistral Web Search. "
             "Aucun lien n'est affiche lorsque le site officiel ne peut pas etre confirme."
         ),
-        "recommandations_traitees": resultats, "recommandations_non_classifiees": non_classifiees,
+        "recommandations_traitees": resultats,
+        "recommandations_non_classifiees": non_classifiees,
+        "journal_classification": journal_classification,
     }

@@ -18,6 +18,8 @@ backend/.env
 
 # Node
 node_modules/
+frontend/.next/
+*.tsbuildinfo
 
 # OS / éditeurs
 .DS_Store

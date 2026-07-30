@@ -1,5 +1,20 @@
 import type { ArtisanMatchingResponse, DomaineInfo, RecommandationInput } from "./types";
 
+export interface DiagnosticMatchingData {
+  adresse: string;
+  code_postal: string;
+  recommandations: RecommandationInput[];
+}
+
+export async function getDiagnosticMatchingData(): Promise<DiagnosticMatchingData> {
+  const resp = await fetch("/api/v1/artisans/diagnostic-data", { cache: "no-store" });
+  if (!resp.ok) {
+    const err = await resp.json().catch(() => ({ detail: `HTTP ${resp.status}` }));
+    throw new Error(err.detail || `Erreur ${resp.status}`);
+  }
+  return resp.json();
+}
+
 /**
  * Lance une recherche intelligente d'artisans RGE et non-RGE.
  * Utilise l'endpoint /search qui géocode automatiquement l'adresse

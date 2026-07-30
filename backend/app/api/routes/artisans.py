@@ -1,31 +1,3 @@
-<<<<<<< HEAD
-"""API de recherche d'artisans correspondant aux travaux recommandés."""
-
-from __future__ import annotations
-
-from typing import Any
-
-from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel, Field
-
-from app.artisans.service import matcher
-
-router = APIRouter(prefix="/artisans", tags=["artisans"])
-
-
-class ArtisanMatchRequest(BaseModel):
-    adresse: str = Field(..., min_length=5)
-    zones: list[dict[str, Any]]
-    limite: int = Field(default=5, ge=1, le=20)
-
-
-@router.post("/match")
-async def match_artisans(payload: ArtisanMatchRequest) -> dict[str, Any]:
-    try:
-        return await matcher(payload.adresse, payload.zones, payload.limite)
-    except ValueError as exc:
-        raise HTTPException(status_code=422, detail=str(exc)) from exc
-=======
 # -*- coding: utf-8 -*-
 """
 POST /api/v1/artisans/matching — Recherche d'artisans RGE et non-RGE
@@ -41,13 +13,16 @@ app/matching/match_artisans_rge.py.
 
 from __future__ import annotations
 
+import json
 import re
+from pathlib import Path
 from typing import Any
 
 import httpx
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
+from app.artisans.service import matcher
 from app.connectors.geocoding import geocode_address
 from app.core.config import settings
 from app.core.logging import get_logger
@@ -61,6 +36,23 @@ from app.matching.match_artisans_rge import RECOMMANDATION_VERS_DOMAINE_ADEME
 logger = get_logger(__name__)
 
 router = APIRouter(prefix="/api/v1/artisans", tags=["artisans"])
+legacy_router = APIRouter(prefix="/artisans", tags=["artisans"])
+RESULTAT_ENRICHI_PATH = Path(__file__).resolve().parents[2] / "matching" / "resultat_enrichi.json"
+
+
+class ArtisanMatchRequest(BaseModel):
+    adresse: str = Field(..., min_length=5)
+    zones: list[dict[str, Any]]
+    limite: int = Field(default=5, ge=1, le=20)
+
+
+@legacy_router.post("/match")
+async def match_artisans(payload: ArtisanMatchRequest) -> dict[str, Any]:
+    """Compatibilité avec le premier client du projet."""
+    try:
+        return await matcher(payload.adresse, payload.zones, payload.limite)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
 class RecommandationInput(BaseModel):
@@ -101,6 +93,58 @@ class ArtisanMatchingResponse(BaseModel):
     recommandations_traitees: list[dict[str, Any]]
     resume: dict[str, Any]
     geocoding: dict[str, Any] | None = None
+
+
+@router.get("/diagnostic-data")
+async def diagnostic_data() -> dict[str, Any]:
+    """Prépare les données de matching depuis resultat_enrichi.json."""
+    try:
+        data = json.loads(RESULTAT_ENRICHI_PATH.read_text(encoding="utf-8"))
+    except FileNotFoundError as exc:
+        raise HTTPException(404, "Le fichier resultat_enrichi.json est introuvable.") from exc
+    except json.JSONDecodeError as exc:
+        raise HTTPException(500, "Le fichier resultat_enrichi.json contient un JSON invalide.") from exc
+
+    adresse = str(data.get("adresse") or "").strip()
+    try:
+        code_postal = _extraire_code_postal(data)
+    except KeyError:
+        code_postal = ""
+
+    recommandations: list[dict[str, Any]] = []
+    for zone_bloc in data.get("zones") or []:
+        zone = str(zone_bloc.get("zone") or "")
+        risques = [str(risque) for risque in zone_bloc.get("risques") or []]
+        for recommandation in zone_bloc.get("recommandations") or []:
+            mesure = str(
+                recommandation.get("mesure")
+                or recommandation.get("travaux")
+                or ""
+            ).strip()
+            cle = recommandation.get("cle")
+            if mesure or cle:
+                recommandations.append({
+                    "cle": cle,
+                    "mesure": mesure or None,
+                    "zone": zone,
+                    "risques": risques,
+                    "priorite": (
+                        recommandation.get("priorite")
+                        or recommandation.get("priority")
+                        or recommandation.get("priorité")
+                    ),
+                })
+
+    if not adresse:
+        raise HTTPException(422, "Aucune adresse n'est présente dans resultat_enrichi.json.")
+    if not recommandations:
+        raise HTTPException(422, "Aucune recommandation n'est présente dans resultat_enrichi.json.")
+
+    return {
+        "adresse": adresse,
+        "code_postal": code_postal,
+        "recommandations": recommandations,
+    }
 
 
 @router.post("/matching", response_model=ArtisanMatchingResponse)
@@ -210,4 +254,3 @@ async def lister_domaines() -> dict:
         "domaines": {**domaines_rge, **domaines_non_rge},
         "total": len(domaines_rge) + len(domaines_non_rge),
     }
->>>>>>> e461ef7 (matching)

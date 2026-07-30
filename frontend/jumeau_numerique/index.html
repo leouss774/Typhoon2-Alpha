@@ -2215,7 +2215,9 @@ function showZonePanel(zoneName) {
   artisanButton.textContent = 'Rechercher des artisans correspondants';
   const artisanResults = document.createElement('div');
   artisanResults.className = 'artisan-results';
-  artisanButton.addEventListener('click', () => rechercherArtisans(zoneName, data, artisanResults, artisanButton));
+  artisanButton.addEventListener('click', () => {
+    window.location.assign('http://localhost:3000/artisans');
+  });
   recosDiv.appendChild(artisanButton);
   recosDiv.appendChild(artisanResults);
 }

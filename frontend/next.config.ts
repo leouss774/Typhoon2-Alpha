@@ -2,12 +2,12 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
-  /* L'API backend tourne sur le port 8001 */
+  /* Partage le même backend que l'interface historique. */
   async rewrites() {
     return [
       {
         source: "/api/:path*",
-        destination: "http://localhost:8001/api/:path*",
+        destination: "http://localhost:8765/api/:path*",
       },
     ];
   },

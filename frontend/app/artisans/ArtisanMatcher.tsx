@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { rechercherArtisans, getDomaines } from "./api";
+import { rechercherArtisans, getDiagnosticMatchingData, getDomaines } from "./api";
 import { parserRecommandations, formatContact } from "./utils";
 import type {
   ArtisanMatchingResponse,
@@ -255,23 +255,44 @@ export default function ArtisanMatcher() {
   const [error, setError] = useState<string | null>(null);
   const [showTips, setShowTips] = useState(false);
   const resultsRef = useRef<HTMLDivElement>(null);
+  const autoSearchStarted = useRef(false);
 
-  /* Restaurer la dernière recherche */
+  /* Charger resultat_enrichi.json et lancer immédiatement le matching. */
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem("typhoon_last_search");
-      if (saved) {
-        const { adresse: a, codePostal: cp, recosRaw: r } = JSON.parse(saved);
-        if (a) setAdresse(a);
-        if (cp) setCodePostal(cp);
-        if (r) setRecosRaw(r);
+    if (autoSearchStarted.current) return;
+    autoSearchStarted.current = true;
+
+    const loadAndSearch = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const diagnostic = await getDiagnosticMatchingData();
+        const raw = diagnostic.recommandations
+          .map((reco) => reco.cle || reco.mesure || "")
+          .filter(Boolean)
+          .join("\n");
+
+        setAdresse(diagnostic.adresse);
+        setCodePostal(diagnostic.code_postal);
+        setRecosRaw(raw);
+
+        const data = await rechercherArtisans(
+          diagnostic.adresse,
+          diagnostic.recommandations,
+          10,
+          diagnostic.code_postal || undefined
+        );
+        setResults(data);
+        setTimeout(() => resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 200);
+      } catch (err: any) {
+        setError(err.message || "Impossible de charger resultat_enrichi.json.");
+      } finally {
+        setLoading(false);
       }
-    } catch { /* ignore */ }
-    /* fallback si rien en cache */
-    if (!adresse) setAdresse("12 rue des Lilas, 33000 Bordeaux");
-    if (!codePostal) setCodePostal("33000");
-    if (!recosRaw) setRecosRaw("isolation_combles\nventilation\nisolation_murs_exterieur\nrga_geotechnique\nsismique_structure");
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    };
+
+    void loadAndSearch();
+  }, []);
 
   /* Charger domaines */
   useEffect(() => { getDomaines().then(setDomaines).catch(() => {}); }, []);
@@ -322,7 +343,7 @@ export default function ArtisanMatcher() {
       setTimeout(() => resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 200);
     } catch (err: any) {
       const msg = err.message?.includes("fetch") || err.message?.includes("NetworkError")
-        ? "Impossible de contacter le serveur backend. Lancer le backend : cd backend && python -m uvicorn app.main:app --reload --port 8001"
+        ? "Impossible de contacter le serveur backend. Lancer le backend : cd backend && python -m uvicorn app.main:app --reload --port 8765"
         : err.message || "Erreur inconnue";
       setError(msg);
     } finally {
@@ -417,77 +438,6 @@ export default function ArtisanMatcher() {
           Recherche intelligente avec <strong>scoring par distance réelle</strong>, cache, parallélisation.
           Données ADEME + Recherche d&apos;Entreprises.
         </p>
-      </section>
-
-      {/* Formulaire */}
-      <section className={styles.formSection}>
-        <div className={styles.formRow}>
-          <div className={styles.formGroup} style={{ flex: 2 }}>
-            <label>Adresse</label>
-            <input className="input" type="text" value={adresse} onChange={e => handleAdresseChange(e.target.value)}
-              placeholder="12 rue des Lilas, 33000 Bordeaux" />
-          </div>
-          <div className={styles.formGroup} style={{ flex: "0 0 120px" }}>
-            <label>Code postal</label>
-            <input className="input" type="text" value={codePostal} onChange={e => setCodePostal(e.target.value)} placeholder="33000" />
-          </div>
-        </div>
-        <div className={styles.formGroup}>
-          <label>Recommandations <span className={styles.recoHint}>(Ctrl+Enter pour chercher)</span></label>
-          <textarea className="input" rows={4} value={recosRaw} onChange={e => setRecosRaw(e.target.value)}
-            placeholder="isolation_combles&#10;rga_geotechnique&#10;Ou texte libre..." />
-        </div>
-        <div className={styles.actions}>
-          <button className="btn btn-primary" onClick={handleSearch} disabled={loading}>
-            {loading ? "🔍 Recherche en cours…" : "🔍 Rechercher des artisans"}
-          </button>
-          <button className="btn btn-ghost btn-sm" onClick={() => setShowDomaines(!showDomaines)}>
-            + Domaines
-          </button>
-          <button className="btn btn-ghost btn-sm" onClick={() => setShowTips(!showTips)}>
-            💡 Aide
-          </button>
-          <button className="btn btn-ghost btn-sm" onClick={reset}>↺ Reset</button>
-        </div>
-
-        {/* Tips */}
-        {showTips && (
-          <div className={styles.tipsBox}>
-            <strong>💡 Astuces :</strong>
-            <ul>
-              <li><kbd>Ctrl+Enter</kbd> pour lancer la recherche depuis n&apos;importe quel champ</li>
-              <li>Saisissez des mots-clés libres (ex: &quot;isoler le toit&quot;) au lieu des clés techniques</li>
-              <li>Les résultats sont triés par score. Utilisez les filtres RGE/Non-RGE pour affiner</li>
-              <li>Exporter en CSV ou JSON pour analyse dans Excel</li>
-              <li>Votre dernière recherche est sauvegardée automatiquement</li>
-            </ul>
-          </div>
-        )}
-
-        {/* Domaines */}
-        {showDomaines && domaines && (
-          <div className={styles.domainesPanel}>
-            <div className={styles.domainesLabel}>Cliquez pour ajouter :</div>
-            <div className={styles.domainesGrid}>
-              {Object.entries(domaines).map(([cle, info]) => (
-                <button key={cle} className={styles.domaineChip} onClick={() => addDomaine(cle)} title={`Clé: ${cle}`}>
-                  {info.libelle}
-                  <span className={`${styles.domaineTag} ${info.categorie === "rge" ? styles.tagRge : styles.tagNonRge}`}>
-                    {info.categorie === "rge" ? "RGE" : "Non-RGE"}
-                  </span>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Presets */}
-        <div className={styles.presets}>
-          <span className={styles.presetsLabel}>Presets :</span>
-          {PRESETS.map(p => (
-            <button key={p.label} className={styles.presetBtn} onClick={() => setRecosRaw(p.recos)}>{p.label}</button>
-          ))}
-        </div>
       </section>
 
       {/* Loading */}
@@ -585,7 +535,7 @@ export default function ArtisanMatcher() {
           {/* Cards */}
           {recosFiltrees.length > 0 ? (
             recosFiltrees.map((item, idx) => (
-              <RecoCard key={item.cle || idx} item={item} idx={idx} animDelay={idx * 80} />
+                <RecoCard key={`${item.cle || "recommandation"}-${idx}`} item={item} idx={idx} animDelay={idx * 80} />
             ))
           ) : (
             <div className="empty-state">Aucune recommandation ne correspond à ce filtre.</div>
