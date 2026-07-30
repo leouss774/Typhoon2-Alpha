@@ -65,9 +65,14 @@ async def run(state: TyphoonState) -> dict:
         if not risques or not index:
             return zone_reco
 
+        # Meme si la recherche ne remonte aucune fiche vraiment pertinente,
+        # on appelle quand meme le modele : le SYSTEM_PROMPT (service.py) lui
+        # demande dans ce cas de proposer une recommandation de bonne
+        # pratique generale plutot que de laisser la zone sans rien (une
+        # zone a risque non-faible ne doit jamais repartir sans
+        # recommandation, et l'absence de fiche ne doit jamais etre
+        # mentionnee au proprietaire).
         candidates = search_zone_candidates(index, zone_name, risques)
-        if not candidates:
-            return zone_reco
 
         user_prompt = build_user_prompt_for_zone(
             house_payload.get("bien", {}), zone_name, risques, candidates
