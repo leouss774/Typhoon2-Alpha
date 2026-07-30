@@ -4275,7 +4275,57 @@ function showZonePanel(zoneName) {
   const artisanResults = document.createElement('div');
   artisanResults.className = 'artisan-results';
   artisanButton.addEventListener('click', () => {
-    window.location.assign('http://localhost:3000/artisans');
+    // Transmet l'adresse et les recommandations du diagnostic (toutes zones
+    // confondues, pas seulement la zone actuellement affichee) a la page
+    // artisans via sessionStorage, pour que le contenu (ex. etude RGA) soit
+    // bien present a l'arrivee sur ../artisans/index.html.
+    //
+    // Important : on garde la zone et les risques d'origine de chaque
+    // mesure (pas seulement r.type, qui vaut toujours la constante
+    // "recommandation_source" et ne decrit pas le domaine des travaux) car
+    // le classifieur backend (_classifier_recommandation) s'appuie d'abord
+    // sur les risques ("retrait_gonflement_argiles", "sismique"...) pour
+    // reconnaitre des mesures comme le RGA quand le texte de la mesure ne
+    // contient aucun mot-cle explicite.
+    const adresseDiag = (rawData && rawData.adresse) || '';
+    const recommandationsStructurees = [];
+    const zonesSource = currentZones || {};
+    // Chaque zone porte son aléa principal dans `alea_principal` (chaîne,
+    // ex. "Retrait-gonflement des argiles"), pas dans un tableau `risques` —
+    // cf. rechercherArtisans() plus haut qui envoie déjà `[data.alea_principal]`
+    // au même backend. C'est ce texte qui contient les mots-clés ("argile",
+    // "sismique", "radon"...) dont le classifieur a besoin.
+    // Le classifieur backend (_classifier_recommandation) compare les
+    // sous-chaines sans re-normaliser zone/risques (seule la mesure est
+    // passee en minuscules cote serveur) : on met donc nous-memes tout en
+    // minuscules ici pour ne pas dependre de la casse d'alea_principal.
+    Object.entries(zonesSource).forEach(([zoneName, z]) => {
+      const risques = z.alea_principal ? [String(z.alea_principal).toLowerCase()] : [];
+      (z.recommandations || []).forEach(r => {
+        const mesure = r.mesure || r.travaux;
+        if (mesure) recommandationsStructurees.push({ mesure: mesure, zone: zoneName.toLowerCase(), risques: risques });
+      });
+    });
+    // Repli si currentZones est vide pour une raison quelconque : au moins
+    // la zone actuellement affichee (deja disponible via la fermeture de
+    // showZonePanel, avec son propre alea_principal).
+    if (!recommandationsStructurees.length) {
+      const risquesZoneActuelle = data.alea_principal ? [String(data.alea_principal).toLowerCase()] : [];
+      recos.forEach(r => {
+        const mesure = r.mesure || r.travaux;
+        if (mesure) recommandationsStructurees.push({ mesure: mesure, zone: String(zoneName).toLowerCase(), risques: risquesZoneActuelle });
+      });
+    }
+    try {
+      sessionStorage.setItem('typhoon_artisan_handoff', JSON.stringify({
+        adresse: adresseDiag,
+        recommandationsStructurees: recommandationsStructurees,
+      }));
+    } catch (e) {
+      // sessionStorage indisponible : on navigue quand meme, avec les
+      // valeurs par defaut de la page artisans.
+    }
+    window.location.assign('../artisans/index.html');
   });
   recosDiv.appendChild(artisanButton);
   recosDiv.appendChild(artisanResults);

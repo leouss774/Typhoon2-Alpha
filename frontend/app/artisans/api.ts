@@ -20,7 +20,7 @@ export async function getDiagnosticMatchingData(): Promise<DiagnosticMatchingDat
  * Utilise l'endpoint /search qui géocode automatiquement l'adresse
  * pour un scoring par distance réelle (Haversine).
  *
- * Utilise le rewrite proxy de next.config.ts (/api/* → localhost:8001/api/*).
+ * Utilise le rewrite proxy de next.config.ts (/api/* → localhost:8765/api/*).
  */
 export async function rechercherArtisans(
   adresse: string,

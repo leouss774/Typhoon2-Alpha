@@ -9,15 +9,15 @@
 <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
 <style>
   :root {
-    --brand: #FF6B4A;
-    --brand-dark: #E24E2E;
-    --brand-light: #FFE4DA;
+    --brand: #316f96;
+    --brand-dark: #204e6d;
+    --brand-light: #dceef4;
     --ink: #1E2A33;
     --text: #4B5760;
-    --muted: #8B959D;
-    --border: #E7DED6;
+    --muted: #626D77;
+    --border: #DCE6EC;
     --surface: #FFFFFF;
-    --surface-alt: #FAF6F2;
+    --surface-alt: #F1F6F9;
     --success: #1F9D6C;
     --warning: #D98A2B;
     --danger: #DC4B39;
@@ -31,7 +31,7 @@
   body {
     margin: 0; padding: 0; min-height: 100vh;
     font-family: var(--font-body); color: var(--ink);
-    background: #F8F6F4;
+    background: #EDF3F6;
   }
 
   /* ---- Layout ---- */
@@ -49,9 +49,9 @@
   }
   .typhoon-logo .mark {
     width: 34px; height: 34px; border-radius: 8px;
-    background: linear-gradient(135deg, #FF9269, var(--brand));
+    background: linear-gradient(135deg, #5FA0C7, var(--brand));
     display: flex; align-items: center; justify-content: center;
-    font-size: 16px; box-shadow: 0 0 14px rgba(255,107,74,0.35);
+    font-size: 16px; box-shadow: 0 0 14px rgba(49,111,150,0.35);
   }
   .typhoon-logo .name {
     font-family: var(--font-head); color: var(--ink); font-size: 18px; font-weight: 700;
@@ -115,26 +115,16 @@
   .btn-ghost:hover { border-color: var(--brand); color: var(--brand); }
   .btn-sm { padding: 6px 14px; font-size: 12px; }
 
-  /* ---- Quick presets ---- */
-  .presets { display: flex; gap: 6px; flex-wrap: wrap; margin: 12px 0 0; }
-  .presets button {
-    background: var(--surface-alt); border: 1px solid var(--border);
-    border-radius: 999px; padding: 6px 14px; font-size: 11.5px;
-    color: var(--text); cursor: pointer; font-weight: 600;
-    transition: all .15s; font-family: var(--font-body);
-  }
-  .presets button:hover { border-color: var(--brand); color: var(--brand); background: var(--brand-light); }
-
   /* ---- Loading ---- */
   #loading { display: none; margin: 20px 0; }
   #loading.visible { display: block; }
   #loading-bar-track {
-    height: 4px; border-radius: 999px; background: rgba(231,222,214,0.4);
+    height: 4px; border-radius: 999px; background: rgba(220,230,236,0.6);
     overflow: hidden; margin-bottom: 10px;
   }
   #loading-bar-fill {
     height: 100%; width: 0%;
-    background: linear-gradient(90deg, #FFD6C2, var(--brand));
+    background: linear-gradient(90deg, var(--brand-light), var(--brand));
     border-radius: 999px; transition: width .3s ease;
   }
   #loading-text { color: var(--muted); font-size: 12px; text-align: center; }
@@ -189,7 +179,7 @@
   .annuaire-info {
     margin: 8px 0 14px; padding: 10px 14px;
     border-left: 4px solid var(--brand);
-    background: #FFF8F5; border-radius: 8px; font-size: 12px; color: var(--text);
+    background: var(--surface-alt); border-radius: 8px; font-size: 12px; color: var(--text);
   }
   .annuaire-info a { color: var(--brand); text-decoration: none; font-weight: 600; }
   .annuaire-info a:hover { text-decoration: underline; }
@@ -210,7 +200,7 @@
     padding: 10px 12px; border-bottom: 1px solid var(--border);
     vertical-align: top;
   }
-  .entreprise-table tr:hover td { background: #FFF8F5; }
+  .entreprise-table tr:hover td { background: var(--surface-alt); }
   .entreprise-table .score {
     font-weight: 800; font-size: 15px; white-space: nowrap;
   }
@@ -326,7 +316,7 @@
 <div class="page">
   <!-- Hero -->
   <section class="hero">
-    <h1>🔨 Matching Artisans & Professionnels</h1>
+    <h1>Matching Artisans & Professionnels</h1>
     <p>
       Trouvez des entreprises RGE (Reconnu Garant de l'Environnement) et des
       professionnels spécialisés pour chaque recommandation de travaux issue
@@ -361,9 +351,9 @@ sismique_structure</textarea>
     </div>
 
     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-      <button class="btn btn-primary" id="search-btn">🔍 Rechercher des artisans</button>
+      <button class="btn btn-primary" id="search-btn">Rechercher des artisans</button>
       <button class="btn btn-ghost btn-sm" id="toggle-domaines-btn">+ Domaines disponibles</button>
-      <button class="btn btn-ghost btn-sm" id="reset-btn">↺ Réinitialiser</button>
+      <button class="btn btn-ghost btn-sm" id="reset-btn">Réinitialiser</button>
     </div>
 
     <!-- Quick add domaines -->
@@ -372,14 +362,6 @@ sismique_structure</textarea>
       <div class="domaine-grid" id="domaine-grid"></div>
     </div>
 
-    <!-- Presets -->
-    <div class="presets">
-      <span style="font-size:11px;color:var(--muted);font-weight:600;margin-right:4px;">Exemples :</span>
-      <button data-recos="isolation_combles,ventilation,isolation_murs_exterieur,rga_geotechnique">Rénovation thermique + RGA</button>
-      <button data-recos="isolation_combles,menuiseries,audit_energetique">Isolation + Menuiseries</button>
-      <button data-recos="sismique_structure,ruissellement_drainage,radon_etancheite">Risques sismique + radon</button>
-      <button data-recos="rga_geotechnique,sismique_structure,ruissellement_drainage">Tous non-RGE</button>
-    </div>
   </section>
 
   <!-- Loading -->
@@ -424,7 +406,7 @@ sismique_structure</textarea>
 //   TYPHOON — Artisan Matching Frontend
 // =========================================================================
 
-const BACKEND_URL = 'http://localhost:8001';
+const BACKEND_URL = 'http://localhost:8765';
 
 // ---- DOM refs ----
 const $ = id => document.getElementById(id);
@@ -452,6 +434,14 @@ const domaineQuick = $('domaines-quick');
 
 let allResults = [];
 let domainesCache = null;
+// Recommandations structurées (mesure + zone + risques) reçues du diagnostic
+// (jumeau numérique) via applyHandoffData(). Le classifieur backend a besoin
+// de zone/risques pour reconnaître des mesures comme le RGA quand le texte
+// seul ne contient pas de mot-clé explicite ("argile", "séisme"...) — un
+// simple textarea une-ligne-par-mesure perd cette info, d'où leur transport
+// à part et leur priorité dans searchBtn.onclick tant qu'elles n'ont pas été
+// consommées par une recherche.
+let handoffRecommandations = null;
 
 // ---- Init: fetch domaines ----
 async function init() {
@@ -465,6 +455,40 @@ async function init() {
   } catch (e) {
     console.warn('Impossible de charger les domaines :', e.message);
   }
+  // domainesCache doit etre pret avant applyHandoffData() : la recherche
+  // auto-declenchee s'appuie dessus pour distinguer cle connue / texte libre.
+  applyHandoffData();
+}
+
+// ---- Reprise des donnees venant du diagnostic (jumeau numerique) ----
+// Le bouton "Rechercher des artisans correspondants" de la page diagnostic
+// stocke l'adresse + les recommandations (ex. rga_geotechnique) dans
+// sessionStorage avant de naviguer ici. Sans ca, la page se rechargeait a
+// vide avec les valeurs par defaut et l'etude RGA (ou toute autre mesure
+// reelle du diagnostic) ne s'affichait jamais.
+function applyHandoffData() {
+  let handoff = null;
+  try {
+    const raw = sessionStorage.getItem('typhoon_artisan_handoff');
+    if (raw) handoff = JSON.parse(raw);
+    sessionStorage.removeItem('typhoon_artisan_handoff');
+  } catch (e) {
+    console.warn('Donnees de diagnostic illisibles :', e.message);
+  }
+  if (!handoff) return;
+
+  if (handoff.adresse) {
+    adresseInput.value = handoff.adresse;
+    const match = handoff.adresse.match(/\b(\d{5})\b/);
+    if (match) cpInput.value = match[1];
+  }
+  if (Array.isArray(handoff.recommandationsStructurees) && handoff.recommandationsStructurees.length) {
+    handoffRecommandations = handoff.recommandationsStructurees;
+    recosInput.value = handoffRecommandations.map(r => r.mesure).join('\n');
+  } else if (Array.isArray(handoff.recommandations) && handoff.recommandations.length) {
+    recosInput.value = handoff.recommandations.join('\n');
+  }
+  searchBtn.click();
 }
 
 function renderDomainesGrid(domaines) {
@@ -491,14 +515,6 @@ function addDomaine(cle) {
   }
   domaineQuick.classList.remove('visible');
 }
-
-// ---- Presets ----
-document.querySelectorAll('.presets button').forEach(btn => {
-  btn.onclick = () => {
-    const recos = btn.dataset.recos;
-    recosInput.value = recos.split(',').join('\n');
-  };
-});
 
 // ---- Toggle domaines panel ----
 toggleDomainesBtn.onclick = () => {
@@ -530,23 +546,38 @@ searchBtn.onclick = async () => {
   const recosRaw = recosInput.value.trim();
 
   if (!adresse && !cp) { alert('Veuillez saisir une adresse ou un code postal.'); return; }
-  if (!recosRaw) { alert('Veuillez saisir au moins une recommandation.'); return; }
+  if (!recosRaw && !(handoffRecommandations && handoffRecommandations.length)) {
+    alert('Veuillez saisir au moins une recommandation.');
+    return;
+  }
 
   // Construire le code postal
   const codePostal = cp || (adresse.match(/\b(\d{5})\b/) || [''])[1];
   const adresseFinal = adresse || `${codePostal} France`;
 
-  // Parser les recommandations
-  const lines = recosRaw.split('\n').map(l => l.trim()).filter(l => l);
-  const recommandations = lines.map(line => {
-    // Vérifier si c'est une clé connue ou du texte libre
-    const isKnownKey = domainesCache && domainesCache[line];
-    if (isKnownKey) {
-      return { cle: line };
-    }
-    // Sinon, on envoie comme texte libre
-    return { mesure: line, zone: '', risques: [] };
-  });
+  // Recommandations : priorité aux données structurées reçues du diagnostic
+  // (zone + risques, nécessaires au classifieur pour reconnaître par ex. le
+  // RGA), sinon on retombe sur le parsing ligne à ligne du textarea.
+  let recommandations;
+  if (handoffRecommandations && handoffRecommandations.length) {
+    recommandations = handoffRecommandations.map(r => ({
+      mesure: r.mesure,
+      zone: r.zone || '',
+      risques: r.risques || [],
+    }));
+    handoffRecommandations = null; // une seule utilisation : recherches manuelles suivantes = texte libre
+  } else {
+    const lines = recosRaw.split('\n').map(l => l.trim()).filter(l => l);
+    recommandations = lines.map(line => {
+      // Vérifier si c'est une clé connue ou du texte libre
+      const isKnownKey = domainesCache && domainesCache[line];
+      if (isKnownKey) {
+        return { cle: line };
+      }
+      // Sinon, on envoie comme texte libre
+      return { mesure: line, zone: '', risques: [] };
+    });
+  }
 
   const loadingInterval = startLoading();
   try {
@@ -610,7 +641,7 @@ function startLoading() {
 function endLoading(interval) {
   clearInterval(interval);
   loadingBar.style.width = '100%';
-  loadingText.textContent = 'Recherche terminée ✓';
+  loadingText.textContent = 'Recherche terminée';
   setTimeout(() => {
     searchBtn.disabled = false;
     loadingEl.classList.remove('visible');
@@ -692,7 +723,7 @@ function renderCards(results) {
 
     // Erreur
     if (erreur) {
-      html += `<div class="error-card"><div class="err-title">⚠️ Catégorie non reconnue</div><div class="err-msg">${escapeHtml(erreur)}</div></div>`;
+      html += `<div class="error-card"><div class="err-title">Catégorie non reconnue</div><div class="err-msg">${escapeHtml(erreur)}</div></div>`;
     }
 
     // Tableau des entreprises
@@ -778,7 +809,7 @@ function renderCards(results) {
       const montant = cout.montant_min && cout.montant_max
         ? `${cout.montant_min.toLocaleString()}€ – ${cout.montant_max.toLocaleString()}€`
         : 'Non estimé';
-      html += `<div style="margin-top:6px;font-size:11px;color:var(--muted);">💰 Coût estimé : <strong>${montant}</strong>${cout.fiabilite ? ` <span style="font-style:italic;">(${escapeHtml(cout.fiabilite)})</span>` : ''}</div>`;
+      html += `<div style="margin-top:6px;font-size:11px;color:var(--muted);">Coût estimé : <strong>${montant}</strong>${cout.fiabilite ? ` <span style="font-style:italic;">(${escapeHtml(cout.fiabilite)})</span>` : ''}</div>`;
     }
 
     html += `</div>`;
@@ -849,8 +880,8 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
-console.log('🔨 Typhoon Matching Artisans — Interface chargée');
-console.log('💡 Ctrl+Enter pour lancer la recherche depuis n\'importe quel champ');
+console.log('Typhoon Matching Artisans — Interface chargée');
+console.log('Ctrl+Enter pour lancer la recherche depuis n\'importe quel champ');
 </script>
 </body>
 </html>
