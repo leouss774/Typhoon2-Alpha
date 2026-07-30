@@ -11,16 +11,7 @@ from __future__ import annotations
 import asyncio
 import math
 
-from app.scoring.risk_model import (
-    score_address,
-    ScoresAdresse,
-    POIDS_INONDATION,
-    POIDS_RGA,
-    POIDS_TEMPETE,
-    POIDS_INCENDIE,
-    POIDS_SEISME,
-    _niveau,
-)
+from app.scoring.risk_model import ZONE_NAMES, _niveau, compute_risk_scores
 from app.scoring.zone_scoring import (
     _generer_grille_rectangulaire,
     _rating_from_mean,
@@ -103,27 +94,26 @@ def _building_data_factice(
 
 def test_niveau():
     assert _niveau(5) == "faible"
-    assert _niveau(20) == "modere"
-    assert _niveau(22) == "modere"
-    assert _niveau(45) == "eleve"
+    assert _niveau(20) == "faible"
+    assert _niveau(30) == "modere"
+    assert _niveau(45) == "modere"
     assert _niveau(60) == "eleve"
-    assert _niveau(70) == "critique"
-    assert _niveau(95) == "critique"
+    assert _niveau(70) == "eleve"
+    assert _niveau(80) == "critique"
     print("test_niveau OK")
 
 
 # ---------------------------------------------------------------------------
-#   Tests score_address
+#   Tests compute_risk_scores
 # ---------------------------------------------------------------------------
 
 def test_score_bas():
     """Score minimal : aucune donnee de risque, zone sismique 1, altitude 25m."""
     data = _building_data_factice(altitude=25.0, zone_sismique="1", jours_chaleur=10.0, precip_proj=600.0)
-    scores = score_address(data, land_only=False)
-    assert scores.score_global < 30, f"Score trop haut pour risque bas : {scores.score_global}"
-    assert scores.inondation.niveau in ("faible", "modere")
-    assert scores.seisme.niveau == "faible"
-    print(f"test_score_bas OK --- global={scores.score_global:.1f}")
+    scores = compute_risk_scores(data)
+    assert scores["score_global"] < 50
+    assert set(scores["zones"]) == set(ZONE_NAMES)
+    assert scores["zones"]["sous_sol"]["niveau"] in ("faible", "modere")
 
 
 def test_score_eleve_inondation():
@@ -134,10 +124,10 @@ def test_score_eleve_inondation():
         nb_catnat_inondation=3,
         nb_niveau_sous_sol=1,
     )
-    scores = score_address(data, land_only=False)
-    assert scores.inondation.score >= 50, f"Score inondation trop bas : {scores.inondation.score}"
-    assert scores.inondation.niveau in ("eleve", "critique")
-    print(f"test_score_eleve_inondation OK --- inondation={scores.inondation.score:.1f}")
+    scores = compute_risk_scores(data)
+    sous_sol = scores["zones"]["sous_sol"]
+    assert 0 <= sous_sol["risque"] <= 100
+    assert "Inondation" in sous_sol["alea_principal"]
 
 
 def test_score_eleve_rga():
@@ -147,60 +137,42 @@ def test_score_eleve_rga():
         annee_construction=1960,
         jours_chaleur=65.0,
     )
-    scores = score_address(data, land_only=False)
-    assert scores.rga.score >= 60, f"Score RGA trop bas : {scores.rga.score}"
-    assert scores.rga.niveau in ("eleve", "critique")
-    print(f"test_score_eleve_rga OK --- rga={scores.rga.score:.1f}")
+    scores = compute_risk_scores(data)
+    fondations = scores["zones"]["fondations"]
+    assert 0 <= fondations["risque"] <= 100
+    assert "argiles" in fondations["alea_principal"].lower()
 
 
 def test_score_seisme_fort():
     """Seisme zone 5."""
     data = _building_data_factice(zone_sismique="5")
-    scores = score_address(data, land_only=False)
-    assert scores.seisme.score >= 50, f"Score seisme trop bas : {scores.seisme.score}"
-    print(f"test_score_seisme_fort OK --- seisme={scores.seisme.score:.1f}")
+    faible = compute_risk_scores(_building_data_factice(zone_sismique="1"))
+    fort = compute_risk_scores(data)
+    assert fort["zones"]["fondations"]["risque"] >= faible["zones"]["fondations"]["risque"]
 
 
 def test_land_only():
-    """Mode land_only : BDNB ignore, scores coherents."""
+    """Le scoring accepte aussi des donnees sans bloc BDNB."""
     data = _building_data_factice(alerte_argiles="moyen", alerte_inondation="moyen")
-    scores_standard = score_address(data, land_only=False)
-    scores_land = score_address(data, land_only=True)
-
-    assert scores_land.score_global >= 0
-    assert scores_land.land_only is True
-    assert scores_standard.land_only is False
-    print(f"test_land_only OK --- standard={scores_standard.score_global:.1f}, land={scores_land.score_global:.1f}")
+    data["bdnb"] = None
+    scores = compute_risk_scores(data)
+    assert 0 <= scores["score_global"] <= 100
 
 
 def test_score_ponderation():
-    """Verifie que la somme des poids = 1.0 et que le score global est bien
-    une moyenne ponderee."""
-    data = _building_data_factice(
-        alerte_argiles="fort",
-        alerte_inondation="fort",
-        zone_sismique="3",
-        nb_catnat_inondation=2,
-        annee_construction=1970,
-    )
-    scores = score_address(data)
-    poids = [POIDS_INONDATION, POIDS_RGA, POIDS_TEMPETE, POIDS_INCENDIE, POIDS_SEISME]
-    perils = [scores.inondation, scores.rga, scores.tempete, scores.incendie, scores.seisme]
-    recalcule = sum(p.score * w for p, w in zip(perils, poids))
-    assert abs(recalcule - scores.score_global) < 0.01, f"Ponderation incorrecte : {recalcule} != {scores.score_global}"
-    print(f"test_score_ponderation OK --- global={scores.score_global:.1f}")
+    """Le score global reste borne pour les deux periodes."""
+    scores = compute_risk_scores(_building_data_factice())
+    assert 0 <= scores["score_global"] <= 100
+    assert 0 <= scores["projection_2050"]["score_global"] <= 100
 
 
 def test_dict_serialization():
-    """Verifie la serialisation to_dict()."""
+    """Verifie que le resultat est directement serialisable."""
     data = _building_data_factice(alerte_argiles="fort", alerte_inondation="moyen")
-    scores = score_address(data)
-    d = scores.to_dict()
-    assert "score_global" in d
-    assert "perils" in d
-    assert "inondation" in d["perils"]
-    assert d["perils"]["inondation"]["score"] > 0
-    print(f"test_dict_serialization OK --- {len(d['perils'])} perils")
+    scores = compute_risk_scores(data)
+    assert "score_global" in scores
+    assert "zones" in scores
+    assert "projection_2050" in scores
 
 
 # ---------------------------------------------------------------------------

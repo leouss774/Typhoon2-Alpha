@@ -293,7 +293,13 @@ async def test_full_collect_pipeline():
     assert building_data["climat_open_meteo"]["reference_2015_2024"]["temperature_max_moyenne_c"] is not None
     assert "rcp4_5_yearly__heatwave_days" in building_data["climat_copernicus"]
     erreurs_sources = {e["source"] for e in building_data["erreurs"]}
-    assert "dvf_local" in erreurs_sources  # aucun CSV DVF telecharge dans ce test
+    # DVF est desactive par defaut sur un poste sans les volumineux CSV locaux.
+    # Une source desactivee n'est pas une erreur de collecte.
+    if core_config.settings.dvf_enabled:
+        assert "dvf_local" in erreurs_sources
+    else:
+        assert building_data["dvf_local"] is None
+        assert "dvf_local" not in erreurs_sources
     assert "copernicus" not in erreurs_sources
     print("\ntest_full_collect_pipeline OK. Extrait :")
     print(json.dumps(building_data, indent=2, ensure_ascii=False)[:1200], "...")
