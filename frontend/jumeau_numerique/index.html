@@ -769,15 +769,20 @@
 /* ========================================================================
    PROPERTY ID SCREEN — Styles fusionnés depuis property-id/index.html
    ======================================================================== */
+/* Property ID — Overlay (modale) */
 #property-id-screen {
-  position: fixed; inset: 0; z-index: 175;
-  display: none; overflow-y: auto;
-  background: #F8F5F1;
+  position: fixed; inset: 0; z-index: 200;
+  display: none;
+  align-items: flex-start; justify-content: center; padding: 30px 16px;
+  background: rgba(2, 6, 12, 0.72); backdrop-filter: blur(6px);
   -webkit-overflow-scrolling: touch;
 }
+#property-id-screen.open { display: flex; }
 #property-id-screen .pid-container {
-  max-width: 1120px; margin: 0 auto;
-  padding: 20px 20px 48px; width: 100%;
+  width: 100%; max-width: 1120px; max-height: 88vh; overflow-y: auto;
+  background: #F8F5F1; border-radius: 16px;
+  padding: 20px 20px 48px;
+  box-shadow: 0 20px 60px rgba(20,20,20,0.12);
 }
 #property-id-screen .pid-brand-bar {
   display: flex; align-items: center; justify-content: space-between;
@@ -987,6 +992,7 @@
   background: #fff; border: 1px solid var(--border); border-radius: 12px;
   padding: 22px 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.06);
 }
+#property-id-screen .pid-reco-card:only-child { grid-column: 1 / -1; }
 #property-id-screen .pid-reco-item {
   display: flex; gap: 12px; padding: 12px;
   border-radius: 8px; transition: all 0.2s ease; cursor: default;
@@ -1709,34 +1715,7 @@
     </div>
   </div>
 
-  <!-- RECO + TIMELINE -->
-  <div class="pid-two-col pid-fade d4" id="pid-section-reco-tl">
-    <div class="pid-reco-card">
-      <div class="pid-section-title">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-        Recommandations
-      </div>
-      <div id="pid-reco-list"></div>
-    </div>
-    <div class="pid-reco-card">
-      <div class="pid-section-title">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-        Historique
-      </div>
-      <div class="pid-timeline" id="pid-timeline-container"></div>
-    </div>
-  </div>
 
-  <!-- DIGITAL TWIN -->
-  <div class="pid-twin pid-fade d5" id="pid-section-twin">
-    <div class="th">
-      <span class="tt"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg> Jumeau Numérique</span>
-      <span class="tb">3D</span>
-    </div>
-    <div class="tchips" id="pid-twin-chips"></div>
-    <button class="twin-json-btn" id="pid-json-btn">Afficher le JSON brut</button>
-    <div class="twin-json-block" id="pid-json-block"><pre id="pid-json-content"></pre></div>
-  </div>
 
 </div>
 </div>
@@ -3421,6 +3400,11 @@ loadDataset(DEFAULT_DATA);
     const { selected, min, max, gain } = computeSelection();
     const baseScore = window.currentGlobalScore ?? DEFAULT_DATA.score_global;
     const { newScore, primePercent } = computePrime(baseScore, gain);
+    // Approximation : reduction 2050 basee sur la meme formule que le score global
+    // — pas un recalcul climatique scientifique distinct. La projection 2050 est
+    // reduite proportionnellement au meme gain_resilience que le score courant.
+    const climateBase = (typeof rawData !== 'undefined' && rawData && rawData.projection_2050 && rawData.projection_2050.score_global) || baseScore;
+    const climateNewScore = computePrime(climateBase, gain).newScore;
     const fullyCertified = newScore <= 45;
 
     document.getElementById('cert-score-before').textContent = baseScore;
@@ -3479,6 +3463,7 @@ loadDataset(DEFAULT_DATA);
         certifie: fullyCertified,
         date_generation: new Date().toISOString(),
         adresse: addr,
+        climate_apres: climateNewScore,
         travaux_retenus: selected.map(i => ({
           zone: i.zone,
           travaux: i.travaux,
@@ -3701,87 +3686,7 @@ function pid_renderPropertyID(data) {
   fmtNA(bld.floors, pid_$('pid-bld-floors'));
   pid_$('pid-bld-addr').textContent = bld.address || '—';
 
-  /* Recommendations */
-  const recos = data.recommendations || [];
-  const recoList = pid_$('pid-reco-list');
-  recoList.innerHTML = '';
-  if (recos.length === 0) {
-    recoList.innerHTML = '<div class="pid-reco-empty"><svg class="ei" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg><p>Aucune recommandation disponible pour cette adresse.</p><p class="eh">Les recommandations de travaux apparaîtront une fois la base documentaire RAG configurée et l\'index généré.</p></div>';
-  } else {
-    recos.forEach(r => {
-      const div = document.createElement('div');
-      div.className = 'pid-reco-item';
-      const mesure = r.mesure || r.travaux || r.title || 'Travaux recommandés';
-      const typeName = r.type || '';
-      const zoneName = r.zone ? r.zone.replace(/_/g, ' ') : '';
-      const sources = r.sources || [];
-      const coutText = r.cout_estime ? (typeof r.cout_estime === 'object' ? r.cout_estime.montant_min || '' : r.cout_estime) : '';
-      div.innerHTML = '<svg class="ri" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>'
-        + '<div class="rc">'
-        + '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px">'
-        + '<div class="rt">' + mesure.slice(0, 120) + (mesure.length > 120 ? '...' : '') + '</div>'
-        + (zoneName ? '<span class="pid-zone-badge">' + zoneName + '</span>' : '')
-        + (typeName ? '<span class="pid-type-badge">' + typeName.replace(/_/g, ' ') + '</span>' : '')
-        + '</div>'
-        + (r.explication ? '<div class="rd">' + r.explication.slice(0, 300) + '</div>' : '')
-        + '<div class="rm">'
-        + (coutText ? '<span>💰 ' + coutText + '</span>' : '')
-        + (r.gain_resilience ? '<span>📈 Résilience +' + r.gain_resilience + '</span>' : '')
-        + (sources.length > 0 ? '<span>📄 ' + sources.length + ' source(s)</span>' : '')
-        + '</div>'
-        + (sources.length > 0 ? '<div class="rsrc">Sources : ' + sources.map(s => s.source_id || '').filter(Boolean).join(', ') + '</div>' : '')
-        + '</div>';
-      recoList.appendChild(div);
-    });
-  }
 
-  /* Timeline */
-  const timeline = data.timeline || [];
-  const tl = pid_$('pid-timeline-container');
-  tl.innerHTML = '';
-  if (timeline.length === 0) {
-    tl.innerHTML = '<div class="pid-reco-empty"><p style="font-size:13px">Aucun événement enregistré.</p></div>';
-  } else {
-    timeline.forEach(evt => {
-      const div = document.createElement('div');
-      const isCert = evt.event && evt.event.toLowerCase().includes('certification');
-      div.className = 'pid-timeline ti' + (isCert ? ' cert' : '');
-      const d = evt.date ? new Date(evt.date).toLocaleDateString('fr-FR', { year: 'numeric', month: 'short', day: 'numeric' }) : '—';
-      let iconSvg;
-      if (isCert) iconSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>';
-      else if (evt.event && (evt.event.toLowerCase().includes('diagnostic') || evt.event.toLowerCase().includes('inspection')))
-        iconSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
-      else if (evt.event && (evt.event.toLowerCase().includes('renovation') || evt.event.toLowerCase().includes('travaux')))
-        iconSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>';
-      else iconSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
-      let details = '';
-      if (evt.details) {
-        if (evt.details.level) details = 'Niveau : ' + evt.details.level;
-        else if (evt.details.property_id) details = 'ID : ' + evt.details.property_id;
-        else if (evt.details.score != null) details = 'Score : ' + evt.details.score;
-      }
-      div.innerHTML = '<div class="tli">' + iconSvg + '</div><div class="tld">' + d + '</div><div class="tle">' + (evt.event || 'Événement') + '</div>' + (details ? '<div class="tldet">' + details + '</div>' : '');
-      tl.appendChild(div);
-    });
-  }
-
-  /* Twin chips */
-  const zones = data.risk_summary && data.risk_summary.zones ? data.risk_summary.zones : {};
-  const twinChips = pid_$('pid-twin-chips');
-  twinChips.innerHTML = '';
-  if (Object.keys(zones).length > 0) {
-    Object.entries(zones).forEach(([key, val]) => {
-      const score = val.score != null ? val.score : 0;
-      const level = score <= 25 ? 'faible' : score <= 50 ? 'modere' : score <= 75 ? 'eleve' : 'critique';
-      const chip = document.createElement('span');
-      chip.className = 'tchip ' + level;
-      chip.innerHTML = '<span class="cd"></span> ' + key.replace(/_/g, ' ');
-      twinChips.appendChild(chip);
-    });
-  } else {
-    twinChips.innerHTML = '<span style="color:var(--muted);font-size:12px;">Aucune zone de risque disponible</span>';
-  }
-  pid_$('pid-json-content').textContent = JSON.stringify(data, null, 2);
 
   /* Fade in */
   pid_fadeIn();
@@ -3884,9 +3789,6 @@ function pid_showPropertyID() {
 
   const riskZoneData = highestZone ? (zones[highestZone] || {}) : {};
 
-  // --- Score Climat 2050 (chemin correct : rawData.projection_2050.score_global) ---
-  const climateScore = (rawData && rawData.projection_2050 && rawData.projection_2050.score_global) || 0;
-
   // --- Adresse ---
   const addr = (rawData && rawData.adresse)
     ? rawData.adresse
@@ -3906,6 +3808,7 @@ function pid_showPropertyID() {
   // --- Certification : utiliser le score après travaux si un devis certifié existe ---
   var certScore = overallScore;
   var certDate = new Date().toISOString();
+  var devisClimateScore = null;
   try {
     var devisRaw = localStorage.getItem('typhoon_devis_result');
     if (devisRaw) {
@@ -3913,10 +3816,16 @@ function pid_showPropertyID() {
       if (devisParsed && devisParsed.certifie && typeof devisParsed.score_apres === 'number') {
         certScore = devisParsed.score_apres;
         if (devisParsed.date_generation) certDate = devisParsed.date_generation;
+        if (typeof devisParsed.climate_apres === 'number') devisClimateScore = devisParsed.climate_apres;
       }
     }
   } catch (e) { /* localStorage peut etre bloque */ }
   const certLevel = pid_certLevel(certScore);
+
+  // --- Score Climat 2050 : utiliser climate_apres du devis si disponible (après travaux), sinon la projection brute ---
+  const climateScore = devisClimateScore !== null
+    ? devisClimateScore
+    : (rawData && rawData.projection_2050 && rawData.projection_2050.score_global) || 0;
 
   const data = {
     property_id: 'TY-' + new Date().getFullYear() + '-' + String(Math.floor(Math.random() * 999999)).padStart(6, '0'),
@@ -3948,14 +3857,11 @@ function pid_showPropertyID() {
       zones: zones,
     },
     recommendations: recos,
-    timeline: [
-      { date: new Date().toISOString(), event: 'Property ID généré', details: { score: overallScore } },
-    ],
     contract: { zones: zones },
   };
 
-  // Afficher l'écran
-  screen.style.display = 'block';
+  // Afficher la modale
+  screen.classList.add('open');
   document.body.style.overflow = 'hidden'; // Empêcher le scroll du fond
 
   // Rendre le Property ID
@@ -3971,22 +3877,32 @@ function pid_showPropertyID() {
 var pidCloseBtn = pid_$('pid-close-btn');
 if (pidCloseBtn) {
   pidCloseBtn.addEventListener('click', function() {
-    pid_$('property-id-screen').style.display = 'none';
+    pid_$('property-id-screen').classList.remove('open');
     document.body.style.overflow = '';
   });
 }
 
-/* JSON toggle */
-var pidJsonBtn = pid_$('pid-json-btn');
-if (pidJsonBtn) {
-  pidJsonBtn.addEventListener('click', function() {
-    var block = pid_$('pid-json-block');
-    if (block) {
-      var open = block.classList.toggle('open');
-      this.textContent = open ? 'Masquer le JSON brut' : 'Afficher le JSON brut';
+/* Fermeture par clic en dehors de la modale */
+var pidOverlay = pid_$('property-id-screen');
+if (pidOverlay) {
+  pidOverlay.addEventListener('click', function(e) {
+    if (e.target === pidOverlay) {
+      pidOverlay.classList.remove('open');
+      document.body.style.overflow = '';
     }
   });
 }
+
+/* Fermeture par touche Échap */
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    var pidScr = pid_$('property-id-screen');
+    if (pidScr && pidScr.classList.contains('open')) {
+      pidScr.classList.remove('open');
+      document.body.style.overflow = '';
+    }
+  }
+});
 
 
 </script>
