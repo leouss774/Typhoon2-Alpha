@@ -16,6 +16,9 @@ logger = get_logger(__name__)
 
 def run(state: TyphoonState) -> dict:
     t0 = time.perf_counter()
-    risk_scores = compute_risk_scores(state["building_data"])
+    risk_scores = compute_risk_scores(
+        building_data=state["building_data"],
+        formulaire=state.get("formulaire"),
+    )
     logger.info("scoring_agent (noeud) -- terminé en %.2fs", time.perf_counter() - t0)
     return {"risk_scores": risk_scores}

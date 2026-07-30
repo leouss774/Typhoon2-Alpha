@@ -1,4 +1,5 @@
-"""Routes de compatibilité (legacy) — pont entre l'ancienne API frontend
+"""
+Routes de compatibilité (legacy) — pont entre l'ancienne API frontend
 et la nouvelle API backend basée sur Typhoon2-Alpha.
 
 Ces routes permettent au frontend React existant de fonctionner
@@ -7,20 +8,30 @@ sans changement avec la nouvelle architecture.
 
 from __future__ import annotations
 
+import asyncio
 import uuid
 from datetime import datetime, timezone
+from typing import Any
 
 from fastapi import APIRouter, HTTPException
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
-from app.agents.graph import diagnostic_graph
-from app.core.logging import get_logger
+from backend.app.agents.graph import diagnostic_graph
+from backend.app.core.logging import get_logger
+
+from backend.services import dvf_service
+from backend.services.pdf_generator import generate_bank_report_pdf
+from backend.services.analyses_store import get_analysis, set_analysis, analyses_store
+
+# Import partagé du store diagnostic (analyses new-format)
+try:
+    from backend.app.api.routes.diagnostic import analyses_store as diagnostic_store
+except ImportError:
+    diagnostic_store = {}
 
 logger = get_logger(__name__)
 router = APIRouter()
-
-# Stockage temporaire pour les analyses
-analyses_store: dict[str, dict] = {}
 
 
 class LegacyAnalyzeRequest(BaseModel):
@@ -43,19 +54,19 @@ async def legacy_analyze(req: LegacyAnalyzeRequest):
 
     try:
         final_state = await diagnostic_graph.ainvoke(
-            {"adresse": adresse, "formulaire": form_data, "copernicus": False},
+            {"adresse": adresse, "formulaire": form_data, "session_id": session_id, "copernicus": False},
             config={"configurable": {"thread_id": session_id}},
         )
 
         analysis = _build_legacy_response(final_state, session_id, adresse, form_data)
-        analyses_store[session_id] = analysis
+        set_analysis(session_id, analysis)
 
         return {"status": "ok", "session_id": session_id, "analysis": analysis}
 
     except Exception as e:
         logger.exception("Erreur legacy analyze")
         analysis = _build_fallback(session_id, adresse, str(e))
-        analyses_store[session_id] = analysis
+        set_analysis(session_id, analysis)
         return {"status": "ok", "session_id": session_id, "analysis": analysis}
 
 
@@ -69,9 +80,7 @@ async def legacy_bank_analyze(req: LegacyAnalyzeRequest):
     if not adresse:
         raise HTTPException(status_code=400, detail="L'adresse est obligatoire")
 
-    analyses_store[session_id] = {"status": "processing", "session_id": session_id}
-
-    import asyncio
+    set_analysis(session_id, {"status": "processing", "session_id": session_id})
 
     async def background_task():
         try:
@@ -81,9 +90,9 @@ async def legacy_bank_analyze(req: LegacyAnalyzeRequest):
             )
             analysis = _build_legacy_response(final_state, session_id, adresse, form_data)
             analysis["status"] = "completed"
-            analyses_store[session_id] = analysis
+            set_analysis(session_id, analysis)
         except Exception as e:
-            analyses_store[session_id] = {"status": "error", "session_id": session_id, "error": str(e)}
+            set_analysis(session_id, {"status": "error", "session_id": session_id, "error": str(e)})
 
     asyncio.create_task(background_task())
 
@@ -92,8 +101,10 @@ async def legacy_bank_analyze(req: LegacyAnalyzeRequest):
 
 @router.get("/analysis/{session_id}")
 async def legacy_get_analysis(session_id: str):
-    """Route legacy : GET /api/analysis/{session_id} (polling)"""
-    analysis = analyses_store.get(session_id)
+    """Route legacy : GET /api/analysis/{session_id} (polling)
+    Lit depuis le store SQLite (persistant après redémarrage).
+    """
+    analysis = get_analysis(session_id)
     if not analysis:
         raise HTTPException(status_code=404, detail="Analyse introuvable")
     return analysis
@@ -104,7 +115,7 @@ async def legacy_get_analysis(session_id: str):
 @router.get("/dashboard/{session_id}")
 async def legacy_dashboard(session_id: str):
     """Dashboard legacy - retourne les données du diagnostic stocké ou des données neutres"""
-    analysis = analyses_store.get(session_id)
+    analysis = get_analysis(session_id)
     if analysis and analysis.get("status") == "completed":
         return _dashboard_from_analysis(analysis)
     # Données neutres si pas d'analyse complète
@@ -126,7 +137,7 @@ async def legacy_dashboard(session_id: str):
 
 @router.get("/recommendations/{session_id}")
 async def legacy_recommendations(session_id: str):
-    analysis = analyses_store.get(session_id)
+    analysis = get_analysis(session_id)
     if not analysis or analysis.get("status") != "completed":
         return {"session_id": session_id, "recommandations": []}
     zones = analysis.get("recommandations", {}).get("zones", {})
@@ -160,29 +171,286 @@ class ChatRequest(BaseModel):
     historique: list[dict] = []
 
 
+# ─── Normalisation des données ─────────────────────────────────────
+
+def _normaliser_analyse(analysis: dict) -> dict:
+    """Normalise les données d'analyse pour le chat.
+
+    Le format produit par le graphe LangGraph (backend/app/agent_graph/)
+    diffère parfois de ce que legacy_chat attend. Cette fonction
+    harmonise les structures.
+
+    Problèmes connus :
+    - scores_par_alea peut être des entiers plats ({"inondation": 15})
+      au lieu de dicts ({"inondation": {"score": 15, "niveau": "faible"}})
+    - zones peut être absent ou dans digital_twin en plus de recommandations
+    - bank_decision peut être stocké sous "bank_decision" au lieu de "decision_bancaire"
+    """
+    if not analysis:
+        return analysis
+
+    analysis = {k: v for k, v in analysis.items() if v is not None}
+
+    # 1. Normaliser scores_par_alea (entiers plats → dicts avec score + niveau)
+    for score_dict_path in [
+        ["analyse_risques", "scores_par_alea"],
+        ["recommandations", "scores_par_alea"],
+    ]:
+        parent = analysis
+        for key in score_dict_path[:-1]:
+            parent = parent.get(key, {})
+            if not isinstance(parent, dict):
+                break
+        else:
+            scores = parent.get(score_dict_path[-1], {})
+            if isinstance(scores, dict):
+                for key, val in list(scores.items()):
+                    if isinstance(val, (int, float)):
+                        s = int(val)
+                        scores[key] = {
+                            "score": s,
+                            "niveau": "critique" if s >= 70 else "eleve" if s >= 55 else "modere" if s >= 35 else "faible",
+                            "label": key.capitalize(),
+                        }
+
+    # 2. Fusionner les zones depuis digital_twin si recommandations.zones est vide
+    digital_twin = analysis.get("digital_twin", {}) or {}
+    if isinstance(digital_twin, dict):
+        twin_zones = digital_twin.get("zones", {}) or {}
+        if twin_zones and not analysis.get("recommandations", {}).get("zones"):
+            if "recommandations" not in analysis:
+                analysis["recommandations"] = {}
+            analysis["recommandations"]["zones"] = twin_zones
+
+        # Fusionner la projection 2050 du digital_twin
+        twin_proj = digital_twin.get("projection_2050", {}) or {}
+        if twin_proj and not analysis.get("recommandations", {}).get("projection_2050"):
+            if "recommandations" not in analysis:
+                analysis["recommandations"] = {}
+            analysis["recommandations"]["projection_2050"] = twin_proj
+
+    # 3. Normaliser bank_decision → decision_bancaire
+    bk = analysis.pop("bank_decision", None) or {}
+    if bk and not analysis.get("decision_bancaire"):
+        analysis["decision_bancaire"] = bk
+
+    # 4. S'assurer que resume existe avec au moins un score
+    if "resume" not in analysis or not analysis.get("resume", {}).get("score_global"):
+        score_global = 0
+        if isinstance(digital_twin, dict):
+            score_global = digital_twin.get("score_global", 0)
+        if score_global == 0:
+            zones = analysis.get("recommandations", {}).get("zones", {}) or {}
+            scores_list = [z.get("risque", 0) for z in zones.values() if isinstance(z, dict) and z.get("risque")]
+            if scores_list:
+                score_global = round(sum(scores_list) / len(scores_list))
+        niveau = "critique" if score_global >= 70 else "eleve" if score_global >= 55 else "modere" if score_global >= 35 else "faible"
+        analysis["resume"] = {
+            "score_global": score_global,
+            "niveau_risque": niveau,
+            "nb_recommandations": 0,
+        }
+
+    return analysis
+
+
 @router.post("/chat/{session_id}")
 async def legacy_chat(session_id: str, req: ChatRequest):
-    """Chat legacy - réponse simple basée sur le contexte"""
-    analysis = analyses_store.get(session_id, {})
-    score = analysis.get("resume", {}).get("score_global", "?")
+    """Chat enrichi - répond avec les VRAIES données d'analyse.
+
+    Sources de donnees (par ordre de priorite) :
+    1. get_analysis() → memoire + SQLite (persistant apres redemarrage)
+    2. diagnostic_store (nouveau format, analyses POST /diagnostic)
+    3. Donnees par defaut si aucune analyse trouvee
+
+    La fonction utilise :
+    - score_global, niveau_risque
+    - scores par alea (inondation, rga, tempete, incendie)
+    - zones du digital_twin
+    - decision_bancaire (taux, valeur, garanties)
+    - recommandations
+    - projection 2050
+    """
+    # 1. Chercher dans le store persistant (memoire + SQLite)
+    analysis = get_analysis(session_id) or {}
+    # 2. Fallback vers le store diagnostic (format new-API)
+    if not analysis.get("resume"):
+        analysis = diagnostic_store.get(session_id, {}) or {}
+
+    # 3. Normaliser les données pour gérer les différences de format
+    analysis = _normaliser_analyse(analysis)
+
+    # Extraire les donnees
+    resume = analysis.get("resume", {}) or {}
+    score = resume.get("score_global", 0) if isinstance(resume, dict) else 0
+    niveau = resume.get("niveau_risque", "non_evalue") if isinstance(resume, dict) else "non_evalue"
     adresse = analysis.get("adresse", "votre bien")
 
-    # Réponse contextuelle simple (sans appeler LLM)
+    # Donnees enrichies (normalisees par _normaliser_analyse)
+    zones = analysis.get("recommandations", {}).get("zones", {}) or \
+            analysis.get("zones", {}) or {}
+    scores_alea = analysis.get("analyse_risques", {}).get("scores_par_alea", {}) or {}
+    bank = analysis.get("decision_bancaire", {}) or analysis.get("bank_decision", {}) or {}
+    projection = analysis.get("recommandations", {}).get("projection_2050", {}) or \
+                 analysis.get("projection_2050", {}) or \
+                 analysis.get("digital_twin", {}).get("projection_2050", {}) or {}
+
+    # Sante du bien
+    form = analysis.get("formulaire_client", {}) or {}
+    type_bien = form.get("type_bien", "")
+    surface = form.get("surface", "")
+
     question_lower = req.question.lower()
-    if "score" in question_lower or "risque" in question_lower:
-        reponse = f"Le score de risque global pour {adresse} est de {score}/100. "
-        if isinstance(score, (int, float)) and score > 50:
-            reponse += "C'est un niveau significatif qui mérite des travaux de mitigation."
+
+    # ── Reponses contextualisees ─────────────────────────────────
+
+    if "score" in question_lower or "risque" in question_lower or "eval" in question_lower:
+        parts = [f"Le score de risque global pour **{adresse}** est de **{score}/100** ({niveau})."]
+
+        # Ajouter les 3 principaux aleas (maintenant normalises en dicts)
+        dominants = sorted(
+            scores_alea.items(),
+            key=lambda kv: kv[1]["score"] if isinstance(kv[1], dict) else 0,
+            reverse=True
+        )[:3]
+        if dominants:
+            aleas_str = "; ".join(
+                f"{k} : {v['score']}/100 ({v['niveau']})"
+                for k, v in dominants if isinstance(v, dict)
+            )
+            parts.append(f"Les principaux risques sont : {aleas_str}.")
+
+        if score >= 60:
+            parts.append("Le niveau de risque est significatif — des travaux de mitigation sont fortement recommandés.")
+        elif score >= 30:
+            parts.append("Le niveau de risque est modéré — un suivi régulier et quelques travaux préventifs suffisent.")
         else:
-            reponse += "C'est un niveau modéré qui reste gérable avec un entretien régulier."
-    elif "cout" in question_lower or "coût" in question_lower or "prix" in question_lower or "travaux" in question_lower:
-        reponse = f"Le coût total estimé des travaux pour {adresse} est détaillé dans la section 'Synthèse de la Rénovation' du dashboard. Les aides mobilisables (MaPrimeRénov', Anah, Fonds Barnier) peuvent réduire significativement votre reste à charge."
-    elif "priorit" in question_lower:
-        reponse = "Les zones les plus prioritaires sont celles avec le score de risque le plus élevé. Consultez le jumeau numérique 3D pour identifier visuellement les zones critiques (en rouge/orange)."
+            parts.append("Le niveau de risque est faible — votre bien est peu exposé aux aléas climatiques.")
+
+        reponse = " ".join(parts)
+
+    elif "zone" in question_lower or "fondation" in question_lower or "toiture" in question_lower or "mur" in question_lower or "sous.sol" in question_lower or "sous-sol" in question_lower:
+        if zones:
+            parts = ["Voici le détail des zones de votre bien :"]
+            for zone_name, zone in zones.items():
+                if isinstance(zone, dict):
+                    z_score = zone.get("risque", "?")
+                    z_niveau = zone.get("niveau", "?")
+                    z_alea = zone.get("alea_principal", "")
+                    parts.append(f"  • **{zone_name}** : {z_score}/100 ({z_niveau}) — {z_alea}")
+            reponse = "\n".join(parts)
+        else:
+            reponse = f"Les données détaillées des zones ne sont pas disponibles pour {adresse}. Consultez le jumeau numérique 3D pour une visualisation interactive."
+
+    elif "cout" in question_lower or "coût" in question_lower or "prix" in question_lower or "combien" in question_lower or "travaux" in question_lower:
+        # Extraire les recommandations
+        recos = []
+        for zone_name, zone in zones.items():
+            if isinstance(zone, dict):
+                for r in zone.get("recommandations", []):
+                    if isinstance(r, dict):
+                        recos.append(r)
+        if recos:
+            total_bas = 0
+            total_haut = 0
+            lignes = []
+            for r in recos[:5]:
+                cout = r.get("cout_estime", "0").replace(" ", "").replace("€", "").replace("/an", "")
+                try:
+                    cout_val = int(cout) if cout.isdigit() else 0
+                except ValueError:
+                    cout_val = 0
+                total_bas += cout_val
+                total_haut += cout_val * 2
+                lignes.append(f"  • {r.get('travaux', 'Travaux')} : environ {cout_val:,} €")
+
+            reponse = (
+                f"Le coût total estimé des travaux pour **{adresse}** se situe entre "
+                f"**{total_bas:,} €** et **{total_haut:,} €**.\n"
+                f"Détail des travaux :\n" + "\n".join(lignes) + "\n\n"
+                "Des aides financières peuvent être mobilisées : MaPrimeRénov', Anah, Fonds Barnier, CEE."
+            )
+        else:
+            reponse = f"Aucune recommandation de travaux n'est disponible pour {adresse} pour le moment."
+
+    elif "taux" in question_lower or "credit" in question_lower or "pret" in question_lower or "banque" in question_lower or "finance" in question_lower or "financier" in question_lower:
+        if bank and bank.get("valeur_marche"):
+            taux = bank.get("taux_propose", "?")
+            valeur = bank.get("valeur_marche", 0)
+            valeur_ajustee = bank.get("valeur_ajustee", 0)
+            score_bancaire = bank.get("score_risque_bancaire", "?")
+            majo = bank.get("majoration_taux", 0)
+            decote = bank.get("decote_pct", 0)
+            niveau_bancaire = bank.get("niveau_risque_bancaire", bank.get("niveau_risque_global", "?"))
+
+            reponse = (
+                f"**Analyse financière** pour {adresse} :\n"
+                f"  • Valeur de marché : **{valeur:,} €**\n"
+                f"  • Valeur ajustée (décote {decote}%) : **{valeur_ajustee:,} €**\n"
+                f"  • Taux proposé : **{taux}%** (majoration de {majo}% incluse)\n"
+                f"  • Score de risque bancaire : {score_bancaire}/100 ({niveau_bancaire})\n"
+                f"Le taux tient compte du profil de risque climatique du bien. "
+                f"Un score faible permet de bénéficier de conditions avantageuses."
+            )
+        elif bank and bank.get("score_risque_bancaire"):
+            # Bank decision exists but maybe no market value
+            taux = bank.get("taux_propose", "?")
+            score_bancaire = bank.get("score_risque_bancaire", "?")
+            niveau_bancaire = bank.get("niveau_risque_bancaire", bank.get("niveau_risque_global", "?"))
+            valeur = bank.get("valeur_marche", bank.get("valeur_ajustee", 0))
+            reponse = (
+                f"**Analyse financière** pour {adresse} :\n"
+                f"  • Valeur estimée : **{valeur:,} €**\n"
+                f"  • Taux proposé : **{taux}%**\n"
+                f"  • Score de risque bancaire : {score_bancaire}/100 ({niveau_bancaire})\n"
+                f"Le taux tient compte du profil de risque climatique du bien."
+            )
+        else:
+            reponse = f"L'analyse financière n'a pas été réalisée pour {adresse}. Lancez une analyse en mode bancaire pour obtenir ces informations."
+
+    elif "priorit" in question_lower or "urgence" in question_lower:
+        zones_triees = sorted(
+            zones.items(),
+            key=lambda kv: kv[1].get("risque", 0) if isinstance(kv[1], dict) else 0,
+            reverse=True
+        )
+        if zones_triees:
+            parts = ["**Priorités par zone** (de la plus critique à la moins critique) :"]
+            for i, (zn, zv) in enumerate(zones_triees, 1):
+                if isinstance(zv, dict):
+                    parts.append(f"  {i}. **{zn}** : {zv.get('risque', '?')}/100 ({zv.get('niveau', '?')})")
+            parts.append("Concentrez-vous d'abord sur les zones en rouge/orange dans le jumeau numérique.")
+            reponse = "\n".join(parts)
+        else:
+            reponse = "Les données de priorité ne sont pas disponibles."
+
     elif "2050" in question_lower or "projection" in question_lower or "futur" in question_lower:
-        reponse = f"La projection 2050 montre une aggravation des risques climatiques pour {adresse}. Les travaux réalisés aujourd'hui vous protègeront mieux demain. Le bouton '2050' dans le jumeau 3D permet de visualiser l'évolution."
+        if projection:
+            score_futur = projection.get("score_global", score) if isinstance(projection, dict) else score
+            aggravation = score_futur - score if isinstance(score_futur, (int, float)) and isinstance(score, (int, float)) else 0
+            reponse = (
+                f"**Projection 2050** pour {adresse} :\n"
+                f"  • Score actuel : **{score}/100**\n"
+                f"  • Score projeté 2050 : **{score_futur}/100**\n"
+                f"  • Aggravation estimée : **+{max(0, aggravation)} points**\n\n"
+                f"Les travaux réalisés aujourd'hui vous protégeront mieux demain. "
+                f"Utilisez le bouton '2050' dans le jumeau 3D pour visualiser l'évolution."
+            )
+        else:
+            reponse = f"Les données de projection 2050 ne sont pas disponibles pour {adresse}."
+
     else:
-        reponse = f"Pour {adresse} (score global: {score}/100), je vous recommande de consulter le jumeau numérique 3D et la liste des recommandations. Puis-je vous aider sur un aspect spécifique ?"
+        reponse = (
+            f"**Bienvenue !** Pour **{adresse}** (score global : {score}/100, niveau {niveau}).\n\n"
+            f"Je peux vous renseigner sur :\n"
+            f"  • Le **score de risque** et les principaux aléas\n"
+            f"  • Les **zones critiques** (fondations, toiture, sous-sol...)\n"
+            f"  • Le **coût des travaux** recommandés\n"
+            f"  • Les **taux bancaires** et l'analyse financière\n"
+            f"  • Les **priorités d'intervention**\n"
+            f"  • La **projection 2050** du changement climatique\n\n"
+            f"Que souhaitez-vous savoir ?"
+        )
 
     return {"reponse": reponse, "session_id": session_id}
 
@@ -227,6 +495,158 @@ async def legacy_vuln_test(req: VulnTestRequest):
             "Une étude plus approfondie est recommandée",
         ],
     }
+
+
+# ─── Route PDF Report (GET) ──────────────────────────────────────────
+
+@router.get("/bank/report/{session_id}/pdf")
+async def legacy_report_pdf(session_id: str):
+    """Génère et télécharge le rapport d'analyse complet au format PDF.
+    Utilise reportlab pour un rendu professionnel avec tableaux et couleurs.
+    """
+    analysis = get_analysis(session_id)
+    if not analysis:
+        raise HTTPException(status_code=404, detail="Analyse introuvable")
+
+    db = analysis.get("decision_bancaire", {}) or {}
+    if not db:
+        raise HTTPException(status_code=404, detail="Décision bancaire introuvable")
+
+    # Enrichir avec les données de marché DVF
+    stats_marche = None
+    try:
+        adr = analysis.get("adresse", "")
+        evo = dvf_service.get_price_evolution(adr)
+        current = dvf_service.query_market_value(adr)
+        if evo.get("evolution"):
+            stats_marche = {
+                "prix_m2_actuel": current.get("prix_m2_median"),
+                "prix_m2_commune": evo["evolution"][-1]["prix_m2_median"] if evo["evolution"] else None,
+                "nb_transactions": current.get("nb_transactions", 0),
+                "tendance": evo.get("tendance", "stable"),
+            }
+    except Exception as e:
+        logger.warning(f"Impossible de récupérer les stats marché pour le PDF : {e}")
+
+    pdf_buffer = generate_bank_report_pdf(
+        session_id=session_id,
+        adresse=analysis.get("adresse", "N/A"),
+        decision_bancaire=db,
+        stats_marche=stats_marche,
+    )
+
+    return StreamingResponse(
+        content=pdf_buffer,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f"attachment; filename=rapport-credit-{session_id}.pdf",
+            "Content-Type": "application/pdf",
+        }
+    )
+
+
+# ─── Route Market Trends ────────────────────────────────────────────
+
+class MarketTrendsRequest(BaseModel):
+    """Requête pour obtenir l'évolution des prix DVF pour une adresse."""
+    adresse: str
+    type_bien: str = "Maison"
+    surface: float = 100
+
+
+@router.post("/bank/market-trends")
+async def legacy_market_trends(req: MarketTrendsRequest):
+    """Retourne l'évolution du prix au m² + comparaison de marché (données DVF réelles)."""
+    evolution = dvf_service.get_price_evolution(req.adresse, req.type_bien)
+    current = dvf_service.query_market_value(req.adresse, req.surface, req.type_bien)
+
+    # Données de comparaison : tous types confondus dans la commune
+    try:
+        all_types = dvf_service.get_price_evolution(req.adresse, "Maison")
+        if all_types.get("evolution") and len(all_types["evolution"]) > 0:
+            annee_courante = all_types["evolution"][-1]
+            prix_m2_commune_tous = annee_courante["prix_m2_median"]
+            tx_total = sum(d["nb_transactions"] for d in all_types["evolution"])
+        else:
+            prix_m2_commune_tous = None
+            tx_total = 0
+
+        # Écart entre le type du bien et la moyenne commune
+        pm2_bien = current.get("prix_m2_median")
+        ecart_pct = None
+        if pm2_bien and prix_m2_commune_tous and prix_m2_commune_tous > 0:
+            ecart_pct = round((pm2_bien - prix_m2_commune_tous) / prix_m2_commune_tous * 100, 1)
+    except Exception:
+        prix_m2_commune_tous = None
+        tx_total = 0
+        ecart_pct = None
+
+    return {
+        "evolution": evolution.get("evolution", []),
+        "source": evolution.get("source", ""),
+        "tendance": evolution.get("tendance", "stable"),
+        "valeur_actuelle": current.get("valeur_estimee"),
+        "prix_m2_bien": current.get("prix_m2_median"),
+        "prix_m2_commune": prix_m2_commune_tous,
+        "ecart_vs_commune_pct": ecart_pct,
+        "nb_transactions": current.get("nb_transactions", 0),
+        "volume_total_transactions": tx_total,
+        "indice_confiance_dvf": current.get("indice_confiance", 0),
+    }
+
+
+# ─── Route PDF Report (POST) ─────────────────────────────────────────
+
+class PdfReportRequest(BaseModel):
+    """Requête pour générer un PDF à partir des données d'analyse fournies par le client.
+    Alternative au endpoint GET /api/bank/report/{session_id}/pdf qui nécessite
+    que l'analyse soit stockée côté serveur (perdue si le backend redémarre).
+    """
+    session_id: str
+    adresse: str = ""
+    decision_bancaire: dict[str, Any]
+
+
+@router.post("/bank/report/pdf")
+async def legacy_report_pdf_post(req: PdfReportRequest):
+    """Génère et télécharge le rapport PDF à partir des données fournies directement.
+    Version POST : plus robuste car elle ne dépend pas du stockage serveur.
+    Le frontend envoie les données d'analyse récupérées depuis le sessionStorage.
+    """
+    db = req.decision_bancaire or {}
+    if not db:
+        raise HTTPException(status_code=400, detail="Données d'analyse manquantes")
+
+    stats_marche = None
+    try:
+        adr = req.adresse or ""
+        evo = dvf_service.get_price_evolution(adr)
+        current = dvf_service.query_market_value(adr)
+        if evo.get("evolution"):
+            stats_marche = {
+                "prix_m2_actuel": current.get("prix_m2_median"),
+                "prix_m2_commune": evo["evolution"][-1]["prix_m2_median"] if evo["evolution"] else None,
+                "nb_transactions": current.get("nb_transactions", 0),
+                "tendance": evo.get("tendance", "stable"),
+            }
+    except Exception as e:
+        logger.warning(f"Impossible de récupérer les stats marché pour le PDF : {e}")
+
+    pdf_buffer = generate_bank_report_pdf(
+        session_id=req.session_id,
+        adresse=req.adresse or "N/A",
+        decision_bancaire=db,
+        stats_marche=stats_marche,
+    )
+
+    return StreamingResponse(
+        content=pdf_buffer,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f"attachment; filename=rapport-credit-{req.session_id}.pdf",
+            "Content-Type": "application/pdf",
+        }
+    )
 
 
 # ─── Helpers ───────────────────────────────────────────────────────

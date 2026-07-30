@@ -24,10 +24,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from backend.services.pdf_generator import generate_bank_report_pdf
 from backend.services import dvf_service
+from backend.services.analyses_store import get_analysis, set_analysis
 from pydantic import BaseModel
 
 # Imports de l'orchestrateur
 from backend.api.orchestrator import run_analysis
+
+# Chat depuis le routeur legacy
+from backend.app.api.routes.legacy import legacy_chat
 
 logger = logging.getLogger(__name__)
 
@@ -45,10 +49,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# Stockage temporaire des analyses (en mémoire, à remplacer par une DB)
-analyses_store: dict[str, dict[str, Any]] = {}
-
 
 # ─── Schémas ──────────────────────────────────────────────────────────────────
 
@@ -90,8 +90,8 @@ async def lancer_analyse(req: AnalyseRequest):
             timeout=120.0
         )
 
-        # Stockage en mémoire
-        analyses_store[session_id] = result
+        # Stockage partagé (accessible par le chat)
+        set_analysis(session_id, result)
 
         return {
             "status": "ok",
@@ -126,7 +126,7 @@ async def lancer_analyse_banque(req: AnalyseRequest):
         raise HTTPException(status_code=400, detail="L'adresse est obligatoire")
 
     # 1. Stocker immédiatement un statut "processing"
-    analyses_store[session_id] = {"status": "processing", "session_id": session_id}
+    set_analysis(session_id, {"status": "processing", "session_id": session_id})
 
     # 2. Lancer l'analyse en arrière-plan (ne pas attendre)
     async def background_task():
@@ -136,20 +136,20 @@ async def lancer_analyse_banque(req: AnalyseRequest):
                 timeout=120.0
             )
             result["status"] = "completed"
-            analyses_store[session_id] = result
+            set_analysis(session_id, result)
         except asyncio.TimeoutError:
-            analyses_store[session_id] = {
+            set_analysis(session_id, {
                 "status": "error",
                 "session_id": session_id,
                 "error": "L'analyse a dépassé le temps limite (120s).",
-            }
+            })
         except Exception as e:
             logger.exception("Erreur analyse bancaire")
-            analyses_store[session_id] = {
+            set_analysis(session_id, {
                 "status": "error",
                 "session_id": session_id,
                 "error": f"Erreur lors de l'analyse : {str(e)}",
-            }
+            })
 
     asyncio.create_task(background_task())
 
@@ -162,7 +162,7 @@ async def lancer_analyse_banque(req: AnalyseRequest):
 
 
 @app.get("/api/analysis/{session_id}")
-async def get_analysis(session_id: str):
+async def get_analysis_endpoint(session_id: str):
     """Récupère une analyse existante par son ID de session.
     
     Retours possibles :
@@ -170,7 +170,7 @@ async def get_analysis(session_id: str):
     - {"status": "error", "error": "..."}  → erreur
     - {données complètes + "status": "completed"} → terminé
     """
-    analysis = analyses_store.get(session_id)
+    analysis = get_analysis(session_id)
     if not analysis:
         raise HTTPException(status_code=404, detail="Analyse introuvable")
     
@@ -224,7 +224,7 @@ async def download_report_pdf(session_id: str):
     """Génère et télécharge le rapport d'analyse complet au format PDF.
     Utilise reportlab pour un rendu professionnel avec tableaux et couleurs.
     """
-    analysis = analyses_store.get(session_id)
+    analysis = get_analysis(session_id)
     if not analysis:
         raise HTTPException(status_code=404, detail="Analyse introuvable")
     
@@ -365,6 +365,19 @@ async def generate_report_pdf_post(req: PdfReportRequest):
             "Content-Type": "application/pdf",
         }
     )
+
+
+# ─── Route Chat ──────────────────────────────────────────────────────────
+
+class ChatRequest(BaseModel):
+    question: str
+    historique: list[dict] = []
+
+
+@app.post("/api/chat/{session_id}")
+async def chat_endpoint(session_id: str, req: ChatRequest):
+    """Route de chat — utilise le handler legacy enrichi."""
+    return await legacy_chat(session_id, req)
 
 
 if __name__ == "__main__":

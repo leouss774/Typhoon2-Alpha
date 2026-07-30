@@ -11,10 +11,10 @@ import urllib.parse
 
 import requests
 
-from backend.config.settings import get_settings
-from backend.services import dvf_service
-from backend.services.retry_decorator import retry
-from backend.services.bank_rates import get_bank_rates, get_actuarial_grid
+from config.settings import get_settings
+from services import dvf_service
+from services.retry_decorator import retry
+from services.bank_rates import get_bank_rates, get_actuarial_grid
 
 logger = logging.getLogger(__name__)
 

@@ -48,9 +48,9 @@ def build_graph():
 
     graph.add_edge(START, "collector_agent")
     graph.add_edge("collector_agent", "scoring_agent")
-    graph.add_edge("scoring_agent", "bank_agent")
-    graph.add_edge("bank_agent", "digital_twin_agent")
-    graph.add_edge("digital_twin_agent", END)
+    graph.add_edge("scoring_agent", "digital_twin_agent")
+    graph.add_edge("digital_twin_agent", "bank_agent")
+    graph.add_edge("bank_agent", END)
 
     return graph.compile(checkpointer=MemorySaver())
 

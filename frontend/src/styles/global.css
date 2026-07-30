@@ -1,4 +1,5 @@
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
+@import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap');
 
 *,
 *::before,
@@ -8,12 +9,17 @@
   padding: 0;
 }
 
-body {
+html, body {
+  height: 100%;
   font-family: var(--font-sans);
   background: var(--color-bg);
   color: var(--color-text);
   line-height: 1.6;
   min-height: 100vh;
+}
+
+h1, h2, h3, h4, .font-head {
+  font-family: var(--font-head);
 }
 
 /* ─── App Layout ─────────────────────────── */
@@ -768,7 +774,7 @@ body {
 }
 
 .bank-progress-step.active::before {
-  background: linear-gradient(90deg, #22c55e, #1e3a5f);
+  background: linear-gradient(90deg, #22c55e, var(--color-brand-dark));
 }
 
 .bank-progress-dot {
@@ -790,20 +796,20 @@ body {
 }
 
 .bank-progress-dot:hover {
-  border-color: #1e3a5f;
-  color: #1e3a5f;
+  border-color: var(--color-brand);
+  color: var(--color-brand);
 }
 
 .bank-progress-dot.active {
-  border-color: #1e3a5f;
-  background: #1e3a5f;
+  border-color: var(--color-brand-dark);
+  background: var(--color-brand);
   color: white;
-  box-shadow: 0 2px 8px rgba(30,58,95,0.3);
+  box-shadow: 0 2px 8px rgba(255, 107, 74, 0.3);
 }
 
 .bank-progress-dot.completed {
-  border-color: #22c55e;
-  background: #22c55e;
+  border-color: var(--color-success);
+  background: var(--color-success);
   color: white;
 }
 
@@ -819,7 +825,7 @@ body {
 }
 
 .bank-progress-label.active {
-  color: #1e3a5f;
+  color: var(--color-ink);
   font-weight: 700;
 }
 
@@ -849,7 +855,7 @@ body {
   width: 36px;
   height: 36px;
   border-radius: 8px;
-  background: #1e3a5f;
+  background: var(--color-brand);
   color: white;
   font-weight: 800;
   font-size: 0.9rem;
@@ -879,7 +885,7 @@ body {
 .bank-btn-pdf {
   padding: 8px 16px;
   border-radius: 6px;
-  background: #1e3a5f;
+  background: var(--color-brand);
   color: white;
   border: none;
   display: inline-flex;
@@ -889,11 +895,11 @@ body {
   font-size: 0.8rem;
   cursor: pointer;
   transition: all 0.2s;
-  box-shadow: 0 1px 3px rgba(30,58,95,0.3);
+  box-shadow: var(--shadow-brand);
 }
 
 .bank-btn-pdf:hover {
-  background: #152a47;
+  background: var(--color-brand-dark);
 }
 
 .bank-confiance-badge {
@@ -953,13 +959,13 @@ body {
 }
 
 .bank-tab-btn:hover {
-  background: rgba(30,58,95,0.04);
+  background: rgba(255,107,74,0.04);
   color: #334155;
 }
 
 .bank-tab-btn.active {
   background: white;
-  color: #1e3a5f;
+  color: var(--color-brand);
   box-shadow: 0 1px 4px rgba(0,0,0,0.08);
 }
 
@@ -970,7 +976,7 @@ body {
   width: 22px;
   height: 22px;
   border-radius: 4px;
-  background: #1e3a5f;
+  background: var(--color-brand);
   color: white;
   font-weight: 700;
   font-size: 0.65rem;
@@ -988,7 +994,7 @@ body {
   transform: translateX(-50%);
   width: 60%;
   height: 2px;
-  background: #1e3a5f;
+  background: var(--color-brand);
   border-radius: 2px 2px 0 0;
 }
 
@@ -1116,9 +1122,9 @@ body {
 .bank-calc-box {
   margin-top: 8px;
   padding: 8px 12px;
-  background: rgba(15,118,110,0.04);
+  background: rgba(255,107,74,0.04);
   border-radius: 6px;
-  border: 1px solid rgba(15,118,110,0.1);
+  border: 1px solid rgba(255,107,74,0.1);
   font-size: 0.7rem;
   color: var(--color-text-secondary);
 }
@@ -1238,8 +1244,8 @@ body {
 }
 
 .bank-garantie-badge[data-obligatoire="true"] {
-  background: rgba(15,118,110,0.12);
-  color: var(--color-primary);
+  background: rgba(255,107,74,0.12);
+  color: var(--color-brand);
 }
 
 .bank-garantie-badge[data-obligatoire="false"] {
@@ -1313,8 +1319,8 @@ body {
 }
 
 .bank-score-box.highlight {
-  border: 2px solid var(--color-primary-light);
-  background: linear-gradient(135deg, rgba(20, 184, 166, 0.06), rgba(20, 184, 166, 0.02));
+  border: 2px solid var(--color-brand-light);
+  background: linear-gradient(135deg, rgba(255,107,74,0.06), rgba(255,107,74,0.02));
 }
 
 .bank-risk-list {
@@ -1335,7 +1341,7 @@ body {
 }
 
 .bank-risk-item:hover {
-  border-color: var(--color-primary-light);
+  border-color: var(--color-brand-light);
   background: #f1f5f9;
 }
 
@@ -1452,9 +1458,9 @@ body {
   padding: 4px 10px;
   border-radius: 12px;
   font-size: 0.75rem;
-  background: rgba(15, 118, 110, 0.06);
-  border: 1px solid rgba(15, 118, 110, 0.15);
-  color: var(--color-primary);
+  background: rgba(255,107,74,0.06);
+  border: 1px solid rgba(255,107,74,0.15);
+  color: var(--color-brand);
 }
 
 .bank-prevention-list {
@@ -1475,7 +1481,7 @@ body {
 }
 
 .bank-prevention-item:hover {
-  border-color: var(--color-primary-light);
+  border-color: var(--color-brand-light);
 }
 
 .bank-prevention-prio {
@@ -1514,14 +1520,14 @@ body {
   border-radius: 20px;
   font-size: 0.75rem;
   font-weight: 600;
-  background: rgba(15, 118, 110, 0.08);
-  border: 1px solid rgba(15, 118, 110, 0.2);
-  color: var(--color-primary);
+  background: rgba(255,107,74,0.08);
+  border: 1px solid rgba(255,107,74,0.2);
+  color: var(--color-brand);
   transition: all 0.15s;
 }
 
 .bank-point-chip:hover {
-  background: rgba(15, 118, 110, 0.15);
+  background: rgba(255,107,74,0.15);
   transform: translateY(-1px);
 }
 
@@ -1539,15 +1545,15 @@ body {
 
 .bank-avis-box {
   margin-top: var(--space-md);
-  background: rgba(15, 118, 110, 0.04);
-  border-left: 4px solid var(--color-primary);
+  background: rgba(255,107,74,0.04);
+  border-left: 4px solid var(--color-brand);
   padding: 14px 18px;
   border-radius: var(--radius-sm);
 }
 
 .bank-avis-title {
   font-size: 0.7rem;
-  color: var(--color-primary);
+  color: var(--color-brand);
   text-transform: uppercase;
   letter-spacing: 1px;
   font-weight: 700;
@@ -1577,8 +1583,8 @@ body {
 }
 
 .bank-verif-box.conditions {
-  background: rgba(15, 118, 110, 0.04);
-  border-left-color: var(--color-primary);
+  background: rgba(255,107,74,0.04);
+  border-left-color: var(--color-brand);
 }
 
 .bank-verif-box.kyc {
@@ -1593,7 +1599,7 @@ body {
   font-weight: 700;
 }
 
-.bank-verif-box.conditions .bank-verif-title { color: var(--color-primary); }
+.bank-verif-box.conditions .bank-verif-title { color: var(--color-brand); }
 .bank-verif-box.kyc .bank-verif-title { color: #a16207; }
 
 .bank-verif-list {
@@ -1640,7 +1646,7 @@ body {
 }
 
 .bank-taux-box:hover {
-  border-color: var(--color-primary-light);
+  border-color: var(--color-brand-light);
 }
 
 .bank-taux-label {
@@ -1689,12 +1695,12 @@ body {
 }
 
 .bank-value-step:hover {
-  border-color: var(--color-primary-light);
+  border-color: var(--color-brand-light);
 }
 
 .bank-value-step.final {
-  background: rgba(15, 118, 110, 0.04);
-  border: 2px solid var(--color-primary-light);
+  background: rgba(255,107,74,0.04);
+  border: 2px solid var(--color-brand-light);
 }
 
 .bank-value-num {
@@ -1704,7 +1710,7 @@ body {
   width: 24px;
   height: 24px;
   border-radius: 50%;
-  background: #1e3a5f;
+  background: var(--color-brand);
   color: white;
   font-weight: 800;
   font-size: 0.7rem;
@@ -1712,12 +1718,12 @@ body {
 }
 
 .bank-value-num.decote {
-  background: #b91c1c;
+  background: var(--color-danger);
   font-size: 0.9rem;
 }
 
 .bank-value-num.final {
-  background: #1e3a5f;
+  background: var(--color-brand-dark);
 }
 
 .bank-value-info {

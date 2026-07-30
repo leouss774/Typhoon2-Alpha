@@ -1,8 +1,22 @@
 :root {
-  /* Couleurs principales */
-  --color-primary: #0f766e;
-  --color-primary-dark: #0d5e57;
-  --color-primary-light: #14b8a6;
+  /* Couleurs Typhoon Brand */
+  --color-brand: #FF6B4A;
+  --color-brand-dark: #E24E2E;
+  --color-brand-light: #FFE4DA;
+  --color-ink: #1E2A33;
+  --color-text: #4B5760;
+  --color-muted: #8B959D;
+  --color-border: #E7DED6;
+  --color-surface: #FFFFFF;
+  --color-surface-alt: #FAF6F2;
+  --color-success: #1F9D6C;
+  --color-warning: #D98A2B;
+  --color-danger: #DC4B39;
+
+  /* Aliases pour compatibilité avec le code existant */
+  --color-primary: #FF6B4A;
+  --color-primary-dark: #E24E2E;
+  --color-primary-light: #FF9269;
 
   /* Couleurs de risque */
   --color-risk-faible: #22c55e;
@@ -12,15 +26,14 @@
 
   /* Neutres */
   --color-bg: #f8fafc;
-  --color-surface: #ffffff;
-  --color-border: #e2e8f0;
-  --color-text: #1e293b;
+  --color-bg-alt: #FAF6F2;
   --color-text-secondary: #64748b;
 
   /* Ombres */
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  --shadow-brand: 0 6px 18px rgba(255, 107, 74, 0.3);
 
   /* Rayons */
   --radius-sm: 6px;
@@ -37,4 +50,6 @@
   /* Typographie */
   --font-sans: "Inter", system-ui, -apple-system, sans-serif;
   --font-mono: "JetBrains Mono", monospace;
+  --font-head: "Source Serif 4", Georgia, "Times New Roman", serif;
+
 }

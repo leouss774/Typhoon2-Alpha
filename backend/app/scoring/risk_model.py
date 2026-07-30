@@ -2,6 +2,15 @@
 
 Aucun LLM ici : chaque sous-score est une fonction pure d'un champ réel de
 `building_data`, avec une justification texte.
+
+v2 — Corrections :
+1. INTÈGRE LE FORMULAIRE CLIENT : fissures, infiltrations, etat_toiture, isolation
+   sont utilisés comme pénalités/malus sur les scores.
+2. DEFAULTS AMÉLIORÉS : quand les données API sont absentes, les valeurs
+   par défaut sont plus conservatrices (hypothèse de risque modéré).
+
+Les recommandations sont générées par `backend/api/recommandations_generator.py`
+et intégrées par `backend/app/digital_twin/contract.py`.
 """
 
 from __future__ import annotations
@@ -15,6 +24,8 @@ logger = get_logger(__name__)
 
 ZONE_NAMES = ["fondations", "murs_nord", "murs_sud", "murs_est", "murs_ouest", "toiture", "sous_sol"]
 
+
+# ── Helpers ──────────────────────────────────────────────────────────
 
 def _clamp(v: float, lo: float = 0, hi: float = 100) -> int:
     return int(round(max(lo, min(hi, v))))
@@ -88,7 +99,93 @@ def _source_en_erreur(georisques: dict[str, Any] | None, nom_source: str) -> boo
     return any(nom_source in (e.get("source") or "") for e in erreurs)
 
 
-# --- Sous-scores ---
+# ── Pénalités du formulaire client ──────────────────────────────────────
+
+def _form_penalties(formulaire: dict[str, Any] | None) -> dict[str, int]:
+    """Calcule des pénalités de score à partir du formulaire client.
+
+    Retourne un dict {zone: penalite} qui peut atteindre +40 points cumulés.
+    """
+    if not formulaire:
+        return {}
+
+    penalties: dict[str, int] = {}
+    form = formulaire
+
+    def _safe_lower(val: Any) -> str:
+        return str(val).lower() if not isinstance(val, str) else val.lower()
+
+    # Fissures → impact fondations/structure
+    fissures = _safe_lower(form.get("fissures") or "")
+    if fissures in ("importantes", "majeures"):
+        penalties["fondations"] = penalties.get("fondations", 0) + 20
+        penalties["murs_nord"] = penalties.get("murs_nord", 0) + 10
+        penalties["murs_sud"] = penalties.get("murs_sud", 0) + 10
+        penalties["murs_est"] = penalties.get("murs_est", 0) + 10
+        penalties["murs_ouest"] = penalties.get("murs_ouest", 0) + 10
+    elif fissures in ("moyennes", "présentes"):
+        penalties["fondations"] = penalties.get("fondations", 0) + 12
+        penalties["murs_nord"] = penalties.get("murs_nord", 0) + 5
+        penalties["murs_sud"] = penalties.get("murs_sud", 0) + 5
+        penalties["murs_est"] = penalties.get("murs_est", 0) + 5
+        penalties["murs_ouest"] = penalties.get("murs_ouest", 0) + 5
+
+    # Infiltrations → impact sous-sol et murs
+    infiltrations = _safe_lower(form.get("infiltrations") or "")
+    if infiltrations in ("oui", "majeures"):
+        penalties["sous_sol"] = penalties.get("sous_sol", 0) + 20
+        penalties["murs_nord"] = penalties.get("murs_nord", 0) + 10
+        penalties["murs_sud"] = penalties.get("murs_sud", 0) + 10
+    elif infiltrations in ("légères", "ponctuelles"):
+        penalties["sous_sol"] = penalties.get("sous_sol", 0) + 10
+        penalties["murs_nord"] = penalties.get("murs_nord", 0) + 3
+
+    # Affaissement → impact fondations massif
+    affaissement = _safe_lower(form.get("affaissement") or "")
+    if affaissement in ("oui", "avéré"):
+        penalties["fondations"] = penalties.get("fondations", 0) + 25
+    elif affaissement in ("léger", "localisé"):
+        penalties["fondations"] = penalties.get("fondations", 0) + 10
+
+    # État toiture → impact toiture
+    etat_toit = _safe_lower(form.get("etat_toiture") or "")
+    if etat_toit in ("mauvais", "dégradé"):
+        penalties["toiture"] = penalties.get("toiture", 0) + 20
+    elif etat_toit in ("moyen", "vétuste"):
+        penalties["toiture"] = penalties.get("toiture", 0) + 10
+
+    # Isolation toiture → impact toiture (confort thermique)
+    isolation = _safe_lower(form.get("isolation_toiture") or "")
+    if isolation in ("faible", "inexistante", "absente"):
+        penalties["toiture"] = penalties.get("toiture", 0) + 10
+
+    # État structurel général → impact fondations + murs
+    etat_struct = _safe_lower(form.get("etat_structure") or "")
+    if etat_struct == "mauvais":
+        penalties["fondations"] = penalties.get("fondations", 0) + 10
+        for z in ["murs_nord", "murs_sud", "murs_est", "murs_ouest"]:
+            penalties[z] = penalties.get(z, 0) + 8
+
+    # Présence de sous-sol/cave → aggrave inondation
+    if form.get("presence_sous_sol") or form.get("presence_cave"):
+        penalties["sous_sol"] = penalties.get("sous_sol", 0) + 8
+
+    # Année construction ancienne → aggrave structure
+    annee = form.get("annee_construction")
+    if isinstance(annee, (int, float)) and annee < 1950:
+        penalties["fondations"] = penalties.get("fondations", 0) + 8
+        for z in ["murs_nord", "murs_sud", "murs_est", "murs_ouest"]:
+            penalties[z] = penalties.get(z, 0) + 5
+
+    return penalties
+
+
+# Les recommandations sont générées par le module dédié :
+# backend/api/recommandations_generator.py → generate_zone_recommendations()
+# et intégrées dans le contrat par backend/app/digital_twin/contract.py
+
+
+# ── Sous-scores ─────────────────────────────────────────────────────────
 
 _ALEA_ARGILE_SCORE = {"faible": 15, "moyen": 50, "fort": 82}
 
@@ -106,8 +203,9 @@ def _argile_subscore(bdnb: dict[str, Any] | None, georisques: dict[str, Any] | N
         source = f"aléa retrait-gonflement des argiles = « {alea} » (BDNB)"
     else:
         secheresses = _count_catnat(georisques, "sécheresse") or _count_catnat(georisques, "secheresse")
-        base = min(20 + secheresses * 12, 65)
-        source = f"aléa argile non fourni par la BDNB ; {secheresses} arrêté(s) CATNAT « sécheresse »"
+        # Default amélioré : même sans donnée BDNB, on part sur du modéré (40) plutôt que 20
+        base = min(40 + secheresses * 10, 70)
+        source = f"aléa argile non fourni par la BDNB ; {secheresses} arrêté(s) CATNAT « sécheresse » ; estimation modérée par défaut"
     if aggravation_2050:
         base = min(base + 12, 100)
         source += " ; +12 pts pour horizon 2050"
@@ -119,13 +217,14 @@ def _inondation_subscore(georisques: dict[str, Any] | None, precip_delta_pct: fl
     hazard_present = _has_hazard(georisques, "inondation")
     zones_inondables = _truthy_hazard_flag((georisques or {}).get("zones_inondables"))
 
-    base = 15
+    # Default amélioré : 25 au lieu de 15 pour être plus conservateur
+    base = 25
     if inondations >= 6:
         base = 75
     elif inondations >= 3:
         base = 55
     elif inondations >= 1:
-        base = 35
+        base = 40
     if hazard_present:
         base += 8
     if zones_inondables:
@@ -145,7 +244,8 @@ def _mouvement_terrain_subscore(georisques: dict[str, Any] | None) -> tuple[int,
     mvt = _data_list(georisques, "mouvements_de_terrain")
     n_cavites = len(cavites)
     n_mvt = len(mvt)
-    base = 15 + min(n_cavites, 3) * 12 + min(n_mvt, 3) * 10
+    # Default amélioré : 25 au lieu de 15, car par défaut il y a souvent des cavités
+    base = 25 + min(n_cavites, 3) * 12 + min(n_mvt, 3) * 10
     source = f"{n_cavites} cavité(s), {n_mvt} mouvement(s) de terrain"
     return _clamp(base), source
 
@@ -157,7 +257,8 @@ def _sismique_subscore(georisques: dict[str, Any] | None) -> tuple[int, str]:
     zone_int = _parse_zone_sismicite(zone)
     if zone_int is not None and zone_int in mapping:
         return mapping[zone_int], f"zone de sismicité {zone_int}"
-    return 20, "zone de sismicité non déterminée"
+    # Default amélioré : 30 au lieu de 20 (par défaut, zone 2)
+    return 30, "zone de sismicité non déterminée (estimation par défaut zone 2)"
 
 
 def _radon_subscore(georisques: dict[str, Any] | None) -> tuple[int, str]:
@@ -218,7 +319,7 @@ def _precipitation_subscore(climat_block: dict[str, Any] | None) -> tuple[int, s
     return _clamp(base), f"{mm:.0f} mm/an"
 
 
-# --- Assemblage par zone ---
+# ── Assemblage par zone ─────────────────────────────────────────────────
 
 def _build_zone(risque: int, alea_principal: str, justifications: list[str]) -> dict[str, Any]:
     puces = []
@@ -240,9 +341,15 @@ def _build_zone(risque: int, alea_principal: str, justifications: list[str]) -> 
     }
 
 
-def _compute_zones_for_period(building_data: dict[str, Any], climat_block: dict[str, Any] | None, is_projection: bool) -> dict[str, dict[str, Any]]:
+def _compute_zones_for_period(
+    building_data: dict[str, Any],
+    climat_block: dict[str, Any] | None,
+    is_projection: bool,
+    form_penalties: dict[str, int] | None = None,
+) -> dict[str, dict[str, Any]]:
     georisques = building_data.get("georisques")
     bdnb = building_data.get("bdnb")
+    penalties = form_penalties or {}
 
     ref_block = (building_data.get("climat_open_meteo") or {}).get("reference_2015_2024")
     precip_ref = (ref_block or {}).get("precipitation_annuelle_moyenne_mm")
@@ -262,26 +369,41 @@ def _compute_zones_for_period(building_data: dict[str, Any], climat_block: dict[
 
     zones: dict[str, dict[str, Any]] = {}
 
-    fondations_risque = _clamp(argile_score * 0.55 + mvt_score * 0.25 + sismique_score * 0.20)
+    # Fondations
+    fondations_risque = _clamp(
+        argile_score * 0.55 + mvt_score * 0.25 + sismique_score * 0.20
+        + penalties.get("fondations", 0)
+    )
     zones["fondations"] = _build_zone(
         fondations_risque,
         "Retrait-gonflement des argiles" if argile_score >= mvt_score else "Mouvement de terrain",
         [argile_src, mvt_src, sismique_src],
     )
 
-    murs_risque = _clamp(precip_score * 0.5 + sismique_score * 0.3 + canicule_score * 0.2)
+    # Murs
+    murs_risque_base = precip_score * 0.5 + sismique_score * 0.3 + canicule_score * 0.2
     murs_justifs = [precip_src, canicule_src, sismique_src]
     for zone_name in ["murs_nord", "murs_sud", "murs_est", "murs_ouest"]:
-        zones[zone_name] = _build_zone(murs_risque, "Exposition climatique (façade)", murs_justifs)
+        penalite = penalties.get(zone_name, 0)
+        risque = _clamp(murs_risque_base + penalite)
+        zones[zone_name] = _build_zone(risque, "Exposition climatique (façade)", murs_justifs)
 
-    toiture_risque = _clamp(canicule_score * 0.45 + precip_score * 0.15 + feu_foret_score * 0.40)
+    # Toiture
+    toiture_risque = _clamp(
+        canicule_score * 0.45 + precip_score * 0.15 + feu_foret_score * 0.40
+        + penalties.get("toiture", 0)
+    )
     zones["toiture"] = _build_zone(
         toiture_risque,
         "Feu de forêt" if feu_foret_score >= canicule_score else "Canicule / stress thermique",
         [canicule_src, precip_src, feu_foret_src],
     )
 
-    sous_sol_risque = _clamp(inondation_score * 0.7 + radon_score * 0.1 + argile_score * 0.2)
+    # Sous-sol
+    sous_sol_risque = _clamp(
+        inondation_score * 0.7 + radon_score * 0.1 + argile_score * 0.2
+        + penalties.get("sous_sol", 0)
+    )
     zones["sous_sol"] = _build_zone(
         sous_sol_risque,
         "Inondation / remontée de nappe",
@@ -302,18 +424,36 @@ def _score_global(zones: dict[str, dict[str, Any]]) -> int:
     return _clamp(total)
 
 
-def compute_risk_scores(building_data: dict[str, Any]) -> dict[str, Any]:
-    """Point d'entrée du scoring_agent."""
+# ── Point d'entrée ──────────────────────────────────────────────────────
+
+def compute_risk_scores(
+    building_data: dict[str, Any],
+    formulaire: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Point d'entrée du scoring_agent.
+
+    Paramètres :
+        building_data : données collectées (Georisques, BDNB, climat...)
+        formulaire : formulaire client (fissures, infiltrations, etat_toiture...)
+
+    Retourne :
+        dict avec score_global, zones, projection_2050
+    """
     logger.info("scoring_agent -- calcul des scores")
 
     climat = building_data.get("climat_open_meteo") or {}
     reference = climat.get("reference_2015_2024")
     projection = climat.get("projection_2041_2050")
 
-    zones_2025 = _compute_zones_for_period(building_data, reference, is_projection=False)
+    # Pénalités du formulaire client
+    penalties = _form_penalties(formulaire)
+    if penalties:
+        logger.info("  -> penalités formulaire: %s", penalties)
+
+    zones_2025 = _compute_zones_for_period(building_data, reference, is_projection=False, form_penalties=penalties)
     score_2025 = _score_global(zones_2025)
 
-    zones_2050 = _compute_zones_for_period(building_data, projection or reference, is_projection=True)
+    zones_2050 = _compute_zones_for_period(building_data, projection or reference, is_projection=True, form_penalties=penalties)
     score_2050 = _score_global(zones_2050)
 
     return {

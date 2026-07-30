@@ -1,3 +1,10 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.backends._legacy:_Backend"
+
+[tool.setuptools]
+packages = ["backend"]
+
 [project]
 name = "typhoon"
 version = "0.1.0"

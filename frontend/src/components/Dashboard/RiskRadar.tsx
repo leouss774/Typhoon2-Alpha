@@ -76,7 +76,7 @@ export default function RiskRadar({ risques }: RiskRadarProps) {
               key={c}
               points={pts.map((p) => p.join(",")).join(" ")}
               fill="none"
-              stroke="#30363d"
+              stroke="var(--color-border)"
               strokeWidth="0.5"
               strokeDasharray="3,3"
             />
@@ -86,7 +86,7 @@ export default function RiskRadar({ risques }: RiskRadarProps) {
         {/* Lignes des axes */}
         {AXIS_CONFIG.map((_, i) => {
           const [x, y] = coords(START_ANGLE + i * ANGLE_STEP, R);
-          return <line key={i} x1={CX} y1={CY} x2={x} y2={y} stroke="#30363d" strokeWidth="0.5" />;
+          return <line key={i} x1={CX} y1={CY} x2={x} y2={y} stroke="var(--color-border)" strokeWidth="0.5" />;
         })}
 
         {/* Labels des axes */}
@@ -99,7 +99,7 @@ export default function RiskRadar({ risques }: RiskRadarProps) {
               y={y}
               textAnchor="middle"
               dominantBaseline="middle"
-              fill="#8b949e"
+              fill="var(--color-text-secondary)"
               fontSize="8"
               fontWeight="500"
             >
@@ -116,8 +116,8 @@ export default function RiskRadar({ risques }: RiskRadarProps) {
             <>
               <polygon
                 points={pts.map((p) => p.join(",")).join(" ")}
-                fill="rgba(20, 184, 166, 0.15)"
-                stroke="#14b8a6"
+                fill="rgba(255, 107, 74, 0.15)"
+                stroke="#FF6B4A"
                 strokeWidth="2"
               />
               {pts.map(([x, y], i) => (

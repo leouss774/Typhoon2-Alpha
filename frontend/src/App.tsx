@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
 import Dashboard from "./components/Dashboard/Dashboard";
 import ClientForm from "./components/Form/ClientForm";
+import HomeScreen from "./components/Home/HomeScreen";
 
-type Page = "form" | "dashboard";
+type Page = "home" | "form" | "dashboard";
 
 function App() {
   const isBankRoute = window.location.pathname.startsWith("/bank");
@@ -14,14 +15,15 @@ function App() {
       // Route banque : par défaut le formulaire, mais on respecte le param ?page=
       return (params.get("page") as Page) || "form";
     }
-    return (params.get("page") as Page) || "dashboard";
+    // Route publique : page d'accueil par défaut
+    return (params.get("page") as Page) || "home";
   });
 
   const [sessionId, setSessionId] = useState<string | null>(() => {
     const params = new URLSearchParams(window.location.search);
     const sid = params.get("sessionId");
     if (sid) return sid;
-    return isBankRoute ? null : "demo-session-001";
+    return isBankRoute ? null : null; // Pas de session par défaut, on commence par l'accueil
   });
 
   // Compteur de clés pour forcer le remount du Dashboard à chaque nouvelle analyse
@@ -49,56 +51,95 @@ function App() {
     setPage("dashboard");
   }, [sessionId, isBankRoute]);
 
+  const handleStartDiagnostic = useCallback(() => {
+    setSessionId(null);
+    setPage("form");
+  }, []);
+
+  // Masquer le header sur la page d'accueil (elle a son propre header)
+  const isHome = page === "home" && !isBankRoute;
+
+  if (isHome) {
+    return <HomeScreen onStart={handleStartDiagnostic} />;
+  }
+
   return (
-    <div className="app" style={{ minHeight: "100vh", background: "#04070c" }}>
+    <div className="app" style={{ minHeight: "100vh", background: "#FFFFFF" }}>
       <header className="app-header" style={{
         display: "flex", justifyContent: "space-between", alignItems: "center",
-        padding: "12px 24px", background: "rgba(6,14,26,0.9)",
-        borderBottom: "1px solid #1c5a9c"
+        padding: "12px 24px", background: "rgba(255,255,255,0.92)",
+        borderBottom: "1px solid #E7DED6", backdropFilter: "blur(10px)"
       }}>
-        <div className="app-logo" style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <span style={{ fontSize: 24 }}>{isBankRoute ? "🏦" : "🌪️"}</span>
-          <h1 style={{ margin: 0, fontSize: 20, color: "#4da6ff" }}>
-            {isBankRoute ? "Typhoon - Portail Bancaire" : "Typhoon"}
-          </h1>
-        </div>
-        <nav className="app-nav" style={{ display: "flex", gap: 8 }}>
+        <a href={isBankRoute ? "/bank" : "/"} style={{ textDecoration: "none" }}>
+          <div className="app-logo" style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div className="mark" style={{
+              width: 38, height: 38, borderRadius: 10,
+              background: "linear-gradient(135deg, #FF9269, #FF6B4A)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: 19, boxShadow: "0 0 18px rgba(255,107,74,0.45)"
+            }}>
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 2 4 5v6c0 5 3.5 9 8 11 4.5-2 8-6 8-11V5z"/>
+                <path d="m9 12 2 2 4-4"/>
+              </svg>
+            </div>
+            <div>
+              <div className="name" style={{ fontFamily: "'Source Serif 4', Georgia, serif", color: "#1E2A33", fontSize: 19, fontWeight: 700, letterSpacing: "0.02em" }}>
+                {isBankRoute ? "Typhoon Banque" : "Typhoon"}
+              </div>
+              <div className="baseline" style={{ color: "#FF6B4A", fontSize: 10.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em" }}>
+                {isBankRoute ? "Analyse de Crédit" : "Diagnostic Climatique"}
+              </div>
+            </div>
+          </div>
+        </a>
+        <nav className="app-nav" style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          {!isBankRoute && (
+            <button
+              onClick={() => setPage("home")}
+              style={{
+                padding: "8px 16px", borderRadius: 8, border: "1px solid #E7DED6",
+                background: "none",
+                color: "#4B5760",
+                fontSize: 13, fontWeight: 700,
+                cursor: "pointer", transition: "all .15s"
+              }}
+            >Accueil</button>
+          )}
           <button
             onClick={() => setPage("dashboard")}
             style={{
-              padding: "8px 16px", borderRadius: 6, border: "1px solid #1c5a9c",
-              background: page === "dashboard" ? "#4da6ff" : "rgba(20,40,65,0.8)",
-              color: page === "dashboard" ? "#04070c" : "#cfe8ff",
-              fontSize: 13, fontWeight: page === "dashboard" ? 700 : 400,
+              padding: "8px 16px", borderRadius: 8, border: "1px solid #E7DED6",
+              background: page === "dashboard" ? "#FF6B4A" : "none",
+              color: page === "dashboard" ? "#FFFFFF" : "#4B5760",
+              fontSize: 13, fontWeight: 700,
               cursor: "pointer", transition: "all .15s"
             }}
           >Dashboard</button>
           {isBankRoute && (
             <button
-              onClick={() => {
-                setSessionId(null);
-                setPage("form");
-              }}
+              onClick={() => { setSessionId(null); setPage("form"); }}
               style={{
-                padding: "8px 16px", borderRadius: 6, border: "1px solid #1c5a9c",
-                background: page === "form" ? "#4da6ff" : "rgba(20,40,65,0.8)",
-                color: page === "form" ? "#04070c" : "#cfe8ff",
-                fontSize: 13, fontWeight: page === "form" ? 700 : 400,
+                padding: "8px 16px", borderRadius: 8, border: "1px solid #E7DED6",
+                background: page === "form" ? "#FF6B4A" : "none",
+                color: page === "form" ? "#FFFFFF" : "#4B5760",
+                fontSize: 13, fontWeight: 700,
                 cursor: "pointer", transition: "all .15s"
               }}
             >Nouvelle analyse crédit</button>
           )}
           <button
             onClick={() => window.location.href = isBankRoute ? "/" : "/bank"}
+            className="btn-ghost"
             style={{
-              padding: "8px 16px", borderRadius: 6, border: "1px dashed #d29922",
-              background: isBankRoute ? "rgba(210,153,34,0.2)" : "transparent",
-              color: "#d29922",
-              fontSize: 13, fontWeight: 700,
-              cursor: "pointer", transition: "all .15s", marginLeft: "10px"
+              padding: "8px 16px", borderRadius: 8,
+              border: "1px dashed #E7DED6",
+              background: "transparent",
+              color: "#FF6B4A", fontSize: 13, fontWeight: 700,
+              cursor: "pointer", transition: "all .15s", marginLeft: 10
             }}
           >
-            {isBankRoute ? "Quitter Portail Banque" : "Accès Banquier"}
+            {isBankRoute ? "← Retour site principal" : "🏦 Accès Banquier"}
           </button>
         </nav>
       </header>

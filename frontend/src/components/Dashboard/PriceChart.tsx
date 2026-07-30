@@ -153,7 +153,7 @@ export default function PriceChart({ adresse, type_bien = "Maison", surface = 10
             const b = 110 + Math.round((1 - intensity) * 80);
             // S'assurer que les valeurs restent dans [0,255]
             const barColor = `rgb(${Math.min(50, r)}, ${Math.min(180, g)}, ${Math.min(180, b)})`;
-            const barColorLatest = "rgb(20, 184, 166)";
+            const barColorLatest = "rgb(255, 107, 74)";
 
             return (
               <g key={d.annee}>
@@ -177,7 +177,7 @@ export default function PriceChart({ adresse, type_bien = "Maison", surface = 10
                   x={x + barWidth / 2}
                   y={y - 6}
                   textAnchor="middle"
-                  fill={isLatest ? "#14b8a6" : "#8b949e"}
+                  fill={isLatest ? "#FF6B4A" : "#8b949e"}
                   fontSize={isLatest ? "11" : "9"}
                   fontWeight={isLatest ? "700" : "400"}
                 >
@@ -189,7 +189,7 @@ export default function PriceChart({ adresse, type_bien = "Maison", surface = 10
                   x={x + barWidth / 2}
                   y={PAD.top + chartH + 16}
                   textAnchor="middle"
-                  fill={isLatest ? "#e6edf3" : "#8b949e"}
+                  fill={isLatest ? "var(--color-ink)" : "var(--color-text-secondary)"}
                   fontSize="10"
                   fontWeight={isLatest ? "700" : "400"}
                 >
@@ -203,7 +203,7 @@ export default function PriceChart({ adresse, type_bien = "Maison", surface = 10
                     y1={PAD.top + chartH - ((data[i - 1].prix_m2_median - minPm2) / range) * chartH}
                     x2={x + barWidth / 2}
                     y2={y}
-                    stroke="#14b8a6"
+                    stroke="#FF6B4A"
                     strokeWidth="2"
                     strokeDasharray={isLatest ? "" : "4,3"}
                     opacity="0.5"

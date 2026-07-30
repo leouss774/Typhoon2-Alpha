@@ -113,7 +113,7 @@ def generate_zone_recommendations(
     isolation_murs_faible = form_data.get("isolation_murs") == "faible"
 
     # ─── Altitude / eau ─────────────────────────────────────────────────────
-    alt = altitude_data.get("altitude", 50) if isinstance(altitude_data, dict) else 50
+    alt = (altitude_data.get("altitude") or 50) if isinstance(altitude_data, dict) else 50
     low_altitude = alt < 20
     near_water = water_dist is not None and water_dist < 200
 

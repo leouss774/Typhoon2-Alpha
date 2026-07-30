@@ -13,14 +13,15 @@ Fonctionne en 2 modes :
 from __future__ import annotations
 
 import logging
+import re
 from typing import TypeVar
 
 import httpx
 from pydantic import BaseModel, ValidationError
 
-from backend.config.settings import get_settings
+from config.settings import get_settings
 settings = get_settings()
-from backend.services.json_validator import (
+from services.json_validator import (
     JsonExtractionError,
     build_retry_prompt,
     parse_and_validate,
@@ -149,6 +150,104 @@ def _call_mistral_api(system_prompt: str, user_prompt: str) -> str:
     except (KeyError, IndexError) as exc:
         raise MistralCallError(f"Réponse Mistral inattendue : {data}") from exc
 
+
+# ── Mock pour le chat conversationnel (texte libre) ──────────────────────────
+
+_MOCK_CHAT_RESPONSE = """D'après l'analyse de votre bien, le score de risque global est de **{score}/100** ({niveau}).
+
+Les principaux risques identifiés sont liés aux aléas climatiques présents dans votre secteur. Je vous recommande de consulter le jumeau numérique 3D pour visualiser les zones critiques et les travaux de prévention suggérés.
+
+N'hésitez pas à me demander plus de détails sur un risque spécifique, les coûts estimés, ou les priorités d'intervention !"""
+
+
+def call_mistral_chat(system_prompt: str, user_prompt: str) -> str:
+    """
+    Appelle Mistral et retourne un texte libre (conversationnel, pas de JSON).
+
+    Fonctionne en 2 modes :
+    - **mock** (USE_MOCK_MISTRAL=True ou pas de clé) : retourne une réponse
+      simulée plausible.
+    - **réel** : appelle l'API Mistral en mode texte libre (sans contrainte
+      `response_format` JSON).
+
+    En cas d'erreur réseau ou API, retourne une réponse de secours
+    générique pour ne pas bloquer l'utilisateur.
+    """
+    if settings.USE_MOCK_MISTRAL or not settings.MISTRAL_API_KEY:
+        logger.warning("MISTRAL MOCK CHAT: réponse simulée")
+        return _mock_chat_completion(system_prompt, user_prompt)
+
+    payload = {
+        "model": settings.MISTRAL_MODEL,
+        "messages": [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
+        ],
+        "temperature": 0.5,
+        "max_tokens": 600,
+    }
+    headers = {
+        "Authorization": f"Bearer {settings.MISTRAL_API_KEY}",
+        "Content-Type": "application/json",
+    }
+
+    try:
+        with httpx.Client(timeout=settings.MISTRAL_TIMEOUT_SECONDS) as client:
+            response = client.post(settings.MISTRAL_API_URL, json=payload, headers=headers)
+            response.raise_for_status()
+            data = response.json()
+        return data["choices"][0]["message"]["content"]
+    except Exception as exc:
+        logger.warning("Appel Mistral chat échoué, fallback simulé : %s", exc)
+        return _mock_chat_completion(system_prompt, user_prompt)
+
+
+def _mock_chat_completion(system_prompt: str, user_prompt: str) -> str:
+    """Réponse simulée pour le chat conversationnel."""
+    # Extraction basique du score depuis le user_prompt pour varier la réponse
+    score = 50
+    niveau = "modéré"
+    for line in user_prompt.split("\n"):
+        if "Score global" in line:
+            m = re.search(r"(\d+)", line)
+            if m:
+                score = int(m.group(1))
+                if score >= 70:
+                    niveau = "critique"
+                elif score >= 55:
+                    niveau = "élevé"
+                elif score >= 35:
+                    niveau = "modéré"
+                else:
+                    niveau = "faible"
+
+    # Réponse contextualisée selon le score
+    if score >= 60:
+        msg = (
+            f"Le score de risque global de votre bien est de **{score}/100** ({niveau}), "
+            f"ce qui nécessite une attention particulière. Les risques dominants identifiés "
+            f"sont significatifs et des travaux de mitigation sont fortement recommandés. "
+            f"Je vous conseille de consulter les recommandations détaillées dans le rapport "
+            f"et de planifier les interventions prioritaires."
+        )
+    elif score >= 30:
+        msg = (
+            f"Votre bien présente un score de risque global de **{score}/100** ({niveau}). "
+            f"Quelques points de vigilance ont été identifiés, mais rien de rédhibitoire. "
+            f"Des travaux préventifs ciblés peuvent améliorer la résilience de votre bien "
+            f"face aux aléas climatiques. Je reste à votre disposition pour plus de détails."
+        )
+    else:
+        msg = (
+            f"Bonne nouvelle ! Le score de risque global de votre bien est de **{score}/100** ({niveau}). "
+            f"Votre bien est peu exposé aux aléas climatiques. "
+            f"Un suivi périodique reste recommandé pour maintenir cette situation favorable."
+        )
+
+    return msg
+
+
+# ── Fonction principale avec validation de schéma ──────────────────────────────
 
 def call_mistral_and_validate(
     system_prompt: str,

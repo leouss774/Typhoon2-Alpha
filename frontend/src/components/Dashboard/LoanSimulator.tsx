@@ -50,10 +50,10 @@ export default function LoanSimulator({
       {/* Explication du taux */}
       <div style={{
         marginBottom: "14px", padding: "10px 14px",
-        background: "rgba(30,58,95,0.04)", borderRadius: "8px",
-        border: "1px solid rgba(30,58,95,0.12)",
+        background: "rgba(255,107,74,0.04)", borderRadius: "8px",
+        border: "1px solid rgba(255,107,74,0.12)",
       }}>
-        <div style={{ fontSize: "0.65rem", fontWeight: 700, color: "#1e3a5f", marginBottom: "6px", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+        <div style={{ fontSize: "0.65rem", fontWeight: 700, color: "var(--color-brand)", marginBottom: "6px", textTransform: "uppercase", letterSpacing: "0.5px" }}>
           Decomposition du taux propose
         </div>
         <div style={{ fontSize: "0.7rem", color: "var(--color-text-secondary)", lineHeight: 1.6 }}>
@@ -146,7 +146,7 @@ export default function LoanSimulator({
           <span>LTV : {Math.round(ltv)}% du bien</span>
           <span>Seuil risque : 80%</span>
         </div>
-        <div style={{ height: "8px", background: "#30363d", borderRadius: "4px", overflow: "hidden", position: "relative" }}>
+        <div style={{ height: "8px", background: "var(--color-border)", borderRadius: "4px", overflow: "hidden", position: "relative" }}>
           {/* Seuil 80% */}
           <div style={{ position: "absolute", left: "80%", top: 0, width: "2px", height: "100%", background: "#ef4444", zIndex: 1 }} />
           {/* Barre LTV */}
@@ -154,7 +154,7 @@ export default function LoanSimulator({
             width: `${Math.min(ltv, 100)}%`, height: "100%",
             background: ltv > 80
               ? "linear-gradient(90deg, #22c55e, #eab308, #ef4444)"
-              : "linear-gradient(90deg, #22c55e, #14b8a6)",
+              : "linear-gradient(90deg, #22c55e, #FF9269)",
             borderRadius: "4px",
             transition: "width 0.3s",
           }} />
@@ -166,7 +166,7 @@ export default function LoanSimulator({
       </div>
 
       {/* Résumé textuel */}
-      <div style={{ marginTop: "8px", padding: "8px 12px", fontSize: "0.65rem", color: "var(--color-text-secondary)", background: "rgba(15,118,110,0.04)", borderRadius: "6px", border: "1px solid rgba(15,118,110,0.1)" }}>
+      <div style={{ marginTop: "8px", padding: "8px 12px", fontSize: "0.65rem", color: "var(--color-text-secondary)", background: "rgba(255,107,74,0.04)", borderRadius: "6px", border: "1px solid rgba(255,107,74,0.1)" }}>
         <strong>Resume :</strong> Pour un pret de <strong>{formatEur(montantEmprunt)}</strong> sur <strong>{duree} ans</strong>
         {" "}à <strong>{taux_propose.toFixed(2)}%</strong>, la mensualité est de <strong>{formatEur(mensualite)}/mois</strong>.
         {" "}Total des intérêts : <strong>{formatEur(totalInterets)}</strong>.
@@ -185,7 +185,7 @@ function SimKPICard({
     <div
       style={{
         padding: "10px", borderRadius: "8px", textAlign: "center",
-        background: "var(--color-bg)", border: "1px solid #30363d",
+        background: "var(--color-bg)",        border: "1px solid var(--color-border)",
         cursor: "help", transition: "all 0.2s",
       }}
       title={tooltip}

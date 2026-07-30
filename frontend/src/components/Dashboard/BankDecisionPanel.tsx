@@ -6,6 +6,7 @@ import RiskTimeline from "./RiskTimeline";
 import LoanSimulator from "./LoanSimulator";
 import KPIStrip from "./KPIStrip";
 import TrustIndicator from "./TrustIndicator";
+import ChatInterface from "../Chat/ChatInterface";
 
 interface RiskIdentifie {
   nom: string;
@@ -78,6 +79,7 @@ interface BankDecisionProps {
   adresse?: string;
   typeBien?: string;
   surface?: number;
+  sessionId?: string;
 }
 
 // ─── Types d'onglets ───
@@ -130,7 +132,7 @@ function SourceBadge({ source }: { source: string }) {
   );
 }
 
-export default function BankDecisionPanel({ decision, adresse, typeBien, surface }: BankDecisionProps) {
+export default function BankDecisionPanel({ decision, adresse, typeBien, surface, sessionId }: BankDecisionProps) {
   const [activeTab, setActiveTab] = useState<TabKey>("synthese");
 
   if (!decision || Object.keys(decision).length === 0) return null;
@@ -189,7 +191,9 @@ export default function BankDecisionPanel({ decision, adresse, typeBien, surface
       {/* ──────── HEADER ──────── */}
       <div className="bank-header">
         <div className="bank-header-left">
-          <span className="bank-header-icon">B</span>
+          <span className="bank-header-icon">              <svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9 12l2 2 4-4m-3-7a8 8 0 1 0 0 16 8 8 0 0 0 0-16z"/>            </svg>
+          </span>
           <div>
             <h2 className="bank-header-title">Analyse de Risque Crédit</h2>
             <p className="bank-header-sub">
@@ -199,7 +203,8 @@ export default function BankDecisionPanel({ decision, adresse, typeBien, surface
         </div>
         <div className="bank-header-right">
           <button className="bank-btn-pdf" onClick={handleDownloadPdf}>
-            <span>PDF</span> Rapport (PDF)
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+            Rapport (PDF)
           </button>
           <span className="bank-confiance-badge" data-level={decision.indice_confiance >= 80 ? "high" : decision.indice_confiance >= 50 ? "mid" : "low"}>
             Confiance {decision.indice_confiance}%
@@ -660,6 +665,16 @@ export default function BankDecisionPanel({ decision, adresse, typeBien, surface
               <strong>Derniere mise a jour des taux :</strong> {decision.date_taux || "N/A"} — {decision.source_taux || "Banque de France"} (confiance {decision.confiance_taux ?? 90}%)
             </div>
           </div>
+
+          {/* 💬 Conseil IA — ChatInterface intégré */}
+          {sessionId && (
+            <div className="bank-section">
+              <h3 className="bank-section-title" style={{ color: "var(--color-primary)" }}>
+                💬 Conseil Typhoon — Posez vos questions
+              </h3>
+              <ChatInterface sessionId={sessionId} />
+            </div>
+          )}
         </div>
       )}
     </div>

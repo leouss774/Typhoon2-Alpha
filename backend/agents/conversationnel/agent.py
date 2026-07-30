@@ -2,15 +2,17 @@
 
 Agent de chat qui répond aux questions du client en exploitant
 le contexte du rapport d'analyse déjà généré par les agents #1 et #2.
+
+Utilise Mistral (réel ou mock) pour générer les réponses.
 """
 
 from __future__ import annotations
 
-import json
 import logging
 from typing import Any
 
 from backend.agents.conversationnel.prompts import SYSTEM_PROMPT, build_chat_prompt
+from services.mistral_client import call_mistral_chat, MistralCallError
 
 logger = logging.getLogger(__name__)
 
@@ -21,6 +23,10 @@ def repondre_question_client(
     historique: list | None = None,
 ) -> str:
     """Répond à une question du client en utilisant le contexte du rapport.
+
+    Utilise `call_mistral_chat()` pour générer une réponse naturelle.
+    En mode mock (par défaut) ou si Mistral est indisponible,
+    retombe sur `_simuler_reponse()` pour ne pas bloquer.
 
     Args:
         question: Question posée par le client.
@@ -36,14 +42,12 @@ def repondre_question_client(
         historique=historique,
     )
 
-    # TODO: Remplacer par un vrai appel LLM
-    # from langchain_anthropic import ChatAnthropic
-    # from backend.config.settings import get_settings
-    # llm = ChatAnthropic(model=get_settings().ANTHROPIC_MODEL, api_key=get_settings().ANTHROPIC_API_KEY)
-    # message = llm.invoke([{"role": "system", "content": SYSTEM_PROMPT}, {"role": "user", "content": prompt}])
-    # return message.content
-
-    return _simuler_reponse(question, rapport_contexte)
+    # Appel Mistral (réel ou mock selon settings.USE_MOCK_MISTRAL)
+    try:
+        return call_mistral_chat(SYSTEM_PROMPT, prompt)
+    except MistralCallError as e:
+        logger.warning("Mistral chat indisponible, fallback simulation : %s", e)
+        return _simuler_reponse(question, rapport_contexte)
 
 
 def _simuler_reponse(question: str, rapport: dict) -> str:

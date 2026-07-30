@@ -7,6 +7,7 @@ from typing import Any, TypedDict
 
 class TyphoonState(TypedDict, total=False):
     # Entrée
+    session_id: str
     adresse: str
     formulaire: dict[str, Any] | None
     copernicus: bool

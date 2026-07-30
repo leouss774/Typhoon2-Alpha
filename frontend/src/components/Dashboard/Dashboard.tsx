@@ -1,6 +1,11 @@
-import { useMemo, useEffect, useState, useCallback, useRef } from "react";
+import { useMemo, useEffect, useState, useCallback, useRef, lazy, Suspense } from "react";
 import DigitalTwin from "../DigitalTwin/DigitalTwin";
 import BankDecisionPanel from "./BankDecisionPanel";
+import ScoreGauge from "./ScoreGauge";
+import RiskCards from "./RiskCards";
+
+// Chargement différé de PropertyMap (react-leaflet peut causer des conflits d'import)
+const PropertyMap = lazy(() => import("./PropertyMap"));
 
 // Fallback : le JSON statique de démo (UNIQUEMENT pour la route publique)
 import demoData from "../../../assessment_complet.json";
@@ -81,7 +86,7 @@ export default function Dashboard({ sessionId, isBankRoute }: DashboardProps) {
 
     setLoading(true);
     setError(null);
-    fetch(`http://localhost:8000/api/analysis/${sessionId}`)
+    fetch(`/api/analysis/${sessionId}`)
       .then(async res => {
         if (!res.ok) {
           if (res.status === 404) {
@@ -297,6 +302,7 @@ export default function Dashboard({ sessionId, isBankRoute }: DashboardProps) {
             adresse={data.adresse || ""}
             typeBien={data.formulaire_client?.type_bien || "Maison"}
             surface={data.formulaire_client?.surface || 100}
+            sessionId={sessionId || undefined}
           />
         ) : (
           <div style={{ padding: "20px", background: "rgba(210,153,34,0.1)", border: "1px solid #d29922", borderRadius: "8px", color: "#d29922", textAlign: "center" }}>
@@ -319,15 +325,20 @@ export default function Dashboard({ sessionId, isBankRoute }: DashboardProps) {
       <div className="dashboard-grid" style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
         
         {/* Ligne 1 : Résumé rapide (Scores statiques) */}
-        <div className="dashboard-row" style={{ display: "flex", gap: "20px" }}>
-          {/* Si tes composants ScoreGauge/PropertyMap plantent, commente-les pour la démo */}
-          {/* <ScoreGauge score={data.resume.score_global} niveau="eleve" /> */}
-          {/* <PropertyMap lat={data.coordonnees.latitude} lng={data.coordonnees.longitude} adresse={data.adresse} /> */}
+        <div className="dashboard-row" style={{ display: "flex", gap: "20px", flexWrap: "wrap" }}>
+          <div style={{ flex: "1 1 280px", minWidth: 280 }}>
+            <ScoreGauge score={data.resume.score_global} niveau={data.resume.niveau_risque} />
+          </div>
+          <div style={{ flex: "1 1 400px", minWidth: 320 }}>
+            <Suspense fallback={<div style={{ height: 250, background: "var(--color-bg)", borderRadius: "var(--radius-sm)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--color-text-secondary)", fontSize: 14 }}>Chargement de la carte...</div>}>
+              <PropertyMap lat={data.coordonnees.latitude} lng={data.coordonnees.longitude} adresse={data.adresse} />
+            </Suspense>
+          </div>
         </div>
 
         {/* Ligne 2 : LE JUMEAU NUMÉRIQUE 3D */}
         <div className="dashboard-row" style={{ display: "flex", gap: "20px", height: "600px" }}>
-          {/* <RiskCards scores={data.analyse_risques.scores_par_alea} dominants={[]} /> */}
+          <RiskCards scores={data.analyse_risques.scores_par_alea} dominants={data.risques_dominants || []} />
           
           <div style={{ flex: 1, background: "#04070c", borderRadius: "12px", border: "1px solid #1c5a9c", overflow: "hidden" }}>
             {/* On injecte l'adaptateur dans la 3D */}

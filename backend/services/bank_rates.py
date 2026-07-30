@@ -62,7 +62,7 @@ def _try_scraper_cache() -> dict | None:
         dict | None: Taux du cache, ou None si indisponible
     """
     try:
-        from backend.services.rate_scraper import fetch_live_rates
+        from services.rate_scraper import fetch_live_rates
         rates = fetch_live_rates(force=False)
         if rates and "taux_base_20_ans" in rates:
             logger.info(f"Taux issus du scraper : {rates.get('source', 'N/A')}")

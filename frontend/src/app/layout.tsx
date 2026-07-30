@@ -33,7 +33,12 @@ export default function RootLayout({
           <header className="app-header">
             <a href="/" style={{ textDecoration: "none" }}>
               <div className="app-logo">
-                <div className="mark">🌪️</div>
+                <div className="mark">
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 2 4 5v6c0 5 3.5 9 8 11 4.5-2 8-6 8-11V5z"/>
+                    <path d="m9 12 2 2 4-4"/>
+                  </svg>
+                </div>
                 <div>
                   <div className="name">Typhoon</div>
                   <div className="baseline">Diagnostic Climatique</div>

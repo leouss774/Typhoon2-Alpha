@@ -27,5 +27,15 @@ export interface ChatResponse {
   session_id: string;
 }
 
+export interface DiagnosticResponse {
+  session_id: string;
+  adresse: string;
+  digital_twin: Record<string, unknown>;
+  bank_decision: Record<string, unknown>;
+  score_global: number;
+  zones: Record<string, unknown>;
+  projection_2050: Record<string, unknown> | null;
+}
+
 export type DashboardResponse = DashboardData;
 export type RecommandationsResponse = Recommandation[];

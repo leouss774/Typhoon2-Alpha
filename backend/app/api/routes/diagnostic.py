@@ -12,8 +12,9 @@ import uuid
 from fastapi import APIRouter, BackgroundTasks, HTTPException
 from pydantic import BaseModel, Field
 
-from app.agents.graph import diagnostic_graph
-from app.core.logging import get_logger
+from backend.app.agents.graph import diagnostic_graph
+from backend.app.core.logging import get_logger
+from backend.services.analyses_store import get_analysis, set_analysis, analyses_store
 
 logger = get_logger(__name__)
 router = APIRouter()
@@ -24,9 +25,6 @@ class DiagnosticRequest(BaseModel):
     formulaire: dict | None = Field(default=None, description="Champs saisis explicitement")
     bank_mode: bool = Field(default=False, description="Activer le module bancaire")
 
-
-# Stockage temporaire pour les analyses async (bank mode)
-analyses_store: dict[str, dict] = {}
 
 
 @router.post("/diagnostic")
@@ -42,6 +40,7 @@ async def run_diagnostic(payload: DiagnosticRequest) -> dict:
             {
                 "adresse": payload.adresse,
                 "formulaire": payload.formulaire or {},
+                "session_id": thread_id,
                 "copernicus": False,
             },
             config={"configurable": {"thread_id": thread_id}},
@@ -66,9 +65,9 @@ async def run_diagnostic(payload: DiagnosticRequest) -> dict:
         "projection_2050": digital_twin.get("projection_2050", {}),
     }
 
-    # Si mode bancaire, stocker pour polling
+    # Si mode bancaire, stocker pour polling (persistance SQLite)
     if payload.bank_mode:
-        analyses_store[thread_id] = {**result, "status": "completed"}
+        set_analysis(thread_id, {**result, "status": "completed"})
 
     logger.info("diagnostic OK en %.2fs (score=%d)", elapsed, result["score_global"])
     logger.info("=" * 70)
@@ -77,8 +76,10 @@ async def run_diagnostic(payload: DiagnosticRequest) -> dict:
 
 @router.get("/diagnostic/{session_id}")
 async def get_diagnostic(session_id: str) -> dict:
-    """Récupère un diagnostic stocké (pour polling mode banque)."""
-    analysis = analyses_store.get(session_id)
+    """Récupère un diagnostic stocké (pour polling mode banque).
+    Cherche d'abord dans le cache mémoire, puis dans SQLite.
+    """
+    analysis = get_analysis(session_id)
     if not analysis:
         raise HTTPException(status_code=404, detail="Analyse introuvable")
     return analysis

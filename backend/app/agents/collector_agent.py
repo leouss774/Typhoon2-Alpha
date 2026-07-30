@@ -18,7 +18,7 @@ from app.connectors.bdnb import BdnbAdresseIntrouvable
 from app.connectors import georisques as georisques_connector
 from app.connectors import ign_altitude
 from app.connectors import open_meteo
-from app.connectors.geocoding import geocode_address, reverse_geocode
+from app.connectors.geocoding import GeoResult, geocode_address, reverse_geocode
 from app.core.config import settings
 from app.core.logging import get_logger
 from app.core.paca import department_code_from_citycode, department_name, is_in_paca
@@ -60,13 +60,27 @@ async def collect(address: str) -> dict:
         # Étape 1 - géocodage
         logger.info("étape 1/3 -- géocodage")
         latlon_match = _LATLON_RE.match(address)
-        if latlon_match:
-            lat_in, lon_in = float(latlon_match.group(1)), float(latlon_match.group(2))
-            geocode = await reverse_geocode(client, lat_in, lon_in)
-            logger.info("  -> reverse geocode %s", geocode.label)
-        else:
-            geocode = await geocode_address(client, address)
-            logger.info("  -> %s (score=%.2f)", geocode.label, geocode.score)
+        try:
+            if latlon_match:
+                lat_in, lon_in = float(latlon_match.group(1)), float(latlon_match.group(2))
+                geocode = await reverse_geocode(client, lat_in, lon_in)
+                logger.info("  -> reverse geocode %s", geocode.label)
+            else:
+                geocode = await geocode_address(client, address)
+                logger.info("  -> %s (score=%.2f)", geocode.label, geocode.score)
+        except Exception as exc:
+            logger.error("géocodage -- échec pour %r: %s", address, exc)
+            erreurs.append({"source": "geocoding", "erreur": f"{type(exc).__name__}: {exc}"})
+            # GeoResult vide pour permettre à la collecte de continuer
+            geocode = GeoResult(
+                label=address,
+                citycode="",
+                postcode="",
+                city="",
+                lat=0.0,
+                lon=0.0,
+                score=0.0,
+            )
 
         department_code = department_code_from_citycode(geocode.citycode)
 

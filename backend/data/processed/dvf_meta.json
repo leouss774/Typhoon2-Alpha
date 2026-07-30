@@ -1,8 +1,8 @@
 {
-  "last_update": "2026-07-28T17:18:02.110876",
-  "total_mutations": 6579594,
+  "last_update": "2026-07-29T15:22:10.608871",
+  "total_mutations": 7793056,
   "total_communes": 33293,
-  "prix_m2_national": 5170,
+  "prix_m2_national": 5165,
   "years": "2021-2025",
   "data_source": "DGFiP - Demandes de Valeurs Foncières (data.gouv.fr)",
   "years_processed": [
