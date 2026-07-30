@@ -20,24 +20,20 @@
       ],
       "recommandations": [
         {
-          "mesure": "Vérifier l’état des structures portantes en béton et remédier aux éventuelles infiltrations ou stagnations d’eau. Réparer le béton dans les zones dégradées.",
-          "type": "recommandation_source",
+          "mesure": "Interdiction des sous-sols partiels.",
+          "type": "obligation_locale",
           "cout_estime": null,
-          "aide": {
-            "dispositif": null,
-            "conditions": null,
-            "statut": "potential_eligibility_only"
-          },
+          "aide": null,
           "sources": [
             {
-              "fiche_id": "REF-0017",
-              "source_id": "S01",
-              "extrait_exact": "2.2 ÉLÉMENTS DE STRUCTURE EN BÉTON Vériﬁer l’état des structures portantes et remédier aux éventuelles inﬁltrations ou stagnations d’eau."
+              "fiche_id": "REF-1336",
+              "source_id": "construire_en_terrain_argileux_reglementation_et_bonnes_pratiques.pdf",
+              "extrait_exact": "Les sous-sols partiels sont interdits"
             }
           ]
         },
         {
-          "mesure": "Vérifier l’état des structures portantes en maçonnerie et remédier aux éventuelles infiltrations ou stagnations d’eau.",
+          "mesure": "Éviter les fondations hétérogènes, notamment la présence d'un sous-sol partiel, pour limiter les risques de désordres.",
           "type": "recommandation_source",
           "cout_estime": null,
           "aide": {
@@ -47,14 +43,14 @@
           },
           "sources": [
             {
-              "fiche_id": "REF-0016",
-              "source_id": "S01",
-              "extrait_exact": "2.1 ÉLÉMENTS DE STRUCTURE EN MAÇONNERIE Vériﬁer l’état des structures portantes et remédier aux éventuelles inﬁltrations ou stagnations d’eau."
+              "fiche_id": "REF-1158",
+              "source_id": "2017-GTI4.3-guidetechnique-Ifsttar.pdf",
+              "extrait_exact": "fondations hétérogènes, par exemple avec la présence d'un sous-sol partiel"
             }
           ]
         },
         {
-          "mesure": "Faire appel à un professionnel (architecte, maître d'œuvre) pour analyser l'architecture du bâtiment et concevoir le projet, indépendamment de sa complexité.",
+          "mesure": "Observer et décrire les désordres (fissures) sur les points de faiblesse de la maison, notamment les fondations, pour identifier le mécanisme déclencheur et écarter ou confirmer l'implication du sol.",
           "type": "recommandation_source",
           "cout_estime": null,
           "aide": {
@@ -64,9 +60,50 @@
           },
           "sources": [
             {
-              "fiche_id": "REF-0374",
-              "source_id": "S09",
-              "extrait_exact": "Indépendamment du degré de complexité de votre projet, faire appel à un professionnel (architecte, maître d’œuvre) pour analyser l’architecture du bâtiment et vous aider à concevoir votre projet."
+              "fiche_id": "REF-1095",
+              "source_id": "2017-GTI4.3-guidetechnique-Ifsttar.pdf",
+              "extrait_exact": "L’observation et la description des désordres sur une maison individuelle doit être le point de départ de la démarche permettant leur traitement."
+            },
+            {
+              "fiche_id": "REF-1095",
+              "source_id": "2017-GTI4.3-guidetechnique-Ifsttar.pdf",
+              "extrait_exact": "Ces désordres (principalement des fissures) apparaissent sur des points de faiblesse qui sont généralement bien connus."
+            }
+          ]
+        },
+        {
+          "mesure": "Identifier les désordres induits par le retrait-gonflement des argiles en observant les indices spécifiques (fissures en escalier, ouverture/fermeture saisonnière, localisation près des arbres ou murs exposés au Sud, désaffleurements, etc.).",
+          "type": "recommandation_source",
+          "cout_estime": null,
+          "aide": null,
+          "sources": [
+            {
+              "fiche_id": "REF-1111",
+              "source_id": "2017-GTI4.3-guidetechnique-Ifsttar.pdf",
+              "extrait_exact": "Il est donc important de savoir reconnaître les désordres induits par ce phénomène, d'en apprécier l'importance et l'évolution possible afin de choisir la solution de traitement la plus adéquate."
+            },
+            {
+              "fiche_id": "REF-1111",
+              "source_id": "2017-GTI4.3-guidetechnique-Ifsttar.pdf",
+              "extrait_exact": "Les désordres associés à un mouvement des fondations se manifestent en général par l'apparition de fissures sur la maison. La direction et la largeur de celles-ci dépendent du processus qui en est à l'origine (figure 1)."
+            },
+            {
+              "fiche_id": "REF-1111",
+              "source_id": "2017-GTI4.3-guidetechnique-Ifsttar.pdf",
+              "extrait_exact": "Indicateurs caractéristiques d’un retrait-gonflement du sol : Les fissures apparaissent apres une période prolongée de sécheresse. Les fissures s’ouvrent en été et se referment en hiver. Les fissures les plus larges sont situées sur les murs exposés au Sud ou près des arbres."
+            }
+          ]
+        },
+        {
+          "mesure": "Surveiller les zones de faiblesse structurelles (ouvertures, jonctions de fondations, extensions) où les désordres (fissures) sont plus susceptibles d'apparaître en cas de retrait-gonflement des argiles.",
+          "type": "recommandation_source",
+          "cout_estime": null,
+          "aide": null,
+          "sources": [
+            {
+              "fiche_id": "REF-1112",
+              "source_id": "2017-GTI4.3-guidetechnique-Ifsttar.pdf",
+              "extrait_exact": "Sur une maison individuelle, les désordres (principalement des fissures) apparaissent du fait de la présence de points de faiblesse qui sont généralement bien connus : les ouvertures (fenêtres et portes), les défauts de liaison des chaînages ou des armatures, les zones où les fondations de la maison changent de configuration (par exemple, la présence d'un sous-sol partiel ou la jonction de redans mal ferraillés) ou encore celles où une extension a été construite."
             }
           ]
         }
@@ -83,7 +120,11 @@
           "mesure": "Vérification régulière des soudures, joints, couvre-joints et fixations de la toiture.",
           "type": "recommandation_source",
           "cout_estime": null,
-          "aide": null,
+          "aide": {
+            "dispositif": null,
+            "conditions": null,
+            "statut": "potential_eligibility_only"
+          },
           "sources": [
             {
               "fiche_id": "REF-0069",
@@ -96,7 +137,11 @@
           "mesure": "Vérifier les fixations, principalement aux rives.",
           "type": "recommandation_source",
           "cout_estime": null,
-          "aide": null,
+          "aide": {
+            "dispositif": null,
+            "conditions": null,
+            "statut": "potential_eligibility_only"
+          },
           "sources": [
             {
               "fiche_id": "REF-0106",
@@ -109,7 +154,11 @@
           "mesure": "Remplacer et remettre en place les éléments manquants, endommagés ou déplacés.",
           "type": "recommandation_source",
           "cout_estime": null,
-          "aide": null,
+          "aide": {
+            "dispositif": null,
+            "conditions": null,
+            "statut": "potential_eligibility_only"
+          },
           "sources": [
             {
               "fiche_id": "REF-0104",
@@ -119,15 +168,15 @@
           ]
         },
         {
-          "mesure": "Vérification de l’état du lestage et remise en place si nécessaire pour éviter le soulèvement des panneaux d’isolation thermique par le vent.",
+          "mesure": "Appliquer les recommandations pour la protection des objets contre les dangers naturels météorologiques, notamment pour le vent (Chapitre 2 – Vent).",
           "type": "recommandation_source",
           "cout_estime": null,
           "aide": null,
           "sources": [
             {
-              "fiche_id": "REF-0072",
-              "source_id": "S01",
-              "extrait_exact": "Après une période de vent violent, on procédera à une vériﬁcation de l’état du lestage et à sa remise en place si nécessaire."
+              "fiche_id": "REF-1989",
+              "source_id": "S21",
+              "extrait_exact": "Recommandations – Protection des objets contre les dangers naturels météorologiques, Chapitre 2 – Vent, ECA, AEIA, 2007"
             }
           ]
         },
@@ -144,13 +193,18 @@
             {
               "fiche_id": "REF-0600",
               "source_id": "S11",
-              "extrait_exact": "Le toit doit être isolé en priorité car c’est l’action la plus rentable ! Perte de chaleur d’une maison non isolée d’avant 1974 [...] 25 à 30 %"
+              "extrait_exact": "Le toit doit être isolé en priorité car c’est l’action la plus rentable !"
+            },
+            {
+              "fiche_id": "REF-0600",
+              "source_id": "S11",
+              "extrait_exact": "Pertes de chaleur d’une maison non isolée d’avant 1974 [...] 25 à 30 %"
             }
           ]
         },
         {
-          "mesure": "Contrôle des avaloirs, tuyaux de descente, gargouilles, solins et profils de rive au moins une fois par an (par exemple, après l’hiver).",
-          "type": "recommandation_source",
+          "mesure": "Isolation thermique obligatoire lors de travaux de réfection de toiture (remplacement de la toiture existante ou installation d'une sur-toiture) couvrant plus de 50 % de la toiture (hors ouvertures). Dérogations possibles en cas de contrainte technique, juridique, architecturale ou économique (temps de retour sur investissement > 10 ans).",
+          "type": "obligation_locale",
           "cout_estime": null,
           "aide": {
             "dispositif": null,
@@ -159,9 +213,14 @@
           },
           "sources": [
             {
-              "fiche_id": "REF-0076",
-              "source_id": "S01",
-              "extrait_exact": "Au moins une fois par an (par exemple, après l’hiver): contrôle des avaloirs, des tuyaux de descente, des gargouilles, des solins, des proﬁlés de rive, etc."
+              "fiche_id": "REF-1297",
+              "source_id": "Ravalement de façade isolation thermique exterieure obligatoire.pdf",
+              "extrait_exact": "Depuis le 1er janvier 2017, il est obligatoire d’embarquer des travaux d’isolation thermique en cas de travaux de rénovation importants."
+            },
+            {
+              "fiche_id": "REF-1297",
+              "source_id": "Ravalement de façade isolation thermique exterieure obligatoire.pdf",
+              "extrait_exact": "Réfections de toiture concernées par l'obligation : celles qui couvrent plus de 50 % de la toiture (hors ouvertures). Est considérée comme une réfection de toiture le fait d'enlever la toiture existante et de la remplacer par une nouvelle toiture. L'installation d'une sur-toiture rentre également dans le champ de l'obligation ;"
             }
           ]
         }
@@ -173,6 +232,23 @@
         "canicule"
       ],
       "recommandations": [
+        {
+          "mesure": "Isoler les parois par l’intérieur ou par l’extérieur selon les durées d’occupation, les particularités constructives et climatiques.",
+          "type": "recommandation_source",
+          "cout_estime": null,
+          "aide": {
+            "dispositif": null,
+            "conditions": null,
+            "statut": "potential_eligibility_only"
+          },
+          "sources": [
+            {
+              "fiche_id": "REF-0475",
+              "source_id": "S09",
+              "extrait_exact": "Maison de campagne - habitat intermittent, occupée été comme hiver • isolation des parois : par l’intérieur ou par l’extérieur, selon durées d’occupation, particularités constructives et climatiques"
+            }
+          ]
+        },
         {
           "mesure": "Assurer l’étanchéité à l’air de l’enveloppe du bâtiment tout en maintenant une ventilation correcte du logement.",
           "type": "recommandation_source",

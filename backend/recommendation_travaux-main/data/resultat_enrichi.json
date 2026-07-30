@@ -20,39 +20,45 @@
       ],
       "recommandations": [
         {
-          "mesure": "Vérifier l’état des structures portantes en béton et remédier aux éventuelles infiltrations ou stagnations d’eau. Réparer le béton dans les zones dégradées.",
-          "type": "recommandation_source",
+          "mesure": "Interdiction des sous-sols partiels.",
+          "type": "obligation_locale",
           "cout_estime": {
-            "montant_min": 3000,
-            "montant_max": 15000,
+            "montant_min": 15000,
+            "montant_max": 50000,
             "devise": "EUR",
             "unite": "forfait",
-            "hypotheses": "Maison individuelle de 100 m² au sol (estimation standard), fondations en béton armé avec dégradations localisées (fissures, infiltrations). Périmètre : diagnostic visuel et destructif partiel (carottage si nécessaire), réparation des zones dégradées (reprise en sous-œuvre, injection de résine époxy ou mortier de réparation), traitement hydrofuge des surfaces exposées. Complexité accrue si accès difficile (terrain en pente, présence d'eau stagnante) ou si les désordres sont étendus. Exclut les travaux de reprise totale des fondations ou de drainage périphérique.",
+            "hypotheses": "Travaux visant à supprimer ou neutraliser un sous-sol partiel pour limiter les risques de retrait-gonflement des argiles. Périmètre : maison individuelle de 100 m² au sol, fondations en parpaing, accès standard (pas de contraintes majeures de site). Inclut : reprise en sous-œuvre des fondations (micropieux ou longrines), étanchéité, drainage périphérique, et remblaiement/terrassement. Exclut : aménagements intérieurs post-travaux (ex : cave transformée en local technique). Variabilité liée à la profondeur des fondations, la nature du sol, et la nécessité de renforcer la structure existante.",
             "origine": "estimation_llm_non_sourcee",
-            "fiabilite": "indicative - ordre de grandeur général, très variable selon l'étendue des désordres et les méthodes de réparation"
+            "fiabilite": "indicative - ordre de grandeur general, non issu d'une source documentaire"
           },
           "aide": {
-            "dispositif": null,
-            "conditions": null,
-            "statut": "potential_eligibility_only"
+            "dispositifs_generaux": [
+              "MaPrimeRénov’",
+              "Éco-prêt à taux zéro (Éco-PTZ)",
+              "Aides de l’Agence Nationale de l’Habitat (Anah)",
+              "Subventions locales (département, région, commune)",
+              "Fonds de prévention des risques naturels majeurs (FPRNM - 'Fonds Barnier')"
+            ],
+            "statut": "potential_eligibility_only",
+            "origine": "estimation_llm_non_sourcee"
           },
           "sources": [
             {
-              "fiche_id": "REF-0017",
-              "source_id": "S01",
-              "extrait_exact": "2.2 ÉLÉMENTS DE STRUCTURE EN BÉTON Vériﬁer l’état des structures portantes et remédier aux éventuelles inﬁltrations ou stagnations d’eau."
+              "fiche_id": "REF-1336",
+              "source_id": "construire_en_terrain_argileux_reglementation_et_bonnes_pratiques.pdf",
+              "extrait_exact": "Les sous-sols partiels sont interdits"
             }
           ]
         },
         {
-          "mesure": "Vérifier l’état des structures portantes en maçonnerie et remédier aux éventuelles infiltrations ou stagnations d’eau.",
+          "mesure": "Éviter les fondations hétérogènes, notamment la présence d'un sous-sol partiel, pour limiter les risques de désordres.",
           "type": "recommandation_source",
           "cout_estime": {
-            "montant_min": 3000,
-            "montant_max": 15000,
+            "montant_min": 20000,
+            "montant_max": 80000,
             "devise": "EUR",
             "unite": "forfait",
-            "hypotheses": "Diagnostic complet des fondations (incluant sondages, inspection visuelle et éventuels tests d'humidité) sur une maison individuelle de plain-pied ou à étage, en parpaing, construite en 1975. Travaux de remédiation possibles : reprise en sous-œuvre partielle (longrines, micropieux), drainage périphérique, étanchéité des murs enterrés, et traitement des infiltrations. Complexité variable selon l'accessibilité (présence de végétation, espace restreint) et l'étendue des désordres (fissures, affaissements). Zone soumise à un risque modéré à fort de retrait-gonflement des argiles (Gironde).",
+            "hypotheses": "Travaux de reprise en sous-oeuvre pour homogénéiser les fondations d'une maison individuelle de 100 m² environ, avec sous-sol partiel. Inclut : étude géotechnique préalable (G2 ou G5), terrassement, mise en place de longrines ou micropieux pour uniformiser les appuis, drainage périphérique si nécessaire, et reprise des murs de soubassement. Complexité accrue par l'accès difficile et la nécessité de préserver la stabilité de la structure existante. Les coûts varient fortement selon la profondeur des fondations à reprendre, la nature du sol (présence d'argile), et l'étendue du sous-sol partiel.",
             "origine": "estimation_llm_non_sourcee",
             "fiabilite": "indicative - ordre de grandeur general, non issu d'une source documentaire"
           },
@@ -63,34 +69,109 @@
           },
           "sources": [
             {
-              "fiche_id": "REF-0016",
-              "source_id": "S01",
-              "extrait_exact": "2.1 ÉLÉMENTS DE STRUCTURE EN MAÇONNERIE Vériﬁer l’état des structures portantes et remédier aux éventuelles inﬁltrations ou stagnations d’eau."
+              "fiche_id": "REF-1158",
+              "source_id": "2017-GTI4.3-guidetechnique-Ifsttar.pdf",
+              "extrait_exact": "fondations hétérogènes, par exemple avec la présence d'un sous-sol partiel"
             }
           ]
         },
         {
-          "mesure": "Faire appel à un professionnel (architecte, maître d'œuvre) pour analyser l'architecture du bâtiment et concevoir le projet, indépendamment de sa complexité.",
+          "mesure": "Observer et décrire les désordres (fissures) sur les points de faiblesse de la maison, notamment les fondations, pour identifier le mécanisme déclencheur et écarter ou confirmer l'implication du sol.",
+          "type": "recommandation_source",
+          "cout_estime": {
+            "montant_min": 800,
+            "montant_max": 2500,
+            "devise": "EUR",
+            "unite": "forfait",
+            "hypotheses": "Diagnostic géotechnique G5 (étude de sol ciblée sur les désordres observés) incluant : visite sur site par un géotechnicien, analyse des fissures, relevés des points de faiblesse, rapport écrit avec identification des mécanismes déclencheurs (retrait-gonflement des argiles) et préconisations. Hypothèses : maison individuelle de 100 m² au sol, accès standard aux fondations, complexité moyenne des désordres (fissures visibles mais pas d'effondrement structurel). Exclut les sondages destructifs ou les essais en laboratoire avancés.",
+            "origine": "estimation_llm_non_sourcee",
+            "fiabilite": "indicative - ordre de grandeur general, non issu d'une source documentaire"
+          },
+          "aide": {
+            "dispositif": null,
+            "conditions": null,
+            "statut": "potential_eligibility_only"
+          },
+          "sources": [
+            {
+              "fiche_id": "REF-1095",
+              "source_id": "2017-GTI4.3-guidetechnique-Ifsttar.pdf",
+              "extrait_exact": "L’observation et la description des désordres sur une maison individuelle doit être le point de départ de la démarche permettant leur traitement."
+            },
+            {
+              "fiche_id": "REF-1095",
+              "source_id": "2017-GTI4.3-guidetechnique-Ifsttar.pdf",
+              "extrait_exact": "Ces désordres (principalement des fissures) apparaissent sur des points de faiblesse qui sont généralement bien connus."
+            }
+          ]
+        },
+        {
+          "mesure": "Identifier les désordres induits par le retrait-gonflement des argiles en observant les indices spécifiques (fissures en escalier, ouverture/fermeture saisonnière, localisation près des arbres ou murs exposés au Sud, désaffleurements, etc.).",
+          "type": "recommandation_source",
+          "cout_estime": {
+            "montant_min": 800,
+            "montant_max": 2500,
+            "devise": "EUR",
+            "unite": "forfait",
+            "hypotheses": "Diagnostic géotechnique de niveau G5 (étude spécifique retrait-gonflement des argiles) pour une maison individuelle de plain-pied ou à étage, incluant : visite sur site, analyse des fissures et indices, relevés topographiques sommaires, rapport écrit avec préconisations. Hypothèses : terrain accessible, absence de contraintes majeures (pente, végétation dense, etc.), prestataire local en Nouvelle-Aquitaine (zone à aléa moyen à fort). Le coût exclut les sondages profonds ou essais en laboratoire complémentaires.",
+            "origine": "estimation_llm_non_sourcee",
+            "fiabilite": "indicative - ordre de grandeur general, non issu d'une source documentaire"
+          },
+          "aide": {
+            "dispositifs_generaux": [
+              "MaPrimeRénov'",
+              "Aides de l'ANAH (Agence Nationale de l'Habitat)",
+              "Subventions locales (département, commune)",
+              "Crédit d'impôt transition énergétique (CITE) - sous conditions"
+            ],
+            "statut": "potential_eligibility_only",
+            "origine": "estimation_llm_non_sourcee"
+          },
+          "sources": [
+            {
+              "fiche_id": "REF-1111",
+              "source_id": "2017-GTI4.3-guidetechnique-Ifsttar.pdf",
+              "extrait_exact": "Il est donc important de savoir reconnaître les désordres induits par ce phénomène, d'en apprécier l'importance et l'évolution possible afin de choisir la solution de traitement la plus adéquate."
+            },
+            {
+              "fiche_id": "REF-1111",
+              "source_id": "2017-GTI4.3-guidetechnique-Ifsttar.pdf",
+              "extrait_exact": "Les désordres associés à un mouvement des fondations se manifestent en général par l'apparition de fissures sur la maison. La direction et la largeur de celles-ci dépendent du processus qui en est à l'origine (figure 1)."
+            },
+            {
+              "fiche_id": "REF-1111",
+              "source_id": "2017-GTI4.3-guidetechnique-Ifsttar.pdf",
+              "extrait_exact": "Indicateurs caractéristiques d’un retrait-gonflement du sol : Les fissures apparaissent apres une période prolongée de sécheresse. Les fissures s’ouvrent en été et se referment en hiver. Les fissures les plus larges sont situées sur les murs exposés au Sud ou près des arbres."
+            }
+          ]
+        },
+        {
+          "mesure": "Surveiller les zones de faiblesse structurelles (ouvertures, jonctions de fondations, extensions) où les désordres (fissures) sont plus susceptibles d'apparaître en cas de retrait-gonflement des argiles.",
           "type": "recommandation_source",
           "cout_estime": {
             "montant_min": 1500,
             "montant_max": 5000,
             "devise": "EUR",
             "unite": "forfait",
-            "hypotheses": "Prestation incluant une étude préalable des fondations et du sol (diagnostic géotechnique G5 recommandé pour le retrait-gonflement des argiles), analyse des plans existants, conception d'un projet d'adaptation (renforcement des fondations, drainage, etc.), et rendu d'un dossier technique complet. Surface moyenne de 100 à 150 m², maison en parpaing des années 1970, accès standard. Complexité variable selon l'état des fondations et la nécessité de sondages complémentaires.",
+            "hypotheses": "Surveillance visuelle et instrumentale (fissuromètres, capteurs) des zones critiques (jonctions fondations/murs, extensions, ouvertures) sur une maison individuelle de 100 m² environ, en parpaing, construite en 1975. Inclut un diagnostic initial par un professionnel (géotechnicien ou bureau d'études structure) pour identifier les points sensibles, suivi d'un suivi périodique (2 à 3 visites/an) sur 2 à 3 ans. Complexité moyenne (accès standard aux fondations, pas de terrassement lourd).",
             "origine": "estimation_llm_non_sourcee",
             "fiabilite": "indicative - ordre de grandeur general, non issu d'une source documentaire"
           },
           "aide": {
-            "dispositif": null,
-            "conditions": null,
-            "statut": "potential_eligibility_only"
+            "dispositifs_generaux": [
+              "MaPrimeRénov' (diagnostic seulement, sous conditions)",
+              "Aides de l'ANAH (Agence Nationale de l'Habitat)",
+              "Subventions locales (départements ou communes en zones à risque argiles)",
+              "Assurance habitation (couverture partielle en cas de sinistre déclaré)"
+            ],
+            "statut": "potential_eligibility_only",
+            "origine": "estimation_llm_non_sourcee"
           },
           "sources": [
             {
-              "fiche_id": "REF-0374",
-              "source_id": "S09",
-              "extrait_exact": "Indépendamment du degré de complexité de votre projet, faire appel à un professionnel (architecte, maître d’œuvre) pour analyser l’architecture du bâtiment et vous aider à concevoir votre projet."
+              "fiche_id": "REF-1112",
+              "source_id": "2017-GTI4.3-guidetechnique-Ifsttar.pdf",
+              "extrait_exact": "Sur une maison individuelle, les désordres (principalement des fissures) apparaissent du fait de la présence de points de faiblesse qui sont généralement bien connus : les ouvertures (fenêtres et portes), les défauts de liaison des chaînages ou des armatures, les zones où les fondations de la maison changent de configuration (par exemple, la présence d'un sous-sol partiel ou la jonction de redans mal ferraillés) ou encore celles où une extension a été construite."
             }
           ]
         }
@@ -108,14 +189,18 @@
           "type": "recommandation_source",
           "cout_estime": {
             "montant_min": 200,
-            "montant_max": 600,
+            "montant_max": 800,
             "devise": "EUR",
             "unite": "forfait",
-            "hypotheses": "Vérification visuelle et manuelle des soudures, joints, couvre-joints et fixations d'une toiture en tuiles d'environ 100 m², sans démontage ni réparation. Complexité moyenne (accès standard, hauteur modérée). Exclut les éventuelles réparations ou remplacements identifiés lors du contrôle.",
+            "hypotheses": "Vérification visuelle et manuelle des soudures, joints, couvre-joints et fixations d'une toiture en tuiles d'environ 100 m² (surface standard pour une maison individuelle des années 1970). Inclut le contrôle de l'état général, la détection de tuiles cassées ou déplacées, et la vérification des fixations (clous, vis, ou crochets). Complexité d'accès modérée (toiture pentue, hauteur standard). Exclut les réparations ou remplacements de matériaux, ainsi que l'utilisation d'équipements spécifiques comme une nacelle (sauf si nécessaire pour des zones difficiles d'accès, ce qui pourrait augmenter le coût).",
             "origine": "estimation_llm_non_sourcee",
             "fiabilite": "indicative - ordre de grandeur general, non issu d'une source documentaire"
           },
-          "aide": null,
+          "aide": {
+            "dispositif": null,
+            "conditions": null,
+            "statut": "potential_eligibility_only"
+          },
           "sources": [
             {
               "fiche_id": "REF-0069",
@@ -132,18 +217,14 @@
             "montant_max": 1200,
             "devise": "EUR",
             "unite": "forfait",
-            "hypotheses": "Vérification et renforcement des fixations des tuiles en rive (environ 20 à 50 mètres linéaires) sur une toiture en tuiles mécaniques ou plates, incluant la main d'œuvre pour un accès standard (pas d'échafaudage complexe). Hypothèses : toiture accessible sans contraintes majeures, pas de remplacement de tuiles (seulement vérification/fixation), maison de plain-pied ou à étage avec accès sécurisé. Complexité variable selon l'état des fixations existantes et la pente de la toiture.",
+            "hypotheses": "Vérification et renforcement des fixations des tuiles en rives (environ 10 à 30 mètres linéaires) sur une toiture en tuiles mécaniques ou plates, incluant la main d'œuvre pour un diagnostic visuel et des corrections ponctuelles (remplacement de crochets, clous ou vis, ajout de fixations si nécessaire). Hypothèses : accès sécurisé à la toiture (pas d'échafaudage complexe), maison de plain-pied ou à un étage, pas de dégradation majeure des liteaux ou chevrons nécessitant des réparations structurelles.",
             "origine": "estimation_llm_non_sourcee",
             "fiabilite": "indicative - ordre de grandeur general, non issu d'une source documentaire"
           },
           "aide": {
-            "dispositifs_generaux": [
-              "MaPrimeRénov'",
-              "Certificats d'Économies d'Énergie (CEE)",
-              "Aides locales (selon région/département)"
-            ],
-            "statut": "potential_eligibility_only",
-            "origine": "estimation_llm_non_sourcee"
+            "dispositif": null,
+            "conditions": null,
+            "statut": "potential_eligibility_only"
           },
           "sources": [
             {
@@ -161,20 +242,14 @@
             "montant_max": 15000,
             "devise": "EUR",
             "unite": "forfait",
-            "hypotheses": "Remplacement et remise en place de tuiles endommagées ou déplacées sur une toiture en tuiles mécaniques ou plates (surface estimée entre 80 et 120 m² pour une maison individuelle standard des années 1970). Inclut la dépose des tuiles abîmées, la vérification et le renforcement éventuel de la charpente si nécessaire, la pose de nouvelles tuiles (même type ou équivalent), les accessoires (fixations, closoirs, etc.), et la remise en état des points singuliers (rives, faîtage, arêtiers). Complexité variable selon l'accessibilité (hauteur, pente), l'état de la charpente, et la nécessité de traiter des infiltrations préalables. Exclut les travaux de zinguerie (gouttières, chéneaux) ou d'isolation.",
+            "hypotheses": "Remplacement partiel ou total des tuiles endommagées ou déplacées sur une toiture de maison individuelle de 100 m² environ (surface standard pour une maison des années 1970). Inclut la main d'œuvre pour dépose des éléments endommagés, fourniture et pose de tuiles neuves (tuiles mécaniques standard), étanchéité et fixation renforcée pour résistance aux intempéries (tempête, grêle). Complexité variable selon l'accessibilité de la toiture (hauteur, pente) et l'état de la charpente (vérification incluse). Exclut les travaux de charpente si des réparations structurelles sont nécessaires.",
             "origine": "estimation_llm_non_sourcee",
             "fiabilite": "indicative - ordre de grandeur general, non issu d'une source documentaire"
           },
           "aide": {
-            "dispositifs_generaux": [
-              "MaPrimeRénov’",
-              "Éco-prêt à taux zéro (Éco-PTZ)",
-              "TVA à taux réduit (10% ou 5,5%)",
-              "Aides des collectivités locales (région, département, commune)",
-              "Subventions de l’ANAH (Agence Nationale de l’Habitat) sous conditions de ressources"
-            ],
-            "statut": "potential_eligibility_only",
-            "origine": "estimation_llm_non_sourcee"
+            "dispositif": null,
+            "conditions": null,
+            "statut": "potential_eligibility_only"
           },
           "sources": [
             {
@@ -185,31 +260,32 @@
           ]
         },
         {
-          "mesure": "Vérification de l’état du lestage et remise en place si nécessaire pour éviter le soulèvement des panneaux d’isolation thermique par le vent.",
+          "mesure": "Appliquer les recommandations pour la protection des objets contre les dangers naturels météorologiques, notamment pour le vent (Chapitre 2 – Vent).",
           "type": "recommandation_source",
           "cout_estime": {
-            "montant_min": 800,
-            "montant_max": 3000,
+            "montant_min": 2000,
+            "montant_max": 10000,
             "devise": "EUR",
             "unite": "forfait",
-            "hypotheses": "Travaux sur une toiture en tuiles de maison individuelle de 100 m² environ, avec accès standard (pas d'échafaudage complexe). Vérification du lestage existant (gravier, dalles, etc.) et remise en place ou renforcement si nécessaire. Complexité variable selon l'état initial et la méthode de lestage (manuel ou mécanique). Coût incluant main d'œuvre et matériaux de remplacement partiel si besoin.",
+            "hypotheses": "Renforcement de la toiture d'une maison individuelle de 100 m² environ, construite en 1975 avec tuiles. Périmètre : fixation renforcée des tuiles (crochets, liteaux), vérification et consolidation des éléments de charpente si nécessaire, pose de bandes de rive ou solins pour limiter les infiltrations, traitement des points singuliers (cheminées, lucarnes). Complexité variable selon l'état initial de la toiture et l'accessibilité. Travaux réalisés par un professionnel RGE.",
             "origine": "estimation_llm_non_sourcee",
             "fiabilite": "indicative - ordre de grandeur general, non issu d'une source documentaire"
           },
           "aide": {
             "dispositifs_generaux": [
               "MaPrimeRénov'",
+              "Éco-prêt à taux zéro (Éco-PTZ)",
               "Certificats d'Économies d'Énergie (CEE)",
-              "Éco-prêt à taux zéro"
+              "Aides locales (selon région/département)"
             ],
             "statut": "potential_eligibility_only",
             "origine": "estimation_llm_non_sourcee"
           },
           "sources": [
             {
-              "fiche_id": "REF-0072",
-              "source_id": "S01",
-              "extrait_exact": "Après une période de vent violent, on procédera à une vériﬁcation de l’état du lestage et à sa remise en place si nécessaire."
+              "fiche_id": "REF-1989",
+              "source_id": "S21",
+              "extrait_exact": "Recommandations – Protection des objets contre les dangers naturels météorologiques, Chapitre 2 – Vent, ECA, AEIA, 2007"
             }
           ]
         },
@@ -221,7 +297,7 @@
             "montant_max": 12000,
             "devise": "EUR",
             "unite": "forfait",
-            "hypotheses": "Maison individuelle de 100 m² au sol (surface de toiture ~120 m²), isolation par l'intérieur (combles aménageables ou perdus) avec laine minérale (épaisseur 300 mm) ou équivalent. Inclut la dépose éventuelle de l'isolation existante, la pose d'un pare-vapeur, et la reprise des finitions (plafond, électricité si nécessaire). Complexité moyenne (accès standard, pas de contraintes architecturales majeures). Exclut les travaux de charpente ou de réfection de couverture (tuiles).",
+            "hypotheses": "Isolation de la toiture d'une maison individuelle de 100 m² environ (surface projetée), avec combles perdus ou aménageables. Hypothèses : isolation par l'intérieur (laine minérale ou ouate de cellulose) avec pare-vapeur, traitement des ponts thermiques, et respect des normes RT existantes. Complexité moyenne (accès standard, pas de surcoût lié à la charpente ou à des contraintes architecturales majeures). Inclut la main d'œuvre et les matériaux, hors éventuelle dépose de l'isolation existante ou traitement de pathologies (humidité, moisissures).",
             "origine": "estimation_llm_non_sourcee",
             "fiabilite": "indicative - ordre de grandeur general, non issu d'une source documentaire"
           },
@@ -234,19 +310,24 @@
             {
               "fiche_id": "REF-0600",
               "source_id": "S11",
-              "extrait_exact": "Le toit doit être isolé en priorité car c’est l’action la plus rentable ! Perte de chaleur d’une maison non isolée d’avant 1974 [...] 25 à 30 %"
+              "extrait_exact": "Le toit doit être isolé en priorité car c’est l’action la plus rentable !"
+            },
+            {
+              "fiche_id": "REF-0600",
+              "source_id": "S11",
+              "extrait_exact": "Pertes de chaleur d’une maison non isolée d’avant 1974 [...] 25 à 30 %"
             }
           ]
         },
         {
-          "mesure": "Contrôle des avaloirs, tuyaux de descente, gargouilles, solins et profils de rive au moins une fois par an (par exemple, après l’hiver).",
-          "type": "recommandation_source",
+          "mesure": "Isolation thermique obligatoire lors de travaux de réfection de toiture (remplacement de la toiture existante ou installation d'une sur-toiture) couvrant plus de 50 % de la toiture (hors ouvertures). Dérogations possibles en cas de contrainte technique, juridique, architecturale ou économique (temps de retour sur investissement > 10 ans).",
+          "type": "obligation_locale",
           "cout_estime": {
-            "montant_min": 150,
-            "montant_max": 400,
+            "montant_min": 40,
+            "montant_max": 120,
             "devise": "EUR",
-            "unite": "forfait",
-            "hypotheses": "Contrôle visuel et fonctionnel des éléments de toiture (avaloirs, tuyaux de descente, gargouilles, solins, profils de rive) pour une maison individuelle de 100 m² environ, avec toiture en tuiles mécaniques ou plates. Hypothèses : accès sécurisé (pas d'échafaudage systématique, mais utilisation possible d'une nacelle ou d'une échelle si nécessaire), vérification de l'étanchéité et de l'état des fixations, nettoyage sommaire des avaloirs et tuyaux. Complexité moyenne (toiture à 2 pans, hauteur standard < 8 m).",
+            "unite": "m2",
+            "hypotheses": "Isolation thermique par l'extérieur (sarking) ou par l'intérieur (combles aménagés ou perdus) lors du remplacement de la toiture en tuiles sur une maison individuelle des années 1970. Surface estimée entre 80 et 120 m2 pour une toiture standard. Inclut la main d'œuvre, les matériaux isolants (laine minérale ou équivalent, épaisseur 20-30 cm), les pare-vapeur, les liteaux et contre-liteaux, et les éventuelles adaptations pour accès difficile. Exclut les travaux de charpente supplémentaires ou les traitements spécifiques (ex : traitement contre l'humidité). Complexité moyenne (pente standard, pas d'obstacles majeurs).",
             "origine": "estimation_llm_non_sourcee",
             "fiabilite": "indicative - ordre de grandeur general, non issu d'une source documentaire"
           },
@@ -257,9 +338,14 @@
           },
           "sources": [
             {
-              "fiche_id": "REF-0076",
-              "source_id": "S01",
-              "extrait_exact": "Au moins une fois par an (par exemple, après l’hiver): contrôle des avaloirs, des tuyaux de descente, des gargouilles, des solins, des proﬁlés de rive, etc."
+              "fiche_id": "REF-1297",
+              "source_id": "Ravalement de façade isolation thermique exterieure obligatoire.pdf",
+              "extrait_exact": "Depuis le 1er janvier 2017, il est obligatoire d’embarquer des travaux d’isolation thermique en cas de travaux de rénovation importants."
+            },
+            {
+              "fiche_id": "REF-1297",
+              "source_id": "Ravalement de façade isolation thermique exterieure obligatoire.pdf",
+              "extrait_exact": "Réfections de toiture concernées par l'obligation : celles qui couvrent plus de 50 % de la toiture (hors ouvertures). Est considérée comme une réfection de toiture le fait d'enlever la toiture existante et de la remplacer par une nouvelle toiture. L'installation d'une sur-toiture rentre également dans le champ de l'obligation ;"
             }
           ]
         }
@@ -272,6 +358,31 @@
       ],
       "recommandations": [
         {
+          "mesure": "Isoler les parois par l’intérieur ou par l’extérieur selon les durées d’occupation, les particularités constructives et climatiques.",
+          "type": "recommandation_source",
+          "cout_estime": {
+            "montant_min": 50,
+            "montant_max": 150,
+            "devise": "EUR",
+            "unite": "m2",
+            "hypotheses": "Isolation des façades d'une maison individuelle en parpaing (année 1975) par l'intérieur ou l'extérieur. Hypothèses : - Surface moyenne de façade à isoler estimée entre 80 et 120 m2 (maison de plain-pied ou R+1). - Isolation par l'extérieur (ITE) : complexe isolant (polystyrène expansé ou laine minérale) + enduit ou bardage, pose incluse. Coût variable selon l'accessibilité (échafaudage nécessaire) et le choix des finitions. - Isolation par l'intérieur (ITI) : laine minérale ou isolant rigide, parement placo, pose incluse. Moins coûteuse mais réduit la surface habitable. - Climat océanique (coordonnées proches de Bordeaux) : isolation adaptée pour limiter les surchauffes estivales (canicule) et les déperditions hivernales. - Complexité variable selon les ouvertures (fenêtres, portes) et les ponts thermiques à traiter.",
+            "origine": "estimation_llm_non_sourcee",
+            "fiabilite": "indicative - ordre de grandeur general, non issu d'une source documentaire"
+          },
+          "aide": {
+            "dispositif": null,
+            "conditions": null,
+            "statut": "potential_eligibility_only"
+          },
+          "sources": [
+            {
+              "fiche_id": "REF-0475",
+              "source_id": "S09",
+              "extrait_exact": "Maison de campagne - habitat intermittent, occupée été comme hiver • isolation des parois : par l’intérieur ou par l’extérieur, selon durées d’occupation, particularités constructives et climatiques"
+            }
+          ]
+        },
+        {
           "mesure": "Assurer l’étanchéité à l’air de l’enveloppe du bâtiment tout en maintenant une ventilation correcte du logement.",
           "type": "recommandation_source",
           "cout_estime": {
@@ -279,7 +390,7 @@
             "montant_max": 20000,
             "devise": "EUR",
             "unite": "forfait",
-            "hypotheses": "Maison individuelle de 100 m² environ, construite en 1975 avec murs en parpaing et toiture en tuiles. Travaux incluant : traitement des ponts thermiques (menuiseries, liaisons murs/toiture, passages de gaines), pose d'un pare-vapeur ou membrane d'étanchéité à l'air sur les façades, vérification et ajustement des systèmes de ventilation (VMC simple ou double flux si nécessaire), étanchéité des coffres de volets roulants et des prises électriques. Complexité accrue si accès difficile aux façades ou nécessité de dépose/repose d'éléments existants (enduit, bardage).",
+            "hypotheses": "Maison individuelle de 100 m² environ, construite en 1975 avec murs en parpaing et toiture en tuiles. Travaux incluant : traitement des ponts thermiques (menuiseries, liaisons murs/toiture, passages de gaines), pose d'un pare-vapeur ou membrane d'étanchéité à l'air sur les murs (si applicable), calfeutrement des menuiseries, vérification et adaptation du système de ventilation (VMC simple ou double flux si nécessaire). Complexité accrue si accès difficile aux façades ou si présence d'amiante (diagnostic préalable non inclus). Fourchette large en raison des variations possibles sur l'état initial et les solutions techniques retenues (ex : VMC double flux vs simple flux).",
             "origine": "estimation_llm_non_sourcee",
             "fiabilite": "indicative - ordre de grandeur general, non issu d'une source documentaire"
           },
@@ -304,7 +415,7 @@
             "montant_max": 200,
             "devise": "EUR",
             "unite": "m²",
-            "hypotheses": "Isolation des murs par l'extérieur (ITE) pour atteindre une résistance thermique de 1 m².K/W, incluant la préparation des supports (maçonnerie en parpaing), l'isolation périphérique pour traiter les ponts thermiques liés au plancher bas, et la finition (enduit ou bardage). Hypothèses : maison de plain-pied ou R+1, accès standard aux façades, matériaux courants (laine de roche ou polystyrène expansé), main-d'œuvre incluse. Complexité accrue si présence d'ouvertures nombreuses ou obstacles (gaines, câbles).",
+            "hypotheses": "Isolation des murs par l'extérieur (ITE) pour atteindre une résistance thermique de 1 m².K/W, incluant la préparation des supports (maçonnerie en parpaing), l'isolation périphérique pour traiter les ponts thermiques liés au plancher bas, et la finition (enduit ou bardage). Hypothèses : maison de plain-pied ou R+1, accès standard aux façades, matériaux courants (laine de roche ou polystyrène expansé), main-d'œuvre incluse. Complexité accrue si présence d'ouvertures nombreuses ou obstacles (gaines, volets, etc.).",
             "origine": "estimation_llm_non_sourcee",
             "fiabilite": "indicative - ordre de grandeur general, non issu d'une source documentaire"
           },
