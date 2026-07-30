@@ -27,6 +27,9 @@ class TyphoonState(TypedDict, total=False):
     # Ecrit par scoring_agent
     risk_scores: dict[str, Any]
 
+    # Ecrit par interpretation_agent
+    interpretations: dict[str, Any]
+
     # Ecrit par digital_twin_agent (sortie finale, cf. contrat "Jumeau
     # numerique 3D" du README)
     digital_twin: dict[str, Any]

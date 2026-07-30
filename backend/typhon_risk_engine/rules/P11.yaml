@@ -1,0 +1,305 @@
+# Regles du peril P11 — Degats des eaux
+# Constantes metier : ce fichier fait foi, jamais le code Python.
+peril_id: P11
+name: Degats des eaux
+hazard_available: true
+commune_context_codes: []
+evidence_disclaimer: Modele ORDINAL faiblement calibre. Le seul repere chiffre du corpus (FA-M01, France
+  Assureurs 2024) est un taux de marche NATIONAL non segmente, inutilisable comme coefficient individuel.
+  Une calibration exige des donnees assureur segmentees.
+frequency:
+  variables:
+  - key: questionnaire.building.plumbing.material
+    raw_paths:
+    - questionnaire.building.plumbing.material
+    role: F
+    weight: 0.4
+    transform:
+      type: categorical
+      mapping:
+        cuivre: 0.35
+        multicouche: 0.3
+        per: 0.4
+        per_ancien: 0.8
+        plomb: 1.0
+        pvc: 0.5
+        inconnu: 0.6
+      unmapped: null
+    direction: increasing
+    unit: class
+    physical_mechanism: 'Materiau des canalisations : sensibilite a la corrosion et au vieillissement.'
+    min_source_rank: 3
+    allowed_scopes:
+    - dwelling
+    - building
+    - building_group
+    allowed_time_horizons:
+    - current
+    on_missing: renormalize_if_dominant_present
+    on_conflict: keep_highest_rank
+    evidence_level: low
+    references:
+    - 'Referentiel, grille Declencheurs & aggravants P11 : age et materiau des canalisations'
+    calibration_status: provisional_modeling_weight
+    dominant: true
+  - key: building.year_built
+    raw_paths:
+    - bdnb.batiment.annee_construction
+    - questionnaire.building.year_built
+    role: F
+    weight: 0.3
+    transform:
+      type: linear_ramp
+      points:
+      - - 1950
+        - 1.0
+      - - 1980
+        - 0.75
+      - - 2000
+        - 0.5
+      - - 2015
+        - 0.25
+      - - 2025
+        - 0.15
+    direction: decreasing
+    unit: year
+    physical_mechanism: Age du reseau, approche par l'age du bati a defaut de date de refection declaree.
+    min_source_rank: 4
+    allowed_scopes:
+    - dwelling
+    - building
+    - building_group
+    allowed_time_horizons:
+    - current
+    on_missing: renormalize_if_dominant_present
+    on_conflict: keep_highest_rank
+    evidence_level: low
+    references:
+    - 'Referentiel, grille Declencheurs & aggravants P11 : vieillissement et corrosion'
+    calibration_status: provisional_modeling_weight
+    notes: Proxy d'un proxy si aucune date de refection n'est fournie.
+  - key: climate.freeze_days
+    raw_paths:
+    - climat_open_meteo.daily.temperature_2m_min
+    role: F
+    weight: 0.3
+    transform:
+      type: linear_ramp
+      points:
+      - - 0
+        - 0.0
+      - - 20
+        - 0.4
+      - - 60
+        - 0.9
+      - - 100
+        - 1.0
+    direction: increasing
+    unit: count
+    physical_mechanism: 'Nombre de jours de gel : rupture de conduite en volume non chauffe.'
+    min_source_rank: 4
+    allowed_scopes:
+    - climate_grid
+    - department
+    allowed_time_horizons:
+    - historical
+    on_missing: renormalize_if_dominant_present
+    on_conflict: keep_highest_rank
+    evidence_level: medium
+    references:
+    - 'Referentiel XL-V08 : pertinent uniquement si nb jours gel/an > seuil'
+    calibration_status: provisional_modeling_weight
+    notes: Depend de temperature_2m_min, NON demande par le collector.
+vulnerability:
+  variables:
+  - key: questionnaire.building.plumbing.unheated_pipes
+    raw_paths:
+    - questionnaire.building.plumbing.unheated_pipes
+    role: V
+    weight: 0.35
+    transform:
+      type: categorical
+      mapping:
+        aucune: 0.1
+        quelques_unes: 0.6
+        nombreuses: 1.0
+      unmapped: null
+    direction: increasing
+    unit: class
+    physical_mechanism: 'Conduites en volume non chauffe : siege des ruptures par gel.'
+    min_source_rank: 3
+    allowed_scopes:
+    - dwelling
+    - building
+    - building_group
+    allowed_time_horizons:
+    - current
+    on_missing: renormalize_if_dominant_present
+    on_conflict: keep_highest_rank
+    evidence_level: medium
+    references:
+    - 'Referentiel XL-V08 : calorifugeage des conduites en zone non chauffee'
+    calibration_status: provisional_modeling_weight
+    dominant: true
+  - key: questionnaire.building.basement
+    raw_paths:
+    - questionnaire.building.basement
+    role: V
+    weight: 0.25
+    transform:
+      type: categorical
+      mapping:
+        aucun: 0.1
+        vide_sanitaire: 0.4
+        cave_partielle: 0.7
+        sous_sol_total: 1.0
+      unmapped: null
+    direction: increasing
+    unit: class
+    physical_mechanism: 'Volume enterre : lieu de stagnation et d''aggravation d''une fuite.'
+    min_source_rank: 3
+    allowed_scopes:
+    - dwelling
+    - building
+    - building_group
+    allowed_time_horizons:
+    - current
+    on_missing: renormalize_if_dominant_present
+    on_conflict: keep_highest_rank
+    evidence_level: medium
+    references:
+    - Referentiel, grille Declencheurs & aggravants P11
+    calibration_status: provisional_modeling_weight
+  - key: questionnaire.building.plumbing.joints_state
+    raw_paths:
+    - questionnaire.building.plumbing.joints_state
+    role: V
+    weight: 0.2
+    transform:
+      type: categorical
+      mapping:
+        bon: 0.15
+        moyen: 0.55
+        degrade: 1.0
+        inconnu: 0.6
+      unmapped: null
+    direction: increasing
+    unit: class
+    physical_mechanism: 'Etat des joints d''etancheite : defaut d''entretien opposable par l''assureur.'
+    min_source_rank: 3
+    allowed_scopes:
+    - dwelling
+    - building
+    - building_group
+    allowed_time_horizons:
+    - current
+    on_missing: renormalize_if_dominant_present
+    on_conflict: keep_highest_rank
+    evidence_level: medium
+    references:
+    - 'Referentiel XL-V06 : entretien des canalisations apparentes'
+    calibration_status: provisional_modeling_weight
+  - key: questionnaire.building.flat_roof_or_walkin_shower
+    raw_paths:
+    - questionnaire.building.flat_roof_or_walkin_shower
+    role: V
+    weight: 0.2
+    transform:
+      type: boolean
+      'true': 1.0
+      'false': 0.0
+    direction: increasing
+    unit: bool
+    physical_mechanism: 'Toiture-terrasse ou douche a l''italienne : points d''etancheite critiques et
+      sinistres lents.'
+    min_source_rank: 3
+    allowed_scopes:
+    - dwelling
+    - building
+    - building_group
+    allowed_time_horizons:
+    - current
+    on_missing: renormalize_if_dominant_present
+    on_conflict: keep_highest_rank
+    evidence_level: medium
+    references:
+    - 'Referentiel XL-V07 : infiltrations lentes exclues de garantie'
+    calibration_status: provisional_modeling_weight
+  - key: questionnaire.building.plumbing.leak_detector
+    raw_paths:
+    - questionnaire.building.plumbing.leak_detector
+    role: protection
+    weight: 0.0
+    transform:
+      type: boolean
+      'true': 1.0
+      'false': 0.0
+    direction: increasing
+    unit: bool
+    physical_mechanism: 'Detecteur de fuite : limite la duree d''ecoulement.'
+    min_source_rank: 3
+    allowed_scopes:
+    - dwelling
+    - building
+    - building_group
+    allowed_time_horizons:
+    - current
+    on_missing: ignore
+    on_conflict: keep_highest_rank
+    evidence_level: medium
+    references:
+    - 'Referentiel, grille Declencheurs & aggravants P11 : absence de detecteur de fuite'
+    calibration_status: provisional_modeling_weight
+    max_reduction: 0.15
+  - key: questionnaire.building.plumbing.auto_shutoff
+    raw_paths:
+    - questionnaire.building.plumbing.auto_shutoff
+    role: protection
+    weight: 0.0
+    transform:
+      type: boolean
+      'true': 1.0
+      'false': 0.0
+    direction: increasing
+    unit: bool
+    physical_mechanism: 'Coupure automatique d''eau : stoppe l''ecoulement sans intervention.'
+    min_source_rank: 3
+    allowed_scopes:
+    - dwelling
+    - building
+    - building_group
+    allowed_time_horizons:
+    - current
+    on_missing: ignore
+    on_conflict: keep_highest_rank
+    evidence_level: medium
+    references:
+    - Referentiel, grille Declencheurs & aggravants P11
+    calibration_status: provisional_modeling_weight
+    max_reduction: 0.2
+  - key: questionnaire.building.plumbing.insulation
+    raw_paths:
+    - questionnaire.building.plumbing.insulation
+    role: protection
+    weight: 0.0
+    transform:
+      type: boolean
+      'true': 1.0
+      'false': 0.0
+    direction: increasing
+    unit: bool
+    physical_mechanism: Calorifugeage des conduites exposees au gel.
+    min_source_rank: 3
+    allowed_scopes:
+    - dwelling
+    - building
+    - building_group
+    allowed_time_horizons:
+    - current
+    on_missing: ignore
+    on_conflict: keep_highest_rank
+    evidence_level: medium
+    references:
+    - Referentiel XL-V08
+    calibration_status: provisional_modeling_weight
+    max_reduction: 0.15

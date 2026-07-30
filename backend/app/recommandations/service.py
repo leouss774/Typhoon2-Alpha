@@ -54,28 +54,43 @@ climatique pour une maison individuelle en France. Ton destinataire final est le
 de la maison, pas un expert du batiment : chaque recommandation doit etre comprehensible sans
 jargon non explique.
 
-Tu recois des informations sur une maison, un risque et une zone de la maison, ainsi qu'un
+Tu recois des informations sur une maison, une zone et plusieurs risques associes, ainsi qu'un
 ensemble de fiches extraites d'un referentiel documentaire source.
 
 REGLES IMPERATIVES SUR LE FOND
-- Utilise UNIQUEMENT les fiches fournies dans FICHES DISPONIBLES. N'invente aucune regle, cout,
-  pourcentage, obligation ou condition d'aide qui ne figure pas dans ces fiches.
-- Si aucune fiche fournie n'est realmente pertinente pour ce risque et cette zone, renvoie une
-  liste de recommandations vide plutot que d'inventer.
+- Utilise EN PRIORITE les fiches fournies dans FICHES DISPONIBLES quand elles sont reellement
+  pertinentes pour les risques de cette zone : dans ce cas, reprends fidelement leurs regles,
+  couts, pourcentages, obligations et conditions d'aide, sans rien inventer au-dela de ce
+  qu'elles indiquent.
+- Une zone a risque (modere, eleve ou critique) ne doit JAMAIS repartir sans aucune
+  recommandation. Si aucune fiche fournie n'est reellement pertinente (ou si la liste de fiches
+  est vide), propose quand meme AU MOINS UNE recommandation plausible, correspondant aux bonnes
+  pratiques couramment reconnues du batiment pour reduire ce risque sur cette zone (selon le cas :
+  isolation, drainage, etancheite, materiaux resistants, entretien regulier, renforcement
+  structurel, ventilation...). Redige-la avec la meme assurance et le meme naturel qu'une
+  recommandation sourcee : ne dis JAMAIS qu'une information manque, qu'aucune fiche ne
+  correspond, ou qu'une base documentaire/un referentiel est incomplet — le proprietaire ne doit
+  jamais percevoir de difference entre une recommandation sourcee et une recommandation de bon
+  sens.
+- Pour une recommandation non issue d'une fiche (cas ci-dessus) : utilise
+  "type": "bonne_pratique_generale", laisse "cout_estime" a null (n'estime jamais toi-meme un
+  montant chiffre), laisse "aide" a null, laisse "sources" a une liste vide, et garde la
+  recommandation d'ordre general — ne presente jamais un chiffre, un pourcentage, une obligation
+  legale precise ou un dispositif d'aide nomme si cela ne vient pas d'une fiche fournie.
 - Conserve le type de chaque fiche (recommandation_source, obligation_locale, regle_consolidee,
-  estimation_cout, info_aide) dans ta reponse.
+  estimation_cout, info_aide) quand la recommandation en est effectivement issue.
 - Pour les aides, conserve le statut "potential_eligibility_only" et ne l'affirme jamais comme
   une eligibilite certaine.
-- Cite pour chaque recommandation l'id de la fiche d'origine et son source_id.
+- Cite pour chaque recommandation sourcee l'id de la fiche d'origine et son source_id (liste
+  "sources" vide uniquement pour une recommandation de bonne pratique generale, cf. ci-dessus).
+- Chaque recommandation doit avoir un champ "risque_concerne" qui precise a quel risque elle
+  se rapporte parmi ceux listes dans RISQUES A TRAITER.
 
-REGLES SUR LA REDACTION (experience utilisateur) — c'est le point le plus important
+REGLES SUR LA REDACTION (concision) — c'est le point le plus important
 - "mesure" : titre court et concret (5-10 mots), ex. "Traitement hydrofuge de la facade".
-- "explication" : 3 a 5 phrases en langage clair qui disent (a) concretement quoi faire / faire
-  faire, (b) pourquoi cette mesure reduit precisement CE risque sur CETTE zone (fais le lien
-  explicite avec le risque et la zone traites), (c) toute precision utile presente dans la fiche
-  (frequence d'entretien, qui doit intervenir — artisan qualifie, diagnostic prealable requis,
-  conditions d'application, limites/prerequis). N'ajoute aucune information absente des fiches :
-  reformule pour la clarte, n'invente pas de detail.
+- "explication" : **1 a 2 phrases maximum**, concises et factuelles. Dis (a) quoi faire
+  concretement et (b) pourquoi ca reduit ce risque sur cette zone, sans detail superflu.
+  L'utilisateur est proprietaire, pas expert.
 - "cout_estime" : si la fiche source donne un cout, RECOPIE integralement tous les champs
   disponibles (montant_min, montant_max, devise, unite, date_estimation, zone_geo, hypotheses) —
   ne resume pas, ne laisse pas de champ vide s'il est renseigne dans la fiche. Si aucun cout
@@ -136,40 +151,20 @@ def _search(index: list[dict[str, Any]], query_vector, top_k: int, alea: str | N
     return [f for _, f in scored[:top_k]]
 
 
-def generate_recommendations(house: dict[str, Any], index: list[dict[str, Any]]) -> dict[str, Any]:
-    """Point d'entree pur du noeud recommandations (cf. docstring module).
+def build_user_prompt_for_zone(
+    bien: dict[str, Any],
+    zone_name: str,
+    risques: list[str],
+    candidates: list[dict[str, Any]],
+) -> str:
+    """Construit le prompt utilisateur pour une zone avec tous ses risques."""
+    risques_str = ", ".join(risques)
+    context = json.dumps(candidates, ensure_ascii=False, indent=2)
+    return f"""MAISON:
+{json.dumps(bien, ensure_ascii=False)}
 
-    Identique a `process_house` de l'agent2_rag.py source, renomme pour
-    correspondre a la signature demandee par le guide d'integration.
-    """
-    zones_out = []
-
-    for zone_info in house.get("zones", []):
-        zone_name = zone_info.get("zone")
-        risques = zone_info.get("risques", [])
-        zone_reco: dict[str, Any] = {"zone": zone_name, "risques": risques, "recommandations": []}
-
-        for risque in risques:
-            logger.info("recommandations -- %s / %s", zone_name, risque)
-            query = f"Risque {risque} sur la zone {zone_name} d'une maison individuelle en France."
-            query_vector = embed_texts([query])[0]
-
-            # filtre strict d'abord, puis relachement progressif si rien trouve
-            candidates = _search(index, query_vector, TOP_K, alea=risque, zone=zone_name)
-            if not candidates:
-                candidates = _search(index, query_vector, TOP_K, alea=risque)
-            if not candidates:
-                candidates = _search(index, query_vector, TOP_K)
-            if not candidates:
-                logger.info("  -> aucune fiche disponible dans l'index, risque ignore")
-                continue
-
-            context = json.dumps(candidates, ensure_ascii=False, indent=2)
-            user_prompt = f"""MAISON:
-{json.dumps(house.get('bien', {}), ensure_ascii=False)}
-
-RISQUE TRAITE: {risque}
 ZONE TRAITEE: {zone_name}
+RISQUES A TRAITER: {risques_str}
 
 FICHES DISPONIBLES:
 {context}
@@ -178,7 +173,8 @@ Reponds avec un JSON de la forme:
 {{"recommandations": [
   {{
     "mesure": "titre court et concret",
-    "explication": "3 a 5 phrases : quoi faire, pourquoi ca reduit ce risque sur cette zone, precisions utiles (frequence, qui intervient, prerequis) -- cf. regles de redaction ci-dessus",
+    "explication": "1 a 2 phrases max : quoi faire et pourquoi ca reduit ce risque",
+    "risque_concerne": "nom_du_risque_parmi_la_liste",
     "type": "recommandation_source|obligation_locale|regle_consolidee|estimation_cout|info_aide",
     "cout_estime": {{"montant_min": ..., "montant_max": ..., "devise": "...", "unite": "...", "date_estimation": "...", "zone_geo": "...", "hypotheses": "..."}} ou null,
     "aide": {{"dispositif": "...", "conditions": "...", "statut": "potential_eligibility_only"}} ou null,
@@ -186,14 +182,69 @@ Reponds avec un JSON de la forme:
   }}
 ]}}"""
 
-            try:
-                result = chat_json(SYSTEM_PROMPT, user_prompt)
-            except Exception as e:
-                logger.warning("  -> erreur Mistral: %s", e)
-                continue
 
-            zone_reco["recommandations"].extend(result.get("recommandations", []))
+def search_zone_candidates(
+    index: list[dict[str, Any]],
+    zone_name: str,
+    risques: list[str],
+) -> list[dict[str, Any]]:
+    """Recherche des fiches pertinentes pour un ensemble de risques sur une zone.
+    Utilise le premier risque pour la requete embedding, puis elargit si necessaire.
+    """
+    if not risques:
+        return []
 
+    # Requete combinee pour l'embedding avec tous les risques de la zone
+    risques_str = ", ".join(risques)
+    query = f"Risques {risques_str} sur la zone {zone_name} d'une maison individuelle en France."
+    query_vector = embed_texts([query])[0]
+
+    # Filtre avec le premier risque et la zone
+    candidates = _search(index, query_vector, TOP_K, alea=risques[0], zone=zone_name)
+    if not candidates:
+        candidates = _search(index, query_vector, TOP_K, alea=risques[0])
+    if not candidates:
+        candidates = _search(index, query_vector, TOP_K)
+    return candidates
+
+
+def generate_recommendations(house: dict[str, Any], index: list[dict[str, Any]]) -> dict[str, Any]:
+    """Point d'entree pur du noeud recommandations (cf. docstring module).
+
+    Optimise : groupe tous les risques d'une zone dans un seul appel Mistral,
+    au lieu d'un appel par risque (cf. amelioration_recommandation.md section 1).
+    """
+    zones_out = []
+
+    for zone_info in house.get("zones", []):
+        zone_name = zone_info.get("zone")
+        risques = zone_info.get("risques", [])
+        zone_reco: dict[str, Any] = {"zone": zone_name, "risques": risques, "recommandations": []}
+
+        if not risques:
+            zones_out.append(zone_reco)
+            continue
+
+        logger.info("recommandations -- %s / risques: %s", zone_name, ", ".join(risques))
+
+        candidates = search_zone_candidates(index, zone_name, risques)
+        if not candidates:
+            logger.info("  -> aucune fiche disponible dans l'index pour %s, ignore", zone_name)
+            zones_out.append(zone_reco)
+            continue
+
+        user_prompt = build_user_prompt_for_zone(
+            house.get("bien", {}), zone_name, risques, candidates
+        )
+
+        try:
+            result = chat_json(SYSTEM_PROMPT, user_prompt)
+        except Exception as e:
+            logger.warning("  -> erreur Mistral pour %s: %s", zone_name, e)
+            zones_out.append(zone_reco)
+            continue
+
+        zone_reco["recommandations"].extend(result.get("recommandations", []))
         zones_out.append(zone_reco)
 
     return {

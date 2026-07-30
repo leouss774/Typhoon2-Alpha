@@ -1,4 +1,5 @@
-# .env
+.env
+.env.txt
 # GUIDE_DEMARRAGE.md
 config_fallback.py
 agent1_extract_fallback.py

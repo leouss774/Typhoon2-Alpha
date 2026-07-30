@@ -1,0 +1,170 @@
+# Regles du peril P04-GLI — Mouvements de terrain - glissement et instabilite de pente
+# Constantes metier : ce fichier fait foi, jamais le code Python.
+peril_id: P04-GLI
+name: Mouvements de terrain - glissement et instabilite de pente
+hazard_available: true
+commune_context_codes:
+- '12'
+- '124'
+parent_peril: P04
+frequency:
+  variables:
+  - key: site.slope_degrees
+    raw_paths:
+    - derive.slope_degrees
+    role: F
+    weight: 0.6
+    transform:
+      type: linear_ramp
+      points:
+      - - 0
+        - 0.0
+      - - 10
+        - 0.2
+      - - 25
+        - 0.7
+      - - 40
+        - 1.0
+    direction: increasing
+    unit: degrees
+    physical_mechanism: 'Pente du versant : predicteur dominant de la susceptibilite au glissement, avec
+      le TWI.'
+    min_source_rank: 2
+    allowed_scopes:
+    - parcel
+    - building
+    - building_group
+    allowed_time_horizons:
+    - current
+    on_missing: renormalize_if_dominant_present
+    on_conflict: keep_highest_rank
+    evidence_level: high
+    references:
+    - 'Referentiel LOM-A02 (Lombardo et al. 2020) : pente prédicteur dominant'
+    calibration_status: provisional_modeling_weight
+    dominant: true
+    notes: Non collecte. La variable categorielle `slope` du data dictionary a 3 classes dont les seuils
+      en degres ne sont pas documentes.
+  - key: site.twi
+    raw_paths:
+    - derive.twi
+    role: F
+    weight: 0.4
+    transform:
+      type: linear_ramp
+      points:
+      - - 2
+        - 0.0
+      - - 8
+        - 0.5
+      - - 14
+        - 1.0
+    direction: increasing
+    unit: index
+    physical_mechanism: 'Indice topographique d''humidite : saturation potentielle du versant.'
+    min_source_rank: 2
+    allowed_scopes:
+    - parcel
+    - building
+    - building_group
+    allowed_time_horizons:
+    - current
+    on_missing: renormalize_if_dominant_present
+    on_conflict: keep_highest_rank
+    evidence_level: high
+    references:
+    - 'Referentiel LOM-A08 (Lombardo et al. 2020) : TWI codominant avec la pente'
+    calibration_status: provisional_modeling_weight
+    notes: Non collecte. Calculable depuis le MNT RGE ALTI.
+vulnerability:
+  variables:
+  - key: questionnaire.building.foundation.rigidity
+    raw_paths:
+    - questionnaire.building.foundation.rigidity
+    role: V
+    weight: 0.45
+    transform:
+      type: categorical
+      mapping:
+        radier: 0.2
+        pieux: 0.25
+        semelles_filantes: 0.7
+        semelles_isolees: 1.0
+      unmapped: null
+    direction: increasing
+    unit: class
+    physical_mechanism: Une fondation rigide (radier) reduit fortement le deplacement differentiel transmis
+      a la superstructure.
+    min_source_rank: 3
+    allowed_scopes:
+    - dwelling
+    - building
+    - building_group
+    allowed_time_horizons:
+    - current
+    on_missing: renormalize_if_dominant_present
+    on_conflict: keep_highest_rank
+    evidence_level: medium
+    references:
+    - Referentiel SFL-V02 (SafeLand D2.5 2011) ; convergence avec MZU-V01 sur P02
+    calibration_status: provisional_modeling_weight
+    dominant: true
+  - key: questionnaire.site.slope_position
+    raw_paths:
+    - questionnaire.site.slope_position
+    role: V
+    weight: 0.3
+    transform:
+      type: categorical
+      mapping:
+        plat: 0.1
+        haut_de_pente: 0.8
+        mi_pente: 0.7
+        pied_de_pente: 1.0
+      unmapped: null
+    direction: increasing
+    unit: class
+    physical_mechanism: 'Position sur le versant : le pied de pente recoit la masse mobilisee, la crete
+      subit le retrait.'
+    min_source_rank: 3
+    allowed_scopes:
+    - dwelling
+    - building
+    - building_group
+    allowed_time_horizons:
+    - current
+    on_missing: renormalize_if_dominant_present
+    on_conflict: keep_highest_rank
+    evidence_level: medium
+    references:
+    - 'Referentiel SFL-A02 : distance du batiment a la crete du glissement'
+    calibration_status: provisional_modeling_weight
+  - key: questionnaire.site.retaining_wall_state
+    raw_paths:
+    - questionnaire.site.retaining_wall_state
+    role: V
+    weight: 0.25
+    transform:
+      type: categorical
+      mapping:
+        absent: 0.3
+        bon: 0.1
+        fissure: 0.8
+        degrade: 1.0
+      unmapped: null
+    direction: increasing
+    unit: class
+    physical_mechanism: 'Mur de soutenement : ouvrage dont la ruine declenche ou aggrave le mouvement.'
+    min_source_rank: 3
+    allowed_scopes:
+    - dwelling
+    - building
+    - building_group
+    allowed_time_horizons:
+    - current
+    on_missing: renormalize_if_dominant_present
+    on_conflict: keep_highest_rank
+    evidence_level: medium
+    references:
+    - 'Referentiel, grille Declencheurs & aggravants P04 : ouvrages de soutenement'
+    calibration_status: provisional_modeling_weight

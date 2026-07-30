@@ -25,7 +25,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+    # env_file ancre sur BASE_DIR (et non sur le repertoire courant) : le
+    # .env est trouve que uvicorn soit lance depuis backend/ ou depuis la
+    # racine du depot, comme pour les chemins de cache/lookup ci-dessous.
+    model_config = SettingsConfigDict(env_file=BASE_DIR / ".env", extra="ignore")
 
     # BDNB (aucune cle necessaire, confirme par un test reel - voir le guide)
     bdnb_api_key: str | None = None
@@ -67,6 +70,14 @@ class Settings(BaseSettings):
     # Mistral (agent recommandations — RAG travaux, cf.
     # app/recommandations/ et backend/recommendation_travaux-main/)
     mistral_api_key: str | None = None
+
+    # Annonces immobilieres "en vente" (carte zone, marqueurs colores par
+    # score climatique - cf. app/connectors/annonces_lookup.py). Source :
+    # backend/data/annonces_maisons_france.csv, une base constituee a la
+    # main par l'utilisateur (liens PAP.fr reels) - gratuit, pas d'appel
+    # reseau. Aucune option RapidAPI ici : un essai reel a facture des la
+    # premiere requete meme avec une cle valide, ce chemin a ete retire du
+    # code entierement plutot que juste desactive.
 
     # Divers
     http_timeout_seconds: float = 15.0
