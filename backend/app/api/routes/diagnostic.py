@@ -203,18 +203,22 @@ class ZoneAnnoncesRequest(BaseModel):
 async def run_zone_annonces(payload: ZoneAnnoncesRequest) -> dict:
     """Annonces de la zone visible + score climatique par annonce.
 
-    Priorité aux vraies ventes DVF (source="dvf") quand citycode est fourni
-    et DVF activé : ce sont de vraies transactions immobilières (pas des
-    biens actuellement en vente - DVF ne recense que des ventes déjà
-    réalisées), géolocalisées à la demande si besoin (voir
-    dvf_lookup.real_transactions_for_zone). Si indisponible (pas de citycode,
-    DVF désactivé, géocodage en échec, aucune vente dans la zone), retombe
-    sur annonces_lookup (base CSV locale d'annonces réelles). Aucun mode
-    démo, aucun appel API tiers : si aucune source réelle n'est disponible,
-    la réponse contient une liste vide.
+    Combine désormais DEUX sources réelles sur la même carte, sans les
+    distinguer visuellement côté frontend (demande explicite : ne pas
+    préciser que les points DVF sont des transactions déjà réalisées, ne
+    pas afficher de lien de fiche pour ces points-là - ils n'en ont pas) :
+
+      1. DVF (vraies transactions immobilières, géolocalisées à la demande -
+         voir dvf_lookup.real_transactions_for_zone), quand citycode est
+         fourni et DVF activé.
+      2. La base CSV locale d'annonces réelles (annonces_lookup.py).
+
+    Aucun mode démo, aucun appel API tiers : si aucune des deux sources
+    n'est disponible, la réponse contient une liste vide.
     """
     department_code = department_code_from_citycode(payload.citycode) if payload.citycode else None
     prix_m2_base = None
+    dvf_listings: list[dict] = []
 
     if payload.citycode and settings.dvf_enabled:
         try:
@@ -234,32 +238,32 @@ async def run_zone_annonces(payload: ZoneAnnoncesRequest) -> dict:
             logger.warning("zone_annonces -- DVF/geocodage indisponible : %s", exc)
             dvf_listings = []
 
-        if dvf_listings:
-            logger.info(">>> POST /diagnostic/zone/annonces OK (%d ventes DVF reelles)", len(dvf_listings))
-            return {
-                "disponible": True,
-                "source": "dvf",
-                "count": len(dvf_listings),
-                "listings": dvf_listings,
-                "fallback_reason": None,
-            }
-
-    logger.info(">>> POST /diagnostic/zone/annonces  bounds=%s  max_results=%d (fallback csv local)", payload.bounds, payload.max_results)
-    result = await annonces_lookup.fetch_annonces_zone(
+    csv_result = await annonces_lookup.fetch_annonces_zone(
         bounds=payload.bounds,
         max_results=payload.max_results,
         prix_m2_base=prix_m2_base,
     )
-    listings = result["listings"]
-    if result.get("fallback_reason"):
-        # Log explicite : c'est ici qu'on voit POURQUOI la base CSV n'a rien
-        # renvoye (fichier absent/invalide - voir annonces_lookup.py).
-        logger.warning(">>> POST /diagnostic/zone/annonces -- source=%s, RAISON : %s", result["source"], result["fallback_reason"])
-    logger.info(">>> POST /diagnostic/zone/annonces OK (%d annonces, source=%s)", len(listings), result["source"])
+    csv_listings = csv_result["listings"]
+
+    combined = (dvf_listings + csv_listings)[: payload.max_results]
+    if dvf_listings and csv_listings:
+        source = "mixed"
+    elif dvf_listings:
+        source = "dvf"
+    else:
+        source = csv_result["source"]
+
+    fallback_reason = None if combined else csv_result.get("fallback_reason")
+    if fallback_reason:
+        logger.warning(">>> POST /diagnostic/zone/annonces -- source=%s, RAISON : %s", source, fallback_reason)
+    logger.info(
+        ">>> POST /diagnostic/zone/annonces OK (%d DVF + %d CSV = %d annonces, source=%s)",
+        len(dvf_listings), len(csv_listings), len(combined), source,
+    )
     return {
         "disponible": True,
-        "source": result["source"],
-        "count": len(listings),
-        "listings": listings,
-        "fallback_reason": result.get("fallback_reason"),
+        "source": source,
+        "count": len(combined),
+        "listings": combined,
+        "fallback_reason": fallback_reason,
     }
