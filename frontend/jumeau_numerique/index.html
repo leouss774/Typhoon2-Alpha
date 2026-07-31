@@ -4,6 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Typhoon — Diagnostic Climatique Immobilier</title>
+<link rel="icon" href="data:,">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -4448,7 +4449,7 @@ loadDataset(DEFAULT_DATA);
 
   // === BAN Geocoding — toutes les villes de France ===
   async function searchCity(query) {
-    if (query.length < 2) { zoneSuggestions.innerHTML = ''; return; }
+    if (query.length < 3) { zoneSuggestions.innerHTML = ''; return; }
     try {
       const resp = await fetch(`https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(query)}&type=municipality&limit=6`);
       const data = await resp.json();
@@ -4459,6 +4460,9 @@ loadDataset(DEFAULT_DATA);
         const div = document.createElement('div');
         div.className = 'ban-suggestion';
         div.textContent = `${city} — ${ctx}`;
+       div.onmousedown = (e) => {
+          e.preventDefault(); // empêche le blur de l'input de virer la liste avant le clic
+        };
         div.onclick = () => selectCity({
           label: `${city} (${ctx.split(',')[0] || ''})`,
           lat: f.geometry.coordinates[1],
