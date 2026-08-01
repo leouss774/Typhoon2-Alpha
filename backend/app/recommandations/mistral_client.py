@@ -16,7 +16,7 @@ from __future__ import annotations
 import json
 import time
 
-from mistralai import Mistral
+from mistralai.client import Mistral
 
 from app.core.config import settings
 
@@ -73,6 +73,15 @@ def chat_json(system_prompt: str, user_prompt: str, max_retries: int = 5) -> dic
             )
             content = response.choices[0].message.content
             time.sleep(THROTTLE_SECONDS)
+            if isinstance(content, list):
+                text_parts = []
+                for chunk in content:
+                    text = getattr(chunk, "text", None)
+                    if isinstance(text, str):
+                        text_parts.append(text)
+                    elif hasattr(text, "text"):
+                        text_parts.append(str(text.text))
+                content = "".join(text_parts)
             return json.loads(content)
         except Exception as e:
             last_err = e
