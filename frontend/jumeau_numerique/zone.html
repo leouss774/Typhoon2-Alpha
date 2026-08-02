@@ -8,8 +8,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-<link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet" />
+<!-- OpenLayers 9 -->
+<script src="https://cdn.jsdelivr.net/npm/ol@9.2.4/dist/ol.js"></script>
+<link href="https://cdn.jsdelivr.net/npm/ol@9.2.4/ol.css" rel="stylesheet" />
 <script src="../api-config.js"></script>
 <style>
 /* ============================================================
@@ -40,7 +41,7 @@
   --radius: 8px;
 }
 
-/* ── Layer toggle (calques par péril) ── */
+/* ── Layer toggle ── */
 .layer-toggle {
   position: absolute; top: 16px; left: 16px; z-index: 5;
   display: flex; gap: 4px; flex-wrap: wrap; max-width: calc(100% - 32px);
@@ -55,6 +56,52 @@
 .layer-pill-btn:hover { background: var(--panel-3); color: var(--paper); }
 .layer-pill-btn.active { background: var(--storm); color: var(--ink); font-weight: 600; }
 
+/* ── OpenLayers control overrides (dark theme) ── */
+.ol-zoom { bottom: 60px !important; right: 12px !important; top: auto !important; left: auto !important; }
+.ol-zoom button {
+  background: rgba(17,27,23,.92) !important; color: var(--paper) !important;
+  border: 1px solid var(--line) !important; border-radius: 4px !important;
+  width: 28px !important; height: 28px !important; font-size: 16px !important;
+  display: flex !important; align-items: center !important; justify-content: center !important;
+  margin: 2px !important; cursor: pointer !important;
+}
+.ol-zoom button:hover { background: var(--storm) !important; color: var(--ink) !important; }
+.ol-scale-line {
+  background: rgba(17,27,23,.8) !important; border: 1px solid var(--line) !important;
+  border-radius: 4px !important; bottom: 30px !important; left: 12px !important;
+  padding: 2px 6px !important;
+}
+.ol-scale-line-inner { color: var(--fog) !important; font-family: var(--mono) !important; font-size: 9px !important; border-color: var(--fog) !important; }
+.ol-attribution { display: none !important; }
+
+/* ── OpenLayers popup ── */
+#ol-popup {
+  position: absolute;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 14px 16px;
+  font-family: var(--sans);
+  box-shadow: 0 8px 30px rgba(0,0,0,.6);
+  min-width: 240px;
+  max-width: 280px;
+  transform: translate(-50%, calc(-100% - 20px));
+  display: none;
+  z-index: 10;
+}
+#ol-popup.visible { display: block; }
+#ol-popup-closer {
+  position: absolute; top: 8px; right: 10px;
+  cursor: pointer; font-size: 16px; color: var(--fog); background: none; border: none;
+  line-height: 1; padding: 0;
+}
+#ol-popup-closer:hover { color: var(--paper); }
+.pop-title { font-family: var(--serif); font-size: 15px; font-weight: 600; margin-bottom: 8px; padding-right: 18px; }
+.pop-row { display: flex; justify-content: space-between; font-size: 11.5px; margin-bottom: 4px; color: var(--fog); }
+.pop-row span:last-child { color: var(--paper); font-weight: 600; }
+.pop-links { display: flex; gap: 6px; margin-top: 10px; }
+.pop-links a { flex: 1; text-align: center; font-size: 10px; font-weight: 600; text-decoration: none; padding: 5px; border-radius: 4px; background: var(--panel-3); color: var(--storm); border: 1px solid var(--line); font-family: var(--mono); transition: .12s; }
+.pop-links a:hover { background: var(--storm); color: var(--ink); }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { height: 100%; background: var(--ink); color: var(--paper); font-family: var(--sans); overflow: hidden; }
@@ -181,7 +228,7 @@ html, body { height: 100%; background: var(--ink); color: var(--paper); font-fam
 .partial-banner { margin: 0 22px 14px; padding: 10px 12px; background: rgba(208,112,48,.1); border: 1px solid rgba(208,112,48,.3); border-radius: 6px; font-size: 11.5px; color: var(--paper); line-height: 1.5; }
 .partial-banner strong { color: var(--d03-eleve); }
 
-/* Avertissement (always visible per plan §5) */
+/* Avertissement */
 .avertissement { margin: 14px 22px 22px; padding: 12px 14px; background: var(--panel-2); border-radius: 6px; border-left: 3px solid var(--storm); font-size: 11.5px; color: var(--fog); line-height: 1.6; }
 .avertissement strong { color: var(--paper); }
 
@@ -199,12 +246,14 @@ html, body { height: 100%; background: var(--ink); color: var(--paper); font-fam
   width: 14px; height: 14px; border-radius: 50%;
   background: var(--clay); border: 2px solid var(--paper);
   box-shadow: 0 0 0 4px rgba(194,112,64,.35);
+  transform: translate(-50%, -50%);
+  cursor: default;
 }
 
 /* Map topbar */
 .map-topbar {
   position: absolute; top: 14px; left: 14px; right: 14px;
-  display: flex; justify-content: space-between; align-items: flex-start;
+  display: flex; justify-content: flex-end; align-items: flex-start;
   pointer-events: none; z-index: 5; gap: 10px;
 }
 .legend-box {
@@ -227,16 +276,13 @@ html, body { height: 100%; background: var(--ink); color: var(--paper); font-fam
 .strip-dot { width: 6px; height: 6px; background: var(--storm); border-radius: 50%; display: inline-block; margin-right: 6px; animation: pulse 2s infinite; }
 @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
 
-/* MapLibre popup */
-.maplibregl-popup-content { background: var(--panel-2) !important; color: var(--paper) !important; border: 1px solid var(--line) !important; border-radius: 8px !important; padding: 14px 16px !important; font-family: var(--sans) !important; box-shadow: 0 8px 30px rgba(0,0,0,.6) !important; }
-.maplibregl-popup-tip { border-top-color: var(--panel-2) !important; border-bottom-color: var(--panel-2) !important; }
-.maplibregl-popup-close-button { color: var(--fog) !important; }
-.pop-title { font-family: var(--serif); font-size: 15px; font-weight: 600; margin-bottom: 8px; }
-.pop-row { display: flex; justify-content: space-between; font-size: 11.5px; margin-bottom: 4px; color: var(--fog); }
-.pop-row span:last-child { color: var(--paper); font-weight: 600; }
-.pop-links { display: flex; gap: 6px; margin-top: 10px; }
-.pop-links a { flex: 1; text-align: center; font-size: 10px; font-weight: 600; text-decoration: none; padding: 5px; border-radius: 4px; background: var(--panel-3); color: var(--storm); border: 1px solid var(--line); font-family: var(--mono); transition: .12s; }
-.pop-links a:hover { background: var(--storm); color: var(--ink); }
+/* WMS source badge */
+.wms-badge {
+  position: absolute; bottom: 32px; right: 12px; z-index: 5;
+  font-family: var(--mono); font-size: 8.5px; color: var(--fog);
+  background: rgba(11,20,16,.75); border: 1px solid var(--line);
+  border-radius: 4px; padding: 2px 6px; pointer-events: none;
+}
 
 /* Idle state placeholder */
 .idle-placeholder { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; gap: 16px; color: var(--fog); text-align: center; padding: 40px; }
@@ -319,8 +365,14 @@ html, body { height: 100%; background: var(--ink); color: var(--paper); font-fam
     <div id="layer-toggle" class="layer-toggle" style="display:none;"></div>
     <div id="map"></div>
 
+    <!-- OpenLayers overlays -->
+    <div class="map-pin" id="map-pin" style="position:absolute; display:none;"></div>
+    <div id="ol-popup">
+      <button id="ol-popup-closer">×</button>
+      <div id="ol-popup-content"></div>
+    </div>
+
     <div class="map-topbar">
-      <div></div>
       <div class="legend-box">
         <h3>Bandes D03 — Risque</h3>
         <div class="legend-row"><span class="legend-sw" style="background:var(--d03-tres-faible)"></span>Très faible<span class="legend-range">&lt;20</span></div>
@@ -334,21 +386,25 @@ html, body { height: 100%; background: var(--ink); color: var(--paper); font-fam
     <div class="idle-placeholder" id="idle-placeholder">
       <h2>Diagnostic géo-risque</h2>
       <p>Saisissez une adresse française pour afficher le rapport de risques Géorisques et positionner le bien sur la carte.</p>
-      <p style="font-family:var(--mono);font-size:10px;color:var(--fog);">Sources : BAN (Etalab) · Géorisques (BRGM/MTE) · Souverain FR/UE</p>
+      <p style="font-family:var(--mono);font-size:10px;color:var(--fog);">Sources : IGN Géoplateforme · Géorisques (BRGM/MTE) · Souverain FR/UE</p>
     </div>
 
     <div class="map-strip">
       <span><span class="strip-dot"></span><span id="strip-text">En attente d'une adresse</span></span>
-      <span>© CARTO · © OpenStreetMap contributors</span>
+      <span>© CARTO · © OpenStreetMap contributors · © BRGM Géorisques</span>
     </div>
+    <div class="wms-badge" id="wms-badge" style="display:none;">WMS BRGM actif</div>
   </main>
 
 </div>
 
 <script>
 /* ================================================================
-   TYPHOON GÉO-RISQUE FRONTEND
+   TYPHOON GÉO-RISQUE FRONTEND — OpenLayers Edition
    Flux : adresse → GET /diagnostic/adresse → RisqueReport D03
+   Couches : WMS raster BRGM (rga, inondation, sismicite)
+             WFS vecteur Géorisques (mouvement_terrain, ppr, ssp)
+             Cercle de repli (radon, feu_foret)
    Zéro valeur simulée · Zéro coordonnée codée en dur
 ================================================================ */
 
@@ -396,36 +452,298 @@ const progressFill   = document.getElementById('progress-fill');
 const results        = document.getElementById('results');
 const idlePlaceholder= document.getElementById('idle-placeholder');
 const stripText      = document.getElementById('strip-text');
+const wmsBadge       = document.getElementById('wms-badge');
 
 let map = null;
-let currentMarker = null;
-let currentPopup = null;
+let view = null;
+let markerOverlay = null;
+let popupOverlay  = null;
 let banTimeout = null;
 
-/* ── Map Init ── */
+/* ── Map Init (OpenLayers) ── */
 function initMap() {
-  map = new maplibregl.Map({
-    container: 'map',
-    style: {
-      version: 8,
-      sources: {
-        carto: {
-          type: 'raster',
-          tiles: [
-            'https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png',
-            'https://b.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png',
-          ],
-          tileSize: 256,
-          attribution: '© CARTO · © OpenStreetMap contributors',
-        }
-      },
-      layers: [{ id: 'carto', type: 'raster', source: 'carto' }]
-    },
-    center: [2.35, 46.8],   // Centre de France par défaut
-    zoom: 5,
+  // Base tile layer: CARTO dark
+  const cartoLayer = new ol.layer.Tile({
+    source: new ol.source.XYZ({
+      urls: [
+        'https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png',
+        'https://b.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png',
+      ],
+      tileSize: 256,
+      maxZoom: 19,
+    }),
   });
-  map.addControl(new maplibregl.NavigationControl(), 'bottom-right');
-  map.addControl(new maplibregl.ScaleControl({ unit: 'metric' }));
+
+  view = new ol.View({
+    center: ol.proj.fromLonLat([2.35, 46.8]),
+    zoom: 5,
+    minZoom: 3,
+    maxZoom: 19,
+  });
+
+  // Marker overlay (the .map-pin div)
+  markerOverlay = new ol.Overlay({
+    element: document.getElementById('map-pin'),
+    positioning: 'center-center',
+    stopEvent: false,
+  });
+
+  // Popup overlay
+  popupOverlay = new ol.Overlay({
+    element: document.getElementById('ol-popup'),
+    positioning: 'bottom-center',
+    stopEvent: true,
+    autoPan: { animation: { duration: 250 } },
+  });
+
+  map = new ol.Map({
+    target: 'map',
+    layers: [cartoLayer],
+    view,
+    overlays: [markerOverlay, popupOverlay],
+    controls: ol.control.defaults.defaults({
+      attribution: false,
+      rotate: false,
+      zoom: true,
+    }).extend([
+      new ol.control.ScaleLine({ units: 'metric' }),
+    ]),
+  });
+
+  // Popup close button
+  document.getElementById('ol-popup-closer').addEventListener('click', () => {
+    popupOverlay.setPosition(undefined);
+    document.getElementById('ol-popup').classList.remove('visible');
+  });
+}
+
+/* ── WMS Layer Map (confirmed layers from mapsref.brgm.fr) ── */
+const WMS_BASE = 'https://mapsref.brgm.fr/wxs/georisques/risques';
+const WMS_LAYER_MAP = {
+  rga:       'ALEARG_2019',         // Retrait-gonflement argiles — millésime 2020
+  inondation:'LIMITETRI',           // Territoires à risque d'inondation (TRI)
+  sismicite: 'risq_zonage_sismique',// Zonage sismique réglementaire
+};
+
+/* ── WFS Layer Map (Géorisques GeoServer) ── */
+const WFS_BASE = 'https://www.georisques.gouv.fr/services';
+const WFS_LAYER_MAP = {
+  mouvement_terrain: ['ms:PPRN_COMMUNE_CAVITE_APPROUV', 'ms:PPRN_COMMUNE_CAVITE_PRESCRIT'],
+  ppr:               ['ms:PPRN_COMMUNE_ATMOS_APPROUVE', 'ms:PPRN_COMMUNE_ATMOS_PRESCRIT'],
+  ssp:               ['ms:SSP_CLASSIF_SIS_GE'],
+  // radon, feu_foret → circle fallback only
+};
+
+/* ── Layer tracking ── */
+let activeLayerKey = 'tous';
+let _olLayers = [];   // OL layer instances tracked for cleanup
+
+function _trackOlLayer(layer) {
+  map.addLayer(layer);
+  _olLayers.push(layer);
+}
+
+function _cleanAllLayers() {
+  for (const layer of _olLayers) {
+    map.removeLayer(layer);
+  }
+  _olLayers = [];
+  wmsBadge.style.display = 'none';
+}
+
+/* ── WMS raster layer builder ── */
+function buildWmsLayer(wmsLayerName, bandColor) {
+  return new ol.layer.Tile({
+    source: new ol.source.TileWMS({
+      url: WMS_BASE,
+      params: {
+        SERVICE: 'WMS',
+        VERSION: '1.3.0',
+        LAYERS: wmsLayerName,
+        FORMAT: 'image/png',
+        TRANSPARENT: 'true',
+        CRS: 'EPSG:3857',
+      },
+      serverType: 'geoserver',
+      crossOrigin: 'anonymous',
+      transition: 300,
+    }),
+    opacity: activeLayerKey === 'tous' ? 0.60 : 0.80,
+  });
+}
+
+/* ── WFS vector layer builder ── */
+async function fetchWfsLayer(typeName, codeInsee) {
+  const url = new URL(WFS_BASE);
+  url.searchParams.set('SERVICE', 'WFS');
+  url.searchParams.set('VERSION', '2.0.0');
+  url.searchParams.set('REQUEST', 'GetFeature');
+  url.searchParams.set('TYPENAMES', typeName);
+  url.searchParams.set('OUTPUTFORMAT', 'application/json');
+  url.searchParams.set('CQL_FILTER', `code_insee='${codeInsee}'`);
+  url.searchParams.set('COUNT', '50');
+
+  const resp = await fetch(url.toString());
+  if (!resp.ok) throw new Error(`WFS ${typeName} HTTP ${resp.status}`);
+  return await resp.json();
+}
+
+function buildVectorLayer(geojson, bandColor) {
+  const format = new ol.format.GeoJSON();
+  const features = format.readFeatures(geojson, {
+    dataProjection: 'EPSG:4326',
+    featureProjection: 'EPSG:3857',
+  });
+  const source = new ol.source.Vector({ features });
+  return new ol.layer.Vector({
+    source,
+    style: new ol.style.Style({
+      fill: new ol.style.Fill({ color: bandColor + '55' }),
+      stroke: new ol.style.Stroke({ color: bandColor, width: 1.5 }),
+    }),
+  });
+}
+
+/* ── Circle fallback layer builder ── */
+function buildCircleLayer(lon, lat, bandColor) {
+  const feature = new ol.Feature({
+    geometry: new ol.geom.Point(ol.proj.fromLonLat([lon, lat])),
+  });
+  const source = new ol.source.Vector({ features: [feature] });
+  return new ol.layer.Vector({
+    source,
+    style: new ol.style.Style({
+      image: new ol.style.Circle({
+        radius: 46,
+        fill: new ol.style.Fill({ color: bandColor + '44' }),
+        stroke: new ol.style.Stroke({ color: bandColor, width: 1.5 }),
+      }),
+    }),
+  });
+}
+
+/* ── Build layer toggle UI ── */
+function buildLayerToggle(report) {
+  const container = document.getElementById('layer-toggle');
+  if (!container) return;
+  container.innerHTML = '';
+
+  const aleasPresents = (report.aleas || []).filter(a => a.present === true);
+  if (!aleasPresents.length) { container.style.display = 'none'; return; }
+  container.style.display = 'flex';
+
+  const makeBtn = (key, label) => {
+    const btn = document.createElement('button');
+    btn.className = 'layer-pill-btn' + (key === activeLayerKey ? ' active' : '');
+    btn.textContent = label;
+    btn.onclick = () => {
+      activeLayerKey = key;
+      container.querySelectorAll('.layer-pill-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      _cleanAllLayers();
+      renderAleaLayers(report);
+    };
+    return btn;
+  };
+
+  container.appendChild(makeBtn('tous', 'Tous les périls'));
+  aleasPresents.forEach(a => {
+    const icon = ALEA_ICONS[a.code] || '•';
+    container.appendChild(makeBtn(a.code, `${icon} ${a.libelle}`));
+  });
+}
+
+/* ── Main layer renderer (3-level strategy) ── */
+async function renderAleaLayers(report) {
+  if (!map) return;
+  const aleasPresents = (report.aleas || []).filter(a => a.present === true && a.niveau);
+  let wmsActive = false;
+
+  for (const a of aleasPresents) {
+    const isVisible = (activeLayerKey === 'tous' || activeLayerKey === a.code);
+    if (!isVisible) continue;
+
+    const band = bandForKey(a.niveau) || {};
+    const color = band.color || '#7A9187';
+
+    /* ── Level 1: WMS raster (mapsref.brgm.fr) — confirmed layers ── */
+    if (WMS_LAYER_MAP[a.code]) {
+      const layer = buildWmsLayer(WMS_LAYER_MAP[a.code], color);
+      _trackOlLayer(layer);
+      wmsActive = true;
+      continue;
+    }
+
+    /* ── Level 2: WFS vector (georisques.gouv.fr) ── */
+    if (WFS_LAYER_MAP[a.code]) {
+      let wfsRendered = false;
+      for (const typeName of WFS_LAYER_MAP[a.code]) {
+        try {
+          const geojson = await fetchWfsLayer(typeName, report.code_insee);
+          if (!geojson || !geojson.features || !geojson.features.length) continue;
+          const layer = buildVectorLayer(geojson, color);
+          _trackOlLayer(layer);
+          wfsRendered = true;
+        } catch (err) {
+          console.warn(`WFS indisponible pour ${typeName}:`, err);
+        }
+      }
+      if (wfsRendered) continue;
+      /* WFS returned empty — fall through to circle */
+    }
+
+    /* ── Level 3: Circle fallback (radon, feu_foret, or any empty WFS) ── */
+    const layer = buildCircleLayer(report.lon, report.lat, color);
+    _trackOlLayer(layer);
+  }
+
+  if (wmsActive) wmsBadge.style.display = 'block';
+}
+
+/* ── Place pin & popup on map ── */
+function placePin(lat, lon, report) {
+  if (!map) return;
+
+  const coord = ol.proj.fromLonLat([lon, lat]);
+
+  // Show and position the marker
+  const pinEl = document.getElementById('map-pin');
+  pinEl.style.display = 'block';
+  markerOverlay.setPosition(coord);
+
+  // Build popup content
+  const topAleas = (report.aleas || [])
+    .filter(a => a.present === true && a.niveau)
+    .map(a => {
+      const band = bandForKey(a.niveau) || {};
+      return `<div class="pop-row"><span>${escHtml(a.libelle)}</span><span style="color:${band.color || '#E8E6DC'}">${band.label || a.niveau}</span></div>`;
+    }).join('');
+
+  const ignLink = `https://www.geoportail.gouv.fr/carte?lon=${lon}&lat=${lat}&z=18`;
+  const osmLink = `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lon}&zoom=18`;
+
+  document.getElementById('ol-popup-content').innerHTML = `
+    <div class="pop-title">${escHtml(report.adresse_normalisee)}</div>
+    ${topAleas || '<div class="pop-row"><span>Aucun aléa présent</span><span>—</span></div>'}
+    <div class="pop-links">
+      <a href="${ignLink}" target="_blank" rel="noopener">IGN Géoportail</a>
+      <a href="${osmLink}" target="_blank" rel="noopener">OpenStreetMap</a>
+    </div>
+  `;
+
+  // Show popup above pin
+  const popup = document.getElementById('ol-popup');
+  popup.classList.add('visible');
+  popupOverlay.setPosition(coord);
+
+  // Fly to address
+  view.animate({ center: coord, zoom: 14, duration: 1200 });
+
+  // Render risk layers
+  activeLayerKey = 'tous';
+  _cleanAllLayers();
+  buildLayerToggle(report);
+  renderAleaLayers(report);
 }
 
 /* ── BAN Autocomplete ── */
@@ -470,7 +788,7 @@ async function runDiagnosis() {
   hideSuggestions();
   diagnoseBtn.disabled = true;
   results.classList.remove('visible');
-  setStatus('Géocodage BAN…', 'loading');
+  setStatus('Géocodage IGN Géoplateforme…', 'loading');
   setProgress(15);
 
   try {
@@ -567,7 +885,7 @@ function displayReport(r) {
     aleaContainer.appendChild(card);
   });
 
-  /* CatNat history across all hazards */
+  /* CatNat history */
   const catnatSection = document.getElementById('r-catnat-section');
   const catnatContainer = document.getElementById('r-catnat');
   const catnat = [];
@@ -614,218 +932,13 @@ function displayReport(r) {
   idlePlaceholder.style.display = 'none';
   stripText.textContent = `${r.adresse_normalisee} · ${r.alea_count} aléa(s) · 0 simulés`;
 
-  /* Map — center on address */
+  /* Map */
   placePin(r.lat, r.lon, r);
 }
 
 function aleaScore(a) {
-  /* Approximation du score numérique à partir de la bande D03 */
   const mapping = { tres_faible: 10, faible: 30, modere: 50, eleve: 70, critique: 90 };
   return mapping[a.niveau] || 0;
-}
-
-/* ── Layer toggle (calques par péril WFS) ── */
-let activeLayerKey = 'tous';
-let _wfsSourceIds = [];  // MapLibre source IDs to remove on cleanup
-let _wfsLayerIds  = [];  // MapLibre layer IDs to remove on cleanup
-
-const WFS_LAYER_MAP = {
-  mouvement_terrain: ['ms:PPRN_COMMUNE_CAVITE_APPROUV', 'ms:PPRN_COMMUNE_CAVITE_PRESCRIT'],
-  ppr:               ['ms:PPRN_COMMUNE_ATMOS_APPROUVE', 'ms:PPRN_COMMUNE_ATMOS_PRESCRIT'],
-  ssp:               ['ms:SSP_CLASSIF_SIS_GE'],
-  rga:               ['ms:ALEARG_REALISE'],           // confirmé WMS GetCapabilities — à valider WFS
-  sismicite:         ['ms:risq_zonage_sismique'],     // confirmé WMS GetCapabilities — à valider WFS
-  // inondation, feu_foret, radon → pas de couche WFS connue → cercle de repli
-};
-
-async function fetchWfsLayer(typeName, codeInsee) {
-  const url = new URL('https://www.georisques.gouv.fr/services');
-  url.searchParams.set('SERVICE', 'WFS');
-  url.searchParams.set('VERSION', '2.0.0');
-  url.searchParams.set('REQUEST', 'GetFeature');
-  url.searchParams.set('TYPENAMES', typeName);
-  url.searchParams.set('OUTPUTFORMAT', 'application/json');
-  url.searchParams.set('CQL_FILTER', `code_insee='${codeInsee}'`);
-  url.searchParams.set('COUNT', '50');
-
-  const resp = await fetch(url.toString());
-  if (!resp.ok) throw new Error(`WFS ${typeName} : HTTP ${resp.status}`);
-  return await resp.json();
-}
-
-function _trackLayer(layerId) { _wfsLayerIds.push(layerId); }
-function _trackSource(srcId) { _wfsSourceIds.push(srcId); }
-
-function _cleanAllLayers() {
-  // Layers must be removed before their sources
-  for (const id of _wfsLayerIds) {
-    if (map.getLayer(id)) map.removeLayer(id);
-  }
-  for (const id of _wfsSourceIds) {
-    if (map.getSource(id)) map.removeSource(id);
-  }
-  _wfsLayerIds = [];
-  _wfsSourceIds = [];
-}
-
-function buildLayerToggle(report) {
-  const container = document.getElementById('layer-toggle');
-  if (!container) return;
-  container.innerHTML = '';
-
-  const aleasPresents = (report.aleas || []).filter(a => a.present === true);
-  if (!aleasPresents.length) { container.style.display = 'none'; return; }
-  container.style.display = 'flex';
-
-  const makeBtn = (key, label) => {
-    const btn = document.createElement('button');
-    btn.className = 'layer-pill-btn' + (key === activeLayerKey ? ' active' : '');
-    btn.textContent = label;
-    btn.onclick = () => {
-      activeLayerKey = key;
-      container.querySelectorAll('.layer-pill-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      _cleanAllLayers();
-      renderAleaLayersWfs(report);
-    };
-    return btn;
-  };
-
-  container.appendChild(makeBtn('tous', 'Tous les périls'));
-  aleasPresents.forEach(a => {
-    const icon = ALEA_ICONS[a.code] || '•';
-    container.appendChild(makeBtn(a.code, `${icon} ${a.libelle}`));
-  });
-}
-
-async function renderAleaLayersWfs(report) {
-  if (!map || !map.getSource) return;
-  const aleasPresents = (report.aleas || []).filter(a => a.present === true && a.niveau);
-
-  for (const a of aleasPresents) {
-    const isVisible = (activeLayerKey === 'tous' || activeLayerKey === a.code);
-    if (!isVisible) continue;
-
-    const typeNames = WFS_LAYER_MAP[a.code];
-    const band = bandForKey(a.niveau) || {};
-
-    if (typeNames) {
-      /* ── Attempt real WFS polygon layers ── */
-      let wfsRendered = false;
-      for (const typeName of typeNames) {
-        const srcId     = `wfs-src-${a.code}-${typeName.replace(/[:.]/g, '-')}`;
-        const fillId    = `wfs-fill-${a.code}-${typeName.replace(/[:.]/g, '-')}`;
-        const outlineId = `wfs-line-${a.code}-${typeName.replace(/[:.]/g, '-')}`;
-
-        try {
-          const geojson = await fetchWfsLayer(typeName, report.code_insee);
-          if (!geojson || !geojson.features || !geojson.features.length) continue;
-
-          map.addSource(srcId, { type: 'geojson', data: geojson });
-          _trackSource(srcId);
-
-          map.addLayer({
-            id: fillId, type: 'fill', source: srcId,
-            paint: {
-              'fill-color': band.color || '#7A9187',
-              'fill-opacity': activeLayerKey === 'tous' ? 0.22 : 0.4,
-            },
-          });
-          _trackLayer(fillId);
-
-          map.addLayer({
-            id: outlineId, type: 'line', source: srcId,
-            paint: { 'line-color': band.color || '#7A9187', 'line-width': 1.5 },
-          });
-          _trackLayer(outlineId);
-
-          wfsRendered = true;
-        } catch (err) {
-          console.warn(`WFS indisponible pour ${typeName} :`, err);
-        }
-      }
-
-      if (wfsRendered) continue;
-      /* ── WFS returned no features → circle fallback ── */
-    }
-
-    /* ── Circle fallback: perils with no WFS entry or empty WFS response ── */
-    const srcId    = `circle-src-${a.code}`;
-    const layerId  = `circle-layer-${a.code}`;
-    map.addSource(srcId, {
-      type: 'geojson',
-      data: {
-        type: 'Feature',
-        properties: { code: a.code, niveau: a.niveau },
-        geometry: { type: 'Point', coordinates: [report.lon, report.lat] },
-      },
-    });
-    _trackSource(srcId);
-
-    map.addLayer({
-      id: layerId, type: 'circle', source: srcId,
-      paint: {
-        'circle-radius': 46,
-        'circle-color': band.color || '#7A9187',
-        'circle-opacity': activeLayerKey === 'tous' ? 0.22 : 0.38,
-        'circle-stroke-width': 1.5,
-        'circle-stroke-color': band.color || '#7A9187',
-        'circle-stroke-opacity': 0.9,
-      },
-    });
-    _trackLayer(layerId);
-  }
-}
-
-function placePin(lat, lon, report) {
-  if (!map) return;
-
-  if (currentMarker) { currentMarker.remove(); currentMarker = null; }
-  if (currentPopup) { currentPopup.remove(); currentPopup = null; }
-
-  const el = document.createElement('div');
-  el.className = 'map-pin';
-
-  currentMarker = new maplibregl.Marker({ element: el })
-    .setLngLat([lon, lat])
-    .addTo(map);
-
-  /* Popup content */
-  const topAleas = (report.aleas || [])
-    .filter(a => a.present === true && a.niveau)
-    .map(a => {
-      const band = bandForKey(a.niveau) || {};
-      return `<div class="pop-row"><span>${escHtml(a.libelle)}</span><span style="color:${band.color || '#E8E6DC'}">${band.label || a.niveau}</span></div>`;
-    }).join('');
-
-  const ignLink = `https://www.geoportail.gouv.fr/carte?lon=${lon}&lat=${lat}&z=18`;
-  const osmLink = `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lon}&zoom=18`;
-
-  const html = `
-    <div class="pop-title">${escHtml(report.adresse_normalisee)}</div>
-    ${topAleas || '<div class="pop-row"><span>Aucun aléa présent</span><span>—</span></div>'}
-    <div class="pop-links">
-      <a href="${ignLink}" target="_blank" rel="noopener">IGN Géoportail</a>
-      <a href="${osmLink}" target="_blank" rel="noopener">OpenStreetMap</a>
-    </div>
-  `;
-
-  currentPopup = new maplibregl.Popup({ offset: 18, maxWidth: '280px', closeOnClick: false })
-    .setLngLat([lon, lat])
-    .setHTML(html)
-    .addTo(map);
-
-  map.flyTo({ center: [lon, lat], zoom: 14, duration: 1200 });
-
-  /* Calques par péril WFS — reset complet à chaque nouveau rapport */
-  activeLayerKey = 'tous';
-  _cleanAllLayers();
-  buildLayerToggle(report);
-  if (map.isStyleLoaded()) {
-    renderAleaLayersWfs(report);
-  } else {
-    map.once('idle', () => renderAleaLayersWfs(report));
-  }
 }
 
 /* ── Status & Progress Helpers ── */
@@ -859,7 +972,6 @@ diagnoseBtn.addEventListener('click', runDiagnosis);
 
 /* ── Init ── */
 initMap();
-window.addEventListener('resize', () => { if (map) map.resize(); });
 </script>
 </body>
 </html>
