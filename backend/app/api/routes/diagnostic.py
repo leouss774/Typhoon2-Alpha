@@ -236,6 +236,17 @@ async def generer_rapport_narratif_adresse(report: RisqueReport) -> dict:
     """
     narratif = await generer_rapport_narratif(report)
     if narratif is None:
+        if not settings.mistral_api_key:
+            raise HTTPException(
+                status_code=503,
+                detail={
+                    "error": "mistral_api_key_manquante",
+                    "detail": (
+                        "Impossible de générer le rapport narratif IA tant que MISTRAL_API_KEY "
+                        "n'est pas configurée côté backend."
+                    ),
+                },
+            )
         raise HTTPException(
             status_code=502,
             detail={"error": "mistral_indisponible", "detail": "Impossible de générer le rapport narratif IA."},

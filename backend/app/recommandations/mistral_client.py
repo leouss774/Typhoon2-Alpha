@@ -37,8 +37,8 @@ def get_client() -> Mistral:
     if _client is None:
         if not settings.mistral_api_key:
             raise RuntimeError(
-                "MISTRAL_API_KEY manquant. Renseigne-la dans backend/.env "
-                "(voir backend/.env.example)."
+                "MISTRAL_API_KEY manquant. Renseigne-la dans le .env racine "
+                "du projet (voir .env.example à la racine)."
             )
         _client = Mistral(api_key=settings.mistral_api_key, timeout_ms=REQUEST_TIMEOUT_MS)
     return _client

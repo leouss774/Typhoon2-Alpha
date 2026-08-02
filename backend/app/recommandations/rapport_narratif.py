@@ -42,7 +42,7 @@ class RapportNarratif(BaseModel):
     sections: list[SectionRapport]
     synthese_finale: str  # hiérarchisation des risques
     obligations_reglementaires: list[str] | None = None
-    genere_par: str = "mistral-small-latest"
+    genere_par: str = "mistral-large-latest"
     metadata: dict[str, Any] = {}
     avertissement_ia: str = (
         "Ce rapport est généré automatiquement par IA à partir des données publiques "
@@ -114,7 +114,7 @@ def _build_rapport_prompt(report: RisqueReport) -> str:
 
 def _appeler_mistral_narratif_sync(report: RisqueReport) -> RapportNarratif | None:
     if not settings.mistral_api_key:
-        logger.debug("MISTRAL_API_KEY absent — rapport narratif ignoré")
+        logger.debug("MISTRAL_API_KEY absent — rapport narratif indisponible")
         return None
 
     try:
@@ -152,6 +152,7 @@ def _appeler_mistral_narratif_sync(report: RisqueReport) -> RapportNarratif | No
             sections=sections,
             synthese_finale=reponse.get("synthese_finale", ""),
             obligations_reglementaires=reponse.get("obligations_reglementaires"),
+            genere_par="mistral-large-latest",
             metadata={"latence_ms": latence_ms},
         )
     except Exception as exc:
