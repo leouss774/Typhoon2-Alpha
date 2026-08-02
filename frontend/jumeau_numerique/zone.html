@@ -224,6 +224,15 @@ html, body { height: 100%; background: var(--ink); color: var(--paper); font-fam
 .alea-card.absent .alea-name { color: var(--fog); }
 .alea-card.error-partial .alea-name { color: var(--fog); font-style: italic; }
 
+.alea-eye-btn {
+  background: transparent; border: 1px solid var(--line); color: var(--storm);
+  border-radius: 4px; padding: 2px 6px; font-size: 11px; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+  transition: .15s; margin-right: 4px;
+}
+.alea-eye-btn:hover { background: var(--panel-3); border-color: var(--storm); }
+.alea-eye-btn.hidden-layer { color: var(--fog); opacity: 0.6; }
+
 /* Partial errors banner */
 .partial-banner { margin: 0 22px 14px; padding: 10px 12px; background: rgba(208,112,48,.1); border: 1px solid rgba(208,112,48,.3); border-radius: 6px; font-size: 11.5px; color: var(--paper); line-height: 1.5; }
 .partial-banner strong { color: var(--d03-eleve); }
@@ -642,63 +651,14 @@ function buildCircleLayer(lon, lat, bandColor) {
   });
 }
 
-/* ── Build layer toggle UI (Eye toggle) ── */
+/* ── Build layer toggle UI (Eye toggle in sidebar) ── */
 function buildLayerToggle(report) {
   const container = document.getElementById('layer-toggle');
-  if (!container) return;
-  container.innerHTML = '';
+  if (container) container.style.display = 'none';
 
   const aleasPresents = (report.aleas || []).filter(a => a.present === true);
-  if (!aleasPresents.length) { container.style.display = 'none'; return; }
-  container.style.display = 'flex';
-
   // Initialize visible set with all present hazards
   visibleLayerKeys = new Set(aleasPresents.map(a => a.code));
-
-  const toggleAllBtn = document.createElement('button');
-  toggleAllBtn.className = 'layer-pill-btn active';
-  toggleAllBtn.textContent = 'Tous';
-  toggleAllBtn.onclick = () => {
-    const allVisible = visibleLayerKeys.size === aleasPresents.length;
-    if (allVisible) {
-      visibleLayerKeys.clear();
-      toggleAllBtn.classList.remove('active');
-    } else {
-      visibleLayerKeys = new Set(aleasPresents.map(a => a.code));
-      toggleAllBtn.classList.add('active');
-    }
-    container.querySelectorAll('.layer-pill-btn[data-code]').forEach(btn => {
-      const code = btn.getAttribute('data-code');
-      const isVis = visibleLayerKeys.has(code);
-      btn.classList.toggle('active', isVis);
-      const layers = _olLayersByKey.get(code) || [];
-      layers.forEach(l => l.setVisible(isVis));
-    });
-  };
-  container.appendChild(toggleAllBtn);
-
-  aleasPresents.forEach(a => {
-    const icon = ALEA_ICONS[a.code] || '•';
-    const btn = document.createElement('button');
-    btn.className = 'layer-pill-btn active';
-    btn.setAttribute('data-code', a.code);
-    btn.textContent = `👁️ ${icon} ${a.libelle}`;
-    btn.onclick = () => {
-      const isCurrentlyVis = visibleLayerKeys.has(a.code);
-      if (isCurrentlyVis) {
-        visibleLayerKeys.delete(a.code);
-        btn.classList.remove('active');
-        btn.textContent = `🚫 ${icon} ${a.libelle}`;
-      } else {
-        visibleLayerKeys.add(a.code);
-        btn.classList.add('active');
-        btn.textContent = `👁️ ${icon} ${a.libelle}`;
-      }
-      const layers = _olLayersByKey.get(a.code) || [];
-      layers.forEach(l => l.setVisible(!isCurrentlyVis));
-    };
-    container.appendChild(btn);
-  });
 }
 
 /* ── Main layer renderer (3-level strategy for 13 hazards) ── */
@@ -740,7 +700,8 @@ async function renderAleaLayers(report) {
 
     /* Level 3: Circle fallback */
     const layer = buildCircleLayer(report.lon, report.lat, color);
-    _trackOlLayer(layer);
+    layer.setVisible(visibleLayerKeys.has(a.code));
+    _trackOlLayer(a.code, layer);
   }
 
   if (wmsActive) wmsBadge.style.display = 'block';
@@ -786,7 +747,6 @@ function placePin(lat, lon, report) {
   view.animate({ center: coord, zoom: 14, duration: 1200 });
 
   // Render risk layers
-  activeLayerKey = 'tous';
   _cleanAllLayers();
   buildLayerToggle(report);
   renderAleaLayers(report);
@@ -918,16 +878,44 @@ function displayReport(r) {
       ? `<a href="${escHtml(a.url_detail)}" target="_blank" rel="noopener" class="alea-link">→ Fiche</a>`
       : '';
 
+    let eyeBtnHtml = '';
+    if (a.present === true) {
+      eyeBtnHtml = `<button class="alea-eye-btn" data-code="${a.code}" title="Afficher/masquer la couche sur la carte">👁️</button>`;
+    }
+
     card.innerHTML = `
       <div class="alea-left">
         <span class="alea-name">${icon} ${escHtml(a.libelle)}</span>
         ${a.zonage ? `<span class="alea-zonage">${escHtml(a.zonage)}</span>` : ''}
       </div>
       <div class="alea-right">
+        ${eyeBtnHtml}
         ${pillHtml}
         ${linkHtml}
       </div>
     `;
+
+    if (a.present === true) {
+      const eyeBtn = card.querySelector('.alea-eye-btn');
+      if (eyeBtn) {
+        eyeBtn.onclick = (e) => {
+          e.stopPropagation();
+          const isVis = visibleLayerKeys.has(a.code);
+          if (isVis) {
+            visibleLayerKeys.delete(a.code);
+            eyeBtn.textContent = '🚫';
+            eyeBtn.classList.add('hidden-layer');
+          } else {
+            visibleLayerKeys.add(a.code);
+            eyeBtn.textContent = '👁️';
+            eyeBtn.classList.remove('hidden-layer');
+          }
+          const layers = _olLayersByKey.get(a.code) || [];
+          layers.forEach(l => l.setVisible(!isVis));
+        };
+      }
+    }
+
     aleaContainer.appendChild(card);
   });
 
