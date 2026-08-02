@@ -3,289 +3,234 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Typhoon — Diagnostic de zone souverain</title>
-<meta name="description" content="Carte interactive des risques géo-climatiques Typhoon — Moteur souverain France / UE (RNB, BDNB, Géorisques, IGN Alti, DVF DGFiP, ADEME DPE).">
+<title>Typhoon — Diagnostic géo-risque adresse</title>
+<meta name="description" content="Saisissez une adresse française pour obtenir le diagnostic géo-risque souverain Typhoon (Géorisques / BAN / D03).">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
 <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet" />
-<script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
 <script src="../api-config.js"></script>
 <style>
-  /* ============================================================
-     DESIGN SYSTEM TYPHOON SOVEREIGN — Dark Theme Reference
-     Palette & Typographies identiques à typhoon_zone_risk_mockup.html
-     Vocabulaire D03 EXCLUSIF (5 niveaux)
-  ============================================================ */
-  :root {
-    --ink:       #0B1410;
-    --panel:     #111B17;
-    --panel-2:   #192219;
-    --panel-3:   #1F2D26;
-    --line:      #263630;
-    --fog:       #7A9187;
-    --paper:     #E8E6DC;
-    --paper-dim: #A8B4AE;
-    --clay:      #C27040;
-    --storm:     #46A3A2;
-    --storm-dim: rgba(70,163,162,.15);
+/* ============================================================
+   TYPHOON — Design System Souverain Dark
+   Vocabulaire D03 EXCLUSIF · 5 niveaux · zéro simulation
+============================================================ */
+:root {
+  --ink:     #0B1410;
+  --panel:   #111B17;
+  --panel-2: #192219;
+  --panel-3: #1F2D26;
+  --line:    #263630;
+  --fog:     #7A9187;
+  --paper:   #E8E6DC;
+  --clay:    #C27040;
+  --storm:   #46A3A2;
+  --storm-dim: rgba(70,163,162,.15);
 
-    /* Bandes D03 — 5 niveaux unifiés */
-    --d03-tres-faible: #3A7A6C;
-    --d03-faible:      #6E9E52;
-    --d03-modere:      #D4AC3E;
-    --d03-eleve:       #D07030;
-    --d03-critique:    #B03020;
+  --d03-tres-faible: #3A7A6C;
+  --d03-faible:      #6E9E52;
+  --d03-modere:      #D4AC3E;
+  --d03-eleve:       #D07030;
+  --d03-critique:    #B03020;
 
-    --status-ok:    #46A3A2;
-    --status-na:    #7A9187;
+  --serif: 'Fraunces', Georgia, serif;
+  --mono:  'IBM Plex Mono', monospace;
+  --sans:  'Inter', system-ui, sans-serif;
+  --radius: 8px;
+}
 
-    --serif: 'Fraunces', 'Georgia', serif;
-    --mono:  'IBM Plex Mono', 'JetBrains Mono', monospace;
-    --sans:  'Inter', system-ui, sans-serif;
-  }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; background: var(--ink); color: var(--paper); font-family: var(--sans); overflow: hidden; }
 
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body { height: 100%; background: var(--ink); color: var(--paper); font-family: var(--sans); overflow: hidden; }
+/* ── Layout ── */
+.app { display: grid; grid-template-columns: 420px 1fr; height: 100vh; }
 
-  /* ── LAYOUT ── */
-  .app { display: grid; grid-template-columns: 400px 1fr; height: 100vh; }
+/* ── Sidebar ── */
+.sidebar {
+  background: var(--panel); border-right: 1px solid var(--line);
+  display: flex; flex-direction: column; overflow-y: auto;
+  scrollbar-width: thin; scrollbar-color: var(--line) transparent;
+}
+.sidebar::-webkit-scrollbar { width: 4px; }
+.sidebar::-webkit-scrollbar-thumb { background: var(--line); border-radius: 2px; }
 
-  /* ── SIDEBAR ── */
-  .sidebar {
-    background: var(--panel);
-    border-right: 1px solid var(--line);
-    display: flex; flex-direction: column;
-    overflow-y: auto;
-    scrollbar-width: thin;
-    scrollbar-color: var(--line) transparent;
-  }
-  .sidebar::-webkit-scrollbar { width: 4px; }
-  .sidebar::-webkit-scrollbar-thumb { background: var(--line); border-radius: 2px; }
+/* Brand */
+.brand {
+  padding: 18px 22px 16px; border-bottom: 1px solid var(--line);
+  display: flex; align-items: center; gap: 10px; flex-shrink: 0;
+}
+.brand-back {
+  color: var(--storm); text-decoration: none; font-family: var(--mono);
+  font-size: 10.5px; font-weight: 600; padding: 4px 8px; border-radius: 4px;
+  background: var(--panel-3); border: 1px solid var(--line); transition: .15s;
+}
+.brand-back:hover { background: var(--storm); color: var(--ink); }
+.brand-title { display: flex; flex-direction: column; }
+.brand-title h1 { font-family: var(--serif); font-size: 18px; font-weight: 600; line-height: 1; }
+.brand-title span { font-family: var(--mono); font-size: 9.5px; color: var(--fog); text-transform: uppercase; letter-spacing: .12em; margin-top: 2px; }
+.brand-badge { margin-left: auto; font-family: var(--mono); font-size: 9px; color: var(--storm); background: var(--panel-3); border: 1px solid var(--line); border-radius: 12px; padding: 3px 8px; white-space: nowrap; }
 
-  /* Brand Header */
-  .brand {
-    padding: 18px 20px 16px;
-    border-bottom: 1px solid var(--line);
-    display: flex; align-items: center; gap: 10px;
-    flex-shrink: 0; background: var(--panel);
-  }
-  .brand-back {
-    color: var(--storm); text-decoration: none; font-family: var(--mono);
-    font-size: 11px; font-weight: 600; padding: 4px 8px; border-radius: 4px;
-    background: var(--panel-3); border: 1px solid var(--line); transition: .15s;
-  }
-  .brand-back:hover { background: var(--storm); color: var(--ink); }
-  .brand-title { display: flex; flex-direction: column; }
-  .brand-title h1 { font-family: var(--serif); font-size: 18px; font-weight: 600; line-height: 1; color: var(--paper); }
-  .brand-title span { font-family: var(--mono); font-size: 9.5px; color: var(--fog); text-transform: uppercase; letter-spacing: .14em; margin-top: 2px; }
-  .brand-badge {
-    margin-left: auto; font-family: var(--mono); font-size: 9px; color: var(--storm);
-    background: var(--panel-3); border: 1px solid var(--line); border-radius: 12px;
-    padding: 3px 8px; white-space: nowrap;
-  }
+/* Searchbox */
+.searchbox { padding: 16px 22px; border-bottom: 1px solid var(--line); }
+.searchbox > label { font-family: var(--mono); font-size: 9.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--fog); display: block; margin-bottom: 8px; }
+.input-wrap { position: relative; }
+#addr-input {
+  width: 100%; background: var(--panel-2); border: 1px solid var(--line);
+  color: var(--paper); padding: 11px 14px; border-radius: var(--radius);
+  font-size: 13.5px; font-family: var(--sans); outline: none; transition: border-color .15s;
+}
+#addr-input:focus { border-color: var(--storm); box-shadow: 0 0 0 3px var(--storm-dim); }
+#addr-input::placeholder { color: var(--fog); }
 
-  /* Search & Controls */
-  .searchbox { padding: 16px 20px; border-bottom: 1px solid var(--line); background: var(--panel); }
-  .searchbox label { font-family: var(--mono); font-size: 9.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--fog); display: block; margin-bottom: 8px; }
-  #zone-search-wrapper { position: relative; }
-  .searchbox input {
-    width: 100%; background: var(--panel-2); border: 1px solid var(--line);
-    color: var(--paper); padding: 10px 12px; border-radius: 6px; font-size: 13.5px;
-    font-family: var(--sans); outline: none; transition: border-color .15s;
-  }
-  .searchbox input:focus { border-color: var(--storm); box-shadow: 0 0 0 2px var(--storm-dim); }
-  .searchbox input::placeholder { color: var(--fog); }
+/* BAN suggestions dropdown */
+#addr-suggestions {
+  position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 20;
+  background: var(--panel-2); border: 1px solid var(--line); border-radius: var(--radius);
+  max-height: 230px; overflow-y: auto; box-shadow: 0 8px 24px rgba(0,0,0,.55); display: none;
+}
+#addr-suggestions.open { display: block; }
+.sug-item { padding: 10px 14px; font-size: 12.5px; cursor: pointer; border-bottom: 1px solid var(--line); color: var(--paper); }
+.sug-item:last-child { border-bottom: none; }
+.sug-item:hover, .sug-item.focused { background: var(--panel-3); color: var(--storm); }
 
-  #zone-suggestions {
-    position: absolute; top: 100%; left: 0; right: 0; z-index: 50;
-    background: var(--panel-2); border: 1px solid var(--line); border-radius: 0 0 6px 6px;
-    max-height: 220px; overflow-y: auto; box-shadow: 0 8px 24px rgba(0,0,0,.5); display: none;
-  }
-  #zone-suggestions:not(:empty) { display: block; }
-  .ban-suggestion { padding: 10px 12px; font-size: 12.5px; color: var(--paper); cursor: pointer; border-bottom: 1px solid var(--line); }
-  .ban-suggestion:last-child { border-bottom: none; }
-  .ban-suggestion:hover { background: var(--panel-3); color: var(--storm); }
+/* Buttons */
+.btn-primary {
+  width: 100%; margin-top: 10px; padding: 12px; border-radius: var(--radius);
+  background: var(--storm); color: var(--ink); border: none;
+  font-family: var(--sans); font-size: 13.5px; font-weight: 700; cursor: pointer; transition: .15s;
+}
+.btn-primary:hover { background: #58c4c3; }
 
-  .assess-btn {
-    width: 100%; margin-top: 10px; padding: 11px; border-radius: 6px;
-    background: var(--storm); color: var(--ink); border: none;
-    font-family: var(--sans); font-size: 13px; font-weight: 700; cursor: pointer; transition: .15s;
-  }
-  .assess-btn:hover { background: #55c4c3; }
-  .assess-btn:disabled { opacity: .35; cursor: not-allowed; }
+/* Status messages */
+.status-msg { margin-top: 10px; font-family: var(--mono); font-size: 10.5px; text-align: center; min-height: 18px; }
+.status-msg.loading { color: var(--storm); }
+.status-msg.error   { color: var(--d03-eleve); }
+.status-msg.ok      { color: var(--d03-tres-faible); }
 
-  .autorefine-row {
-    display: flex; align-items: center; justify-content: space-between;
-    margin-top: 12px; padding: 8px 10px; background: var(--panel-2);
-    border: 1px solid var(--line); border-radius: 6px;
-  }
-  .autorefine-row label { font-size: 11.5px; color: var(--paper); font-weight: 500; cursor: pointer; }
-  .autorefine-row .hint { font-family: var(--mono); font-size: 9px; color: var(--fog); margin-top: 2px; }
-  .toggle-switch { position: relative; width: 32px; height: 18px; flex-shrink: 0; }
-  .toggle-switch input { opacity: 0; width: 0; height: 0; }
-  .toggle-switch .track { position: absolute; inset: 0; background: var(--line); border-radius: 999px; cursor: pointer; transition: .15s; }
-  .toggle-switch .track::before { content: ''; position: absolute; width: 14px; height: 14px; left: 2px; top: 2px; background: var(--paper); border-radius: 50%; transition: transform .15s; }
-  .toggle-switch input:checked + .track { background: var(--storm); }
-  .toggle-switch input:checked + .track::before { transform: translateX(14px); background: var(--ink); }
+/* Progress bar */
+.progress { height: 3px; background: var(--line); border-radius: 2px; overflow: hidden; margin-top: 6px; display: none; }
+.progress.visible { display: block; }
+.progress-fill { height: 100%; width: 0%; background: var(--storm); transition: width .4s ease; }
 
-  #zone-refine-status { display: none; align-items: center; gap: 6px; font-family: var(--mono); font-size: 9.5px; color: var(--storm); margin-top: 6px; }
-  #zone-refine-status.visible { display: flex; }
-  #zone-refine-status .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--storm); animation: pulse 1.5s infinite; }
+/* ── Result Panel ── */
+#results { display: none; }
+#results.visible { display: block; }
 
-  /* Loading State */
-  #zone-loading { display: none; padding: 14px 20px; border-bottom: 1px solid var(--line); background: var(--panel-2); }
-  #zone-loading.visible { display: block; }
-  .loading-bar { height: 4px; background: var(--panel-3); border-radius: 2px; overflow: hidden; margin-bottom: 6px; }
-  .loading-fill { height: 100%; width: 0%; background: var(--storm); transition: width .3s ease; }
-  .loading-text { font-family: var(--mono); font-size: 10.5px; color: var(--fog); text-align: center; }
+/* Address heading */
+.addr-heading { padding: 16px 22px; border-bottom: 1px solid var(--line); background: var(--panel-2); }
+.addr-heading .norm { font-family: var(--serif); font-size: 17px; line-height: 1.3; margin-bottom: 6px; }
+.addr-heading .meta { font-family: var(--mono); font-size: 9.5px; color: var(--fog); }
 
-  /* Results Section */
-  #zone-results { display: none; }
-  #zone-results.visible { display: block; }
+/* Global score */
+.score-block { padding: 18px 22px; border-bottom: 1px solid var(--line); }
+.score-row { display: flex; align-items: flex-end; gap: 14px; margin-bottom: 10px; }
+.score-num { font-family: var(--serif); font-size: 56px; font-weight: 600; line-height: 1; color: var(--clay); }
+.score-meta { display: flex; flex-direction: column; gap: 3px; padding-bottom: 6px; }
+.score-label { font-family: var(--mono); font-size: 9px; text-transform: uppercase; letter-spacing: .12em; color: var(--fog); }
+.d03-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 12px; border-radius: 20px;
+  font-family: var(--mono); font-size: 10.5px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: .06em; border: 1px solid;
+}
+.d03-pill::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+.d03-tres-faible { color: var(--d03-tres-faible); border-color: var(--d03-tres-faible); background: rgba(58,122,108,.12); }
+.d03-faible      { color: var(--d03-faible);      border-color: var(--d03-faible);      background: rgba(110,158,82,.12); }
+.d03-modere      { color: var(--d03-modere);      border-color: var(--d03-modere);      background: rgba(212,172,62,.12); }
+.d03-eleve       { color: var(--d03-eleve);       border-color: var(--d03-eleve);       background: rgba(208,112,48,.12); }
+.d03-critique    { color: var(--d03-critique);    border-color: var(--d03-critique);    background: rgba(176,48,32,.12); }
 
-  /* Selected Address Card */
-  .address-result { padding: 16px 20px; border-bottom: 1px solid var(--line); background: var(--panel-2); }
-  .address-result .addr { font-family: var(--serif); font-size: 17px; line-height: 1.25; margin-bottom: 6px; color: var(--paper); }
-  .address-result .meta { font-family: var(--mono); font-size: 10px; color: var(--fog); }
+/* Aléas list */
+.aleas-section { padding: 16px 22px; border-bottom: 1px solid var(--line); }
+.section-heading { font-family: var(--mono); font-size: 9.5px; text-transform: uppercase; letter-spacing: .12em; color: var(--fog); margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+.section-heading::after { content: ''; flex: 1; height: 1px; background: var(--line); }
 
-  /* Score Block */
-  .score-block { padding: 18px 20px; border-bottom: 1px solid var(--line); }
-  .score-row { display: flex; align-items: flex-end; gap: 12px; margin-bottom: 8px; }
-  .score-num { font-family: var(--serif); font-size: 52px; font-weight: 600; line-height: 1; color: var(--clay); }
-  .score-meta { display: flex; flex-direction: column; gap: 2px; padding-bottom: 4px; }
-  .score-label { font-family: var(--mono); font-size: 9px; text-transform: uppercase; letter-spacing: .12em; color: var(--fog); }
+.alea-card {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 12px; border-radius: 6px; margin-bottom: 6px;
+  background: var(--panel-2); border: 1px solid var(--line); gap: 10px;
+}
+.alea-card:last-child { margin-bottom: 0; }
+.alea-left { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+.alea-name { font-size: 13px; color: var(--paper); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.alea-zonage { font-family: var(--mono); font-size: 9.5px; color: var(--fog); }
+.alea-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.alea-link { font-family: var(--mono); font-size: 9px; color: var(--storm); text-decoration: none; padding: 2px 6px; border: 1px solid var(--storm); border-radius: 4px; transition: .12s; }
+.alea-link:hover { background: var(--storm); color: var(--ink); }
+.alea-card.absent .alea-name { color: var(--fog); }
+.alea-card.error-partial .alea-name { color: var(--fog); font-style: italic; }
 
-  /* D03 Band Pill */
-  .d03-band {
-    display: inline-flex; align-items: center; gap: 6px;
-    padding: 3px 10px; border-radius: 16px;
-    font-family: var(--mono); font-size: 10px; font-weight: 600;
-    text-transform: uppercase; letter-spacing: .06em; border: 1px solid;
-  }
-  .d03-band::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
-  .d03-tres-faible { color: var(--d03-tres-faible); border-color: var(--d03-tres-faible); background: rgba(58,122,108,.15); }
-  .d03-faible      { color: var(--d03-faible);      border-color: var(--d03-faible);      background: rgba(110,158,82,.15); }
-  .d03-modere      { color: var(--d03-modere);      border-color: var(--d03-modere);      background: rgba(212,172,62,.15); }
-  .d03-eleve       { color: var(--d03-eleve);       border-color: var(--d03-eleve);       background: rgba(208,112,48,.15); }
-  .d03-critique    { color: var(--d03-critique);    border-color: var(--d03-critique);    background: rgba(176,48,32,.15); }
+/* Partial errors banner */
+.partial-banner { margin: 0 22px 14px; padding: 10px 12px; background: rgba(208,112,48,.1); border: 1px solid rgba(208,112,48,.3); border-radius: 6px; font-size: 11.5px; color: var(--paper); line-height: 1.5; }
+.partial-banner strong { color: var(--d03-eleve); }
 
-  /* Perils Section */
-  .perils { padding: 16px 20px; border-bottom: 1px solid var(--line); }
-  .perils h2 { font-family: var(--mono); font-size: 9.5px; text-transform: uppercase; letter-spacing: .12em; color: var(--fog); margin-bottom: 12px; }
-  .peril-row { margin-bottom: 12px; }
-  .peril-row:last-child { margin-bottom: 0; }
-  .peril-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
-  .peril-name { font-size: 12.5px; color: var(--paper); }
-  .peril-val { font-family: var(--mono); font-size: 12px; font-weight: 600; }
-  .peril-track { height: 5px; background: var(--panel-3); border-radius: 3px; overflow: hidden; margin-bottom: 3px; }
-  .peril-fill { height: 100%; border-radius: 3px; transition: width .5s ease; }
+/* Avertissement (always visible per plan §5) */
+.avertissement { margin: 14px 22px 22px; padding: 12px 14px; background: var(--panel-2); border-radius: 6px; border-left: 3px solid var(--storm); font-size: 11.5px; color: var(--fog); line-height: 1.6; }
+.avertissement strong { color: var(--paper); }
 
-  .confiance-row { display: flex; align-items: center; gap: 6px; }
-  .confiance-label { font-family: var(--mono); font-size: 8.5px; color: var(--fog); }
-  .confiance-track { flex: 1; height: 2px; background: var(--panel-3); border-radius: 1px; overflow: hidden; }
-  .confiance-fill { height: 100%; background: var(--storm); opacity: .7; }
-  .confiance-val { font-family: var(--mono); font-size: 8.5px; color: var(--fog); }
+/* CatNat history */
+.catnat-section { padding: 0 22px 16px; border-bottom: 1px solid var(--line); }
+.catnat-entry { font-family: var(--mono); font-size: 10px; color: var(--fog); padding: 4px 0; border-bottom: 1px dashed var(--line); }
+.catnat-entry:last-child { border-bottom: none; }
 
-  .peril-row.unavailable .peril-name, .peril-row.unavailable .peril-val { color: var(--fog); opacity: .5; }
-  .peril-row.unavailable .peril-track { background: repeating-linear-gradient(45deg, var(--panel-3), var(--panel-3) 4px, #1D2E26 4px, #1D2E26 8px); }
+/* ── Map ── */
+.map-wrap { position: relative; background: var(--ink); }
+#map { width: 100%; height: 100%; }
 
-  /* Worst Case Banner */
-  .worst-banner { margin: 14px 20px 0; padding: 10px 12px; background: rgba(176,48,32,.12); border: 1px solid rgba(176,48,32,.3); border-radius: 6px; font-size: 11.5px; color: var(--paper); line-height: 1.4; }
-  .worst-banner strong { color: var(--d03-critique); }
+/* Pin marker */
+.map-pin {
+  width: 14px; height: 14px; border-radius: 50%;
+  background: var(--clay); border: 2px solid var(--paper);
+  box-shadow: 0 0 0 4px rgba(194,112,64,.35);
+}
 
-  /* DVF Price Section */
-  .dvf-card { padding: 16px 20px; border-bottom: 1px solid var(--line); background: var(--panel-2); }
-  .dvf-card h2 { font-family: var(--mono); font-size: 9.5px; text-transform: uppercase; letter-spacing: .12em; color: var(--fog); margin-bottom: 8px; }
-  .dvf-value { font-family: var(--serif); font-size: 24px; font-weight: 600; color: var(--storm); margin-bottom: 4px; }
-  .dvf-meta { font-family: var(--mono); font-size: 10px; color: var(--fog); line-height: 1.4; }
+/* Map topbar */
+.map-topbar {
+  position: absolute; top: 14px; left: 14px; right: 14px;
+  display: flex; justify-content: space-between; align-items: flex-start;
+  pointer-events: none; z-index: 5; gap: 10px;
+}
+.legend-box {
+  pointer-events: auto; background: rgba(11,20,16,.92); backdrop-filter: blur(8px);
+  border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px;
+  box-shadow: 0 4px 20px rgba(0,0,0,.4); min-width: 175px;
+}
+.legend-box h3 { font-family: var(--mono); font-size: 9px; text-transform: uppercase; letter-spacing: .12em; color: var(--fog); margin-bottom: 8px; }
+.legend-row { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; font-size: 11px; }
+.legend-sw { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+.legend-range { font-family: var(--mono); font-size: 9px; color: var(--fog); margin-left: auto; }
 
-  /* Provenance Section */
-  .provenance { padding: 16px 20px; border-bottom: 1px solid var(--line); }
-  .provenance h2 { font-family: var(--mono); font-size: 9.5px; text-transform: uppercase; letter-spacing: .12em; color: var(--fog); margin-bottom: 10px; }
-  .src-item { display: flex; align-items: center; justify-content: space-between; padding: 6px 0; border-bottom: 1px dashed var(--line); font-size: 11.5px; }
-  .src-item:last-child { border-bottom: none; }
-  .src-name { color: var(--paper); }
-  .src-tag { font-family: var(--mono); font-size: 9px; color: var(--fog); display: block; }
-  .src-status { font-family: var(--mono); font-size: 9px; font-weight: 600; padding: 2px 7px; border-radius: 10px; }
-  .status-ok { background: rgba(70,163,162,.15); color: var(--storm); border: 1px solid rgba(70,163,162,.3); }
-  .status-na { background: rgba(255,255,255,.05); color: var(--fog); border: 1px solid var(--line); }
+/* Map bottom strip */
+.map-strip {
+  position: absolute; bottom: 0; left: 0; right: 0; padding: 7px 16px;
+  background: rgba(11,20,16,.9); border-top: 1px solid var(--line);
+  display: flex; justify-content: space-between; align-items: center;
+  font-family: var(--mono); font-size: 9.5px; color: var(--fog); z-index: 5;
+}
+.strip-dot { width: 6px; height: 6px; background: var(--storm); border-radius: 50%; display: inline-block; margin-right: 6px; animation: pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
 
-  /* Honest Data Note */
-  .footprint-note { margin: 16px 20px 20px; padding: 12px 14px; background: var(--panel-2); border-radius: 6px; border-left: 3px solid var(--storm); font-size: 11.5px; color: var(--fog); line-height: 1.5; }
-  .footprint-note b { color: var(--paper); }
+/* MapLibre popup */
+.maplibregl-popup-content { background: var(--panel-2) !important; color: var(--paper) !important; border: 1px solid var(--line) !important; border-radius: 8px !important; padding: 14px 16px !important; font-family: var(--sans) !important; box-shadow: 0 8px 30px rgba(0,0,0,.6) !important; }
+.maplibregl-popup-tip { border-top-color: var(--panel-2) !important; border-bottom-color: var(--panel-2) !important; }
+.maplibregl-popup-close-button { color: var(--fog) !important; }
+.pop-title { font-family: var(--serif); font-size: 15px; font-weight: 600; margin-bottom: 8px; }
+.pop-row { display: flex; justify-content: space-between; font-size: 11.5px; margin-bottom: 4px; color: var(--fog); }
+.pop-row span:last-child { color: var(--paper); font-weight: 600; }
+.pop-links { display: flex; gap: 6px; margin-top: 10px; }
+.pop-links a { flex: 1; text-align: center; font-size: 10px; font-weight: 600; text-decoration: none; padding: 5px; border-radius: 4px; background: var(--panel-3); color: var(--storm); border: 1px solid var(--line); font-family: var(--mono); transition: .12s; }
+.pop-links a:hover { background: var(--storm); color: var(--ink); }
 
-  #zone-sample-info { font-family: var(--mono); font-size: 9.5px; color: var(--fog); text-align: center; padding: 8px; border-top: 1px solid var(--line); flex-shrink: 0; }
+/* Idle state placeholder */
+.idle-placeholder { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; gap: 16px; color: var(--fog); text-align: center; padding: 40px; }
+.idle-placeholder h2 { font-family: var(--serif); font-size: 22px; color: var(--paper); }
+.idle-placeholder p { font-size: 13px; line-height: 1.6; max-width: 320px; }
 
-  /* ── MAP AREA ── */
-  .map-wrap { position: relative; background: var(--ink); }
-  #map { width: 100%; height: 100%; }
-
-  .topbar { position: absolute; top: 14px; left: 14px; right: 14px; display: flex; justify-content: space-between; align-items: flex-start; pointer-events: none; z-index: 5; gap: 10px; }
-
-  .layer-pill {
-    pointer-events: auto; background: rgba(17,27,23,.92); backdrop-filter: blur(8px);
-    border: 1px solid var(--line); border-radius: 6px; padding: 4px; display: flex; gap: 3px;
-    box-shadow: 0 4px 20px rgba(0,0,0,.4);
-  }
-  .layer-pill button {
-    background: transparent; border: none; color: var(--fog); font-family: var(--sans);
-    font-size: 12px; padding: 6px 12px; border-radius: 4px; cursor: pointer; transition: .15s;
-  }
-  .layer-pill button:hover { background: var(--panel-3); color: var(--paper); }
-  .layer-pill button.active { background: var(--storm); color: var(--ink); font-weight: 700; }
-
-  .legend {
-    pointer-events: auto; background: rgba(17,27,23,.92); backdrop-filter: blur(8px);
-    border: 1px solid var(--line); border-radius: 6px; padding: 12px 14px; min-width: 180px;
-    box-shadow: 0 4px 20px rgba(0,0,0,.4);
-  }
-  .legend h3 { font-family: var(--mono); font-size: 9px; text-transform: uppercase; letter-spacing: .12em; color: var(--fog); margin-bottom: 8px; }
-  .legend-row { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; font-size: 11px; color: var(--paper); }
-  .legend-sw { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
-  .legend-range { font-family: var(--mono); font-size: 9px; color: var(--fog); margin-left: auto; }
-  .legend-err-row { display: flex; align-items: center; gap: 6px; font-size: 9.5px; color: var(--fog); margin-top: 6px; padding-top: 6px; border-top: 1px dashed var(--line); }
-  .legend-err-sw { width: 10px; height: 10px; border-radius: 50%; background: repeating-linear-gradient(45deg,#263630,#263630 2px,#1F2D26 2px,#1F2D26 4px); border: 1px solid var(--fog); }
-
-  .provenance-strip {
-    position: absolute; bottom: 0; left: 0; right: 0;
-    background: rgba(11,20,16,.94); border-top: 1px solid var(--line);
-    padding: 7px 16px; display: flex; justify-content: space-between; align-items: center;
-    font-family: var(--mono); font-size: 9.5px; color: var(--fog); z-index: 5;
-  }
-  .provenance-strip .live-dot { width: 6px; height: 6px; background: var(--storm); border-radius: 50%; display: inline-block; margin-right: 6px; animation: pulse 2s infinite; }
-  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
-
-  #zone-precision-badge { position: absolute; right: 14px; top: 14px; z-index: 3; background: rgba(17,27,23,.9); border: 1px solid var(--line); color: var(--paper); font-family: var(--mono); font-size: 10px; padding: 4px 10px; border-radius: 12px; }
-  #zone-annonces-badge { display: none; position: absolute; right: 14px; top: 44px; z-index: 3; background: var(--storm); color: var(--ink); font-family: var(--mono); font-size: 10px; font-weight: 700; padding: 4px 10px; border-radius: 12px; }
-  #zone-annonces-badge.visible { display: block; }
-
-  /* MapLibre Popup Styling */
-  .maplibregl-popup-content {
-    background: var(--panel-2) !important; color: var(--paper) !important;
-    border: 1px solid var(--line) !important; border-radius: 8px !important;
-    padding: 14px 16px !important; font-family: var(--sans) !important;
-    box-shadow: 0 8px 30px rgba(0,0,0,.6) !important;
-  }
-  .maplibregl-popup-tip { border-top-color: var(--panel-2) !important; border-bottom-color: var(--panel-2) !important; }
-  .maplibregl-popup-close-button { color: var(--fog) !important; font-size: 16px !important; }
-  .pop-score { font-family: var(--serif); font-size: 26px; font-weight: 600; color: var(--clay); }
-  .pop-title { font-family: var(--serif); font-size: 14px; font-weight: 600; margin-bottom: 8px; color: var(--paper); }
-  .pop-row { display: flex; justify-content: space-between; font-size: 11px; color: var(--fog); margin-bottom: 3px; }
-  .pop-row span:last-child { color: var(--paper); font-weight: 600; }
-  .pop-actions { display: flex; gap: 6px; margin-top: 10px; }
-  .pop-actions a {
-    flex: 1; text-align: center; font-size: 10px; font-weight: 600; text-decoration: none;
-    padding: 6px 0; border-radius: 4px; background: var(--panel-3); color: var(--storm);
-    border: 1px solid var(--line); transition: .15s; font-family: var(--mono);
-  }
-  .pop-actions a:hover { background: var(--storm); color: var(--ink); }
-
-  @media (max-width: 820px) {
-    .app { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
-    .sidebar { max-height: 50vh; }
-  }
+@media (max-width: 820px) {
+  .app { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+  .sidebar { max-height: 55vh; }
+}
 </style>
 </head>
 <body>
@@ -294,126 +239,90 @@
   <!-- ===== SIDEBAR ===== -->
   <aside class="sidebar">
 
-    <!-- Brand Header -->
     <div class="brand">
-      <a href="index.html#modes" class="brand-back">← Accueil</a>
+      <a href="index.html" class="brand-back">← Accueil</a>
       <div class="brand-title">
         <h1>Typhoon</h1>
         <span>Diagnostic géo-risque · Souverain</span>
       </div>
-      <div class="brand-badge">FR / UE</div>
+      <div class="brand-badge">🇫🇷 / UE</div>
     </div>
 
-    <!-- Searchbox -->
     <div class="searchbox">
-      <label>1. Adresse ou Ville en France</label>
-      <div id="zone-search-wrapper">
-        <input id="zone-city-input" type="text" placeholder="ex. Paris, Nice, Lyon, Marseille…" autocomplete="off" />
-        <div id="zone-suggestions"></div>
+      <label>Adresse en France (texte libre)</label>
+      <div class="input-wrap">
+        <input id="addr-input" type="text"
+          placeholder="ex. 14 Avenue des Palmiers 06000 Nice"
+          autocomplete="off" spellcheck="false" />
+        <div id="addr-suggestions"></div>
       </div>
-      <button class="assess-btn" id="zone-assess-btn">Analyser cette zone</button>
-
-      <div class="autorefine-row">
-        <div>
-          <label for="zone-autorefine-toggle">Affiner au zoom</label>
-          <div class="hint">Grille dynamique à chaque déplacement</div>
-        </div>
-        <div class="toggle-switch">
-          <input type="checkbox" id="zone-autorefine-toggle" checked>
-          <label class="track" for="zone-autorefine-toggle"></label>
-        </div>
-      </div>
-      <div id="zone-refine-status"><span class="dot"></span><span>Raffinement de la zone en cours…</span></div>
+      <button class="btn-primary" id="diagnose-btn">Diagnostiquer cette adresse</button>
+      <div class="status-msg" id="status-msg"></div>
+      <div class="progress" id="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
     </div>
 
-    <!-- Loading bar -->
-    <div id="zone-loading">
-      <div class="loading-bar"><div class="loading-fill" id="zone-loading-fill"></div></div>
-      <div class="loading-text" id="zone-loading-text">Calcul en cours…</div>
-    </div>
-
-    <!-- Results (hidden until assessment run) -->
-    <div id="zone-results">
-
-      <div class="address-result">
-        <div class="addr" id="zm-city-name">—</div>
-        <div class="meta" id="zm-coords-meta">GPS —</div>
+    <div id="results">
+      <div class="addr-heading">
+        <div class="norm" id="r-adresse-norm">—</div>
+        <div class="meta" id="r-meta">—</div>
       </div>
 
       <div class="score-block">
         <div class="score-row">
-          <span class="score-num" id="zm-score">—</span>
+          <span class="score-num" id="r-score">—</span>
           <div class="score-meta">
-            <span class="score-label">Score global D03 /100</span>
-            <span class="d03-band" id="zm-band">—</span>
+            <span class="score-label">Score de risque global /100</span>
+            <span class="d03-pill" id="r-band">—</span>
           </div>
         </div>
       </div>
 
-      <div class="worst-banner" id="zm-worst" style="display:none;">
-        Point chaud : <strong id="zm-worst-peril">—</strong> (<strong id="zm-worst-score">—</strong>/100)
+      <div class="aleas-section">
+        <div class="section-heading">Aléas recensés — Géorisques</div>
+        <div id="r-aleas"></div>
       </div>
 
-      <!-- Perils -->
-      <div class="perils">
-        <h2>Score par péril — D03</h2>
-        <div id="zm-perils"></div>
+      <div id="r-catnat-section" class="catnat-section" style="display:none;">
+        <div class="section-heading">Historique arrêtés CatNat</div>
+        <div id="r-catnat"></div>
       </div>
 
-      <!-- DVF Prices -->
-      <div class="dvf-card">
-        <h2>Marché immobilier (DVF DGFiP)</h2>
-        <div class="dvf-value" id="zm-prix-median">— €/m²</div>
-        <div class="dvf-meta" id="zm-prix-meta">Sélectionnez une zone pour afficher les ventes DVF réelles</div>
-      </div>
+      <div id="r-partial-banner" class="partial-banner" style="display:none;"></div>
 
-      <!-- Provenance breakdown -->
-      <div class="provenance">
-        <h2>Provenance des données</h2>
-        <div id="zm-provenance"></div>
-      </div>
-
-      <!-- Honest Data note -->
-      <div class="footprint-note">
-        <b>Aucune donnée simulée.</b> Chaque score provient d'une source publique française/UE identifiée. Un péril marqué « indisponible » indique un manque de réponse source, jamais un score inventé.
+      <div class="avertissement">
+        <strong>⚠ Ce rapport n'est pas l'ERRIAL officiel.</strong>
+        Il agrège les données publiques Géorisques (BRGM / MTE).
+        Il ne remplace pas l'État des Risques réglementaire obligatoire à la vente/location.
       </div>
     </div>
 
-    <div id="zone-sample-info">Prêt — tapez une ville pour démarrer</div>
   </aside>
 
-  <!-- ===== MAP AREA ===== -->
+  <!-- ===== MAP ===== -->
   <main class="map-wrap">
     <div id="map"></div>
 
-    <div class="topbar">
-      <div class="layer-pill">
-        <button class="active" data-layer="global">Risque global</button>
-        <button data-layer="inondation">Inondation</button>
-        <button data-layer="rga">Argiles</button>
-        <button data-layer="prix">Prix DVF</button>
-      </div>
-
-      <div class="legend">
-        <h3>Bandes D03 — Niveau de risque</h3>
-        <div class="legend-row"><span class="legend-sw" style="background:var(--d03-tres-faible)"></span>Très faible<span class="legend-range">&lt; 20</span></div>
+    <div class="map-topbar">
+      <div></div>
+      <div class="legend-box">
+        <h3>Bandes D03 — Risque</h3>
+        <div class="legend-row"><span class="legend-sw" style="background:var(--d03-tres-faible)"></span>Très faible<span class="legend-range">&lt;20</span></div>
         <div class="legend-row"><span class="legend-sw" style="background:var(--d03-faible)"></span>Faible<span class="legend-range">20–39</span></div>
         <div class="legend-row"><span class="legend-sw" style="background:var(--d03-modere)"></span>Modéré<span class="legend-range">40–59</span></div>
         <div class="legend-row"><span class="legend-sw" style="background:var(--d03-eleve)"></span>Élevé<span class="legend-range">60–79</span></div>
-        <div class="legend-row"><span class="legend-sw" style="background:var(--d03-critique)"></span>Critique<span class="legend-range">≥ 80</span></div>
-        <div class="legend-err-row">
-          <span class="legend-err-sw"></span>
-          <span>Point en erreur (source indisponible)</span>
-        </div>
+        <div class="legend-row"><span class="legend-sw" style="background:var(--d03-critique)"></span>Critique<span class="legend-range">≥80</span></div>
       </div>
     </div>
 
-    <div id="zone-precision-badge">zoom 13 · grille 500 m</div>
-    <div id="zone-annonces-badge"></div>
+    <div class="idle-placeholder" id="idle-placeholder">
+      <h2>Diagnostic géo-risque</h2>
+      <p>Saisissez une adresse française pour afficher le rapport de risques Géorisques et positionner le bien sur la carte.</p>
+      <p style="font-family:var(--mono);font-size:10px;color:var(--fog);">Sources : BAN (Etalab) · Géorisques (BRGM/MTE) · Souverain FR/UE</p>
+    </div>
 
-    <div class="provenance-strip">
-      <span><span class="live-dot"></span><span id="strip-info">Diagnostic souverain · 0 simulés</span></span>
-      <span>© IGN · OpenStreetMap contributors · Géorisques · BDNB</span>
+    <div class="map-strip">
+      <span><span class="strip-dot"></span><span id="strip-text">En attente d'une adresse</span></span>
+      <span>© CARTO · © OpenStreetMap contributors</span>
     </div>
   </main>
 
@@ -421,489 +330,347 @@
 
 <script>
 /* ================================================================
-   TYPHOON SOVEREIGN GEO-ENGINE FRONTEND
-   Strict D03 5-band vocabulary (tres_faible, faible, modere, eleve, critique)
-   100% sovereign (IGN, OSM, DVF, Géorisques) — Zero simulated scores
+   TYPHOON GÉO-RISQUE FRONTEND
+   Flux : adresse → GET /diagnostic/adresse → RisqueReport D03
+   Zéro valeur simulée · Zéro coordonnée codée en dur
 ================================================================ */
+
+const API = (typeof window.TYPHOON_API !== 'undefined' ? window.TYPHOON_API : 'http://127.0.0.1:8765');
+
+/* D03 Bands */
+const D03 = [
+  { key: 'tres_faible', label: 'Très faible', color: '#3A7A6C', cls: 'd03-tres-faible', max: 20 },
+  { key: 'faible',      label: 'Faible',      color: '#6E9E52', cls: 'd03-faible',      max: 40 },
+  { key: 'modere',      label: 'Modéré',      color: '#D4AC3E', cls: 'd03-modere',      max: 60 },
+  { key: 'eleve',       label: 'Élevé',       color: '#D07030', cls: 'd03-eleve',       max: 80 },
+  { key: 'critique',    label: 'Critique',    color: '#B03020', cls: 'd03-critique',    max: Infinity },
+];
+function bandForKey(key) { return D03.find(b => b.key === key); }
+function scoreColor(score) {
+  if (score == null) return '#7A9187';
+  for (const b of D03) if (score < b.max) return b.color;
+  return D03[D03.length - 1].color;
+}
+
+/* ALÉA ICONS */
+const ALEA_ICONS = {
+  inondation: '🌊',
+  rga: '🏗️',
+  sismicite: '🌍',
+  radon: '☢️',
+  feu_foret: '🔥',
+  mouvement_terrain: '⛰️',
+};
 
 function escHtml(s) {
   if (s == null) return '';
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-/* D03 Bands Definition */
-const D03 = {
-  tres_faible: { label: 'Très faible', css: 'd03-tres-faible', color: '#3A7A6C', max: 20 },
-  faible:      { label: 'Faible',      css: 'd03-faible',      color: '#6E9E52', max: 40 },
-  modere:      { label: 'Modéré',      css: 'd03-modere',      color: '#D4AC3E', max: 60 },
-  eleve:       { label: 'Élevé',       css: 'd03-eleve',       color: '#D07030', max: 80 },
-  critique:    { label: 'Critique',    css: 'd03-critique',    color: '#B03020', max: Infinity }
-};
-
-function d03Band(score) {
-  if (score == null || isNaN(score)) return null;
-  const s = Number(score);
-  if (s < 20) return D03.tres_faible;
-  if (s < 40) return D03.faible;
-  if (s < 60) return D03.modere;
-  if (s < 80) return D03.eleve;
-  return D03.critique;
-}
-
-const PERIL_NAMES = {
-  inondation: { fr: 'Inondation' },
-  rga:        { fr: 'Retrait-gonflement argiles' },
-  feu_foret:  { fr: 'Feu de forêt' },
-  seisme:     { fr: 'Séisme' },
-  submersion: { fr: 'Submersion marine' },
-  tempete:    { fr: 'Tempête' },
-  incendie:   { fr: 'Incendie' }
-};
-
-const PROV_CATALOG = {
-  rnb:            { label: 'Géométrie',         tag: 'RNB-coeur' },
-  bdnb:           { label: 'Matériaux / Année', tag: 'BDNB Open' },
-  georisques:     { label: 'Aléas',             tag: 'Géorisques v1' },
-  ign_alti:       { label: 'Altimétrie',        tag: 'IGN Altimétrie' },
-  dvf_as_api:     { label: 'Prix locaux',       tag: 'DVF DGFiP' },
-  ademe_dpe:      { label: 'DPE',               tag: 'ADEME DPE' },
-  open_meteo:     { label: 'Climat observé',    tag: 'Open-Meteo' },
-  copernicus_cds: { label: 'Climat 2050',       tag: 'Copernicus CDS' }
-};
-
-const ZONE_BACKEND = window.TYPHOON_API || 'http://127.0.0.1:8765';
-
-/* DOM Elements */
-const zoneResults     = document.getElementById('zone-results');
-const zoneAssessBtn   = document.getElementById('zone-assess-btn');
-const zoneLoading     = document.getElementById('zone-loading');
-const zoneLoadingFill = document.getElementById('zone-loading-fill');
-const zoneLoadingText = document.getElementById('zone-loading-text');
-const zoneCityInput   = document.getElementById('zone-city-input');
-const zoneSuggestions = document.getElementById('zone-suggestions');
-const zoneAutorefineToggle = document.getElementById('zone-autorefine-toggle');
-const zoneRefineStatus = document.getElementById('zone-refine-status');
-const zonePrecisionBadge = document.getElementById('zone-precision-badge');
-const stripInfo       = document.getElementById('strip-info');
+/* ── DOM ── */
+const addrInput      = document.getElementById('addr-input');
+const addrSuggestions= document.getElementById('addr-suggestions');
+const diagnoseBtn    = document.getElementById('diagnose-btn');
+const statusMsg      = document.getElementById('status-msg');
+const progressBar    = document.getElementById('progress-bar');
+const progressFill   = document.getElementById('progress-fill');
+const results        = document.getElementById('results');
+const idlePlaceholder= document.getElementById('idle-placeholder');
+const stripText      = document.getElementById('strip-text');
 
 let map = null;
-let zoneBounds = null;
-let selectedCity = null;
+let currentMarker = null;
+let currentPopup = null;
 let banTimeout = null;
 
-let hasFirstResult = false;
-let moveDebounce = null;
-let requestSeq = 0;
-let activeController = null;
-let sseSource = null;
-
-function spacingForZoom(zoom) {
-  if (zoom < 11) return 1.2;
-  if (zoom < 13) return 0.6;
-  if (zoom < 15) return 0.3;
-  return 0.15;
-}
-
-function computeGridParams(bounds, targetSpacingKm) {
-  const [latMin, lonMin, latMax, lonMax] = bounds;
-  const latMoy = (latMin + latMax) / 2;
-  const degPerKmLat = 1.0 / 111.0;
-  const degPerKmLon = 1.0 / (111.0 * Math.cos(latMoy * Math.PI / 180));
-  let spacing = targetSpacingKm;
-  let rows, cols, total;
-  for (let i = 0; i < 20; i++) {
-    const stepLat = spacing * degPerKmLat;
-    const stepLon = spacing * degPerKmLon;
-    rows = Math.floor((latMax - latMin) / stepLat) + 1;
-    cols = Math.floor((lonMax - lonMin) / stepLon) + 1;
-    total = rows * cols;
-    if (total <= 195) break;
-    spacing *= 1.15;
-  }
-  return { spacingKm: spacing, maxPoints: Math.min(200, total + 2), rows, cols };
-}
-
-/* Isobands */
-const RISK_BREAKS = [0, 20, 40, 60, 80, 100.01];
-const RISK_COLORS = ['#3A7A6C', '#6E9E52', '#D4AC3E', '#D07030', '#B03020'];
-
-function buildIsobands(points) {
-  if (!window.turf || points.length < 4) return { type: 'FeatureCollection', features: [] };
-  try {
-    const fc = turf.featureCollection(points.map(p => turf.point([p.lon, p.lat], { score: p.score })));
-    const bands = turf.isobands(fc, RISK_BREAKS, { zProperty: 'score' });
-    bands.features.forEach((f, i) => { f.properties.fillColor = RISK_COLORS[Math.min(i, RISK_COLORS.length - 1)]; });
-    return bands;
-  } catch (e) {
-    return { type: 'FeatureCollection', features: [] };
-  }
-}
-
-/* BAN Search */
-async function searchCity(query) {
-  if (query.length < 3) { zoneSuggestions.innerHTML = ''; return; }
-  try {
-    const resp = await fetch(`${ZONE_BACKEND}/api/geocode/search?q=${encodeURIComponent(query)}&limit=6`);
-    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-    const data = await resp.json();
-    zoneSuggestions.innerHTML = '';
-    (data.results || []).forEach(city => {
-      const div = document.createElement('div');
-      div.className = 'ban-suggestion';
-      div.textContent = `${city.city} — ${city.context || ''}`;
-      div.onmousedown = e => e.preventDefault();
-      div.onclick = () => selectCity({
-        label: city.label || `${city.city} (${(city.context || '').split(',')[0] || ''})`,
-        lat: city.lat, lon: city.lon,
-        city: city.city, citycode: city.citycode || ''
-      });
-      zoneSuggestions.appendChild(div);
-    });
-  } catch (e) {
-    document.getElementById('zone-sample-info').textContent = 'Recherche de ville indisponible (backend hors ligne ?)';
-  }
-}
-
-function selectCity(city) {
-  selectedCity = city;
-  zoneCityInput.value = city.label || city.city;
-  zoneSuggestions.innerHTML = '';
-  const lat = city.lat, lon = city.lon;
-  const d = 0.025;
-  zoneBounds = { lat_min: lat - d, lon_min: lon - d, lat_max: lat + d, lon_max: lon + d };
-  zoneAssessBtn.disabled = false;
-  document.getElementById('zm-city-name').textContent = city.city;
-  document.getElementById('zm-coords-meta').textContent = `GPS ${lat.toFixed(4)}°N, ${lon.toFixed(4)}°E · Code ${city.citycode || 'N/A'}`;
-  map.flyTo({ center: [lon, lat], zoom: 13, duration: 1200 });
-}
-
-/* Maplibre Init */
+/* ── Map Init ── */
 function initMap() {
-  if (map) return;
   map = new maplibregl.Map({
     container: 'map',
     style: {
       version: 8,
-      glyphs: 'https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf',
       sources: {
         carto: {
           type: 'raster',
           tiles: [
             'https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png',
             'https://b.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png',
-            'https://c.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png'
           ],
           tileSize: 256,
-          attribution: '© CARTO · © OpenStreetMap contributors'
+          attribution: '© CARTO · © OpenStreetMap contributors',
         }
       },
       layers: [{ id: 'carto', type: 'raster', source: 'carto' }]
     },
-    center: [7.2620, 43.7102],
-    zoom: 13
+    center: [2.35, 46.8],   // Centre de France par défaut
+    zoom: 5,
   });
-
   map.addControl(new maplibregl.NavigationControl(), 'bottom-right');
   map.addControl(new maplibregl.ScaleControl({ unit: 'metric' }));
-
-  map.on('load', () => {
-    map.addSource('sample-points', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
-    map.addSource('error-points', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
-
-    map.addSource('risk-isobands', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
-    map.addLayer({ id: 'risk-isobands-fill', type: 'fill', source: 'risk-isobands', paint: { 'fill-color': ['get', 'fillColor'], 'fill-opacity': 0.6 } });
-    map.addLayer({ id: 'risk-isobands-line', type: 'line', source: 'risk-isobands', paint: { 'line-color': 'rgba(255,255,255,0.2)', 'line-width': 0.5 } });
-
-    /* Valid points (D03 colors) */
-    map.addLayer({
-      id: 'sample-dots', type: 'circle', source: 'sample-points', minzoom: 13,
-      paint: {
-        'circle-radius': ['interpolate', ['linear'], ['zoom'], 13, 2, 15, 3.5, 17, 5],
-        'circle-color': [
-          'step', ['get', 'score'],
-          '#3A7A6C', 20, '#6E9E52', 40, '#D4AC3E', 60, '#D07030', 80, '#B03020'
-        ],
-        'circle-opacity': 0.9, 'circle-stroke-color': '#111B17', 'circle-stroke-width': 1
-      }
-    });
-
-    /* Error points — rendered visibly (fix bug B7) */
-    map.addLayer({
-      id: 'error-dots', type: 'circle', source: 'error-points', minzoom: 11,
-      paint: {
-        'circle-radius': 4, 'circle-color': '#7A9187', 'circle-opacity': 0.5,
-        'circle-stroke-color': '#263630', 'circle-stroke-width': 1
-      }
-    });
-
-    /* Annonces layer */
-    map.addSource('annonces', { type: 'geojson', data: { type: 'FeatureCollection', features: [] }, cluster: true, clusterMaxZoom: 15, clusterRadius: 50 });
-    map.addLayer({ id: 'annonces-clusters', type: 'circle', source: 'annonces', filter: ['has', 'point_count'], paint: { 'circle-radius': ['step', ['get', 'point_count'], 14, 10, 18, 30, 24], 'circle-color': '#192219', 'circle-stroke-color': '#46A3A2', 'circle-stroke-width': 2 } });
-    map.addLayer({ id: 'annonces-cluster-count', type: 'symbol', source: 'annonces', filter: ['has', 'point_count'], layout: { 'text-field': ['get', 'point_count_abbreviated'], 'text-font': ['Open Sans Bold'], 'text-size': 12 }, paint: { 'text-color': '#E8E6DC' } });
-    map.addLayer({ id: 'annonces-unclustered', type: 'circle', source: 'annonces', filter: ['!', ['has', 'point_count']], paint: { 'circle-radius': 7, 'circle-color': ['step', ['get', 'climat_score'], '#3A7A6C', 20, '#6E9E52', 40, '#D4AC3E', 60, '#D07030', 80, '#B03020'], 'circle-stroke-color': '#E8E6DC', 'circle-stroke-width': 1.5 } });
-
-    map.on('click', 'annonces-unclustered', e => {
-      const f = e.features[0];
-      showAnnoncePopup(f.geometry.coordinates.slice(), f.properties);
-    });
-  });
-
-  map.on('moveend', () => {
-    if (!hasFirstResult || !zoneAutorefineToggle.checked) return;
-    clearTimeout(moveDebounce);
-    moveDebounce = setTimeout(runAutoRefine, 550);
-  });
 }
 
-/* Assessment Runner */
-async function runAssessment(boundsArr, spacingKm, maxPoints, opts = {}) {
-  const seq = ++requestSeq;
-  if (activeController) activeController.abort();
-  activeController = new AbortController();
-
-  if (opts.silent) {
-    zoneRefineStatus.classList.add('visible');
-  } else {
-    zoneAssessBtn.disabled = true;
-    zoneLoading.classList.add('visible');
-    zoneLoadingFill.style.width = '20%';
-    zoneLoadingText.textContent = 'Appel backend Typhoon Sovereign…';
-    zoneResults.classList.remove('visible');
-  }
-
+/* ── BAN Autocomplete ── */
+async function fetchSuggestions(q) {
+  if (q.length < 3) { hideSuggestions(); return; }
   try {
-    const response = await fetch(`${ZONE_BACKEND}/diagnostic/zone`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ bounds: boundsArr, spacing_km: spacingKm, max_points: maxPoints, land_only: false }),
-      signal: activeController.signal
-    });
-
-    if (!response.ok) throw new Error(`Erreur ${response.status}: ${await response.text()}`);
-    const data = await response.json();
-    if (seq !== requestSeq) return;
-
-    if (!opts.silent) {
-      zoneLoadingFill.style.width = '100%';
-      zoneLoadingText.textContent = 'Terminé ✓';
-    }
-    displayResults(data);
-    hasFirstResult = true;
-  } catch (err) {
-    if (err.name === 'AbortError') return;
-    if (!opts.silent) {
-      zoneLoadingText.textContent = 'Erreur : ' + err.message;
-      zoneAssessBtn.disabled = false;
-    }
-  } finally {
-    if (seq === requestSeq) {
-      zoneRefineStatus.classList.remove('visible');
-      if (!opts.silent) {
-        setTimeout(() => { zoneLoading.classList.remove('visible'); zoneAssessBtn.disabled = false; }, 400);
-      }
-    }
-  }
-}
-
-function displayResults(data) {
-  zoneResults.classList.add('visible');
-
-  const score = data.score_moyen != null ? Math.round(data.score_moyen) : null;
-  const band  = d03Band(score);
-
-  document.getElementById('zm-score').textContent = score ?? '—';
-  const bandEl = document.getElementById('zm-band');
-  if (band) {
-    bandEl.textContent = band.label;
-    bandEl.className = `d03-band ${band.css}`;
-  } else {
-    bandEl.textContent = '—';
-    bandEl.className = 'd03-band';
-  }
-
-  stripInfo.textContent = `${data.nb_points_valides || 0} / ${data.nb_points || 0} points valides · 0 simulés`;
-  document.getElementById('zone-sample-info').textContent = `${data.nb_points || 0} points evalués · ${data.nb_points_valides || 0} valides · ${data.nb_points_erreur || 0} erreurs`;
-
-  /* Worst Case */
-  const zmWorst = document.getElementById('zm-worst');
-  if (data.worst_case_score && data.worst_case_score >= 50) {
-    zmWorst.style.display = 'block';
-    document.getElementById('zm-worst-peril').textContent = PERIL_NAMES[data.worst_case_peril]?.fr || data.worst_case_peril || '—';
-    document.getElementById('zm-worst-score').textContent = Math.round(data.worst_case_score);
-  } else {
-    zmWorst.style.display = 'none';
-  }
-
-  /* Perils */
-  const zmPerils = document.getElementById('zm-perils');
-  zmPerils.innerHTML = '';
-  if (data.perils) {
-    for (const [key, p] of Object.entries(data.perils)) {
-      const info = PERIL_NAMES[key] || { fr: key };
-      const val  = p.moyenne != null ? Math.round(p.moyenne) : null;
-      const b    = d03Band(val);
-      const conf = p.confiance != null ? p.confiance : 0;
-      const isUnavail = val === null;
-
-      const div = document.createElement('div');
-      div.className = `peril-row${isUnavail ? ' unavailable' : ''}`;
-      div.innerHTML = `
-        <div class="peril-header">
-          <span class="peril-name">${escHtml(info.fr)}</span>
-          ${isUnavail ? `<span class="src-status status-na">indisponible</span>` : `<span class="peril-val" style="color:${b.color}">${val}</span>`}
-        </div>
-        <div class="peril-track">
-          ${isUnavail ? '' : `<div class="peril-fill" style="width:${val}%;background:${b.color}"></div>`}
-        </div>
-        <div class="confiance-row">
-          <span class="confiance-label">Confiance</span>
-          <div class="confiance-track"><div class="confiance-fill" style="width:${(conf*100).toFixed(0)}%"></div></div>
-          <span class="confiance-val">${(conf*100).toFixed(0)}%</span>
-        </div>
-      `;
-      zmPerils.appendChild(div);
-    }
-  }
-
-  /* Provenance */
-  renderProvenance(document.getElementById('zm-provenance'), data.provenance);
-
-  /* Points & Isobands */
-  const allPts = data.points_echantillon || [];
-  const validPts = allPts.filter(p => p.lat != null && p.lon != null && p.score != null)
-    .map(p => ({ lat: p.lat, lon: p.lon, score: p.score?.score_global ?? p.score ?? 50 }));
-  const errorPts = allPts.filter(p => p.lat != null && p.lon != null && (p.score == null || p.erreur));
-
-  const ptsSource = map && map.getSource('sample-points');
-  if (ptsSource) {
-    ptsSource.setData({
-      type: 'FeatureCollection',
-      features: validPts.map(p => ({ type: 'Feature', geometry: { type: 'Point', coordinates: [p.lon, p.lat] }, properties: { score: p.score } }))
-    });
-  }
-
-  const errSource = map && map.getSource('error-points');
-  if (errSource) {
-    errSource.setData({
-      type: 'FeatureCollection',
-      features: errorPts.map(p => ({ type: 'Feature', geometry: { type: 'Point', coordinates: [p.lon, p.lat] } }))
-    });
-  }
-
-  const isoSource = map && map.getSource('risk-isobands');
-  if (isoSource) isoSource.setData(buildIsobands(validPts));
-}
-
-function renderProvenance(container, provenance) {
-  container.innerHTML = '';
-  if (!provenance) {
-    container.innerHTML = '<p style="font-size:11px;color:var(--fog);">Sources en cours d\'initialisation.</p>';
-    return;
-  }
-  for (const [key, data] of Object.entries(provenance)) {
-    const catalog = PROV_CATALOG[key] || { label: key, tag: key };
-    const isOk = data.status === 'ok';
-    const row = document.createElement('div');
-    row.className = 'src-item';
-    row.innerHTML = `
-      <div>
-        <span class="src-name">${escHtml(catalog.label)}</span>
-        <span class="src-tag">${escHtml(catalog.tag)}</span>
-      </div>
-      <span class="src-status ${isOk ? 'status-ok' : 'status-na'}">${isOk ? 'reçu' : 'indisponible'}</span>
-    `;
-    container.appendChild(row);
-  }
-}
-
-/* DVF Prices */
-async function fetchZonePrix(boundsArr) {
-  if (!selectedCity || !selectedCity.citycode) return;
-  try {
-    const resp = await fetch(`${ZONE_BACKEND}/diagnostic/zone/prix`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ bounds: boundsArr, citycode: selectedCity.citycode })
-    });
+    const resp = await fetch(`${API}/api/geocode/search?q=${encodeURIComponent(q)}&limit=5`);
     if (!resp.ok) return;
     const data = await resp.json();
-    const medianEl = document.getElementById('zm-prix-median');
-    const metaEl   = document.getElementById('zm-prix-meta');
-    if (!data.disponible || !data.nb_ventes) {
-      medianEl.textContent = '— €/m²';
-      metaEl.textContent = 'Aucune vente DVF enregistrée sur la période dans cette zone.';
-      return;
-    }
-    medianEl.textContent = Math.round(data.prix_m2_median).toLocaleString('fr-FR') + ' €/m²';
-    metaEl.textContent = `${data.nb_ventes} vente(s) DVF DGFiP réelles enregistrées`;
-  } catch (_) {}
+    renderSuggestions(data.results || []);
+  } catch (_) { hideSuggestions(); }
 }
 
-/* Annonce popup (100% sovereign links) */
-function showAnnoncePopup(coords, p) {
-  const [lon, lat] = coords;
+function renderSuggestions(items) {
+  addrSuggestions.innerHTML = '';
+  if (!items.length) { hideSuggestions(); return; }
+  items.forEach(item => {
+    const div = document.createElement('div');
+    div.className = 'sug-item';
+    div.textContent = item.label || item.city;
+    div.onmousedown = e => e.preventDefault();
+    div.onclick = () => {
+      addrInput.value = item.label || item.city;
+      hideSuggestions();
+      runDiagnosis();
+    };
+    addrSuggestions.appendChild(div);
+  });
+  addrSuggestions.classList.add('open');
+}
+
+function hideSuggestions() {
+  addrSuggestions.innerHTML = '';
+  addrSuggestions.classList.remove('open');
+}
+
+/* ── Diagnosis ── */
+async function runDiagnosis() {
+  const q = addrInput.value.trim();
+  if (!q) { setStatus('Saisissez une adresse.', 'error'); return; }
+
+  hideSuggestions();
+  diagnoseBtn.disabled = true;
+  results.classList.remove('visible');
+  setStatus('Géocodage BAN…', 'loading');
+  setProgress(15);
+
+  try {
+    const resp = await fetch(`${API}/diagnostic/adresse?q=${encodeURIComponent(q)}`);
+    setProgress(75);
+
+    if (!resp.ok) {
+      let detail = `Erreur ${resp.status}`;
+      try {
+        const err = await resp.json();
+        detail = err.detail?.detail || err.detail?.error || JSON.stringify(err.detail) || detail;
+      } catch (_) {}
+      setStatus(detail, 'error');
+      setProgress(0);
+      diagnoseBtn.disabled = false;
+      return;
+    }
+
+    const report = await resp.json();
+    setProgress(100);
+    setTimeout(() => { setProgress(0); progressBar.classList.remove('visible'); }, 600);
+    setStatus(`${report.alea_count} aléa(s) recensé(s) — rapport généré le ${report.date_generation}`, 'ok');
+    displayReport(report);
+  } catch (err) {
+    setStatus('Erreur réseau — backend inaccessible ?', 'error');
+    setProgress(0);
+  } finally {
+    diagnoseBtn.disabled = false;
+  }
+}
+
+/* ── Display Report ── */
+function displayReport(r) {
+  /* Address heading */
+  document.getElementById('r-adresse-norm').textContent = r.adresse_normalisee;
+  document.getElementById('r-meta').textContent =
+    `GPS ${r.lat.toFixed(5)}°N, ${r.lon.toFixed(5)}°E · Code INSEE ${r.code_insee} · Généré le ${r.date_generation}`;
+
+  /* Global score */
+  const presentAleas = r.aleas.filter(a => a.present === true);
+  const maxScore = presentAleas.length
+    ? Math.max(...presentAleas.map(a => aleaScore(a)))
+    : null;
+
+  const scoreEl = document.getElementById('r-score');
+  const bandEl  = document.getElementById('r-band');
+  if (maxScore !== null) {
+    scoreEl.textContent = maxScore;
+    const band = D03.find(b => maxScore < b.max) || D03[D03.length - 1];
+    bandEl.textContent = band.label;
+    bandEl.className = `d03-pill ${band.cls}`;
+    scoreEl.style.color = band.color;
+  } else {
+    scoreEl.textContent = '—';
+    bandEl.textContent = 'Indéterminé';
+    bandEl.className = 'd03-pill';
+  }
+
+  /* Aléas */
+  const aleaContainer = document.getElementById('r-aleas');
+  aleaContainer.innerHTML = '';
+  (r.aleas || []).forEach(a => {
+    const band = a.niveau ? bandForKey(a.niveau) : null;
+    const icon = ALEA_ICONS[a.code] || '⚠️';
+    const isError = a.present === null;
+    const isAbsent = a.present === false;
+
+    const card = document.createElement('div');
+    card.className = `alea-card${isAbsent ? ' absent' : ''}${isError ? ' error-partial' : ''}`;
+
+    let pillHtml = '';
+    if (isError) {
+      pillHtml = `<span style="font-family:var(--mono);font-size:9px;color:var(--fog);">source indisponible</span>`;
+    } else if (isAbsent) {
+      pillHtml = `<span style="font-family:var(--mono);font-size:9px;color:var(--fog);">Non concerné</span>`;
+    } else if (band) {
+      pillHtml = `<span class="d03-pill ${band.cls}" style="font-size:9px;padding:2px 8px;">${band.label}</span>`;
+    }
+
+    const linkHtml = a.url_detail
+      ? `<a href="${escHtml(a.url_detail)}" target="_blank" rel="noopener" class="alea-link">→ Fiche</a>`
+      : '';
+
+    card.innerHTML = `
+      <div class="alea-left">
+        <span class="alea-name">${icon} ${escHtml(a.libelle)}</span>
+        ${a.zonage ? `<span class="alea-zonage">${escHtml(a.zonage)}</span>` : ''}
+      </div>
+      <div class="alea-right">
+        ${pillHtml}
+        ${linkHtml}
+      </div>
+    `;
+    aleaContainer.appendChild(card);
+  });
+
+  /* CatNat history */
+  const catnatSection = document.getElementById('r-catnat-section');
+  const catnatContainer = document.getElementById('r-catnat');
+  const inond = r.aleas.find(a => a.code === 'inondation');
+  const catnat = inond?.catnat_historique || [];
+  if (catnat.length) {
+    catnatSection.style.display = '';
+    catnatContainer.innerHTML = '';
+    catnat.slice(0, 8).forEach(ev => {
+      const div = document.createElement('div');
+      div.className = 'catnat-entry';
+      div.textContent = [
+        ev.libelle_risque_jo || ev.libelle || '—',
+        ev.date_debut_evt ? ev.date_debut_evt.slice(0, 4) : null,
+      ].filter(Boolean).join(' · ');
+      catnatContainer.appendChild(div);
+    });
+    if (catnat.length > 8) {
+      const more = document.createElement('div');
+      more.className = 'catnat-entry';
+      more.style.color = 'var(--fog)';
+      more.textContent = `+ ${catnat.length - 8} autre(s)…`;
+      catnatContainer.appendChild(more);
+    }
+  } else {
+    catnatSection.style.display = 'none';
+  }
+
+  /* Partial errors */
+  const banner = document.getElementById('r-partial-banner');
+  if (r.erreurs_partielles && r.erreurs_partielles.length) {
+    banner.style.display = '';
+    banner.innerHTML = `<strong>⚠ Sources partiellement indisponibles :</strong> ${escHtml(r.erreurs_partielles.join(' · '))}. Les aléas concernés affichent « source indisponible ».`;
+  } else {
+    banner.style.display = 'none';
+  }
+
+  /* Show results */
+  results.classList.add('visible');
+  idlePlaceholder.style.display = 'none';
+  stripText.textContent = `${r.adresse_normalisee} · ${r.alea_count} aléa(s) · 0 simulés`;
+
+  /* Map — center on address */
+  placePin(r.lat, r.lon, r);
+}
+
+function aleaScore(a) {
+  /* Approximation du score numérique à partir de la bande D03 */
+  const mapping = { tres_faible: 10, faible: 30, modere: 50, eleve: 70, critique: 90 };
+  return mapping[a.niveau] || 0;
+}
+
+function placePin(lat, lon, report) {
+  if (!map) return;
+
+  if (currentMarker) { currentMarker.remove(); currentMarker = null; }
+  if (currentPopup) { currentPopup.remove(); currentPopup = null; }
+
+  const el = document.createElement('div');
+  el.className = 'map-pin';
+
+  currentMarker = new maplibregl.Marker({ element: el })
+    .setLngLat([lon, lat])
+    .addTo(map);
+
+  /* Popup content */
+  const topAleas = (report.aleas || [])
+    .filter(a => a.present === true && a.niveau)
+    .map(a => {
+      const band = bandForKey(a.niveau) || {};
+      return `<div class="pop-row"><span>${escHtml(a.libelle)}</span><span style="color:${band.color || '#E8E6DC'}">${band.label || a.niveau}</span></div>`;
+    }).join('');
+
   const ignLink = `https://www.geoportail.gouv.fr/carte?lon=${lon}&lat=${lat}&z=18`;
   const osmLink = `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lon}&zoom=18`;
 
   const html = `
-    <div class="pop-title">${escHtml(p.adresse || 'Bien immobilier')}</div>
-    <div class="pop-row"><span>Prix</span><span>${p.prix != null ? Math.round(p.prix).toLocaleString('fr-FR')+' €' : '—'}</span></div>
-    <div class="pop-row"><span>Surface</span><span>${p.surface_m2 != null ? Math.round(p.surface_m2)+' m²' : '—'}</span></div>
-    <div class="pop-row"><span>Prix/m²</span><span style="color:var(--clay);">${p.prix_m2 != null ? Math.round(p.prix_m2).toLocaleString('fr-FR')+' €' : '—'}</span></div>
-    <div class="pop-row"><span>DPE</span><span>${escHtml(p.dpe || '?')}</span></div>
-    <div class="pop-row"><span>Score D03</span><span>${p.climat_score ?? '—'}/100</span></div>
-    <div class="pop-actions">
+    <div class="pop-title">${escHtml(report.adresse_normalisee)}</div>
+    ${topAleas || '<div class="pop-row"><span>Aucun aléa présent</span><span>—</span></div>'}
+    <div class="pop-links">
       <a href="${ignLink}" target="_blank" rel="noopener">IGN Géoportail</a>
       <a href="${osmLink}" target="_blank" rel="noopener">OpenStreetMap</a>
     </div>
   `;
 
-  new maplibregl.Popup({ offset: 12, maxWidth: '260px' }).setLngLat(coords).setHTML(html).addTo(map);
+  currentPopup = new maplibregl.Popup({ offset: 18, maxWidth: '280px', closeOnClick: false })
+    .setLngLat([lon, lat])
+    .setHTML(html)
+    .addTo(map);
+
+  map.flyTo({ center: [lon, lat], zoom: 14, duration: 1200 });
 }
 
-/* Buttons & Events */
-zoneAssessBtn.onclick = () => {
-  if (!zoneBounds) {
-    // Derive bounds from current map view if not explicitly selected from BAN
-    const b = map ? map.getBounds() : null;
-    if (b) {
-      zoneBounds = { lat_min: b.getSouth(), lon_min: b.getWest(), lat_max: b.getNorth(), lon_max: b.getEast() };
-    } else {
-      // Default to Paris center bounds
-      zoneBounds = { lat_min: 48.835, lon_min: 2.325, lat_max: 48.885, lon_max: 2.375 };
-    }
-  }
-  const boundsArr = [zoneBounds.lat_min, zoneBounds.lon_min, zoneBounds.lat_max, zoneBounds.lon_max];
-  const { spacingKm, maxPoints } = computeGridParams(boundsArr, 0.3);
-  runAssessment(boundsArr, spacingKm, maxPoints, { silent: false });
-  fetchZonePrix(boundsArr);
-};
-
-function runAutoRefine() {
-  if (!map) return;
-  const b = map.getBounds();
-  const zoom = map.getZoom();
-  const boundsArr = [b.getSouth(), b.getWest(), b.getNorth(), b.getEast()];
-  const target = spacingForZoom(zoom);
-  const { spacingKm, maxPoints } = computeGridParams(boundsArr, target);
-  zonePrecisionBadge.textContent = `zoom ${zoom.toFixed(1)} · grille ${Math.round(spacingKm * 1000)} m`;
-  runAssessment(boundsArr, spacingKm, maxPoints, { silent: true });
-  fetchZonePrix(boundsArr);
+/* ── Status & Progress Helpers ── */
+function setStatus(msg, type = '') {
+  statusMsg.textContent = msg;
+  statusMsg.className = `status-msg ${type}`;
 }
 
-zoneAutorefineToggle.onchange = () => {
-  if (zoneAutorefineToggle.checked && hasFirstResult) runAutoRefine();
-};
+function setProgress(pct) {
+  if (pct > 0) { progressBar.classList.add('visible'); }
+  progressFill.style.width = `${pct}%`;
+}
 
-zoneCityInput.oninput = () => {
+/* ── Events ── */
+addrInput.addEventListener('input', () => {
+  const q = addrInput.value.trim();
   clearTimeout(banTimeout);
-  const q = zoneCityInput.value.trim();
-  if (q.length < 2) { zoneSuggestions.innerHTML = ''; return; }
-  banTimeout = setTimeout(() => searchCity(q), 250);
-};
-zoneCityInput.onblur = () => { setTimeout(() => { zoneSuggestions.innerHTML = ''; }, 200); };
-zoneCityInput.onkeydown = e => { if (e.key === 'Enter' && zoneSuggestions.children.length > 0) zoneSuggestions.children[0].click(); };
+  if (q.length < 3) { hideSuggestions(); return; }
+  banTimeout = setTimeout(() => fetchSuggestions(q), 220);
+});
 
-/* Start */
+addrInput.addEventListener('blur', () => {
+  setTimeout(hideSuggestions, 180);
+});
+
+addrInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter') { hideSuggestions(); runDiagnosis(); }
+});
+
+diagnoseBtn.addEventListener('click', runDiagnosis);
+
+/* ── Init ── */
 initMap();
 window.addEventListener('resize', () => { if (map) map.resize(); });
 </script>
