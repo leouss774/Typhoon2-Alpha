@@ -664,12 +664,12 @@ function buildLayerToggle(report) {
 /* ── Main layer renderer (3-level strategy for 13 hazards) ── */
 async function renderAleaLayers(report) {
   if (!map) return;
-  const aleasPresents = (report.aleas || []).filter(a => a.present === true && a.niveau);
+  const aleasInReport = (report.aleas || []);
   let wmsActive = false;
 
-  for (const a of aleasPresents) {
-    const band = bandForKey(a.niveau) || {};
-    const color = band.color || '#7A9187';
+  for (const a of aleasInReport) {
+    const band = a.niveau ? bandForKey(a.niveau) : {};
+    const color = band ? (band.color || '#7A9187') : '#7A9187';
 
     /* Level 1: WMS raster (mapsref.brgm.fr) */
     if (WMS_LAYER_MAP[a.code]) {
@@ -878,10 +878,8 @@ function displayReport(r) {
       ? `<a href="${escHtml(a.url_detail)}" target="_blank" rel="noopener" class="alea-link">→ Fiche</a>`
       : '';
 
-    let eyeBtnHtml = '';
-    if (a.present === true) {
-      eyeBtnHtml = `<button class="alea-eye-btn" data-code="${a.code}" title="Afficher/masquer la couche sur la carte">👁️</button>`;
-    }
+    const isVis = visibleLayerKeys.has(a.code);
+    const eyeBtnHtml = `<button class="alea-eye-btn ${isVis ? '' : 'hidden-layer'}" data-code="${a.code}" title="Afficher/masquer la couche sur la carte">${isVis ? '👁️' : '🚫'}</button>`;
 
     card.innerHTML = `
       <div class="alea-left">
@@ -895,25 +893,23 @@ function displayReport(r) {
       </div>
     `;
 
-    if (a.present === true) {
-      const eyeBtn = card.querySelector('.alea-eye-btn');
-      if (eyeBtn) {
-        eyeBtn.onclick = (e) => {
-          e.stopPropagation();
-          const isVis = visibleLayerKeys.has(a.code);
-          if (isVis) {
-            visibleLayerKeys.delete(a.code);
-            eyeBtn.textContent = '🚫';
-            eyeBtn.classList.add('hidden-layer');
-          } else {
-            visibleLayerKeys.add(a.code);
-            eyeBtn.textContent = '👁️';
-            eyeBtn.classList.remove('hidden-layer');
-          }
-          const layers = _olLayersByKey.get(a.code) || [];
-          layers.forEach(l => l.setVisible(!isVis));
-        };
-      }
+    const eyeBtn = card.querySelector('.alea-eye-btn');
+    if (eyeBtn) {
+      eyeBtn.onclick = (e) => {
+        e.stopPropagation();
+        const currentlyVisible = visibleLayerKeys.has(a.code);
+        if (currentlyVisible) {
+          visibleLayerKeys.delete(a.code);
+          eyeBtn.textContent = '🚫';
+          eyeBtn.classList.add('hidden-layer');
+        } else {
+          visibleLayerKeys.add(a.code);
+          eyeBtn.textContent = '👁️';
+          eyeBtn.classList.remove('hidden-layer');
+        }
+        const layers = _olLayersByKey.get(a.code) || [];
+        layers.forEach(l => l.setVisible(!currentlyVisible));
+      };
     }
 
     aleaContainer.appendChild(card);
