@@ -337,6 +337,9 @@ html, body { height: 100%; background: var(--ink); color: var(--paper); font-fam
             <span class="d03-pill" id="r-band">—</span>
           </div>
         </div>
+        <a id="pdf-report-btn" class="btn-primary" style="display:inline-block; text-decoration:none; text-align:center; margin-top:8px; background:var(--panel-3); color:var(--storm); border:1px solid var(--line);" target="_blank" rel="noopener">
+          📄 Télécharger le rapport PDF officiel
+        </a>
       </div>
 
       <div class="aleas-section">
@@ -517,37 +520,66 @@ function initMap() {
   });
 }
 
+/* ALÉA ICONS */
+const ALEA_ICONS = {
+  inondation: '🌊',
+  rga: '🏗️',
+  sismicite: '🌍',
+  radon: '☢️',
+  feu_foret: '🔥',
+  mouvement_terrain: '⛰️',
+  ppr: '📜',
+  ssp: '🏭',
+  cavite: '🕳️',
+  avalanche: '🏔️',
+  icpe: '🏭',
+  canalisations: '⛽',
+  vent_cyclonique: '🌀',
+  territoires: '🗺️',
+};
+
 /* ── WMS Layer Map (confirmed layers from mapsref.brgm.fr) ── */
 const WMS_BASE = 'https://mapsref.brgm.fr/wxs/georisques/risques';
 const WMS_LAYER_MAP = {
-  rga:       'ALEARG_2019',         // Retrait-gonflement argiles — millésime 2020
-  inondation:'LIMITETRI',           // Territoires à risque d'inondation (TRI)
-  sismicite: 'risq_zonage_sismique',// Zonage sismique réglementaire
+  rga:               'ALEARG',
+  inondation:        'LIMITETRI_FXX',
+  sismicite:         'SIS_INTENSITE_MAXCOM',
+  avalanche:         'PPRN_COMMUNE_AVALANCHE_APPROUV',
+  cavite:            'CAVITE_LOCALISEE',
+  feu_foret:         'PPRN_COMMUNE_FEU_APPROUV',
+  icpe:              'INSTALLATIONS_CLASSEES_SIMPLIFIE',
+  mouvement_terrain: 'MVT_LOCALISE',
+  radon:             'RADON',
+  canalisations:     'CANALISATIONS',
+  ppr:               'PPRN_COMMUNE_GASPAR',
 };
 
 /* ── WFS Layer Map (Géorisques GeoServer) ── */
 const WFS_BASE = 'https://www.georisques.gouv.fr/services';
 const WFS_LAYER_MAP = {
-  mouvement_terrain: ['ms:PPRN_COMMUNE_CAVITE_APPROUV', 'ms:PPRN_COMMUNE_CAVITE_PRESCRIT'],
-  ppr:               ['ms:PPRN_COMMUNE_ATMOS_APPROUVE', 'ms:PPRN_COMMUNE_ATMOS_PRESCRIT'],
-  ssp:               ['ms:SSP_CLASSIF_SIS_GE'],
-  // radon, feu_foret → circle fallback only
+  ssp: ['ms:SSP_CLASSIF_SIS_GE'],
 };
 
-/* ── Layer tracking ── */
-let activeLayerKey = 'tous';
-let _olLayers = [];   // OL layer instances tracked for cleanup
+/* ── Layer tracking & eye toggle state ── */
+let visibleLayerKeys = new Set();
+let _olLayersByKey = new Map(); // key (alea code) -> array of OL layer instances
 
-function _trackOlLayer(layer) {
+function _trackOlLayer(key, layer) {
   map.addLayer(layer);
-  _olLayers.push(layer);
+  if (!_olLayersByKey.has(key)) {
+    _olLayersByKey.set(key, []);
+  }
+  _olLayersByKey.get(key).push(layer);
 }
 
 function _cleanAllLayers() {
-  for (const layer of _olLayers) {
-    map.removeLayer(layer);
+  for (const [key, layers] of _olLayersByKey.entries()) {
+    for (const layer of layers) {
+      map.removeLayer(layer);
+    }
   }
-  _olLayers = [];
+  _olLayersByKey.clear();
+  visibleLayerKeys.clear();
   wmsBadge.style.display = 'none';
 }
 
@@ -568,7 +600,7 @@ function buildWmsLayer(wmsLayerName, bandColor) {
       crossOrigin: 'anonymous',
       transition: 300,
     }),
-    opacity: activeLayerKey === 'tous' ? 0.60 : 0.80,
+    opacity: 0.65,
   });
 }
 
@@ -622,7 +654,7 @@ function buildCircleLayer(lon, lat, bandColor) {
   });
 }
 
-/* ── Build layer toggle UI ── */
+/* ── Build layer toggle UI (Eye toggle) ── */
 function buildLayerToggle(report) {
   const container = document.getElementById('layer-toggle');
   if (!container) return;
@@ -632,49 +664,75 @@ function buildLayerToggle(report) {
   if (!aleasPresents.length) { container.style.display = 'none'; return; }
   container.style.display = 'flex';
 
-  const makeBtn = (key, label) => {
-    const btn = document.createElement('button');
-    btn.className = 'layer-pill-btn' + (key === activeLayerKey ? ' active' : '');
-    btn.textContent = label;
-    btn.onclick = () => {
-      activeLayerKey = key;
-      container.querySelectorAll('.layer-pill-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      _cleanAllLayers();
-      renderAleaLayers(report);
-    };
-    return btn;
-  };
+  // Initialize visible set with all present hazards
+  visibleLayerKeys = new Set(aleasPresents.map(a => a.code));
 
-  container.appendChild(makeBtn('tous', 'Tous les périls'));
+  const toggleAllBtn = document.createElement('button');
+  toggleAllBtn.className = 'layer-pill-btn active';
+  toggleAllBtn.textContent = 'Tous';
+  toggleAllBtn.onclick = () => {
+    const allVisible = visibleLayerKeys.size === aleasPresents.length;
+    if (allVisible) {
+      visibleLayerKeys.clear();
+      toggleAllBtn.classList.remove('active');
+    } else {
+      visibleLayerKeys = new Set(aleasPresents.map(a => a.code));
+      toggleAllBtn.classList.add('active');
+    }
+    container.querySelectorAll('.layer-pill-btn[data-code]').forEach(btn => {
+      const code = btn.getAttribute('data-code');
+      const isVis = visibleLayerKeys.has(code);
+      btn.classList.toggle('active', isVis);
+      const layers = _olLayersByKey.get(code) || [];
+      layers.forEach(l => l.setVisible(isVis));
+    });
+  };
+  container.appendChild(toggleAllBtn);
+
   aleasPresents.forEach(a => {
     const icon = ALEA_ICONS[a.code] || '•';
-    container.appendChild(makeBtn(a.code, `${icon} ${a.libelle}`));
+    const btn = document.createElement('button');
+    btn.className = 'layer-pill-btn active';
+    btn.setAttribute('data-code', a.code);
+    btn.textContent = `👁️ ${icon} ${a.libelle}`;
+    btn.onclick = () => {
+      const isCurrentlyVis = visibleLayerKeys.has(a.code);
+      if (isCurrentlyVis) {
+        visibleLayerKeys.delete(a.code);
+        btn.classList.remove('active');
+        btn.textContent = `🚫 ${icon} ${a.libelle}`;
+      } else {
+        visibleLayerKeys.add(a.code);
+        btn.classList.add('active');
+        btn.textContent = `👁️ ${icon} ${a.libelle}`;
+      }
+      const layers = _olLayersByKey.get(a.code) || [];
+      layers.forEach(l => l.setVisible(!isCurrentlyVis));
+    };
+    container.appendChild(btn);
   });
 }
 
-/* ── Main layer renderer (3-level strategy) ── */
+/* ── Main layer renderer (3-level strategy for 13 hazards) ── */
 async function renderAleaLayers(report) {
   if (!map) return;
   const aleasPresents = (report.aleas || []).filter(a => a.present === true && a.niveau);
   let wmsActive = false;
 
   for (const a of aleasPresents) {
-    const isVisible = (activeLayerKey === 'tous' || activeLayerKey === a.code);
-    if (!isVisible) continue;
-
     const band = bandForKey(a.niveau) || {};
     const color = band.color || '#7A9187';
 
-    /* ── Level 1: WMS raster (mapsref.brgm.fr) — confirmed layers ── */
+    /* Level 1: WMS raster (mapsref.brgm.fr) */
     if (WMS_LAYER_MAP[a.code]) {
       const layer = buildWmsLayer(WMS_LAYER_MAP[a.code], color);
-      _trackOlLayer(layer);
+      layer.setVisible(visibleLayerKeys.has(a.code));
+      _trackOlLayer(a.code, layer);
       wmsActive = true;
       continue;
     }
 
-    /* ── Level 2: WFS vector (georisques.gouv.fr) ── */
+    /* Level 2: WFS vector (georisques.gouv.fr) */
     if (WFS_LAYER_MAP[a.code]) {
       let wfsRendered = false;
       for (const typeName of WFS_LAYER_MAP[a.code]) {
@@ -682,17 +740,17 @@ async function renderAleaLayers(report) {
           const geojson = await fetchWfsLayer(typeName, report.code_insee);
           if (!geojson || !geojson.features || !geojson.features.length) continue;
           const layer = buildVectorLayer(geojson, color);
-          _trackOlLayer(layer);
+          layer.setVisible(visibleLayerKeys.has(a.code));
+          _trackOlLayer(a.code, layer);
           wfsRendered = true;
         } catch (err) {
           console.warn(`WFS indisponible pour ${typeName}:`, err);
         }
       }
       if (wfsRendered) continue;
-      /* WFS returned empty — fall through to circle */
     }
 
-    /* ── Level 3: Circle fallback (radon, feu_foret, or any empty WFS) ── */
+    /* Level 3: Circle fallback */
     const layer = buildCircleLayer(report.lon, report.lat, color);
     _trackOlLayer(layer);
   }
@@ -931,6 +989,12 @@ function displayReport(r) {
   results.classList.add('visible');
   idlePlaceholder.style.display = 'none';
   stripText.textContent = `${r.adresse_normalisee} · ${r.alea_count} aléa(s) · 0 simulés`;
+
+  /* PDF report link */
+  const pdfBtn = document.getElementById('pdf-report-btn');
+  if (pdfBtn) {
+    pdfBtn.href = `${API}/diagnostic/adresse/rapport-pdf?lat=${r.lat}&lon=${r.lon}`;
+  }
 
   /* Map */
   placePin(r.lat, r.lon, r);

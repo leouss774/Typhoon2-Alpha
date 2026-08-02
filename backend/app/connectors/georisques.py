@@ -56,29 +56,29 @@ async def fetch_georisques_raw(
     latlon = f"{lon},{lat}"
 
     sources = {
-        "risques_commune":    ("gaspar/risques",   {"code_insee": citycode}),
-        "catnat":             ("gaspar/catnat",     {"code_insee": citycode}),
-        "zones_inondables":   ("azi",              {"code_insee": citycode}),
-        "cavites":            ("cavites",           {"latlon": latlon, "rayon": rayon_m}),
-        "zonage_sismique":    ("zonage_sismique",   {"code_insee": citycode}),
-        "radon":              ("radon",             {"code_insee": citycode}),
-        "mouvements_terrain": ("mvt",              {"latlon": latlon, "rayon": rayon_m}),
-        "ppr":                ("gaspar/pprn",      {"code_insee": citycode}),
-        "ssp":                ("ssp",              {"code_insee": citycode}),
-        "feu_foret":          ("gaspar/risques",    {"code_insee": citycode}),  # filtré ci-dessous
+        "risques_commune":    ("gaspar/risques",          {"code_insee": citycode}),
+        "catnat":             ("gaspar/catnat",            {"code_insee": citycode}),
+        "zones_inondables":   ("azi",                     {"code_insee": citycode}),
+        "cavites":            ("cavites",                  {"latlon": latlon, "rayon": rayon_m}),
+        "zonage_sismique":    ("zonage_sismique",          {"code_insee": citycode}),
+        "radon":              ("radon",                    {"code_insee": citycode}),
+        "mouvements_terrain": ("mvt",                     {"latlon": latlon, "rayon": rayon_m}),
+        "ppr":                ("gaspar/pprn",              {"code_insee": citycode}),
+        "pprt":               ("gaspar/pprt",              {"code_insee": citycode}),
+        "ssp":                ("ssp",                      {"code_insee": citycode}),
+        "icpe":               ("installations_classees",   {"code_insee": citycode}),
     }
 
+    # Endpoints that legitimately return 404 when no data exists for the commune
+    _404_ok = {"zones_inondables", "ppr", "pprt", "ssp", "icpe"}
+
     for cle, (path, params) in sources.items():
-        if cle == "feu_foret":
-            # feu_foret est dans risques_commune, pas une route séparée
-            continue
         try:
             resultat[cle] = await _get(client, path, params)
         except httpx.HTTPStatusError as exc:
             resultat[cle] = None
-            if exc.response.status_code == 404 and cle in ("zones_inondables", "ppr", "ssp"):
-                # endpoints v1 retournent 404 quand aucune donnée n'existe pour la commune
-                pass
+            if exc.response.status_code == 404 and cle in _404_ok:
+                pass  # no data = expected, normalizers handle it
             else:
                 resultat["erreurs"].append({
                     "source": f"georisques.{cle}",
@@ -140,7 +140,7 @@ def _catnat_entries(raw: dict) -> list[dict]:
 
 
 def _catnat_entries_filtrees(raw: dict, keywords: list[str]) -> list[dict] | None:
-    """Retourne les arrêtés CatNat dont le libellé contient un des mots-clés."""
+    """Retourne les arretés CatNat dont le libellé contient un des mots-clés."""
     entries = _catnat_entries(raw)
     if not entries:
         return None
@@ -184,12 +184,11 @@ def _alea_inondation(raw: dict) -> AleaDetail:
     if zi: base += 12
     score = min(base, 100)
 
-    niveau = _score_to_niveau(score)
     catnat_hist = _catnat_entries_filtrees(raw, ["inondation", "coulée", "submersion"])
     return AleaDetail(
         code="inondation", libelle="Inondation",
         present=(hazard or n_catnat > 0 or bool(zi)),
-        niveau=niveau,
+        niveau=_score_to_niveau(score),
         catnat_historique=catnat_hist,
         url_detail="https://www.georisques.gouv.fr/risques/inondations",
     )
@@ -234,7 +233,6 @@ def _alea_sismicite(raw: dict) -> AleaDetail:
     zone_val = None
     if zonage and isinstance(zonage[0], dict):
         zone_val = zonage[0].get("zone_sismicite")
-    # Aussi chercher dans risques_commune
     if zone_val is None:
         rc = (raw.get("risques_commune") or {})
         data = rc.get("data") if isinstance(rc, dict) else None
@@ -320,7 +318,7 @@ def _alea_feu_foret(raw: dict) -> AleaDetail:
 
 
 def _alea_mouvement_terrain(raw: dict) -> AleaDetail:
-    failed = _is_source_failed(raw, "mouvements_terrain") and _is_source_failed(raw, "cavites")
+    failed = _is_source_failed(raw, "mouvements_terrain")
     if failed:
         return AleaDetail(
             code="mouvement_terrain", libelle="Mouvement de terrain",
@@ -328,10 +326,9 @@ def _alea_mouvement_terrain(raw: dict) -> AleaDetail:
             erreur="source Géorisques indisponible",
             url_detail="https://www.georisques.gouv.fr/risques/mouvements-de-terrain",
         )
-    cavites = _data_list(raw, "cavites")
     mvt = _data_list(raw, "mouvements_terrain")
     n_mvt_catnat = _count_catnat_keyword(raw, "mouvement de terrain")
-    n = len(cavites) + len(mvt) + n_mvt_catnat
+    n = len(mvt) + n_mvt_catnat
     base = 10 + min(n * 10, 60)
     catnat_hist = _catnat_entries_filtrees(raw, ["mouvement de terrain"])
     return AleaDetail(
@@ -343,8 +340,142 @@ def _alea_mouvement_terrain(raw: dict) -> AleaDetail:
     )
 
 
+def _alea_cavite(raw: dict) -> AleaDetail:
+    """Cavités souterraines (BD Cavités BRGM)."""
+    failed = _is_source_failed(raw, "cavites")
+    if failed:
+        return AleaDetail(
+            code="cavite", libelle="Cavités souterraines",
+            present=None, niveau=None,
+            erreur="source Géorisques indisponible",
+            url_detail="https://www.georisques.gouv.fr/risques/cavites-souterraines",
+        )
+    cavites = _data_list(raw, "cavites")
+    n = len(cavites)
+    base = 10
+    if n >= 5: base = 75
+    elif n >= 2: base = 55
+    elif n >= 1: base = 35
+    return AleaDetail(
+        code="cavite", libelle="Cavités souterraines",
+        present=(n > 0),
+        niveau=_score_to_niveau(base),
+        zonage=f"{n} cavité(s) recensée(s)" if n > 0 else None,
+        url_detail="https://www.georisques.gouv.fr/risques/cavites-souterraines",
+    )
+
+
+def _alea_avalanche(raw: dict) -> AleaDetail:
+    """Avalanches — détectées via risques_commune (GASPAR)."""
+    failed = _is_source_failed(raw, "risques_commune")
+    if failed:
+        return AleaDetail(
+            code="avalanche", libelle="Avalanche",
+            present=None, niveau=None,
+            erreur="source Géorisques indisponible",
+            url_detail="https://www.georisques.gouv.fr/risques/avalanches",
+        )
+    hazard = _has_hazard_keyword(raw, "avalanche")
+    n_catnat = _count_catnat_keyword(raw, "avalanche")
+    base = 10
+    if hazard: base = 60
+    base += min(n_catnat * 5, 25)
+    catnat_hist = _catnat_entries_filtrees(raw, ["avalanche"])
+    return AleaDetail(
+        code="avalanche", libelle="Avalanche",
+        present=(hazard or n_catnat > 0),
+        niveau=_score_to_niveau(min(base, 100)),
+        catnat_historique=catnat_hist,
+        url_detail="https://www.georisques.gouv.fr/risques/avalanches",
+    )
+
+
+def _alea_icpe(raw: dict) -> AleaDetail:
+    """Installations classées (ICPE) — dont Seveso."""
+    failed = _is_source_failed(raw, "icpe")
+    if failed:
+        return AleaDetail(
+            code="icpe", libelle="Installations industrielles (ICPE)",
+            present=None, niveau=None,
+            erreur="source Géorisques indisponible",
+            url_detail="https://www.georisques.gouv.fr/risques/installations-classees-pour-la-protection-de-lenvironnement-icpe",
+        )
+    icpe_list = _data_list(raw, "icpe")
+    n = len(icpe_list)
+    seveso = any(
+        (
+            "seveso" in str(e.get("statut_seveso", "") or "").lower()
+            or "seveso" in str(e.get("lib_statut_seveso", "") or "").lower()
+        )
+        for e in icpe_list
+        if isinstance(e, dict)
+    )
+    base = 10
+    if seveso: base = 80
+    elif n >= 10: base = 65
+    elif n >= 3: base = 45
+    elif n >= 1: base = 30
+    return AleaDetail(
+        code="icpe", libelle="Installations industrielles (ICPE)",
+        present=(n > 0),
+        niveau=_score_to_niveau(base),
+        zonage=(f"{n} installation(s) classée(s)" + (" dont Seveso" if seveso else "")) if n > 0 else None,
+        url_detail="https://www.georisques.gouv.fr/risques/installations-classees-pour-la-protection-de-lenvironnement-icpe",
+    )
+
+
+def _alea_canalisations(raw: dict) -> AleaDetail:
+    """Réseaux et canalisations de matières dangereuses (GASPAR)."""
+    failed = _is_source_failed(raw, "risques_commune")
+    if failed:
+        return AleaDetail(
+            code="canalisations", libelle="Réseaux et canalisations",
+            present=None, niveau=None,
+            erreur="source Géorisques indisponible",
+            url_detail="https://www.georisques.gouv.fr/risques/transport-de-matieres-dangereuses",
+        )
+    hazard = (
+        _has_hazard_keyword(raw, "canalisation")
+        or _has_hazard_keyword(raw, "matières dangereuses")
+        or _has_hazard_keyword(raw, "transport de marchandises dangereuses")
+        or _has_hazard_keyword(raw, "tmd")
+    )
+    score = 45 if hazard else 5
+    return AleaDetail(
+        code="canalisations", libelle="Réseaux et canalisations",
+        present=hazard,
+        niveau=_score_to_niveau(score),
+        url_detail="https://www.georisques.gouv.fr/risques/transport-de-matieres-dangereuses",
+    )
+
+
+def _alea_vent_cyclonique(raw: dict) -> AleaDetail:
+    """Vents cycloniques — pertinent essentiellement pour les DOM-TOM."""
+    failed = _is_source_failed(raw, "risques_commune")
+    if failed:
+        return AleaDetail(
+            code="vent_cyclonique", libelle="Vents cycloniques",
+            present=None, niveau=None,
+            erreur="source Géorisques indisponible",
+            url_detail="https://www.georisques.gouv.fr/risques/cyclones",
+        )
+    hazard = (
+        _has_hazard_keyword(raw, "cyclone")
+        or _has_hazard_keyword(raw, "vent cyclonique")
+        or _has_hazard_keyword(raw, "phénomène météorologique")
+        or _has_hazard_keyword(raw, "phenomene meteorologique")
+    )
+    score = 60 if hazard else 5
+    return AleaDetail(
+        code="vent_cyclonique", libelle="Vents cycloniques",
+        present=hazard,
+        niveau=_score_to_niveau(score),
+        url_detail="https://www.georisques.gouv.fr/risques/cyclones",
+    )
+
+
 def _alea_ppr(raw: dict) -> AleaDetail:
-    """Plans de Prévention des Risques (PPRN / PPRT / PPRM)."""
+    """Plans de Prévention des Risques (PPRN + PPRT fusionnés)."""
     failed = _is_source_failed(raw, "ppr")
     if failed:
         return AleaDetail(
@@ -354,11 +485,11 @@ def _alea_ppr(raw: dict) -> AleaDetail:
             url_detail="https://www.georisques.gouv.fr/risques/plans-de-prevention-des-risques",
         )
     ppr_list = _data_list(raw, "ppr")
-    n_ppr = len(ppr_list)
+    pprt_list = _data_list(raw, "pprt")
+    n_ppr = len(ppr_list) + len(pprt_list)
     score = 10
     if n_ppr >= 3: score = 75
     elif n_ppr >= 1: score = 50
-
     return AleaDetail(
         code="ppr", libelle="Plan de Prévention des Risques (PPR)",
         present=(n_ppr > 0),
@@ -383,7 +514,6 @@ def _alea_ssp(raw: dict) -> AleaDetail:
     score = 10
     if n_ssp >= 5: score = 70
     elif n_ssp >= 1: score = 40
-
     return AleaDetail(
         code="ssp", libelle="Sites et sols pollués (SSP)",
         present=(n_ssp > 0),
@@ -416,6 +546,7 @@ async def get_risque_report(
     """
     Orchestre les appels Géorisques et retourne un RisqueReport normalisé.
     Ne lève jamais d'exception réseau (erreurs_partielles à la place).
+    Couvre 13 catégories de périls (comme la carte interactive officielle).
     """
     raw = await fetch_georisques_raw(client, code_insee, lat, lon)
 
@@ -426,6 +557,11 @@ async def get_risque_report(
         _alea_radon(raw),
         _alea_feu_foret(raw),
         _alea_mouvement_terrain(raw),
+        _alea_cavite(raw),
+        _alea_avalanche(raw),
+        _alea_icpe(raw),
+        _alea_canalisations(raw),
+        _alea_vent_cyclonique(raw),
         _alea_ppr(raw),
         _alea_ssp(raw),
     ]

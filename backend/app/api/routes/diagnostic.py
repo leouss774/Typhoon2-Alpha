@@ -242,3 +242,57 @@ async def generer_rapport_narratif_adresse(report: RisqueReport) -> dict:
         )
     return narratif.model_dump()
 
+
+@router.get("/diagnostic/adresse/rapport-pdf")
+async def rapport_pdf_officiel(
+    lat: float = Query(..., description="Latitude WGS84"),
+    lon: float = Query(..., description="Longitude WGS84"),
+):
+    """
+    Proxy vers l'endpoint officiel Géorisques /api/v1/rapport_pdf.
+
+    Renvoie le PDF binaire tel quel (Content-Type: application/pdf).
+    Paramètre latlon = lon,lat (longitude d'abord — conforme à l'API Géorisques v1).
+
+    Codes de retour :
+      200 : PDF binaire
+      404 : Géorisques ne peut pas générer de rapport pour ces coordonnées
+            (adresse non reconnue côté BRGM — comportement connu, à gérer côté UI)
+      502 : Géorisques indisponible ou timeout
+    """
+    from fastapi import Response as FastAPIResponse
+
+    georisques_pdf_url = "https://www.georisques.gouv.fr/api/v1/rapport_pdf"
+    params = {"latlon": f"{lon},{lat}"}
+
+    try:
+        async with httpx.AsyncClient(timeout=25.0) as client:
+            resp = await client.get(georisques_pdf_url, params=params)
+    except httpx.TimeoutException as exc:
+        raise HTTPException(
+            status_code=502,
+            detail={"error": "rapport_pdf_timeout", "detail": str(exc)},
+        ) from exc
+    except httpx.HTTPError as exc:
+        raise HTTPException(
+            status_code=502,
+            detail={"error": "rapport_pdf_indisponible", "detail": str(exc)},
+        ) from exc
+
+    if resp.status_code == 404:
+        raise HTTPException(
+            status_code=404,
+            detail={"error": "rapport_pdf_indisponible", "detail": "Géorisques ne peut pas générer de rapport PDF pour ces coordonnées."},
+        )
+
+    if resp.status_code != 200:
+        raise HTTPException(
+            status_code=502,
+            detail={"error": "rapport_pdf_erreur", "detail": f"Géorisques a retourné HTTP {resp.status_code}"},
+        )
+
+    return FastAPIResponse(
+        content=resp.content,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f"attachment; filename=\"georisques_rapport_{lat:.4f}_{lon:.4f}.pdf\""},
+    )
