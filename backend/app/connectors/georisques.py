@@ -72,6 +72,18 @@ async def fetch_georisques_raw(
             continue
         try:
             resultat[cle] = await _get(client, path, params)
+        except httpx.HTTPStatusError as exc:
+            resultat[cle] = None
+            if exc.response.status_code == 404 and cle == "zones_inondables":
+                # L'endpoint /azi retourne 404 pour de nombreuses communes
+                # (limitation documentée de l'API Géorisques v1).
+                # On traite ça comme "pas de données" — pas une erreur réelle.
+                pass
+            else:
+                resultat["erreurs"].append({
+                    "source": f"georisques.{cle}",
+                    "erreur": str(exc),
+                })
         except httpx.HTTPError as exc:
             resultat[cle] = None
             resultat["erreurs"].append({
