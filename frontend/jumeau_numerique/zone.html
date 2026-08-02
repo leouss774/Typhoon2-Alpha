@@ -626,11 +626,16 @@ function aleaScore(a) {
 
 /* ── Layer toggle (calques par péril WFS) ── */
 let activeLayerKey = 'tous';
+let _wfsSourceIds = [];  // MapLibre source IDs to remove on cleanup
+let _wfsLayerIds  = [];  // MapLibre layer IDs to remove on cleanup
 
 const WFS_LAYER_MAP = {
   mouvement_terrain: ['ms:PPRN_COMMUNE_CAVITE_APPROUV', 'ms:PPRN_COMMUNE_CAVITE_PRESCRIT'],
   ppr:               ['ms:PPRN_COMMUNE_ATMOS_APPROUVE', 'ms:PPRN_COMMUNE_ATMOS_PRESCRIT'],
   ssp:               ['ms:SSP_CLASSIF_SIS_GE'],
+  rga:               ['ms:ALEARG_REALISE'],           // confirmé WMS GetCapabilities — à valider WFS
+  sismicite:         ['ms:risq_zonage_sismique'],     // confirmé WMS GetCapabilities — à valider WFS
+  // inondation, feu_foret, radon → pas de couche WFS connue → cercle de repli
 };
 
 async function fetchWfsLayer(typeName, codeInsee) {
@@ -646,6 +651,21 @@ async function fetchWfsLayer(typeName, codeInsee) {
   const resp = await fetch(url.toString());
   if (!resp.ok) throw new Error(`WFS ${typeName} : HTTP ${resp.status}`);
   return await resp.json();
+}
+
+function _trackLayer(layerId) { _wfsLayerIds.push(layerId); }
+function _trackSource(srcId) { _wfsSourceIds.push(srcId); }
+
+function _cleanAllLayers() {
+  // Layers must be removed before their sources
+  for (const id of _wfsLayerIds) {
+    if (map.getLayer(id)) map.removeLayer(id);
+  }
+  for (const id of _wfsSourceIds) {
+    if (map.getSource(id)) map.removeSource(id);
+  }
+  _wfsLayerIds = [];
+  _wfsSourceIds = [];
 }
 
 function buildLayerToggle(report) {
@@ -665,6 +685,7 @@ function buildLayerToggle(report) {
       activeLayerKey = key;
       container.querySelectorAll('.layer-pill-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
+      _cleanAllLayers();
       renderAleaLayersWfs(report);
     };
     return btn;
@@ -682,53 +703,77 @@ async function renderAleaLayersWfs(report) {
   const aleasPresents = (report.aleas || []).filter(a => a.present === true && a.niveau);
 
   for (const a of aleasPresents) {
-    const typeNames = WFS_LAYER_MAP[a.code];
     const isVisible = (activeLayerKey === 'tous' || activeLayerKey === a.code);
+    if (!isVisible) continue;
+
+    const typeNames = WFS_LAYER_MAP[a.code];
+    const band = bandForKey(a.niveau) || {};
 
     if (typeNames) {
+      /* ── Attempt real WFS polygon layers ── */
+      let wfsRendered = false;
       for (const typeName of typeNames) {
-        const id = `wfs-${a.code}-${typeName.replace(/[:.]/g, '-')}`;
-        const outlineId = `${id}-outline`;
-
-        if (map.getLayer(id)) {
-          map.setLayoutProperty(id, 'visibility', isVisible ? 'visible' : 'none');
-          if (map.getLayer(outlineId)) {
-            map.setLayoutProperty(outlineId, 'visibility', isVisible ? 'visible' : 'none');
-          }
-          continue;
-        }
-
-        if (!isVisible) continue;
+        const srcId     = `wfs-src-${a.code}-${typeName.replace(/[:.]/g, '-')}`;
+        const fillId    = `wfs-fill-${a.code}-${typeName.replace(/[:.]/g, '-')}`;
+        const outlineId = `wfs-line-${a.code}-${typeName.replace(/[:.]/g, '-')}`;
 
         try {
           const geojson = await fetchWfsLayer(typeName, report.code_insee);
           if (!geojson || !geojson.features || !geojson.features.length) continue;
 
-          const band = bandForKey(a.niveau) || {};
-          map.addSource(id, { type: 'geojson', data: geojson });
+          map.addSource(srcId, { type: 'geojson', data: geojson });
+          _trackSource(srcId);
+
           map.addLayer({
-            id,
-            type: 'fill',
-            source: id,
+            id: fillId, type: 'fill', source: srcId,
             paint: {
               'fill-color': band.color || '#7A9187',
               'fill-opacity': activeLayerKey === 'tous' ? 0.22 : 0.4,
             },
           });
+          _trackLayer(fillId);
+
           map.addLayer({
-            id: outlineId,
-            type: 'line',
-            source: id,
-            paint: {
-              'line-color': band.color || '#7A9187',
-              'line-width': 1.5,
-            },
+            id: outlineId, type: 'line', source: srcId,
+            paint: { 'line-color': band.color || '#7A9187', 'line-width': 1.5 },
           });
+          _trackLayer(outlineId);
+
+          wfsRendered = true;
         } catch (err) {
           console.warn(`WFS indisponible pour ${typeName} :`, err);
         }
       }
+
+      if (wfsRendered) continue;
+      /* ── WFS returned no features → circle fallback ── */
     }
+
+    /* ── Circle fallback: perils with no WFS entry or empty WFS response ── */
+    const srcId    = `circle-src-${a.code}`;
+    const layerId  = `circle-layer-${a.code}`;
+    map.addSource(srcId, {
+      type: 'geojson',
+      data: {
+        type: 'Feature',
+        properties: { code: a.code, niveau: a.niveau },
+        geometry: { type: 'Point', coordinates: [report.lon, report.lat] },
+      },
+    });
+    _trackSource(srcId);
+
+    map.addLayer({
+      id: layerId, type: 'circle', source: srcId,
+      paint: {
+        'circle-radius': 46,
+        'circle-color': band.color || '#7A9187',
+        'circle-opacity': activeLayerKey === 'tous' ? 0.22 : 0.38,
+        'circle-stroke-width': 1.5,
+        'circle-stroke-color': band.color || '#7A9187',
+        'circle-stroke-opacity': 0.9,
+      },
+    });
+    _trackLayer(layerId);
   }
 }
 
@@ -772,8 +817,9 @@ function placePin(lat, lon, report) {
 
   map.flyTo({ center: [lon, lat], zoom: 14, duration: 1200 });
 
-  /* Calques par péril WFS */
+  /* Calques par péril WFS — reset complet à chaque nouveau rapport */
   activeLayerKey = 'tous';
+  _cleanAllLayers();
   buildLayerToggle(report);
   if (map.isStyleLoaded()) {
     renderAleaLayersWfs(report);
