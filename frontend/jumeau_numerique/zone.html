@@ -428,18 +428,6 @@ function scoreColor(score) {
   return D03[D03.length - 1].color;
 }
 
-/* ALÉA ICONS */
-const ALEA_ICONS = {
-  inondation: '🌊',
-  rga: '🏗️',
-  sismicite: '🌍',
-  radon: '☢️',
-  feu_foret: '🔥',
-  mouvement_terrain: '⛰️',
-  ppr: '📜',
-  ssp: '🏭',
-};
-
 function escHtml(s) {
   if (s == null) return '';
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
