@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="../api-config.js"></script>
 <style>
 /* ========================================================================
    DESIGN TOKENS — alignés sur le design system de l'équipe
@@ -1191,7 +1192,7 @@ a { color: var(--brand); text-decoration: none; }
    applique les overrides devis si disponibles.
    ===================================================================== */
 
-const API_BASE = 'http://localhost:8000';
+const API_BASE = window.TYPHOON_API || 'http://127.0.0.1:8765';
 const $ = id => document.getElementById(id);
 
 /* ===== STATUS ===== */
