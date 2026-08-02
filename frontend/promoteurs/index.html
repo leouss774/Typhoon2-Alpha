@@ -10,6 +10,7 @@
 <!-- MapLibre GL JS v4 -->
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
 <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet" />
+<script src="../api-config.js"></script>
 <style>
   :root {
     --brand: #FF6B4A;
@@ -206,6 +207,42 @@
 </head>
 <body>
 
+<!-- ============================================================
+  BANNIÈRE "EN RECONSTRUCTION" — ne pas retirer avant que
+  /diagnostic/zone-lite soit implémenté côté backend.
+  Contexte : /api/v1/zone/assess n'a jamais existé ; /diagnostic/zone
+  a été supprimé lors de la migration adresse-based (Sprint A, 02/08/2026).
+  Ce front est un artefact mort jusqu'à la reconstruction du mode zone.
+  Voir : typhoon_reaudit_feature_restructure.md §2.1 + Sprint C.
+============================================================ -->
+<div id="reconstruction-banner" style="
+  position:fixed; top:0; left:0; right:0; z-index:9999;
+  background:linear-gradient(90deg,#B03020,#8B2010);
+  color:#fff; padding:10px 20px; display:flex; align-items:center;
+  justify-content:space-between; gap:16px; font-family:system-ui,sans-serif;
+  font-size:12.5px; box-shadow:0 2px 12px rgba(0,0,0,.4);
+">
+  <div style="display:flex;align-items:center;gap:10px;">
+    <span style="font-size:18px;">🚧</span>
+    <div>
+      <strong style="font-size:13.5px;">Module en reconstruction</strong>
+      — L'évaluation de zone (<code>/api/v1/zone/assess</code>) n'existe pas côté backend.
+      Ce module sera rebranché sur <code>/diagnostic/zone-lite</code> dès que ce backend sera disponible.
+      En attendant, utilisez
+      <a href="../jumeau_numerique/zone.html" style="color:#FFD0C0;font-weight:700;">
+        le diagnostic adresse →
+      </a>
+    </div>
+  </div>
+  <button onclick="document.getElementById('reconstruction-banner').style.display='none'"
+    style="background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.4);
+    color:#fff;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:11px;
+    white-space:nowrap;flex-shrink:0;">
+    Masquer
+  </button>
+</div>
+<div style="height:50px;"></div><!-- spacer pour compenser le banner fixed -->
+
 <div id="app">
   <!-- Sidebar -->
   <div id="sidebar">
@@ -351,7 +388,7 @@
 //   MapLibre GL JS — dessin de zone, heatmap, rapport
 // =========================================================================
 
-const BACKEND_URL = 'http://localhost:8765';
+const BACKEND_URL = window.TYPHOON_API || 'http://127.0.0.1:8765';
 // Note: la carte utilise le style CartoDB dark-matter (gratuit, sans clé)
 
 const state = {
@@ -447,9 +484,8 @@ map.on('load', () => {
       'circle-radius': 4,
       'circle-color': ['match', ['get', 'niveau'],
         'faible', '#1F9D6C',
-        'modere', '#D98A2B',
-        'eleve', '#E24E2E',
-        'critique', '#C0392B',
+        'moyen', '#D98A2B',
+        'fort', '#C0392B',
         '#8B959D'
       ],
       'circle-stroke-color': '#fff',
@@ -565,37 +601,22 @@ communeSelect.onchange = () => {
   }, `Commune ${communeSelect.options[communeSelect.selectedIndex].text}`);
 };
 
-// ---- Animation de chargement simulée ----
+// ---- Animation de chargement ----
+// Pas de progression simulée : la barre reste en mode "en cours" pendant
+// l'appel HTTP puis passe à 100 % à la fin (le temps réel est fourni par le
+// backend via duree_evaluation_s).
 function startLoading() {
   state.loading = true;
   assessBtn.disabled = true;
   loadingIndicator.classList.add('visible');
   results.classList.remove('visible');
-  loadingBar.style.width = '0%';
-  loadingText.textContent = 'Génération de la grille d\'échantillonnage…';
-
-  let progress = 0;
-  const steps = [
-    { at: 10, text: 'Génération de la grille d\'échantillonnage…' },
-    { at: 25, text: 'Appels API Géorisques, IGN, BDNB…' },
-    { at: 50, text: 'Collecte des données climatiques…' },
-    { at: 75, text: 'Calcul des scores par point…' },
-    { at: 90, text: 'Agrégation et analyse de la zone…' },
-  ];
-  const interval = setInterval(() => {
-    progress += 2;
-    loadingBar.style.width = Math.min(progress, 90) + '%';
-    const step = steps.find(s => progress <= s.at);
-    if (step) loadingText.textContent = step.text;
-    if (progress >= 90) clearInterval(interval);
-  }, 200);
-  return interval;
+  loadingBar.style.width = '25%';
+  loadingText.textContent = 'Évaluation de la zone en cours…';
 }
 
-function endLoading(interval) {
-  clearInterval(interval);
+function endLoading(doneText) {
   loadingBar.style.width = '100%';
-  loadingText.textContent = 'Évaluation terminée ✓';
+  loadingText.textContent = doneText || 'Évaluation terminée ✓';
   setTimeout(() => {
     state.loading = false;
     assessBtn.disabled = false;
@@ -607,7 +628,10 @@ function endLoading(interval) {
 function displayResults(data) {
   // Carte de score
   ratingScore.textContent = data.score_moyen.toFixed(1);
-  const niveau = data.rating_global.toLowerCase();
+  // Le backend renvoie des libellés accentués ("Élevé", "Modéré") ; les classes
+  // CSS sont sans accent (badge-eleve, badge-modere) — normaliser.
+  const niveau = (data.rating_global || '')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
   ratingBadge.textContent = data.rating_global;
   ratingBadge.className = 'rating-badge badge-' + niveau;
   ratingPoints.textContent = data.nb_points;
@@ -729,32 +753,52 @@ function scoreColor(score) {
 assessBtn.onclick = async () => {
   if (!state.bounds || state.loading) return;
 
-  const interval = startLoading();
+  startLoading();
   try {
-    const resp = await fetch(`${BACKEND_URL}/api/v1/zone/assess`, {
+    const resp = await fetch(`${BACKEND_URL}/diagnostic/zone`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        zone: state.bounds,
+        bounds: [
+          state.bounds.lat_min, state.bounds.lon_min,
+          state.bounds.lat_max, state.bounds.lon_max,
+        ],
         spacing_km: parseFloat(spacingSelect.value),
         max_points: 50,
-        max_concurrency: 5,
         land_only: modeSelect.value === 'land_only',
-        include_samples: true,
       }),
     });
-    if (!resp.ok) {
-      const err = await resp.json().catch(() => ({}));
-      throw new Error(err.detail?.message || `HTTP ${resp.status}`);
-    }
+    if (!resp.ok) throw new Error(`HTTP ${resp.status} : ${await resp.text()}`);
     const data = await resp.json();
-    endLoading(interval);
+    endLoading(
+      data.duree_evaluation_s != null
+        ? `Évaluation terminée en ${data.duree_evaluation_s} s`
+        : 'Évaluation terminée ✓'
+    );
     displayResults(data);
   } catch (err) {
-    endLoading(interval);
-    alert('Erreur : ' + err.message);
+    endLoading();
+    showError('Erreur : ' + err.message);
   }
 };
+
+// ---- Erreur inline (remplace les alert()) ----
+function showError(msg) {
+  let el = document.getElementById('app-error');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'app-error';
+    el.style.cssText = 'position:fixed;top:16px;right:16px;background:#DC4B39;color:#fff;' +
+      'padding:10px 16px;border-radius:8px;font-size:13px;font-weight:600;z-index:1000;' +
+      'box-shadow:0 4px 16px rgba(0,0,0,.2);';
+    document.body.appendChild(el);
+  }
+  el.textContent = msg;
+  clearTimeout(el._t);
+  el._t = setTimeout(() => {
+    if (el && el.parentNode) el.parentNode.removeChild(el);
+  }, 4000);
+}
 
 // ---- Reset ----
 $('reset-btn').onclick = () => {

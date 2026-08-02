@@ -6,6 +6,7 @@ Routes actives :
   POST /diagnostic/fast        → rapide (collecte + scoring seulement)
   POST /diagnostic/recommandations → phase 2 (RAG + interprétation)
   GET  /diagnostic/adresse     → MVP géo-risque : adresse → Géorisques → RisqueReport
+                                  (+ recommandations Mistral non bloquantes)
 """
 
 from __future__ import annotations
@@ -25,6 +26,7 @@ from app.connectors.geocodage_connector import AdresseNonTrouveeError, geocoder_
 from app.connectors.georisques import get_risque_report
 from app.core.config import settings
 from app.core.logging import get_logger
+from app.recommandations.adresse_recommandations import recommander
 
 logger = get_logger(__name__)
 router = APIRouter()
@@ -208,10 +210,14 @@ async def diagnostic_adresse(
             detail={"error": "source_indisponible", "source": "georisques", "detail": str(exc)},
         ) from exc
 
+    # Étape 4 — Recommandations Mistral (non bloquant : fail-soft, toujours après le rapport factuel)
+    report.recommandations = await recommander(report)
+
     elapsed = time.perf_counter() - t0
     logger.info(
-        "diagnostic/adresse OK en %.2fs — %d aléas présents, %d erreurs partielles",
+        "diagnostic/adresse OK en %.2fs — %d aléas, %d erreurs partielles, recommandations=%s",
         elapsed, report.alea_count, len(report.erreurs_partielles),
+        "ok" if report.recommandations else "none",
     )
 
     return report.model_dump()

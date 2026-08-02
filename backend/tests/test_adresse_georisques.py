@@ -91,10 +91,10 @@ def test_geocodage_adresse_valide():
         with patch("app.connectors.geocodage_connector.httpx.AsyncClient") as mock_cls:
             mock_client = AsyncMock()
             mock_cls.return_value.__aenter__.return_value = mock_client
-            mock_client.get.return_value = httpx.Response(200, json=BAN_RESPONSE_NICE)
+            mock_client.get.return_value = httpx.Response(200, json=BAN_RESPONSE_NICE, request=httpx.Request("GET", "https://data.geopf.fr/geocodage/search"))
             return await geocoder_adresse("14 Avenue des Palmiers Nice")
 
-    result = asyncio.get_event_loop().run_until_complete(_run())
+    result = asyncio.run(_run())
     assert isinstance(result, GeocodageResult)
     assert abs(result.lat - 43.7102) < 0.001
     assert abs(result.lon - 7.262) < 0.001
@@ -112,11 +112,11 @@ def test_geocodage_adresse_absurde():
         with patch("app.connectors.geocodage_connector.httpx.AsyncClient") as mock_cls:
             mock_client = AsyncMock()
             mock_cls.return_value.__aenter__.return_value = mock_client
-            mock_client.get.return_value = httpx.Response(200, json=BAN_RESPONSE_EMPTY)
+            mock_client.get.return_value = httpx.Response(200, json=BAN_RESPONSE_EMPTY, request=httpx.Request("GET", "https://data.geopf.fr/geocodage/search"))
             return await geocoder_adresse("zzz adresse inexistante 99999")
 
     with pytest.raises(AdresseNonTrouveeError):
-        asyncio.get_event_loop().run_until_complete(_run())
+        asyncio.run(_run())
 
 
 # ---------------------------------------------------------------------------
@@ -132,7 +132,7 @@ def test_georisques_raw_nice():
         with patch("app.connectors.georisques.fetch_georisques_raw", return_value=GEORISQUES_RAW_NICE):
             return GEORISQUES_RAW_NICE
 
-    raw = asyncio.get_event_loop().run_until_complete(_run())
+    raw = asyncio.run(_run())
     assert "risques_commune" in raw
     assert "catnat" in raw
     assert "zonage_sismique" in raw
@@ -157,7 +157,7 @@ def test_risque_report_nice():
                 code_insee="06088",
             )
 
-    report = asyncio.get_event_loop().run_until_complete(_run())
+    report = asyncio.run(_run())
     assert isinstance(report, RisqueReport)
     assert report.code_insee == "06088"
     assert report.alea_count >= 1
@@ -197,7 +197,7 @@ def test_erreurs_partielles():
                 lat=48.86, lon=2.35, code_insee="75056",
             )
 
-    report = asyncio.get_event_loop().run_until_complete(_run())
+    report = asyncio.run(_run())
     assert len(report.erreurs_partielles) == 1
     assert "zonage_sismique" in report.erreurs_partielles[0]
 
@@ -224,3 +224,32 @@ def test_erreurs_partielles():
 ])
 def test_d03_bands(score, expected):
     assert _score_to_niveau(score) == expected
+
+
+# ---------------------------------------------------------------------------
+# Test 7 : Recommandations Mistral — Fail-soft en cas d'erreur / timeout
+# ---------------------------------------------------------------------------
+
+def test_recommandations_mistral_failure():
+    """Vérifie qu'un échec Mistral retourne None sans lever d'exception."""
+    from app.recommandations.adresse_recommandations import recommander
+
+    async def _run():
+        with patch("app.connectors.georisques.fetch_georisques_raw", return_value=GEORISQUES_RAW_NICE):
+            mock_client = AsyncMock(spec=httpx.AsyncClient)
+            report = await get_risque_report(
+                client=mock_client,
+                adresse_saisie="test",
+                adresse_normalisee="14 Avenue des Palmiers 06000 Nice",
+                lat=43.7102, lon=7.2620, code_insee="06088",
+            )
+            # Simulation d'un échec Mistral (Timeout / Erreur API / etc.)
+            with patch("app.recommandations.adresse_recommandations._appeler_mistral_sync", side_effect=TimeoutError("Mistral API timeout")):
+                recs = await recommander(report)
+                return report, recs
+
+    report, recs = asyncio.run(_run())
+    assert recs is None
+    assert isinstance(report, RisqueReport)
+    assert report.adresse_normalisee == "14 Avenue des Palmiers 06000 Nice"
+
