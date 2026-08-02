@@ -157,11 +157,11 @@ async def diagnostic_adresse(
     q: str = Query(..., min_length=3, description="Adresse française (texte libre)")
 ) -> dict:
     """
-    Flux souverain : adresse saisie → géocodage BAN → Géorisques → RisqueReport.
+    Flux souverain : adresse saisie → géocodage IGN (Géoplateforme) → Géorisques → RisqueReport.
 
     Codes de retour :
       200 : rapport complet (peut contenir erreurs_partielles si une sous-API a échoué)
-      422 : adresse non trouvée par la BAN (score_geocodage < 0.4 ou zéro résultat)
+      422 : adresse non trouvée par l'IGN (score_geocodage < 0.4 ou zéro résultat)
       502 : Géorisques totalement indisponible
     """
     logger.info("GET /diagnostic/adresse  q=%r", q)
