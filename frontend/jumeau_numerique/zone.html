@@ -624,8 +624,29 @@ function aleaScore(a) {
   return mapping[a.niveau] || 0;
 }
 
-/* ── Layer toggle (calques par péril) ── */
+/* ── Layer toggle (calques par péril WFS) ── */
 let activeLayerKey = 'tous';
+
+const WFS_LAYER_MAP = {
+  mouvement_terrain: ['ms:PPRN_COMMUNE_CAVITE_APPROUV', 'ms:PPRN_COMMUNE_CAVITE_PRESCRIT'],
+  ppr:               ['ms:PPRN_COMMUNE_ATMOS_APPROUVE', 'ms:PPRN_COMMUNE_ATMOS_PRESCRIT'],
+  ssp:               ['ms:SSP_CLASSIF_SIS_GE'],
+};
+
+async function fetchWfsLayer(typeName, codeInsee) {
+  const url = new URL('https://www.georisques.gouv.fr/services');
+  url.searchParams.set('SERVICE', 'WFS');
+  url.searchParams.set('VERSION', '2.0.0');
+  url.searchParams.set('REQUEST', 'GetFeature');
+  url.searchParams.set('TYPENAMES', typeName);
+  url.searchParams.set('OUTPUTFORMAT', 'application/json');
+  url.searchParams.set('CQL_FILTER', `code_insee='${codeInsee}'`);
+  url.searchParams.set('COUNT', '50');
+
+  const resp = await fetch(url.toString());
+  if (!resp.ok) throw new Error(`WFS ${typeName} : HTTP ${resp.status}`);
+  return await resp.json();
+}
 
 function buildLayerToggle(report) {
   const container = document.getElementById('layer-toggle');
@@ -644,7 +665,7 @@ function buildLayerToggle(report) {
       activeLayerKey = key;
       container.querySelectorAll('.layer-pill-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
-      renderAleaLayers(report);
+      renderAleaLayersWfs(report);
     };
     return btn;
   };
@@ -656,43 +677,59 @@ function buildLayerToggle(report) {
   });
 }
 
-function renderAleaLayers(report) {
+async function renderAleaLayersWfs(report) {
   if (!map || !map.getSource) return;
   const aleasPresents = (report.aleas || []).filter(a => a.present === true && a.niveau);
 
-  // Nettoyage des calques précédents
-  aleasPresents.forEach(a => {
-    const id = `alea-layer-${a.code}`;
-    if (map.getLayer(id)) map.removeLayer(id);
-    if (map.getSource(id)) map.removeSource(id);
-  });
+  for (const a of aleasPresents) {
+    const typeNames = WFS_LAYER_MAP[a.code];
+    const isVisible = (activeLayerKey === 'tous' || activeLayerKey === a.code);
 
-  const lon = report.lon, lat = report.lat;
-  aleasPresents
-    .filter(a => activeLayerKey === 'tous' || activeLayerKey === a.code)
-    .forEach(a => {
-      const id = `alea-layer-${a.code}`;
-      const band = bandForKey(a.niveau) || {};
-      const geojson = {
-        type: 'Feature',
-        properties: { code: a.code, niveau: a.niveau },
-        geometry: { type: 'Point', coordinates: [lon, lat] },
-      };
-      map.addSource(id, { type: 'geojson', data: geojson });
-      map.addLayer({
-        id,
-        type: 'circle',
-        source: id,
-        paint: {
-          'circle-radius': 46,
-          'circle-color': band.color || '#7A9187',
-          'circle-opacity': activeLayerKey === 'tous' ? 0.22 : 0.38,
-          'circle-stroke-width': 1.5,
-          'circle-stroke-color': band.color || '#7A9187',
-          'circle-stroke-opacity': 0.9,
-        },
-      });
-    });
+    if (typeNames) {
+      for (const typeName of typeNames) {
+        const id = `wfs-${a.code}-${typeName.replace(/[:.]/g, '-')}`;
+        const outlineId = `${id}-outline`;
+
+        if (map.getLayer(id)) {
+          map.setLayoutProperty(id, 'visibility', isVisible ? 'visible' : 'none');
+          if (map.getLayer(outlineId)) {
+            map.setLayoutProperty(outlineId, 'visibility', isVisible ? 'visible' : 'none');
+          }
+          continue;
+        }
+
+        if (!isVisible) continue;
+
+        try {
+          const geojson = await fetchWfsLayer(typeName, report.code_insee);
+          if (!geojson || !geojson.features || !geojson.features.length) continue;
+
+          const band = bandForKey(a.niveau) || {};
+          map.addSource(id, { type: 'geojson', data: geojson });
+          map.addLayer({
+            id,
+            type: 'fill',
+            source: id,
+            paint: {
+              'fill-color': band.color || '#7A9187',
+              'fill-opacity': activeLayerKey === 'tous' ? 0.22 : 0.4,
+            },
+          });
+          map.addLayer({
+            id: outlineId,
+            type: 'line',
+            source: id,
+            paint: {
+              'line-color': band.color || '#7A9187',
+              'line-width': 1.5,
+            },
+          });
+        } catch (err) {
+          console.warn(`WFS indisponible pour ${typeName} :`, err);
+        }
+      }
+    }
+  }
 }
 
 function placePin(lat, lon, report) {
@@ -735,13 +772,13 @@ function placePin(lat, lon, report) {
 
   map.flyTo({ center: [lon, lat], zoom: 14, duration: 1200 });
 
-  /* Calques par péril */
+  /* Calques par péril WFS */
   activeLayerKey = 'tous';
   buildLayerToggle(report);
   if (map.isStyleLoaded()) {
-    renderAleaLayers(report);
+    renderAleaLayersWfs(report);
   } else {
-    map.once('idle', () => renderAleaLayers(report));
+    map.once('idle', () => renderAleaLayersWfs(report));
   }
 }
 
