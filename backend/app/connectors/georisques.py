@@ -63,6 +63,8 @@ async def fetch_georisques_raw(
         "zonage_sismique":    ("zonage_sismique",   {"code_insee": citycode}),
         "radon":              ("radon",             {"code_insee": citycode}),
         "mouvements_terrain": ("mvt",              {"latlon": latlon, "rayon": rayon_m}),
+        "ppr":                ("gaspar/pprn",      {"code_insee": citycode}),
+        "ssp":                ("ssp",              {"code_insee": citycode}),
         "feu_foret":          ("gaspar/risques",    {"code_insee": citycode}),  # filtré ci-dessous
     }
 
@@ -74,10 +76,8 @@ async def fetch_georisques_raw(
             resultat[cle] = await _get(client, path, params)
         except httpx.HTTPStatusError as exc:
             resultat[cle] = None
-            if exc.response.status_code == 404 and cle == "zones_inondables":
-                # L'endpoint /azi retourne 404 pour de nombreuses communes
-                # (limitation documentée de l'API Géorisques v1).
-                # On traite ça comme "pas de données" — pas une erreur réelle.
+            if exc.response.status_code == 404 and cle in ("zones_inondables", "ppr", "ssp"):
+                # endpoints v1 retournent 404 quand aucune donnée n'existe pour la commune
                 pass
             else:
                 resultat["erreurs"].append({
@@ -139,6 +139,19 @@ def _catnat_entries(raw: dict) -> list[dict]:
     return data or []
 
 
+def _catnat_entries_filtrees(raw: dict, keywords: list[str]) -> list[dict] | None:
+    """Retourne les arrêtés CatNat dont le libellé contient un des mots-clés."""
+    entries = _catnat_entries(raw)
+    if not entries:
+        return None
+    kws = [k.lower() for k in keywords]
+    filtrees = [
+        e for e in entries
+        if any(k in (e.get("libelle_risque_jo") or "").lower() for k in kws)
+    ]
+    return filtrees or None
+
+
 def _is_source_failed(raw: dict, cle: str) -> bool:
     return any(
         cle in (e.get("source") or "")
@@ -172,7 +185,7 @@ def _alea_inondation(raw: dict) -> AleaDetail:
     score = min(base, 100)
 
     niveau = _score_to_niveau(score)
-    catnat_hist = _catnat_entries(raw) or None
+    catnat_hist = _catnat_entries_filtrees(raw, ["inondation", "coulée", "submersion"])
     return AleaDetail(
         code="inondation", libelle="Inondation",
         present=(hazard or n_catnat > 0 or bool(zi)),
@@ -198,10 +211,12 @@ def _alea_rga(raw: dict) -> AleaDetail:
     if hazard: base = 50
     base += min(n_sec * 8, 30)
     score = min(base, 100)
+    catnat_hist = _catnat_entries_filtrees(raw, ["sécheresse", "secheresse"])
     return AleaDetail(
         code="rga", libelle="Retrait-gonflement des argiles",
         present=(hazard or n_sec > 0),
         niveau=_score_to_niveau(score),
+        catnat_historique=catnat_hist,
         url_detail="https://www.georisques.gouv.fr/risques/retrait-gonflement-des-argiles",
     )
 
@@ -318,11 +333,63 @@ def _alea_mouvement_terrain(raw: dict) -> AleaDetail:
     n_mvt_catnat = _count_catnat_keyword(raw, "mouvement de terrain")
     n = len(cavites) + len(mvt) + n_mvt_catnat
     base = 10 + min(n * 10, 60)
+    catnat_hist = _catnat_entries_filtrees(raw, ["mouvement de terrain"])
     return AleaDetail(
         code="mouvement_terrain", libelle="Mouvement de terrain",
         present=(n > 0),
         niveau=_score_to_niveau(base),
+        catnat_historique=catnat_hist,
         url_detail="https://www.georisques.gouv.fr/risques/mouvements-de-terrain",
+    )
+
+
+def _alea_ppr(raw: dict) -> AleaDetail:
+    """Plans de Prévention des Risques (PPRN / PPRT / PPRM)."""
+    failed = _is_source_failed(raw, "ppr")
+    if failed:
+        return AleaDetail(
+            code="ppr", libelle="Plan de Prévention des Risques (PPR)",
+            present=None, niveau=None,
+            erreur="source Géorisques indisponible",
+            url_detail="https://www.georisques.gouv.fr/risques/plans-de-prevention-des-risques",
+        )
+    ppr_list = _data_list(raw, "ppr")
+    n_ppr = len(ppr_list)
+    score = 10
+    if n_ppr >= 3: score = 75
+    elif n_ppr >= 1: score = 50
+
+    return AleaDetail(
+        code="ppr", libelle="Plan de Prévention des Risques (PPR)",
+        present=(n_ppr > 0),
+        niveau=_score_to_niveau(score),
+        zonage=f"{n_ppr} PPR recensé(s)" if n_ppr > 0 else "Aucun PPR prescrit",
+        url_detail="https://www.georisques.gouv.fr/risques/plans-de-prevention-des-risques",
+    )
+
+
+def _alea_ssp(raw: dict) -> AleaDetail:
+    """Sites et Sols Pollués (BASOL / CASIAS / SIS)."""
+    failed = _is_source_failed(raw, "ssp")
+    if failed:
+        return AleaDetail(
+            code="ssp", libelle="Sites et sols pollués (SSP)",
+            present=None, niveau=None,
+            erreur="source Géorisques indisponible",
+            url_detail="https://www.georisques.gouv.fr/risques/sites-et-sols-pollues",
+        )
+    ssp_list = _data_list(raw, "ssp")
+    n_ssp = len(ssp_list)
+    score = 10
+    if n_ssp >= 5: score = 70
+    elif n_ssp >= 1: score = 40
+
+    return AleaDetail(
+        code="ssp", libelle="Sites et sols pollués (SSP)",
+        present=(n_ssp > 0),
+        niveau=_score_to_niveau(score),
+        zonage=f"{n_ssp} site(s) ou sol(s) pollué(s)" if n_ssp > 0 else "Aucun site recensé",
+        url_detail="https://www.georisques.gouv.fr/risques/sites-et-sols-pollues",
     )
 
 
@@ -359,6 +426,8 @@ async def get_risque_report(
         _alea_radon(raw),
         _alea_feu_foret(raw),
         _alea_mouvement_terrain(raw),
+        _alea_ppr(raw),
+        _alea_ssp(raw),
     ]
 
     erreurs_partielles = [

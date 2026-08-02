@@ -271,3 +271,68 @@ def test_no_decommissioned_geocodage_connector_import():
     assert "geocodage_connector" not in source, "diagnostic.py ne doit plus jamais importer geocodage_connector !"
 
 
+# ---------------------------------------------------------------------------
+# Test 9 : CatNat filtré par péril + PPR et SSP normalisés
+# ---------------------------------------------------------------------------
+
+def test_catnat_filtering_and_ppr_ssp():
+    """Vérifie l'exposition de PPR, SSP et du CatNat filtré sur RGA et MVT."""
+    raw_enriched = {
+        **GEORISQUES_RAW_NICE,
+        "ppr": [{"num_ppr": "PPR123", "type_ppr": "PPRN"}],
+        "ssp": [{"id_site": "SSP001", "nom_site": "Ancienne Usine"}],
+    }
+
+    async def _run():
+        with patch("app.connectors.georisques.fetch_georisques_raw", return_value=raw_enriched):
+            mock_client = AsyncMock(spec=httpx.AsyncClient)
+            return await get_risque_report(
+                client=mock_client,
+                adresse_saisie="Nice",
+                adresse_normalisee="14 Avenue des Palmiers 06000 Nice",
+                lat=43.7102, lon=7.2620, code_insee="06088",
+            )
+
+    report = asyncio.run(_run())
+
+    # Vérification PPR & SSP
+    ppr = next(a for a in report.aleas if a.code == "ppr")
+    assert ppr.present is True
+    assert ppr.niveau == NiveauRisque.MODERE
+
+    ssp = next(a for a in report.aleas if a.code == "ssp")
+    assert ssp.present is True
+    assert ssp.niveau == NiveauRisque.MODERE
+
+    # Vérification CatNat filtré pour RGA
+    rga = next(a for a in report.aleas if a.code == "rga")
+    assert rga.catnat_historique is not None
+    assert any("Sécheresse" in (c.get("libelle_risque_jo") or "") for c in rga.catnat_historique)
+
+
+# ---------------------------------------------------------------------------
+# Test 10 : Rapport Narratif Mistral — Fail-soft
+# ---------------------------------------------------------------------------
+
+def test_rapport_narratif_mistral_fail_soft():
+    """Vérifie que generer_rapport_narratif retourne None en cas d'échec Mistral."""
+    from app.recommandations.rapport_narratif import generer_rapport_narratif
+
+    async def _run():
+        with patch("app.connectors.georisques.fetch_georisques_raw", return_value=GEORISQUES_RAW_NICE):
+            mock_client = AsyncMock(spec=httpx.AsyncClient)
+            report = await get_risque_report(
+                client=mock_client,
+                adresse_saisie="test",
+                adresse_normalisee="14 Avenue des Palmiers 06000 Nice",
+                lat=43.7102, lon=7.2620, code_insee="06088",
+            )
+            with patch("app.recommandations.rapport_narratif._appeler_mistral_narratif_sync", side_effect=RuntimeError("Mistral API error")):
+                res = await generer_rapport_narratif(report)
+                return res
+
+    res = asyncio.run(_run())
+    assert res is None
+
+
+

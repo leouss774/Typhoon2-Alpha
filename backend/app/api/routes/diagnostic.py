@@ -27,6 +27,8 @@ from app.connectors.georisques import get_risque_report
 from app.core.config import settings
 from app.core.logging import get_logger
 from app.recommandations.adresse_recommandations import recommander
+from app.recommandations.rapport_narratif import generer_rapport_narratif
+from app.schemas.risque_report import RisqueReport
 
 logger = get_logger(__name__)
 router = APIRouter()
@@ -222,3 +224,21 @@ async def diagnostic_adresse(
     )
 
     return report.model_dump()
+
+
+@router.post("/diagnostic/adresse/rapport")
+async def generer_rapport_narratif_adresse(report: RisqueReport) -> dict:
+    """
+    Génère un rapport narratif complet structuré par IA (Mistral) à partir d'un RisqueReport.
+
+    Découplé de GET /diagnostic/adresse pour éviter tout impact sur la latence du rapport factuel.
+    Fail-soft : retourne 502 si Mistral est indisponible.
+    """
+    narratif = await generer_rapport_narratif(report)
+    if narratif is None:
+        raise HTTPException(
+            status_code=502,
+            detail={"error": "mistral_indisponible", "detail": "Impossible de générer le rapport narratif IA."},
+        )
+    return narratif.model_dump()
+

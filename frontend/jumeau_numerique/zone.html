@@ -40,6 +40,22 @@
   --radius: 8px;
 }
 
+/* ── Layer toggle (calques par péril) ── */
+.layer-toggle {
+  position: absolute; top: 16px; left: 16px; z-index: 5;
+  display: flex; gap: 4px; flex-wrap: wrap; max-width: calc(100% - 32px);
+  background: rgba(17,27,23,.92); backdrop-filter: blur(6px);
+  border: 1px solid var(--line); border-radius: 8px; padding: 6px;
+}
+.layer-pill-btn {
+  background: transparent; border: none; color: var(--fog);
+  font-family: inherit; font-size: 12px; padding: 6px 11px;
+  border-radius: 6px; cursor: pointer; white-space: nowrap; transition: .15s;
+}
+.layer-pill-btn:hover { background: var(--panel-3); color: var(--paper); }
+.layer-pill-btn.active { background: var(--storm); color: var(--ink); font-weight: 600; }
+
+
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { height: 100%; background: var(--ink); color: var(--paper); font-family: var(--sans); overflow: hidden; }
 
@@ -300,6 +316,7 @@ html, body { height: 100%; background: var(--ink); color: var(--paper); font-fam
 
   <!-- ===== MAP ===== -->
   <main class="map-wrap">
+    <div id="layer-toggle" class="layer-toggle" style="display:none;"></div>
     <div id="map"></div>
 
     <div class="map-topbar">
@@ -360,6 +377,8 @@ const ALEA_ICONS = {
   radon: '☢️',
   feu_foret: '🔥',
   mouvement_terrain: '⛰️',
+  ppr: '📜',
+  ssp: '🏭',
 };
 
 function escHtml(s) {
@@ -548,15 +567,20 @@ function displayReport(r) {
     aleaContainer.appendChild(card);
   });
 
-  /* CatNat history */
+  /* CatNat history across all hazards */
   const catnatSection = document.getElementById('r-catnat-section');
   const catnatContainer = document.getElementById('r-catnat');
-  const inond = r.aleas.find(a => a.code === 'inondation');
-  const catnat = inond?.catnat_historique || [];
+  const catnat = [];
+  (r.aleas || []).forEach(a => {
+    if (a.catnat_historique && a.catnat_historique.length) {
+      a.catnat_historique.forEach(ev => catnat.push({ ...ev, alea_libelle: a.libelle }));
+    }
+  });
+
   if (catnat.length) {
     catnatSection.style.display = '';
     catnatContainer.innerHTML = '';
-    catnat.slice(0, 8).forEach(ev => {
+    catnat.slice(0, 10).forEach(ev => {
       const div = document.createElement('div');
       div.className = 'catnat-entry';
       div.textContent = [
@@ -565,11 +589,11 @@ function displayReport(r) {
       ].filter(Boolean).join(' · ');
       catnatContainer.appendChild(div);
     });
-    if (catnat.length > 8) {
+    if (catnat.length > 10) {
       const more = document.createElement('div');
       more.className = 'catnat-entry';
       more.style.color = 'var(--fog)';
-      more.textContent = `+ ${catnat.length - 8} autre(s)…`;
+      more.textContent = `+ ${catnat.length - 10} autre(s)…`;
       catnatContainer.appendChild(more);
     }
   } else {
@@ -598,6 +622,77 @@ function aleaScore(a) {
   /* Approximation du score numérique à partir de la bande D03 */
   const mapping = { tres_faible: 10, faible: 30, modere: 50, eleve: 70, critique: 90 };
   return mapping[a.niveau] || 0;
+}
+
+/* ── Layer toggle (calques par péril) ── */
+let activeLayerKey = 'tous';
+
+function buildLayerToggle(report) {
+  const container = document.getElementById('layer-toggle');
+  if (!container) return;
+  container.innerHTML = '';
+
+  const aleasPresents = (report.aleas || []).filter(a => a.present === true);
+  if (!aleasPresents.length) { container.style.display = 'none'; return; }
+  container.style.display = 'flex';
+
+  const makeBtn = (key, label) => {
+    const btn = document.createElement('button');
+    btn.className = 'layer-pill-btn' + (key === activeLayerKey ? ' active' : '');
+    btn.textContent = label;
+    btn.onclick = () => {
+      activeLayerKey = key;
+      container.querySelectorAll('.layer-pill-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderAleaLayers(report);
+    };
+    return btn;
+  };
+
+  container.appendChild(makeBtn('tous', 'Tous les périls'));
+  aleasPresents.forEach(a => {
+    const icon = ALEA_ICONS[a.code] || '•';
+    container.appendChild(makeBtn(a.code, `${icon} ${a.libelle}`));
+  });
+}
+
+function renderAleaLayers(report) {
+  if (!map || !map.getSource) return;
+  const aleasPresents = (report.aleas || []).filter(a => a.present === true && a.niveau);
+
+  // Nettoyage des calques précédents
+  aleasPresents.forEach(a => {
+    const id = `alea-layer-${a.code}`;
+    if (map.getLayer(id)) map.removeLayer(id);
+    if (map.getSource(id)) map.removeSource(id);
+  });
+
+  const lon = report.lon, lat = report.lat;
+  aleasPresents
+    .filter(a => activeLayerKey === 'tous' || activeLayerKey === a.code)
+    .forEach(a => {
+      const id = `alea-layer-${a.code}`;
+      const band = bandForKey(a.niveau) || {};
+      const geojson = {
+        type: 'Feature',
+        properties: { code: a.code, niveau: a.niveau },
+        geometry: { type: 'Point', coordinates: [lon, lat] },
+      };
+      map.addSource(id, { type: 'geojson', data: geojson });
+      map.addLayer({
+        id,
+        type: 'circle',
+        source: id,
+        paint: {
+          'circle-radius': 46,
+          'circle-color': band.color || '#7A9187',
+          'circle-opacity': activeLayerKey === 'tous' ? 0.22 : 0.38,
+          'circle-stroke-width': 1.5,
+          'circle-stroke-color': band.color || '#7A9187',
+          'circle-stroke-opacity': 0.9,
+        },
+      });
+    });
 }
 
 function placePin(lat, lon, report) {
@@ -639,6 +734,15 @@ function placePin(lat, lon, report) {
     .addTo(map);
 
   map.flyTo({ center: [lon, lat], zoom: 14, duration: 1200 });
+
+  /* Calques par péril */
+  activeLayerKey = 'tous';
+  buildLayerToggle(report);
+  if (map.isStyleLoaded()) {
+    renderAleaLayers(report);
+  } else {
+    map.once('idle', () => renderAleaLayers(report));
+  }
 }
 
 /* ── Status & Progress Helpers ── */
