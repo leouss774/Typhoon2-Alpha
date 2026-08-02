@@ -22,7 +22,7 @@ from pydantic import BaseModel, Field
 from app.agents import digital_twin_agent, interpretation_agent, recommandations_agent, scoring_agent
 from app.agents.collector_agent import collect
 from app.agents.graph import diagnostic_graph
-from app.connectors.geocodage_connector import AdresseNonTrouveeError, geocoder_adresse
+from app.connectors.geocoding import GeocodingError, geocode_address
 from app.connectors.georisques import get_risque_report
 from app.core.config import settings
 from app.core.logging import get_logger
@@ -167,44 +167,45 @@ async def diagnostic_adresse(
     logger.info("GET /diagnostic/adresse  q=%r", q)
     t0 = time.perf_counter()
 
-    # Étape 1 — Géocodage BAN
-    try:
-        geo = await geocoder_adresse(q)
-    except AdresseNonTrouveeError as exc:
-        raise HTTPException(
-            status_code=422,
-            detail={"error": "adresse_non_trouvee", "detail": str(exc)},
-        ) from exc
-    except httpx.HTTPError as exc:
-        raise HTTPException(
-            status_code=502,
-            detail={"error": "geocodage_indisponible", "detail": str(exc)},
-        ) from exc
-
-    # Rejeter si score de géocodage trop bas (adresse ambiguë)
-    if geo.score < 0.4:
-        raise HTTPException(
-            status_code=422,
-            detail={
-                "error": "adresse_ambigue",
-                "detail": f"Score de géocodage trop faible ({geo.score:.2f}) pour «{q}». Précisez la ville ou le code postal.",
-                "label_propose": geo.label,
-            },
-        )
-
-    # Étape 2 & 3 — Géorisques → RisqueReport normalisé
+    # Étape 1 & 2 & 3 — Géocodage IGN + Géorisques → RisqueReport normalisé
     try:
         async with httpx.AsyncClient(timeout=15.0) as client:
+            try:
+                geo = await geocode_address(client, q)
+            except GeocodingError as exc:
+                raise HTTPException(
+                    status_code=422,
+                    detail={"error": "adresse_non_trouvee", "detail": str(exc)},
+                ) from exc
+            except httpx.HTTPError as exc:
+                raise HTTPException(
+                    status_code=502,
+                    detail={"error": "geocodage_indisponible", "detail": str(exc)},
+                ) from exc
+
+            # Rejeter si score de géocodage trop bas (adresse ambiguë)
+            if geo.score < 0.4:
+                raise HTTPException(
+                    status_code=422,
+                    detail={
+                        "error": "adresse_ambigue",
+                        "detail": f"Score de géocodage trop faible ({geo.score:.2f}) pour «{q}». Précisez la ville ou le code postal.",
+                        "label_propose": geo.label,
+                    },
+                )
+
             report = await get_risque_report(
                 client=client,
                 adresse_saisie=q,
                 adresse_normalisee=geo.label,
                 lat=geo.lat,
                 lon=geo.lon,
-                code_insee=geo.code_insee,
+                code_insee=geo.citycode,
             )
+    except HTTPException:
+        raise
     except Exception as exc:
-        logger.exception("diagnostic/adresse -- Géorisques inaccessible pour %r", q)
+        logger.exception("diagnostic/adresse -- Échec du diagnostic pour %r", q)
         raise HTTPException(
             status_code=502,
             detail={"error": "source_indisponible", "source": "georisques", "detail": str(exc)},

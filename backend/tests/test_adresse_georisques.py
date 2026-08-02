@@ -18,10 +18,10 @@ from unittest.mock import AsyncMock, patch
 import httpx
 import pytest
 
-from app.connectors.geocodage_connector import (
-    AdresseNonTrouveeError,
-    GeocodageResult,
-    geocoder_adresse,
+from app.connectors.geocoding import (
+    GeocodeResult,
+    GeocodingError,
+    geocode_address,
 )
 from app.connectors.georisques import (
     fetch_georisques_raw,
@@ -86,36 +86,40 @@ GEORISQUES_RAW_NICE = {
 # ---------------------------------------------------------------------------
 
 def test_geocodage_adresse_valide():
-    """Adresse valide → GeocodageResult avec lat/lon/code_insee corrects."""
+    """Adresse valide → GeocodeResult avec lat/lon/citycode corrects (IGN Geoplateforme)."""
     async def _run():
-        with patch("app.connectors.geocodage_connector.httpx.AsyncClient") as mock_cls:
-            mock_client = AsyncMock()
-            mock_cls.return_value.__aenter__.return_value = mock_client
-            mock_client.get.return_value = httpx.Response(200, json=BAN_RESPONSE_NICE, request=httpx.Request("GET", "https://data.geopf.fr/geocodage/search"))
-            return await geocoder_adresse("14 Avenue des Palmiers Nice")
+        mock_client = AsyncMock(spec=httpx.AsyncClient)
+        mock_client.get.return_value = httpx.Response(
+            200,
+            json=BAN_RESPONSE_NICE,
+            request=httpx.Request("GET", "https://data.geopf.fr/geocodage/search"),
+        )
+        return await geocode_address(mock_client, "14 Avenue des Palmiers Nice")
 
     result = asyncio.run(_run())
-    assert isinstance(result, GeocodageResult)
+    assert isinstance(result, GeocodeResult)
     assert abs(result.lat - 43.7102) < 0.001
     assert abs(result.lon - 7.262) < 0.001
-    assert result.code_insee == "06088"
+    assert result.citycode == "06088"
     assert result.score >= 0.9
 
 
 # ---------------------------------------------------------------------------
-# Test 2 : géocodage — adresse absurde → AdresseNonTrouveeError
+# Test 2 : géocodage — adresse absurde → GeocodingError
 # ---------------------------------------------------------------------------
 
 def test_geocodage_adresse_absurde():
-    """Adresse non trouvée → AdresseNonTrouveeError (jamais un fallback silencieux)."""
+    """Adresse non trouvée → GeocodingError (jamais un fallback silencieux)."""
     async def _run():
-        with patch("app.connectors.geocodage_connector.httpx.AsyncClient") as mock_cls:
-            mock_client = AsyncMock()
-            mock_cls.return_value.__aenter__.return_value = mock_client
-            mock_client.get.return_value = httpx.Response(200, json=BAN_RESPONSE_EMPTY, request=httpx.Request("GET", "https://data.geopf.fr/geocodage/search"))
-            return await geocoder_adresse("zzz adresse inexistante 99999")
+        mock_client = AsyncMock(spec=httpx.AsyncClient)
+        mock_client.get.return_value = httpx.Response(
+            200,
+            json=BAN_RESPONSE_EMPTY,
+            request=httpx.Request("GET", "https://data.geopf.fr/geocodage/search"),
+        )
+        return await geocode_address(mock_client, "zzz adresse inexistante 99999")
 
-    with pytest.raises(AdresseNonTrouveeError):
+    with pytest.raises(GeocodingError):
         asyncio.run(_run())
 
 
@@ -252,4 +256,18 @@ def test_recommandations_mistral_failure():
     assert recs is None
     assert isinstance(report, RisqueReport)
     assert report.adresse_normalisee == "14 Avenue des Palmiers 06000 Nice"
+
+
+# ---------------------------------------------------------------------------
+# Test 8 : Introspection — Interdiction absolue d'importer geocodage_connector
+# ---------------------------------------------------------------------------
+
+def test_no_decommissioned_geocodage_connector_import():
+    """Vérifie qu'aucun fichier du backend n'importe l'ancien connector décommissionné."""
+    import inspect
+    import app.api.routes.diagnostic as diag_module
+
+    source = inspect.getsource(diag_module)
+    assert "geocodage_connector" not in source, "diagnostic.py ne doit plus jamais importer geocodage_connector !"
+
 
