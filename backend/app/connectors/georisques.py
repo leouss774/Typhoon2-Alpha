@@ -168,7 +168,7 @@ def _alea_inondation(raw: dict) -> AleaDetail:
     if failed:
         return AleaDetail(
             code="inondation", libelle="Inondation",
-            present=None, niveau=None,
+            present=None, present_commune=None, niveau=None,
             erreur="source Géorisques indisponible",
             url_detail="https://www.georisques.gouv.fr/risques/inondations",
         )
@@ -185,9 +185,11 @@ def _alea_inondation(raw: dict) -> AleaDetail:
     score = min(base, 100)
 
     catnat_hist = _catnat_entries_filtrees(raw, ["inondation", "coulée", "submersion"])
+    is_commune = hazard or n_catnat > 0 or bool(zi)
     return AleaDetail(
         code="inondation", libelle="Inondation",
-        present=(hazard or n_catnat > 0 or bool(zi)),
+        present=bool(zi),
+        present_commune=is_commune,
         niveau=_score_to_niveau(score),
         catnat_historique=catnat_hist,
         url_detail="https://www.georisques.gouv.fr/risques/inondations",
@@ -200,7 +202,7 @@ def _alea_rga(raw: dict) -> AleaDetail:
     if failed:
         return AleaDetail(
             code="rga", libelle="Retrait-gonflement des argiles",
-            present=None, niveau=None,
+            present=None, present_commune=None, niveau=None,
             erreur="source Géorisques indisponible",
             url_detail="https://www.georisques.gouv.fr/risques/retrait-gonflement-des-argiles",
         )
@@ -211,9 +213,11 @@ def _alea_rga(raw: dict) -> AleaDetail:
     base += min(n_sec * 8, 30)
     score = min(base, 100)
     catnat_hist = _catnat_entries_filtrees(raw, ["sécheresse", "secheresse"])
+    is_commune = hazard or n_sec > 0
     return AleaDetail(
         code="rga", libelle="Retrait-gonflement des argiles",
-        present=(hazard or n_sec > 0),
+        present=is_commune,
+        present_commune=is_commune,
         niveau=_score_to_niveau(score),
         catnat_historique=catnat_hist,
         url_detail="https://www.georisques.gouv.fr/risques/retrait-gonflement-des-argiles",
@@ -225,7 +229,7 @@ def _alea_sismicite(raw: dict) -> AleaDetail:
     if failed:
         return AleaDetail(
             code="sismicite", libelle="Sismicité",
-            present=None, niveau=None,
+            present=None, present_commune=None, niveau=None,
             erreur="source Géorisques indisponible",
             url_detail="https://www.georisques.gouv.fr/risques/seismes",
         )
@@ -251,10 +255,12 @@ def _alea_sismicite(raw: dict) -> AleaDetail:
     mapping = {0: 5, 1: 15, 2: 30, 3: 50, 4: 70, 5: 88}
     score = mapping.get(zone_int, 15) if zone_int is not None else 15
     zonage_str = f"Zone {zone_int}" if zone_int is not None else None
+    is_commune = zone_int is not None and zone_int >= 1
 
     return AleaDetail(
         code="sismicite", libelle="Sismicité",
-        present=(zone_int is not None and zone_int >= 1),
+        present=is_commune,
+        present_commune=is_commune,
         niveau=_score_to_niveau(score),
         zonage=zonage_str,
         url_detail="https://www.georisques.gouv.fr/risques/seismes",
@@ -266,7 +272,7 @@ def _alea_radon(raw: dict) -> AleaDetail:
     if failed:
         return AleaDetail(
             code="radon", libelle="Radon",
-            present=None, niveau=None,
+            present=None, present_commune=None, niveau=None,
             erreur="source Géorisques indisponible",
             url_detail="https://www.georisques.gouv.fr/risques/radon",
         )
@@ -285,9 +291,12 @@ def _alea_radon(raw: dict) -> AleaDetail:
     else:
         score, zonage_str = 10, None
 
+    is_commune = classe_int is not None and classe_int >= 2
+
     return AleaDetail(
         code="radon", libelle="Radon",
-        present=(classe_int is not None and classe_int >= 2),
+        present=is_commune,
+        present_commune=is_commune,
         niveau=_score_to_niveau(score),
         zonage=zonage_str,
         url_detail="https://www.georisques.gouv.fr/risques/radon",
@@ -299,7 +308,7 @@ def _alea_feu_foret(raw: dict) -> AleaDetail:
     if failed:
         return AleaDetail(
             code="feu_foret", libelle="Feu de forêt",
-            present=None, niveau=None,
+            present=None, present_commune=None, niveau=None,
             erreur="source Géorisques indisponible",
             url_detail="https://www.georisques.gouv.fr/risques/feux-de-foret",
         )
@@ -312,6 +321,7 @@ def _alea_feu_foret(raw: dict) -> AleaDetail:
     return AleaDetail(
         code="feu_foret", libelle="Feu de forêt",
         present=hazard,
+        present_commune=hazard,
         niveau=_score_to_niveau(score),
         url_detail="https://www.georisques.gouv.fr/risques/feux-de-foret",
     )
@@ -322,7 +332,7 @@ def _alea_mouvement_terrain(raw: dict) -> AleaDetail:
     if failed:
         return AleaDetail(
             code="mouvement_terrain", libelle="Mouvement de terrain",
-            present=None, niveau=None,
+            present=None, present_commune=None, niveau=None,
             erreur="source Géorisques indisponible",
             url_detail="https://www.georisques.gouv.fr/risques/mouvements-de-terrain",
         )
@@ -333,7 +343,8 @@ def _alea_mouvement_terrain(raw: dict) -> AleaDetail:
     catnat_hist = _catnat_entries_filtrees(raw, ["mouvement de terrain"])
     return AleaDetail(
         code="mouvement_terrain", libelle="Mouvement de terrain",
-        present=(n > 0),
+        present=len(mvt) > 0,
+        present_commune=(n > 0),
         niveau=_score_to_niveau(base),
         catnat_historique=catnat_hist,
         url_detail="https://www.georisques.gouv.fr/risques/mouvements-de-terrain",
@@ -346,7 +357,7 @@ def _alea_cavite(raw: dict) -> AleaDetail:
     if failed:
         return AleaDetail(
             code="cavite", libelle="Cavités souterraines",
-            present=None, niveau=None,
+            present=None, present_commune=None, niveau=None,
             erreur="source Géorisques indisponible",
             url_detail="https://www.georisques.gouv.fr/risques/cavites-souterraines",
         )
@@ -359,6 +370,7 @@ def _alea_cavite(raw: dict) -> AleaDetail:
     return AleaDetail(
         code="cavite", libelle="Cavités souterraines",
         present=(n > 0),
+        present_commune=(n > 0),
         niveau=_score_to_niveau(base),
         zonage=f"{n} cavité(s) recensée(s)" if n > 0 else None,
         url_detail="https://www.georisques.gouv.fr/risques/cavites-souterraines",
@@ -371,7 +383,7 @@ def _alea_avalanche(raw: dict) -> AleaDetail:
     if failed:
         return AleaDetail(
             code="avalanche", libelle="Avalanche",
-            present=None, niveau=None,
+            present=None, present_commune=None, niveau=None,
             erreur="source Géorisques indisponible",
             url_detail="https://www.georisques.gouv.fr/risques/avalanches",
         )
@@ -381,9 +393,11 @@ def _alea_avalanche(raw: dict) -> AleaDetail:
     if hazard: base = 60
     base += min(n_catnat * 5, 25)
     catnat_hist = _catnat_entries_filtrees(raw, ["avalanche"])
+    is_commune = hazard or n_catnat > 0
     return AleaDetail(
         code="avalanche", libelle="Avalanche",
-        present=(hazard or n_catnat > 0),
+        present=is_commune,
+        present_commune=is_commune,
         niveau=_score_to_niveau(min(base, 100)),
         catnat_historique=catnat_hist,
         url_detail="https://www.georisques.gouv.fr/risques/avalanches",
@@ -396,7 +410,7 @@ def _alea_icpe(raw: dict) -> AleaDetail:
     if failed:
         return AleaDetail(
             code="icpe", libelle="Installations industrielles (ICPE)",
-            present=None, niveau=None,
+            present=None, present_commune=None, niveau=None,
             erreur="source Géorisques indisponible",
             url_detail="https://www.georisques.gouv.fr/risques/installations-classees-pour-la-protection-de-lenvironnement-icpe",
         )
@@ -418,6 +432,7 @@ def _alea_icpe(raw: dict) -> AleaDetail:
     return AleaDetail(
         code="icpe", libelle="Installations industrielles (ICPE)",
         present=(n > 0),
+        present_commune=(n > 0),
         niveau=_score_to_niveau(base),
         zonage=(f"{n} installation(s) classée(s)" + (" dont Seveso" if seveso else "")) if n > 0 else None,
         url_detail="https://www.georisques.gouv.fr/risques/installations-classees-pour-la-protection-de-lenvironnement-icpe",
@@ -430,7 +445,7 @@ def _alea_canalisations(raw: dict) -> AleaDetail:
     if failed:
         return AleaDetail(
             code="canalisations", libelle="Réseaux et canalisations",
-            present=None, niveau=None,
+            present=None, present_commune=None, niveau=None,
             erreur="source Géorisques indisponible",
             url_detail="https://www.georisques.gouv.fr/risques/transport-de-matieres-dangereuses",
         )
@@ -444,6 +459,7 @@ def _alea_canalisations(raw: dict) -> AleaDetail:
     return AleaDetail(
         code="canalisations", libelle="Réseaux et canalisations",
         present=hazard,
+        present_commune=hazard,
         niveau=_score_to_niveau(score),
         url_detail="https://www.georisques.gouv.fr/risques/transport-de-matieres-dangereuses",
     )
@@ -455,7 +471,7 @@ def _alea_vent_cyclonique(raw: dict) -> AleaDetail:
     if failed:
         return AleaDetail(
             code="vent_cyclonique", libelle="Vents cycloniques",
-            present=None, niveau=None,
+            present=None, present_commune=None, niveau=None,
             erreur="source Géorisques indisponible",
             url_detail="https://www.georisques.gouv.fr/risques/cyclones",
         )
@@ -469,6 +485,7 @@ def _alea_vent_cyclonique(raw: dict) -> AleaDetail:
     return AleaDetail(
         code="vent_cyclonique", libelle="Vents cycloniques",
         present=hazard,
+        present_commune=hazard,
         niveau=_score_to_niveau(score),
         url_detail="https://www.georisques.gouv.fr/risques/cyclones",
     )
@@ -480,7 +497,7 @@ def _alea_ppr(raw: dict) -> AleaDetail:
     if failed:
         return AleaDetail(
             code="ppr", libelle="Plan de Prévention des Risques (PPR)",
-            present=None, niveau=None,
+            present=None, present_commune=None, niveau=None,
             erreur="source Géorisques indisponible",
             url_detail="https://www.georisques.gouv.fr/risques/plans-de-prevention-des-risques",
         )
@@ -493,6 +510,7 @@ def _alea_ppr(raw: dict) -> AleaDetail:
     return AleaDetail(
         code="ppr", libelle="Plan de Prévention des Risques (PPR)",
         present=(n_ppr > 0),
+        present_commune=(n_ppr > 0),
         niveau=_score_to_niveau(score),
         zonage=f"{n_ppr} PPR recensé(s)" if n_ppr > 0 else "Aucun PPR prescrit",
         url_detail="https://www.georisques.gouv.fr/risques/plans-de-prevention-des-risques",
@@ -505,7 +523,7 @@ def _alea_ssp(raw: dict) -> AleaDetail:
     if failed:
         return AleaDetail(
             code="ssp", libelle="Sites et sols pollués (SSP)",
-            present=None, niveau=None,
+            present=None, present_commune=None, niveau=None,
             erreur="source Géorisques indisponible",
             url_detail="https://www.georisques.gouv.fr/risques/sites-et-sols-pollues",
         )
@@ -517,6 +535,7 @@ def _alea_ssp(raw: dict) -> AleaDetail:
     return AleaDetail(
         code="ssp", libelle="Sites et sols pollués (SSP)",
         present=(n_ssp > 0),
+        present_commune=(n_ssp > 0),
         niveau=_score_to_niveau(score),
         zonage=f"{n_ssp} site(s) ou sol(s) pollué(s)" if n_ssp > 0 else "Aucun site recensé",
         url_detail="https://www.georisques.gouv.fr/risques/sites-et-sols-pollues",

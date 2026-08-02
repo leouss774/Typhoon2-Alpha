@@ -356,10 +356,13 @@ html, body { height: 100%; background: var(--ink); color: var(--paper); font-fam
         <div id="r-aleas"></div>
       </div>
 
-      <div id="r-catnat-section" class="catnat-section" style="display:none;">
-        <div class="section-heading">Historique arrêtés CatNat</div>
-        <div id="r-catnat"></div>
-      </div>
+      <details id="r-catnat-section" class="catnat-section" style="display:none; margin-top:12px; cursor:pointer;">
+        <summary class="section-heading" style="user-select:none; outline:none; display:flex; justify-content:space-between; align-items:center;">
+          <span>Historique arrêtés CatNat <span id="r-catnat-count" style="font-size:9px; color:var(--fog);"></span></span>
+          <span style="font-size:10px; color:var(--storm);">▼</span>
+        </summary>
+        <div id="r-catnat" style="margin-top:10px;"></div>
+      </details>
 
       <div id="r-partial-banner" class="partial-banner" style="display:none;"></div>
 
@@ -865,13 +868,23 @@ function displayReport(r) {
     const card = document.createElement('div');
     card.className = `alea-card${isAbsent ? ' absent' : ''}${isError ? ' error-partial' : ''}`;
 
-    let pillHtml = '';
+    let addrStatusHtml = '';
+    let communeStatusHtml = '';
+
     if (isError) {
       pillHtml = `<span style="font-family:var(--mono);font-size:9px;color:var(--fog);">source indisponible</span>`;
-    } else if (isAbsent) {
-      pillHtml = `<span style="font-family:var(--mono);font-size:9px;color:var(--fog);">Non concerné</span>`;
-    } else if (band) {
-      pillHtml = `<span class="d03-pill ${band.cls}" style="font-size:9px;padding:2px 8px;">${band.label}</span>`;
+    } else {
+      // Address status
+      const addrPresent = a.present === true;
+      addrStatusHtml = `<span style="font-family:var(--mono);font-size:8.5px;padding:2px 6px;border-radius:4px;background:var(--panel-3);color:${addrPresent ? 'var(--d03-eleve)' : 'var(--d03-tres-faible)'}">📍 Adresse: ${addrPresent ? 'CONCERNÉ' : 'PAS DE RISQUE'}</span>`;
+
+      // Commune status
+      const communePresent = a.present_commune !== false;
+      communeStatusHtml = `<span style="font-family:var(--mono);font-size:8.5px;padding:2px 6px;border-radius:4px;background:var(--panel-3);color:${communePresent ? 'var(--d03-modere)' : 'var(--fog)'}">🏛️ Commune: ${communePresent ? 'EXISTANT' : 'NON CONCERNÉ'}</span>`;
+
+      if (band && a.present === true) {
+        pillHtml = `<span class="d03-pill ${band.cls}" style="font-size:9px;padding:2px 8px;">${band.label}</span>`;
+      }
     }
 
     const linkHtml = a.url_detail
@@ -884,7 +897,11 @@ function displayReport(r) {
     card.innerHTML = `
       <div class="alea-left">
         <span class="alea-name">${icon} ${escHtml(a.libelle)}</span>
-        ${a.zonage ? `<span class="alea-zonage">${escHtml(a.zonage)}</span>` : ''}
+        <div style="display:flex;gap:4px;margin-top:3px;flex-wrap:wrap;">
+          ${addrStatusHtml}
+          ${communeStatusHtml}
+        </div>
+        ${a.zonage ? `<span class="alea-zonage" style="margin-top:2px;">${escHtml(a.zonage)}</span>` : ''}
       </div>
       <div class="alea-right">
         ${eyeBtnHtml}
@@ -918,6 +935,7 @@ function displayReport(r) {
   /* CatNat history */
   const catnatSection = document.getElementById('r-catnat-section');
   const catnatContainer = document.getElementById('r-catnat');
+  const catnatCount = document.getElementById('r-catnat-count');
   const catnat = [];
   (r.aleas || []).forEach(a => {
     if (a.catnat_historique && a.catnat_historique.length) {
@@ -926,22 +944,23 @@ function displayReport(r) {
   });
 
   if (catnat.length) {
-    catnatSection.style.display = '';
+    catnatSection.style.display = 'block';
+    if (catnatCount) catnatCount.textContent = `(${catnat.length} arrêtés)`;
     catnatContainer.innerHTML = '';
-    catnat.slice(0, 10).forEach(ev => {
+    catnat.slice(0, 15).forEach(ev => {
       const div = document.createElement('div');
       div.className = 'catnat-entry';
       div.textContent = [
         ev.libelle_risque_jo || ev.libelle || '—',
-        ev.date_debut_evt ? ev.date_debut_evt.slice(0, 4) : null,
+        ev.date_debut_evt ? (ev.date_debut_evt.length >= 10 ? ev.date_debut_evt.slice(0, 10) : ev.date_debut_evt) : null,
       ].filter(Boolean).join(' · ');
       catnatContainer.appendChild(div);
     });
-    if (catnat.length > 10) {
+    if (catnat.length > 15) {
       const more = document.createElement('div');
       more.className = 'catnat-entry';
       more.style.color = 'var(--fog)';
-      more.textContent = `+ ${catnat.length - 10} autre(s)…`;
+      more.textContent = `+ ${catnat.length - 15} autre(s)…`;
       catnatContainer.appendChild(more);
     }
   } else {

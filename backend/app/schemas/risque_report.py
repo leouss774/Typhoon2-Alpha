@@ -48,7 +48,8 @@ def niveau_from_score(score: int | None) -> NiveauRisque | None:
 class AleaDetail(BaseModel):
     code: str                         # ex: "inondation", "rga", "sismicite", "feu_foret", "radon"
     libelle: str                      # libellé FR affichable
-    present: bool | None              # None si la source a échoué
+    present: bool | None              # None si la source a échoué (à mon adresse)
+    present_commune: bool | None = None # statut au niveau de la commune (ex: existant/concerné)
     niveau: NiveauRisque | None       # None si Géorisques ne fournit pas de gradation
     zonage: str | None = None         # ex: "Zone sismique 2 - faible"
     catnat_historique: list[dict] | None = None  # arrêtés CatNat, si dispo
