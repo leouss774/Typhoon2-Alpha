@@ -63,12 +63,25 @@
   /* ---- Panneaux du jumeau numérique (écran 3) ---- */
   #toggle-panel {
     position: absolute; top: 20px; left: 20px;
-    background: rgba(255, 255, 255, 0.96); border: 1px solid #DCE6EC; border-radius: 10px;
-    padding: 14px 18px; color: #3E4850; z-index: 10; backdrop-filter: blur(8px);
-    box-shadow: 0 0 20px rgba(67, 134, 177, 0.15); width: 280px;
+    background: rgba(255, 255, 255, 0.92); border: 1px solid rgba(220, 230, 236, 0.8); border-radius: 16px;
+    padding: 16px 18px; color: #3E4850; z-index: 10; backdrop-filter: blur(10px);
+    box-shadow: 0 8px 28px rgba(30, 42, 51, 0.1); width: 280px;
   }
-  #toggle-panel h3 { margin: 0 0 8px 0; font-size: 12px; font-weight: 600; color: #316f96; text-transform: uppercase; letter-spacing: 0.08em; }
-  #toggle-panel .addr-line { font-size: 13px; color: #4E5860; margin: 0 0 10px 0; line-height: 1.4; }
+  /* Identité de marque en tête de panneau : remplace l'ancien label
+     "JUMEAU NUMÉRIQUE — DIAGNOSTIC" en majuscules par une composition
+     pictogramme + wordmark, cohérente avec le reste de l'interface
+     (cf. .typhoon-logo sur l'accueil). */
+  #toggle-panel-brand { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  #toggle-panel .tp-mark {
+    width: 32px; height: 32px; border-radius: 9px; flex-shrink: 0;
+    background: linear-gradient(135deg, #5B93FF, #316f96);
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 12px rgba(49, 111, 150, 0.35);
+  }
+  #toggle-panel .tp-brand-text { display: flex; flex-direction: column; line-height: 1.2; min-width: 0; }
+  #toggle-panel .tp-name { font-family: var(--font-head); font-size: 15px; font-weight: 700; color: #1E2A33; letter-spacing: 0.005em; }
+  #toggle-panel .tp-sub { font-size: 10px; font-weight: 700; color: #316f96; text-transform: uppercase; letter-spacing: 0.08em; margin-top: 2px; }
+  #toggle-panel .addr-line { font-size: 13px; color: #4E5860; margin: 0 0 12px 0; padding-bottom: 12px; line-height: 1.4; border-bottom: 1px solid rgba(220, 230, 236, 0.8); }
   #toggle-buttons button {
     background: rgba(241, 246, 249, 0.8); border: 1px solid #DCE6EC; color: #3E4850; padding: 8px 16px;
     border-radius: 6px; cursor: pointer; font-size: 13px; margin-right: 6px; transition: all .15s;
@@ -1938,7 +1951,15 @@
 </div>
 
 <div id="toggle-panel" class="tab-3d-only">
-  <h3>Jumeau numérique — Diagnostic</h3>
+  <div id="toggle-panel-brand">
+    <span class="tp-mark" aria-hidden="true">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5 3.5 9 8 11 4.5-2 8-6 8-11V5z"/><path d="m9 12 2 2 4-4"/></svg>
+    </span>
+    <div class="tp-brand-text">
+      <span class="tp-name">Jumeau numérique</span>
+      <span class="tp-sub">Diagnostic climatique</span>
+    </div>
+  </div>
   <div class="addr-line" id="addr-line">—</div>
   <div id="toggle-buttons">
     <button id="btn-2025" class="active">2025</button>
@@ -2489,6 +2510,18 @@ const DEFAULT_DATA = {
 };
 
 const ZONE_NAMES = ["fondations", "murs_nord", "murs_sud", "murs_est", "murs_ouest", "toiture", "sous_sol"];
+
+// Libellé affiché pour une zone : les 4 orientations de façade
+// (murs_nord/sud/est/ouest) sont des clés techniques internes, nécessaires
+// à la géométrie 3D et au raycasting, mais s'affichent toutes sous le même
+// terme générique "Murs" — plus simple à lire, sans jargon d'orientation.
+// Point d'entrée unique réutilisé par toute étiquette de zone dans le
+// fichier (info-bulle 3D, panneau rapide, pages du dashboard, Property ID).
+function zoneDisplayLabel(name) {
+  if (!name) return '';
+  if (String(name).indexOf('murs') === 0) return 'Murs';
+  return String(name).replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+}
 
 // ---------- 1. FONCTION DE MAPPING RISQUE -> EFFET VISUEL (pure, déterministe) ----------
 function mapRiskToEffect(zoneName, score) {
@@ -4128,7 +4161,7 @@ function makeLabelCanvasTexture(title, score) {
   ctx.fillStyle = 'rgba(10,16,26,0.9)'; ctx.strokeStyle = color; ctx.lineWidth = 3;
   roundRect(ctx, 4, 4, canvas.width - 8, canvas.height - 8, 12); ctx.fill(); ctx.stroke();
   ctx.fillStyle = '#cfe4ff'; ctx.font = '600 22px Segoe UI, sans-serif';
-  ctx.fillText(title.replace('_', ' '), 20, 36);
+  ctx.fillText(zoneDisplayLabel(title), 20, 36);
   ctx.fillStyle = color; ctx.font = '700 26px Segoe UI, sans-serif';
   ctx.fillText(score + ' / 100', 20, 70);
   return new THREE.CanvasTexture(canvas);
@@ -4232,7 +4265,7 @@ function showZoneTooltip(zoneName, clientX, clientY) {
   const niveau = data ? data.niveau : null;
   const niveauLabels = { faible: 'Risque faible', modere: 'Risque modéré', eleve: 'Risque élevé', critique: 'Risque critique' };
   const niveauColors = { faible: '#22c55e', modere: '#facc15', eleve: '#f97316', critique: '#dc2626' };
-  const label = zoneName.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  const label = zoneDisplayLabel(zoneName);
   zoneTooltipEl.innerHTML = '<strong>' + label + '</strong>' +
     (niveau ? '<br><span style="color:' + (niveauColors[niveau] || '#8B959D') + ';">' + (niveauLabels[niveau] || niveau) + '</span>' : '');
   zoneTooltipEl.style.left = (clientX + 16) + 'px';
@@ -4324,7 +4357,7 @@ function showZoneQuickInfo(zoneName) {
   if (!data || !panel) return;
   const meta = ZQI_NIVEAU_META[data.niveau] || { label: data.niveau || 'Risque', color: '#8B959D' };
 
-  document.getElementById('zone-quickinfo-name').textContent = zoneName.replace(/_/g, ' ');
+  document.getElementById('zone-quickinfo-name').textContent = zoneDisplayLabel(zoneName);
 
   const riskEl = document.getElementById('zone-quickinfo-risk');
   riskEl.innerHTML = '<strong>Risque</strong> — ' + (data.alea_principal ? escapeHtml(data.alea_principal) + ' ' : '')
@@ -4595,10 +4628,19 @@ function formatCoutEstime(cout) {
   return txt;
 }
 
+// Nettoyage éditorial du texte des recommandations : les tirets ("-") du
+// texte source (LLM ou données de démo, ex. "anti-retour", "auto-cohérent")
+// sont remplacés par un espace pour une lecture plus naturelle, sans jamais
+// coller deux mots ensemble.
+function stripHyphens(text) {
+  if (text === null || text === undefined) return text;
+  return String(text).replace(/-/g, ' ').replace(/\s{2,}/g, ' ').trim();
+}
+
 // Helpers partagés (chat + devis) pour lire indifféremment le schéma réel
 // (mesure/cout_estime objet/aide/sources) et le schéma d'exemple
 // (travaux/cout_estime chaîne/gain_resilience).
-function recoLabel(r) { return r.mesure || r.travaux || 'Travaux recommandés'; }
+function recoLabel(r) { return stripHyphens(r.mesure || r.travaux || 'Travaux recommandés'); }
 function recoCostRange(r) {
   const c = r.cout_estime;
   if (c && typeof c === 'object') {
@@ -4781,7 +4823,7 @@ function showZonePanel(zoneName) {
     const tab = document.createElement('span');
     tab.className = 'info-zone-tab' + ((z === zoneName) ? ' active' : '');
     if (!zData.recommandations || !zData.recommandations.length) tab.classList.add('tab-empty');
-    const label = z.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    const label = zoneDisplayLabel(z);
     const n = (zData.recommandations || []).length;
     tab.innerHTML = label + (n > 0 ? '<span class="tab-count">' + n + '</span>' : '');
     tab.onclick = () => showZonePanel(z);
@@ -4792,7 +4834,7 @@ function showZonePanel(zoneName) {
   }
 
   // ---- Zone header ----
-  document.getElementById('info-title').textContent = zoneName.replace(/_/g, ' ');
+  document.getElementById('info-title').textContent = zoneDisplayLabel(zoneName);
   const badge = document.getElementById('info-badge');
   badge.textContent = data.niveau.toUpperCase() + ' \u2014 ' + data.risque + '/100';
   const scoreColorHex = '#' + scoreToColor(data.risque).toString(16).padStart(6, '0');
@@ -4810,7 +4852,7 @@ function showZonePanel(zoneName) {
   const aggravantsDiv = document.getElementById('info-aggravants');
   const attenuantsDiv = document.getElementById('info-attenuants');
   if (data.conclusion) {
-    let zoneLabel = zoneName.replace(/_/g, ' ').replace(/\b\w/g, function(c) { return c.toUpperCase(); });
+    let zoneLabel = zoneDisplayLabel(zoneName);
     diagnosticHeader.textContent = 'Diagnostic ' + zoneLabel;
     etatDiv.textContent = 'Etat : ' + data.conclusion;
     conclusionDiv.style.display = 'block';
@@ -4892,7 +4934,7 @@ function showZonePanel(zoneName) {
       const card = document.createElement('div');
       card.className = 'reco-card';
 
-      const mesure = r.mesure || r.travaux || 'Travaux recommand\u00e9s';
+      const mesure = recoLabel(r);
       const risqueConcerne = r.risque_concerne || (Array.isArray(r.sources) && r.sources.length ? r.sources[0].source_id : '') || '';
       const cout = parseCoutEstime(r.cout_estime);
 
@@ -4916,7 +4958,7 @@ function showZonePanel(zoneName) {
         + '</div>'
         + '<div class="reco-card-body">'
         + (risqueConcerne ? '<div class="reco-risque-tag">' + escapeHtml(risqueConcerne) + '</div>' : '')
-        + (r.explication ? '<div class="reco-explication">' + escapeHtml(r.explication) + '</div>' : '')
+        + (r.explication ? '<div class="reco-explication">' + escapeHtml(stripHyphens(r.explication)) + '</div>' : '')
         + (r.type ? '<div class="reco-meta"><strong>Type :</strong> ' + escapeHtml(r.type.replace(/_/g, ' ')) + '</div>' : '')
         + (coutLabel ? '<div class="reco-meta"><strong>Cout estime :</strong> ' + escapeHtml(coutLabel) + '</div>' : '')
         + (r.gain_resilience ? '<div class="reco-meta"><strong>Gain resilience :</strong> +' + r.gain_resilience + '</div>' : '')
@@ -6000,7 +6042,7 @@ loadDataset(DEFAULT_DATA);
   }
 
   function zoneLabel(name) {
-    return name.replace(/_/g, ' ');
+    return zoneDisplayLabel(name);
   }
 
   function reponseSynthese() {
@@ -6209,7 +6251,7 @@ loadDataset(DEFAULT_DATA);
 
   let items = [];
 
-  function zoneLabel(name) { return name.replace(/_/g, ' '); }
+  function zoneLabel(name) { return zoneDisplayLabel(name); }
 
   function buildItems() {
     const zones = (typeof currentZones !== 'undefined' && currentZones) ? currentZones : DEFAULT_DATA.zones;
@@ -6615,9 +6657,9 @@ function pid_renderPropertyID(data) {
     recos.forEach(r => {
       const div = document.createElement('div');
       div.className = 'pid-reco-item';
-      const mesure = r.mesure || r.travaux || r.title || 'Travaux recommandés';
+      const mesure = stripHyphens(r.mesure || r.travaux || r.title || 'Travaux recommandés');
       const typeName = r.type || '';
-      const zoneName = r.zone ? r.zone.replace(/_/g, ' ') : '';
+      const zoneName = r.zone ? zoneDisplayLabel(r.zone) : '';
       const sources = r.sources || [];
       const coutText = r.cout_estime ? (typeof r.cout_estime === 'object' ? r.cout_estime.montant_min || '' : r.cout_estime) : '';
       div.innerHTML = '<svg class="ri" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>'
@@ -6627,7 +6669,7 @@ function pid_renderPropertyID(data) {
         + (zoneName ? '<span class="pid-zone-badge">' + zoneName + '</span>' : '')
         + (typeName ? '<span class="pid-type-badge">' + typeName.replace(/_/g, ' ') + '</span>' : '')
         + '</div>'
-        + (r.explication ? '<div class="rd">' + r.explication.slice(0, 300) + '</div>' : '')
+        + (r.explication ? '<div class="rd">' + stripHyphens(r.explication).slice(0, 300) + '</div>' : '')
         + '<div class="rm">'
         + (coutText ? '<span>' + coutText + '</span>' : '')
         + (r.gain_resilience ? '<span>Résilience +' + r.gain_resilience + '</span>' : '')
@@ -6674,12 +6716,19 @@ function pid_renderPropertyID(data) {
   const twinChips = pid_$('pid-twin-chips');
   twinChips.innerHTML = '';
   if (Object.keys(zones).length > 0) {
+    // Les 4 orientations de murs partagent le même libellé "Murs" (cf.
+    // zoneDisplayLabel) : une seule puce par groupe, sinon 4 puces
+    // identiques se répètent inutilement dans ce résumé.
+    const seenLabels = new Set();
     Object.entries(zones).forEach(([key, val]) => {
+      const label = zoneDisplayLabel(key);
+      if (seenLabels.has(label)) return;
+      seenLabels.add(label);
       const score = val.score != null ? val.score : 0;
       const level = score <= 25 ? 'faible' : score <= 50 ? 'modere' : score <= 75 ? 'eleve' : 'critique';
       const chip = document.createElement('span');
       chip.className = 'tchip ' + level;
-      chip.innerHTML = '<span class="cd"></span> ' + key.replace(/_/g, ' ');
+      chip.innerHTML = '<span class="cd"></span> ' + label;
       twinChips.appendChild(chip);
     });
   } else {
@@ -6732,7 +6781,7 @@ function pid_applyDevisOverrides(currentAddress) {
   if (stored.travaux_retenus && stored.travaux_retenus.length) {
     stored.travaux_retenus.forEach(t => {
       const li = document.createElement('li');
-      li.innerHTML = '<span><span class="wn">' + t.travaux + '</span><span class="wz"> — ' + (t.zone ? t.zone.replace(/_/g, ' ') : '') + '</span></span><span class="wc">' + (t.cout_estime || '—') + '</span>';
+      li.innerHTML = '<span><span class="wn">' + stripHyphens(t.travaux) + '</span><span class="wz"> — ' + (t.zone ? zoneDisplayLabel(t.zone) : '') + '</span></span><span class="wc">' + (t.cout_estime || '—') + '</span>';
       ul.appendChild(li);
     });
   }
@@ -6823,7 +6872,7 @@ function pid_showPropertyID() {
       zones: zones,
     },
     risk_summary: {
-      highest_risk: highestZone ? highestZone.replace(/_/g, ' ') : '—',
+      highest_risk: highestZone ? zoneDisplayLabel(highestZone) : '—',
       risk_level: riskZoneData.niveau || 'N/A',
       main_hazard: riskZoneData.alea_principal || 'N/A',
       zones: zones,
@@ -6934,7 +6983,7 @@ document.querySelectorAll('#home-nav a').forEach(function(a) {
     return 'tres eleve';
   }
   function dashZoneLabel(name) {
-    return String(name).replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    return zoneDisplayLabel(name);
   }
   function dashDataset() {
     return (typeof currentZones !== 'undefined' && currentZones) ? currentZones : DEFAULT_DATA.zones;
@@ -7011,14 +7060,22 @@ document.querySelectorAll('#home-nav a').forEach(function(a) {
     const rowsEl = document.getElementById('dash-zone-score-rows');
     if (rowsEl) {
       rowsEl.innerHTML = '';
+      // Les 4 orientations de murs partagent le même libellé "Murs" : une
+      // seule ligne (basée sur la première façade rencontrée, dont le
+      // risque est de toute façon identique aux 3 autres) plutôt que 4
+      // lignes identiques.
+      const seenLabels = new Set();
       ZONE_NAMES.forEach(name => {
         const z = dataset[name];
         if (!z) return;
+        const label = dashZoneLabel(name);
+        if (seenLabels.has(label)) return;
+        seenLabels.add(label);
         const meta = dashNiveauMeta(z.niveau);
         const row = document.createElement('div');
         row.className = 'dash-zone-score-row';
         row.innerHTML =
-          `<div class="dash-zone-score-name">${escapeHtml(dashZoneLabel(name))}</div>`
+          `<div class="dash-zone-score-name">${escapeHtml(label)}</div>`
           + `<div class="dash-zone-score-track"><div class="dash-zone-score-fill" style="width:${Math.max(0, Math.min(100, z.risque))}%; background:${meta.color};"></div></div>`
           + `<div class="dash-zone-score-num">${z.risque}</div>`
           + `<div class="dash-zone-score-badge" style="background:${meta.color};">${escapeHtml(meta.label)}</div>`
@@ -7072,7 +7129,6 @@ document.querySelectorAll('#home-nav a').forEach(function(a) {
   // réelle (le détail garde la trace de la façade d'origine).
   const DASH_WALL_ZONES = ['murs_nord', 'murs_sud', 'murs_est', 'murs_ouest'];
   function dashZoneGroupLabel(group, zones) {
-    if (group === 'murs') return 'Façades (' + zones.map(z => dashZoneLabel(z).replace('Murs ', '')).join(', ') + ')';
     return dashZoneLabel(group);
   }
 
@@ -7167,7 +7223,7 @@ document.querySelectorAll('#home-nav a').forEach(function(a) {
         + `<span class="reco-priority-badge" style="background:${meta.color};color:#fff;">${escapeHtml(meta.label)}</span>`
         + '</div>'
         + '<div class="reco-card-body">'
-        + (r.explication ? '<div class="reco-explication">' + escapeHtml(r.explication) + '</div>' : '')
+        + (r.explication ? '<div class="reco-explication">' + escapeHtml(stripHyphens(r.explication)) + '</div>' : '')
         + '<div class="reco-meta"><strong>Zone(s) concernée(s) :</strong> ' + escapeHtml(zoneLabelText) + '</div>'
         + (item.zoneDetails[0] && item.zoneDetails[0].alea_principal ? '<div class="reco-meta"><strong>Aléa principal :</strong> ' + escapeHtml(item.zoneDetails[0].alea_principal) + '</div>' : '')
         + (r.type ? '<div class="reco-meta"><strong>Type de travaux :</strong> ' + escapeHtml(String(r.type).replace(/_/g, ' ')) + '</div>' : '')
