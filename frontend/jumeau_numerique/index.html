@@ -6264,7 +6264,7 @@ loadDataset(DEFAULT_DATA);
           id: zoneName + '__' + idx + '__' + label.replace(/[^a-zA-Z0-9]/g, '_'),
           zone: zoneName,
           travaux: label,
-          cout_estime: cost.label,
+          cout_estime: (cost.label && cost.label !== '—') ? cost.label : '',
           gain_resilience: recoGain(r),
           min: cost.min, max: cost.max,
           checked: true
@@ -7209,6 +7209,10 @@ document.querySelectorAll('#home-nav a').forEach(function(a) {
       const meta = dashNiveauMeta(item.niveau);
       const r = item.raw;
       const zoneLabelText = dashZoneGroupLabel(item.group, item.zones);
+      // Un coût inconnu renvoie un simple tiret ("—") côté recoCostRange :
+      // on ne l'affiche pas plutôt que de montrer un tiret orphelin sans
+      // valeur derrière.
+      const hasCost = !!(item.cost && item.cost.label && item.cost.label !== '—');
       const card = document.createElement('div');
       card.className = 'reco-card';
       card.innerHTML =
@@ -7218,7 +7222,7 @@ document.querySelectorAll('#home-nav a').forEach(function(a) {
         + '<div class="dash-reco-card-body">'
         + `<div class="dash-reco-zone-tag">${escapeHtml(zoneLabelText)}</div>`
         + '<div class="reco-title-wrap"><span class="reco-title">' + escapeHtml(item.mesure) + '</span>'
-        + (item.cost.label ? '<span class="reco-sub">' + escapeHtml(item.cost.label) + '</span>' : '')
+        + (hasCost ? '<span class="reco-sub">' + escapeHtml(item.cost.label) + '</span>' : '')
         + '</div></div></div>'
         + `<span class="reco-priority-badge" style="background:${meta.color};color:#fff;">${escapeHtml(meta.label)}</span>`
         + '</div>'
@@ -7227,7 +7231,7 @@ document.querySelectorAll('#home-nav a').forEach(function(a) {
         + '<div class="reco-meta"><strong>Zone(s) concernée(s) :</strong> ' + escapeHtml(zoneLabelText) + '</div>'
         + (item.zoneDetails[0] && item.zoneDetails[0].alea_principal ? '<div class="reco-meta"><strong>Aléa principal :</strong> ' + escapeHtml(item.zoneDetails[0].alea_principal) + '</div>' : '')
         + (r.type ? '<div class="reco-meta"><strong>Type de travaux :</strong> ' + escapeHtml(String(r.type).replace(/_/g, ' ')) + '</div>' : '')
-        + (item.cost.label ? '<div class="reco-meta"><strong>Coût estimé :</strong> ' + escapeHtml(item.cost.label) + '</div>' : '')
+        + (hasCost ? '<div class="reco-meta"><strong>Coût estimé :</strong> ' + escapeHtml(item.cost.label) + '</div>' : '')
         + (item.gain != null ? '<div class="reco-meta"><strong>Gain de résilience :</strong> +' + item.gain + '%</div>' : '')
         + (r.aide && (r.aide.dispositif || r.aide.conditions) ? '<div class="reco-aide"><b>' + escapeHtml(r.aide.dispositif || 'Aide potentielle') + '</b>'
           + (r.aide.conditions ? '<div style="font-size:11px;margin-top:3px;">' + escapeHtml(r.aide.conditions) + '</div>' : '')
