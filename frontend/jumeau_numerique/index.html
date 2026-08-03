@@ -580,8 +580,10 @@
     background: var(--surface-alt);
   }
   .zm-annonce-photo-placeholder {
-    width: 40px; height: 40px; border-radius: 6px; flex-shrink: 0; background: var(--surface-alt);
+    width: 40px; height: 40px; border-radius: 6px; flex-shrink: 0;
+    background: var(--brand-light); display: flex; align-items: center; justify-content: center;
   }
+  .zm-annonce-photo-placeholder svg { width: 18px; height: 18px; color: var(--brand); opacity: 0.75; }
   .zm-annonce-info { flex: 1; min-width: 0; }
   .zm-annonce-addr {
     font-size: 11.5px; font-weight: 600; color: var(--ink); white-space: nowrap;
@@ -5709,6 +5711,13 @@ loadDataset(DEFAULT_DATA);
   // raisonnable pour rester lisible. Clic -> recentre la carte et ouvre le
   // popup complet (showAnnoncePopup), comme un clic direct sur le marqueur.
   const ZM_ANNONCES_LIMIT = 12;
+  // Icône de repli (petite maison) affichée à la place d'une vraie photo
+  // quand l'annonce n'en fournit pas — plus soigné qu'un carré vide.
+  const ZM_ANNONCE_PLACEHOLDER_HTML = '<div class="zm-annonce-photo-placeholder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M9.5 21v-6h5v6"/></svg></div>';
+  // Exposée en global : appelée depuis l'attribut inline onerror="" de
+  // l'<img> ci-dessous (le photoHtml est injecté via innerHTML, donc ne
+  // peut pas fermer sur une fonction locale du script).
+  window.annoncePhotoFallback = function (imgEl) { imgEl.outerHTML = ZM_ANNONCE_PLACEHOLDER_HTML; };
   function renderAnnoncesSidebar(listings) {
     const box = document.getElementById('zm-annonces-list');
     if (!box) return;
@@ -5722,10 +5731,10 @@ loadDataset(DEFAULT_DATA);
       const prixTxt = l.prix != null ? Math.round(l.prix).toLocaleString('fr-FR') + ' €' : '—';
       const prixM2Txt = l.prix_m2 != null ? Math.round(l.prix_m2).toLocaleString('fr-FR') + ' €/m²' : '';
       const score = l.climat_score;
-      const scoreColor = score == null ? '#8B959D' : score < 20 ? '#1F9D6C' : score < 45 ? '#D98A2B' : score < 70 ? '#204e6d' : '#C0392B';
+      const scoreColor = '#8B959D';
       const photoHtml = l.photo
-        ? `<img src="${escapeHtml(l.photo)}" alt="" class="zm-annonce-photo" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'zm-annonce-photo-placeholder'}))">`
-        : '<div class="zm-annonce-photo-placeholder"></div>';
+        ? `<img src="${escapeHtml(l.photo)}" alt="" class="zm-annonce-photo" loading="lazy" onerror="annoncePhotoFallback(this)">`
+        : ZM_ANNONCE_PLACEHOLDER_HTML;
       const item = document.createElement('div');
       item.className = 'zm-annonce-item';
       item.innerHTML = `
