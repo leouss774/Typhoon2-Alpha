@@ -564,12 +564,35 @@
   .badge-critique { background: #FDD8D4; color: #C0392B; }
   .zone-rating-meta { color: var(--text); font-size: 11px; margin-top: 6px; }
 
-  .zone-peril-item { margin-bottom: 10px; }
-  .zone-peril-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
-  .zone-peril-name { font-size: 12px; font-weight: 600; color: var(--ink); }
-  .zone-peril-score { font-size: 13px; font-weight: 700; }
-  .zone-peril-bar { height: 5px; border-radius: 999px; background: rgba(231,222,214,0.5); overflow: hidden; }
-  .zone-peril-fill { height: 100%; border-radius: 999px; transition: width .6s ease; }
+  /* ---- Annonces à proximité (remplace l'ancien détail par péril de la
+     sidebar, jugé peu utile : mêmes données réelles que les marqueurs de
+     la carte — prix, prix/m², score climat — cf. displayZoneAnnonces /
+     renderAnnoncesSidebar) ---- */
+  .zm-annonces-empty { font-size: 11px; color: var(--muted); padding: 4px 0; }
+  .zm-annonce-item {
+    display: flex; align-items: center; gap: 10px; padding: 9px 10px;
+    border: 1px solid var(--border); border-radius: 8px; margin-bottom: 8px;
+    cursor: pointer; transition: border-color .15s, background .15s;
+  }
+  .zm-annonce-item:hover { border-color: var(--brand); background: var(--brand-light); }
+  .zm-annonce-photo {
+    width: 40px; height: 40px; border-radius: 6px; object-fit: cover; flex-shrink: 0;
+    background: var(--surface-alt);
+  }
+  .zm-annonce-photo-placeholder {
+    width: 40px; height: 40px; border-radius: 6px; flex-shrink: 0; background: var(--surface-alt);
+  }
+  .zm-annonce-info { flex: 1; min-width: 0; }
+  .zm-annonce-addr {
+    font-size: 11.5px; font-weight: 600; color: var(--ink); white-space: nowrap;
+    overflow: hidden; text-overflow: ellipsis;
+  }
+  .zm-annonce-meta { font-size: 10.5px; color: var(--muted); margin-top: 2px; }
+  .zm-annonce-price { font-size: 12px; font-weight: 800; color: #1F9D6C; }
+  .zm-annonce-score {
+    font-size: 10.5px; font-weight: 700; padding: 2px 7px; border-radius: 999px;
+    color: #fff; flex-shrink: 0; margin-left: 4px;
+  }
   .zone-worst-banner {
     background: rgba(220,75,57,0.08); border: 1px solid rgba(220,75,57,0.2);
     border-radius: 8px; padding: 10px 12px; margin-bottom: 14px;
@@ -1831,8 +1854,8 @@
               <div class="zone-prix-meta" id="zm-prix-meta">Sélectionnez une ville pour voir les ventes DVF</div>
             </div>
 
-            <div class="zone-section-label">Détail par péril</div>
-            <div id="zm-perils"></div>
+            <div class="zone-section-label">Annonces à proximité</div>
+            <div id="zm-annonces-list"><div class="zm-annonces-empty">Sélectionnez une ville pour voir les biens en vente</div></div>
           </div>
         </div>
         <div id="zone-sample-info"></div>
@@ -5656,18 +5679,18 @@ loadDataset(DEFAULT_DATA);
     const source = zoneMap && zoneMap.getSource('annonces');
     if (!data || !data.disponible || !source) {
       if (badge) badge.classList.remove('visible');
+      renderAnnoncesSidebar([]);
       return;
     }
 
     // Filet de sécurité : n'affiche jamais un bien de démonstration, même si
     // une réponse mise en cache ou un ancien appel en contiendrait encore.
-    const features = (data.listings || [])
-      .filter(l => l.lat != null && l.lon != null && l.source !== 'demo')
-      .map(l => ({
-        type: 'Feature',
-        geometry: { type: 'Point', coordinates: [l.lon, l.lat] },
-        properties: l
-      }));
+    const listings = (data.listings || []).filter(l => l.lat != null && l.lon != null && l.source !== 'demo');
+    const features = listings.map(l => ({
+      type: 'Feature',
+      geometry: { type: 'Point', coordinates: [l.lon, l.lat] },
+      properties: l
+    }));
     source.setData({ type: 'FeatureCollection', features });
 
     const count = features.length;
@@ -5677,6 +5700,50 @@ loadDataset(DEFAULT_DATA);
       badge.textContent = `${count} bien(s)`;
     }
     badge.classList.add('visible');
+    renderAnnoncesSidebar(listings);
+  }
+
+  // Sidebar "Annonces à proximité" (remplace l'ancien "Détail par péril") :
+  // mêmes annonces réelles que les marqueurs de la carte (prix, prix/m²,
+  // score climat), triées par prix/m² croissant, limitées à un nombre
+  // raisonnable pour rester lisible. Clic -> recentre la carte et ouvre le
+  // popup complet (showAnnoncePopup), comme un clic direct sur le marqueur.
+  const ZM_ANNONCES_LIMIT = 12;
+  function renderAnnoncesSidebar(listings) {
+    const box = document.getElementById('zm-annonces-list');
+    if (!box) return;
+    if (!listings || !listings.length) {
+      box.innerHTML = '<div class="zm-annonces-empty">Aucune offre réelle disponible pour cette zone</div>';
+      return;
+    }
+    const sorted = listings.slice().sort((a, b) => (a.prix_m2 || Infinity) - (b.prix_m2 || Infinity));
+    box.innerHTML = '';
+    sorted.slice(0, ZM_ANNONCES_LIMIT).forEach(l => {
+      const prixTxt = l.prix != null ? Math.round(l.prix).toLocaleString('fr-FR') + ' €' : '—';
+      const prixM2Txt = l.prix_m2 != null ? Math.round(l.prix_m2).toLocaleString('fr-FR') + ' €/m²' : '';
+      const score = l.climat_score;
+      const scoreColor = score == null ? '#8B959D' : score < 20 ? '#1F9D6C' : score < 45 ? '#D98A2B' : score < 70 ? '#204e6d' : '#C0392B';
+      const photoHtml = l.photo
+        ? `<img src="${escapeHtml(l.photo)}" alt="" class="zm-annonce-photo" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'zm-annonce-photo-placeholder'}))">`
+        : '<div class="zm-annonce-photo-placeholder"></div>';
+      const item = document.createElement('div');
+      item.className = 'zm-annonce-item';
+      item.innerHTML = `
+        ${photoHtml}
+        <div class="zm-annonce-info">
+          <div class="zm-annonce-addr">${escapeHtml(l.adresse || 'Bien immobilier')}</div>
+          <div class="zm-annonce-meta"><span class="zm-annonce-price">${prixTxt}</span>${prixM2Txt ? ' · ' + prixM2Txt : ''}</div>
+        </div>
+        <span class="zm-annonce-score" style="background:${scoreColor}">${score != null ? Math.round(score) : '—'}</span>
+      `;
+      item.addEventListener('click', () => {
+        if (l.lat != null && l.lon != null && zoneMap) {
+          zoneMap.flyTo({ center: [l.lon, l.lat], zoom: Math.max(zoneMap.getZoom(), 14), duration: 800 });
+          showAnnoncePopup([l.lon, l.lat], l);
+        }
+      });
+      box.appendChild(item);
+    });
   }
 
   function showAnnoncePopup(coords, p) {
@@ -5717,8 +5784,9 @@ loadDataset(DEFAULT_DATA);
   };
 
   // Légende "Aléas de la zone" (coin haut-gauche de la carte, cf. zone-legend-perils
-  // dans le HTML) : reprend les mêmes 5 aléas que le détail sidebar (zmPerils),
-  // mais en lecture rapide sur la carte elle-même, triés du plus au moins sévère.
+  // dans le HTML) : lecture rapide des 8 aléas directement sur la carte,
+  // triés du plus au moins sévère (seul panneau de détail par péril restant,
+  // la sidebar affiche désormais les annonces à la place).
   function updatePerilsLegend(perils) {
     const box = document.getElementById('zone-legend-perils');
     const rows = document.getElementById('zone-legend-perils-rows');
@@ -5754,7 +5822,6 @@ loadDataset(DEFAULT_DATA);
     const zmWorst = document.getElementById('zm-worst');
     const zmWorstPeril = document.getElementById('zm-worst-peril');
     const zmWorstScore = document.getElementById('zm-worst-score');
-    const zmPerils = document.getElementById('zm-perils');
     const zmSampleInfo = document.getElementById('zone-sample-info');
 
     zmScore.textContent = data.score_moyen != null ? Math.round(data.score_moyen) : '—';
@@ -5771,24 +5838,6 @@ loadDataset(DEFAULT_DATA);
       zmWorst.style.display = 'none';
     }
 
-    zmPerils.innerHTML = '';
-    if (data.perils) {
-      for (const [key, peril] of Object.entries(data.perils)) {
-        const info = PERIL_NAMES[key] || { fr: key };
-        const score = peril.moyenne || 0;
-        const color = score < 20 ? '#1F9D6C' : score < 45 ? '#D98A2B' : score < 70 ? '#204e6d' : '#C0392B';
-        const div = document.createElement('div');
-        div.className = 'zone-peril-item';
-        div.innerHTML = `
-          <div class="zone-peril-header">
-            <span class="zone-peril-name">${info.fr}</span>
-            <span class="zone-peril-score" style="color:${color}">${Math.round(score)}</span>
-          </div>
-          <div class="zone-peril-bar"><div class="zone-peril-fill" style="width:${score}%;background:${color}"></div></div>
-        `;
-        zmPerils.appendChild(div);
-      }
-    }
     updatePerilsLegend(data.perils);
 
     // Conserve la dernière réponse backend pour permettre de rebasculer
