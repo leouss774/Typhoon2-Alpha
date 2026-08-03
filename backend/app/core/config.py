@@ -50,7 +50,7 @@ class Settings(BaseSettings):
     # car le premier lancement declenche un telechargement multi-gigaoctets.
     # --- CHANGEZ ICI --- passez a True pour activer Copernicus dans le workflow.
     # Vous pouvez aussi le definir via COPERNICUS_ENABLED=true dans .env.
-    copernicus_enabled: bool = False
+    copernicus_enabled: bool = True
     copernicus_cache_dir: str = str(BASE_DIR / "data" / "lookup" / "copernicus")
 
     # Lookup local DVF - meme logique de chemin absolu. Les CSV par
