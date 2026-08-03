@@ -1,38 +1,69 @@
 /* ============================================================================
-   TYPHOON — /jumeau : jumeau numérique 3D (port React du front natif
-   frontend/jumeau_numerique/index.html — écran app-ui).
-   Thème clair fidèle à l'original (brand #316f96), scellé sous .jumeau-app.
+   TYPHOON — /jumeau : jumeau numérique 3D — Material 3 (m3.material.io)
+   Thème sombre D03, identique au /zone. Tokens scopés sous .jumeau-app.
    Le moteur Three.js (src/jumeau/scene-engine.js) adresse des #id et des
-   classes internes : tout est redéfini ici, scopé pour ne pas polluer le
-   reste de l'app (les ids sont uniques à cette route).
+   classes internes : TOUS sont conservés ; seuls les styles changent.
+   Classes injectées par le moteur : reco-*, artisan-*, info-zone-tab,
+   tab-count, cost-summary-*, risk-filter-btn, badge, …
 ============================================================================ */
 
-@import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap');
-
 .jumeau-app {
-  --brand: #316f96;
-  --brand-dark: #204e6d;
-  --brand-light: #dceef4;
-  --ink: #1e2a33;
-  --text: #4b5760;
-  --muted: #626d77;
-  --border: #dce6ec;
-  --surface: #ffffff;
-  --surface-alt: #f1f6f9;
-  --success: #1f9d6c;
-  --warning: #d98a2b;
-  --danger: #dc4b39;
-  --font-head: 'Source Serif 4', Georgia, 'Times New Roman', serif;
-  --font-body: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  color-scheme: dark;
+
+  /* Material 3 — dark scheme dérivé de la palette D03 (même bloc que /zone) */
+  --md-sys-color-primary: #7fcbc9;
+  --md-sys-color-on-primary: #003735;
+  --md-sys-color-primary-container: #1e4e4c;
+  --md-sys-color-on-primary-container: #9ce7e4;
+  --md-sys-color-secondary: #b0ccc8;
+  --md-sys-color-on-secondary: #1b3531;
+  --md-sys-color-secondary-container: #2f4b47;
+  --md-sys-color-on-secondary-container: #cbe9e4;
+  --md-sys-color-tertiary: #e3ad84;
+  --md-sys-color-on-tertiary: #41250d;
+  --md-sys-color-tertiary-container: #5c3a20;
+  --md-sys-color-on-tertiary-container: #ffdbc0;
+  --md-sys-color-error: #ffb4ab;
+  --md-sys-color-on-error: #690005;
+  --md-sys-color-error-container: #93000a;
+  --md-sys-color-on-error-container: #ffdad6;
+
+  --md-sys-color-surface: #0b1410;
+  --md-sys-color-surface-dim: #0b1410;
+  --md-sys-color-surface-bright: #323a36;
+  --md-sys-color-surface-container-lowest: #060e0b;
+  --md-sys-color-surface-container-low: #131c18;
+  --md-sys-color-surface-container: #17201c;
+  --md-sys-color-surface-container-high: #222b26;
+  --md-sys-color-surface-container-highest: #2c3631;
+  --md-sys-color-on-surface: #e8e6dc;
+  --md-sys-color-on-surface-variant: #bfc9c4;
+  --md-sys-color-outline: #89948f;
+  --md-sys-color-outline-variant: #263630;
+  --md-sys-color-scrim: #000000;
+  --md-sys-color-shadow: #000000;
+
+  /* D03 — bandes de risque */
+  --d03-tres-faible: #3a7a6c;
+  --d03-faible: #6e9e52;
+  --d03-modere: #d4ac3e;
+  --d03-eleve: #d07030;
+  --d03-critique: #b03020;
+
+  /* M3 : Roboto est la police par défaut de la type scale ; Roboto Mono est
+     recommandé pour les données chiffrées (m3.material.io/styles/typography/fonts).
+     --serif garde son nom historique mais aliase la typeface brand M3 (Roboto). */
+  --serif: 'Roboto', system-ui, sans-serif;
+  --mono: 'Roboto Mono', 'IBM Plex Mono', monospace;
 
   position: fixed;
   inset: 0;
   z-index: 40;
   display: flex;
   flex-direction: column;
-  background: #ffffff;
-  color: var(--ink);
-  font-family: var(--font-body);
+  background: var(--md-sys-color-surface);
+  color: var(--md-sys-color-on-surface);
+  font-family: 'Roboto', system-ui, sans-serif;
   overflow: hidden;
 }
 
@@ -42,17 +73,17 @@
   box-sizing: border-box;
 }
 
-/* ---- Topbar ---- */
+/* ---- Topbar M3 ---- */
 .jumeau-topbar {
   flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 12px 5vw;
-  background: rgba(255, 255, 255, 0.94);
-  backdrop-filter: blur(10px);
-  border-bottom: 1px solid var(--border);
+  height: 64px;
+  padding: 0 20px;
+  background: var(--md-sys-color-surface-container);
+  border-bottom: 1px solid var(--md-sys-color-outline-variant);
   z-index: 15;
 }
 .jumeau-topbar .jumeau-brand {
@@ -64,39 +95,48 @@
 .jumeau-brand-back {
   display: grid;
   place-items: center;
-  width: 38px;
-  height: 38px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
-  color: var(--muted);
+  color: var(--md-sys-color-on-surface-variant);
   text-decoration: none;
   transition: background 0.15s, color 0.15s;
 }
 .jumeau-brand-back:hover {
-  background: var(--brand-light);
-  color: var(--brand);
+  background: var(--md-sys-color-surface-container-high);
+  color: var(--md-sys-color-primary);
 }
 .jumeau-brand-back md-icon {
-  font-size: 20px;
+  font-size: 22px;
+}
+.jumeau-brand-text {
+  min-width: 0;
 }
 .jumeau-brand h1 {
   margin: 0;
-  font-family: var(--font-head);
-  font-size: 17px;
-  font-weight: 700;
-  color: var(--ink);
+  font-family: var(--serif);
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--md-sys-color-on-surface);
   line-height: 1.2;
 }
 .jumeau-brand .jumeau-brand-tag {
   font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.08em;
+  font-weight: 500;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--brand);
+  color: var(--md-sys-color-on-surface-variant);
+  margin-top: 2px;
 }
-.jumeau-topbar .jumeau-top-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+.jumeau-sovereign-badge {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--md-sys-color-primary);
+  background: var(--md-sys-color-primary-container);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: 999px;
+  padding: 4px 10px;
+  white-space: nowrap;
 }
 
 /* ---- Scène (zone plein écran) ---- */
@@ -105,6 +145,7 @@
   flex: 1;
   min-height: 0;
   overflow: hidden;
+  background: var(--md-sys-color-surface);
 }
 #scene-container {
   position: absolute;
@@ -124,16 +165,20 @@
   position: fixed;
   z-index: 30;
   pointer-events: none;
-  background: rgba(30, 42, 51, 0.92);
-  color: #fff;
+  background: var(--md-sys-color-surface-container-high);
+  color: var(--md-sys-color-on-surface);
   font-size: 12px;
   line-height: 1.4;
-  padding: 6px 10px;
-  border-radius: 6px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--md-sys-color-outline-variant);
   opacity: 0;
   transition: opacity 0.15s ease;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
   white-space: nowrap;
+}
+#zone-tooltip strong {
+  color: var(--md-sys-color-primary);
 }
 
 /* ---- Légende couleurs de risque (pied de scène) ---- */
@@ -146,20 +191,20 @@
   align-items: center;
   gap: 16px;
   z-index: 10;
-  background: rgba(255, 255, 255, 0.94);
-  border: 1px solid #dce6ec;
+  background: var(--md-sys-color-surface-container-low);
+  border: 1px solid var(--md-sys-color-outline-variant);
   border-radius: 999px;
   padding: 8px 18px;
   backdrop-filter: blur(8px);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
 }
 #risk-legend .rl-item {
   display: flex;
   align-items: center;
   gap: 6px;
   font-size: 11px;
-  color: #3e4850;
-  font-weight: 600;
+  color: var(--md-sys-color-on-surface-variant);
+  font-weight: 500;
 }
 #risk-legend .rl-dot {
   width: 9px;
@@ -173,76 +218,206 @@
   position: absolute;
   top: 20px;
   left: 20px;
-  background: rgba(255, 255, 255, 0.96);
-  border: 1px solid #dce6ec;
-  border-radius: 10px;
-  padding: 14px 18px;
-  color: #3e4850;
+  background: var(--md-sys-color-surface-container-low);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: 16px;
+  padding: 16px 18px;
+  color: var(--md-sys-color-on-surface);
   z-index: 10;
-  backdrop-filter: blur(8px);
-  box-shadow: 0 0 20px rgba(67, 134, 177, 0.15);
-  width: 280px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
+  width: 292px;
   max-width: calc(100vw - 40px);
   max-height: calc(100% - 40px);
   overflow-y: auto;
 }
+#toggle-panel .tp-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+#toggle-panel .tp-head md-icon {
+  font-size: 20px;
+  color: var(--md-sys-color-primary);
+  flex-shrink: 0;
+}
 #toggle-panel h3 {
-  margin: 0 0 8px 0;
+  margin: 0;
   font-size: 12px;
   font-weight: 600;
-  color: #316f96;
+  color: var(--md-sys-color-on-surface);
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
 #toggle-panel .addr-line {
   font-size: 13px;
-  color: #4e5860;
-  margin: 0 0 10px 0;
+  color: var(--md-sys-color-on-surface-variant);
+  margin: 0 0 12px 0;
   line-height: 1.4;
 }
+/* Segmented control M3 (2025 / 2050) */
+#toggle-buttons {
+  display: flex;
+  gap: 6px;
+  padding: 3px;
+  background: var(--md-sys-color-surface-container-high);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: 999px;
+}
 #toggle-buttons button {
-  background: rgba(241, 246, 249, 0.8);
-  border: 1px solid #dce6ec;
-  color: #3e4850;
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--md-sys-color-on-surface-variant);
   padding: 8px 16px;
-  border-radius: 6px;
+  border-radius: 999px;
   cursor: pointer;
   font-size: 13px;
-  margin-right: 6px;
-  transition: all 0.15s;
+  font-weight: 600;
+  transition: all 0.18s;
   font-family: inherit;
 }
+#toggle-buttons button:hover {
+  color: var(--md-sys-color-on-surface);
+}
 #toggle-buttons button.active {
-  background: #316f96;
-  border-color: #316f96;
-  color: #ffffff;
+  background: var(--md-sys-color-primary);
+  color: var(--md-sys-color-on-primary);
   font-weight: 700;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
 }
 #global-score {
-  margin-top: 10px;
+  margin-top: 12px;
   font-size: 13px;
-  color: #4e5860;
+  color: var(--md-sys-color-on-surface-variant);
 }
 #global-score strong {
-  color: #1e2a33;
-  font-size: 22px;
-  text-shadow: 0 0 12px rgba(67, 134, 177, 0.6);
+  color: var(--md-sys-color-primary);
+  font-size: 24px;
+  text-shadow: 0 0 16px rgba(127, 203, 201, 0.45);
 }
-#climat-panel {
+/* Statut de génération des recommandations (le moteur bascule display) */
+#reco-status.reco-status {
   display: none;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  font-size: 11.5px;
+  color: var(--md-sys-color-on-surface-variant);
+  font-weight: 600;
+}
+.reco-status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--md-sys-color-primary);
+  flex-shrink: 0;
+  animation: jumeau-pulse 1.6s infinite;
+}
+@keyframes jumeau-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+/* Actions (bascule climat + lien Property ID) */
+.tp-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  margin-top: 10px;
+}
+#btn-climat-toggle {
+  /* Le moteur écrit background/borderColor en inline (thème clair) :
+     on force le thème sombre via !important pour gagner sur l'inline. */
+  background: var(--md-sys-color-secondary-container) !important;
+  border: 1px solid var(--md-sys-color-outline-variant) !important;
+  color: var(--md-sys-color-on-secondary-container) !important;
+  padding: 9px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.18s;
+}
+#btn-climat-toggle:hover {
+  background: var(--md-sys-color-surface-container-high) !important;
 }
 .jumeau-pid-link {
-  color: var(--brand);
+  color: var(--md-sys-color-primary);
   font-size: 12px;
   font-weight: 700;
   text-decoration: none;
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
+}
+.jumeau-pid-link md-icon {
+  font-size: 16px;
 }
 .jumeau-pid-link:hover {
-  color: var(--brand-dark);
+  color: var(--md-sys-color-on-primary-container);
   text-decoration: underline;
+}
+/* ---- Panneau climatique 2050 ---- */
+#climat-panel {
+  display: none;
+  margin-top: 12px;
+  padding: 12px 14px;
+  background: var(--md-sys-color-surface-container-high);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: 12px;
+}
+.climat-title {
+  font-size: 11px;
+  color: var(--md-sys-color-primary);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 6px;
+}
+.climat-temp-row {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+.climat-temp-row strong {
+  color: var(--md-sys-color-tertiary);
+  font-size: 28px;
+  line-height: 1;
+}
+.climat-temp-row span {
+  color: var(--md-sys-color-on-surface-variant);
+  font-size: 14px;
+}
+.climat-sub {
+  color: var(--md-sys-color-on-surface-variant);
+  font-size: 10.5px;
+  margin-top: 2px;
+}
+.climat-source {
+  margin-top: 6px;
+  font-size: 10px;
+  color: var(--md-sys-color-on-surface-variant);
+}
+.data-badge {
+  display: none;
+  margin-top: 6px;
+  font-size: 10px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-weight: 700;
+  width: fit-content;
+}
+.badge-copernicus {
+  background: var(--md-sys-color-primary-container);
+  color: var(--md-sys-color-on-primary-container);
+}
+.badge-dvf {
+  background: rgba(110, 158, 82, 0.18);
+  color: var(--d03-faible);
+  border: 1px solid rgba(110, 158, 82, 0.4);
 }
 
 /* ---- Panneau droit (détail de zone) ---- */
@@ -254,146 +429,158 @@
   max-width: calc(100vw - 40px);
   max-height: calc(100% - 40px);
   overflow-y: auto;
-  background: rgba(255, 255, 255, 0.97);
-  border: 1px solid #dce6ec;
-  border-radius: 10px;
+  background: var(--md-sys-color-surface-container-low);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: 16px;
   padding: 20px;
-  color: #2e373f;
+  color: var(--md-sys-color-on-surface);
   z-index: 10;
   display: none;
-  backdrop-filter: blur(8px);
-  box-shadow: 0 0 20px rgba(49, 111, 150, 0.15);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
 }
 #info-panel::-webkit-scrollbar {
   width: 5px;
 }
 #info-panel::-webkit-scrollbar-thumb {
-  background: #a9d4e6;
+  background: var(--md-sys-color-outline-variant);
   border-radius: 999px;
 }
 #info-panel h3 {
-  margin: 0 0 4px 0;
-  font-size: 18px;
+  margin: 0 0 6px 0;
+  font-size: 20px;
   text-transform: capitalize;
-  color: #1e2a33;
+  color: var(--md-sys-color-on-surface);
+  font-family: var(--serif);
+  font-weight: 600;
 }
 #info-panel .badge {
   display: inline-block;
-  padding: 2px 10px;
+  padding: 3px 12px;
   border-radius: 999px;
   font-size: 12px;
   font-weight: 700;
-  margin-bottom: 10px;
-  color: #ffffff;
+  color: #fff;
+  /* background : écrit en inline par le moteur (couleur de risque) */
+}
+.info-badge-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 #info-panel p {
   font-size: 14.5px;
   line-height: 1.6;
-  color: #333e47;
+  color: var(--md-sys-color-on-surface-variant);
   margin: 6px 0;
 }
 #info-panel p#info-alea {
-  color: #1e2a33;
+  color: var(--md-sys-color-on-surface);
+  margin: 0;
 }
 #info-panel .reco {
-  background: rgba(241, 246, 249, 0.8);
-  border: 1px solid #dce6ec;
-  border-radius: 8px;
+  background: var(--md-sys-color-surface-container-high);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: 12px;
   padding: 12px 14px;
   margin-top: 8px;
   font-size: 13.5px;
 }
 #info-panel .reco b {
-  color: #1e2a33;
+  color: var(--md-sys-color-on-surface);
 }
 
-/* ---- Filtre par niveau de risque ---- */
+/* ---- Filtre par niveau de risque (chips M3) ---- */
 #info-risk-filter {
   display: flex;
-  gap: 4px;
-  margin-bottom: 10px;
+  gap: 6px;
+  margin-bottom: 12px;
   flex-wrap: wrap;
 }
 .risk-filter-btn {
   flex: 1;
   min-width: 0;
-  padding: 6px 7px;
-  border-radius: 6px;
+  padding: 7px 8px;
+  border-radius: 999px;
   font-size: 11.5px;
-  font-weight: 700;
+  font-weight: 600;
   cursor: pointer;
-  border: 1px solid var(--border);
-  background: var(--surface-alt);
-  color: var(--muted);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  background: var(--md-sys-color-surface-container-high);
+  color: var(--md-sys-color-on-surface-variant);
   transition: all 0.15s;
   font-family: inherit;
   white-space: nowrap;
 }
 .risk-filter-btn:hover {
-  border-color: var(--brand);
-  color: var(--ink);
+  border-color: var(--md-sys-color-primary);
+  color: var(--md-sys-color-on-surface);
 }
 .risk-filter-btn.active {
-  background: var(--brand);
-  border-color: var(--brand);
-  color: #fff;
+  background: var(--md-sys-color-primary);
+  border-color: var(--md-sys-color-primary);
+  color: var(--md-sys-color-on-primary);
 }
 .risk-filter-btn.active[data-filter='critique'] {
-  background: #c0392b;
-  border-color: #c0392b;
+  background: var(--d03-critique);
+  border-color: var(--d03-critique);
 }
 .risk-filter-btn.active[data-filter='eleve'] {
-  background: #bf5e00;
-  border-color: #bf5e00;
+  background: var(--d03-eleve);
+  border-color: var(--d03-eleve);
 }
 .risk-filter-btn.active[data-filter='modere'] {
-  background: #d98a2b;
-  border-color: #d98a2b;
+  background: var(--d03-modere);
+  border-color: var(--d03-modere);
+  color: #1a1a12;
 }
 
 /* ---- Barre de progression du score de zone ---- */
 #info-score-bar-track {
   height: 6px;
   border-radius: 999px;
-  background: var(--border);
+  background: var(--md-sys-color-surface-container-high);
+  border: 1px solid var(--md-sys-color-outline-variant);
   overflow: hidden;
-  margin: 4px 0 8px;
+  margin: 8px 0;
 }
 #info-score-bar-fill {
   height: 100%;
   border-radius: 999px;
+  background: var(--md-sys-color-primary);
   transition: width 0.5s ease;
 }
 
-/* ---- Zone tabs ---- */
+/* ---- Zone tabs (injectés par le moteur) ---- */
 #info-zone-tabs {
   display: flex;
   gap: 4px;
   flex-wrap: wrap;
   margin-bottom: 12px;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--md-sys-color-outline-variant);
   padding-bottom: 8px;
 }
 .info-zone-tab {
-  padding: 5px 11px;
-  border-radius: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.15s;
-  color: #4e5860;
-  background: var(--surface-alt);
-  border: 1px solid var(--border);
+  color: var(--md-sys-color-on-surface-variant);
+  background: var(--md-sys-color-surface-container-high);
+  border: 1px solid var(--md-sys-color-outline-variant);
   white-space: nowrap;
 }
 .info-zone-tab:hover {
-  border-color: var(--brand);
-  color: var(--ink);
+  border-color: var(--md-sys-color-primary);
+  color: var(--md-sys-color-on-surface);
 }
 .info-zone-tab.active {
-  background: var(--brand-light);
-  color: var(--brand-dark);
-  border-color: var(--brand);
+  background: var(--md-sys-color-primary-container);
+  color: var(--md-sys-color-on-primary-container);
+  border-color: var(--md-sys-color-primary);
 }
 .info-zone-tab .tab-count {
   display: inline-flex;
@@ -404,9 +591,9 @@
   border-radius: 50%;
   font-size: 10px;
   font-weight: 700;
-  background: rgba(49, 111, 150, 0.2);
-  color: var(--brand-dark);
-  margin-left: 4px;
+  background: rgba(127, 203, 201, 0.2);
+  color: var(--md-sys-color-on-primary-container);
+  margin-left: 5px;
 }
 .info-zone-tab.tab-empty {
   opacity: 0.4;
@@ -417,10 +604,10 @@
 #info-cost-summary {
   display: none;
   margin-bottom: 12px;
-  padding: 10px 12px;
-  background: rgba(31, 157, 108, 0.06);
-  border: 1px solid rgba(31, 157, 108, 0.2);
-  border-radius: 8px;
+  padding: 12px 14px;
+  background: rgba(110, 158, 82, 0.1);
+  border: 1px solid rgba(110, 158, 82, 0.3);
+  border-radius: 12px;
 }
 #info-cost-summary.visible {
   display: block;
@@ -430,34 +617,34 @@
   justify-content: space-between;
   align-items: center;
   font-size: 12.5px;
-  color: var(--text);
+  color: var(--md-sys-color-on-surface-variant);
   margin-bottom: 3px;
 }
 .cost-summary-row:last-child {
   margin-bottom: 0;
 }
 .cost-summary-row .cs-label {
-  color: #4e5860;
+  color: var(--md-sys-color-on-surface-variant);
   font-weight: 600;
 }
 .cost-summary-row .cs-value {
   font-weight: 700;
-  color: var(--ink);
+  color: var(--md-sys-color-on-surface);
 }
 .cost-summary-row .cs-value.accent {
-  color: var(--success);
+  color: var(--d03-faible);
 }
 .cost-summary-progress {
   height: 4px;
   border-radius: 999px;
-  background: var(--border);
+  background: var(--md-sys-color-surface-container-high);
   overflow: hidden;
   margin-top: 6px;
 }
 .cost-summary-progress .cp-fill {
   height: 100%;
   border-radius: 999px;
-  background: linear-gradient(90deg, var(--success), var(--brand));
+  background: linear-gradient(90deg, var(--d03-faible), var(--md-sys-color-primary));
   transition: width 0.6s ease;
 }
 
@@ -467,10 +654,10 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: #4e5860;
+  color: var(--md-sys-color-primary);
   margin: 14px 0 6px;
   padding-top: 8px;
-  border-top: 1px solid var(--border);
+  border-top: 1px solid var(--md-sys-color-outline-variant);
 }
 .reco-group-label:first-child {
   margin-top: 0;
@@ -481,33 +668,34 @@
 /* ---- Accordion reco cards ---- */
 .reco-card {
   margin-bottom: 8px;
-  border-radius: 8px;
-  border: 1px solid var(--border);
+  border-radius: 12px;
+  border: 1px solid var(--md-sys-color-outline-variant);
   overflow: hidden;
-  transition: box-shadow 0.15s;
+  transition: box-shadow 0.15s, border-color 0.15s;
 }
 .reco-card:hover {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  border-color: var(--md-sys-color-primary);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
 }
 .reco-card-header {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 10px;
+  padding: 10px 12px;
   cursor: pointer;
-  background: var(--surface-alt);
+  background: var(--md-sys-color-surface-container-high);
   transition: background 0.15s;
   user-select: none;
 }
 .reco-card-header:hover {
-  background: rgba(67, 134, 177, 0.06);
+  background: var(--md-sys-color-primary-container);
 }
 .reco-card-header .reco-chevron {
   width: 16px;
   height: 16px;
   flex-shrink: 0;
   transition: transform 0.2s ease;
-  color: var(--muted);
+  color: var(--md-sys-color-primary);
 }
 .reco-card-header .reco-chevron.open {
   transform: rotate(90deg);
@@ -519,13 +707,13 @@
 .reco-card-header .reco-title {
   font-size: 13.5px;
   font-weight: 700;
-  color: var(--ink);
+  color: var(--md-sys-color-on-surface);
   line-height: 1.35;
   display: block;
 }
 .reco-card-header .reco-sub {
   font-size: 11.5px;
-  color: #4e5860;
+  color: var(--md-sys-color-on-surface-variant);
   margin-top: 2px;
 }
 .reco-priority-badge {
@@ -534,27 +722,27 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  padding: 3px 7px;
-  border-radius: 4px;
+  padding: 3px 8px;
+  border-radius: 999px;
   flex-shrink: 0;
 }
 .reco-priority-badge.haute {
-  background: #fde7e2;
-  color: #dc4b39;
+  background: rgba(176, 48, 32, 0.2);
+  color: var(--md-sys-color-error);
 }
 .reco-priority-badge.moyenne {
-  background: #fbeed9;
-  color: #b96a18;
+  background: rgba(212, 172, 62, 0.18);
+  color: var(--d03-modere);
 }
 .reco-priority-badge.faible {
-  background: #e4f5ec;
-  color: #1f9d6c;
+  background: rgba(110, 158, 82, 0.18);
+  color: var(--d03-faible);
 }
 .reco-card-body {
   display: none;
-  padding: 10px 12px 12px;
-  border-top: 1px solid var(--border);
-  background: var(--surface);
+  padding: 12px 14px;
+  border-top: 1px solid var(--md-sys-color-outline-variant);
+  background: var(--md-sys-color-surface-container-low);
 }
 .reco-card-body.open {
   display: block;
@@ -562,34 +750,35 @@
 .reco-card-body .reco-explication {
   font-size: 13px;
   line-height: 1.6;
-  color: #333e47;
+  color: var(--md-sys-color-on-surface);
   margin-bottom: 8px;
 }
-.reco-card-body .reco-meta {
+.reco-card-body .reco-meta,
+.reco-card-body .reco-meta-sub {
   font-size: 12.5px;
-  color: #4e5860;
+  color: var(--md-sys-color-on-surface-variant);
   margin-bottom: 6px;
 }
 .reco-card-body .reco-meta strong {
-  color: var(--ink);
+  color: var(--md-sys-color-on-surface);
   font-weight: 600;
 }
 .reco-card-body .reco-aide {
   font-size: 12.5px;
-  color: #8a5a10;
-  background: #fbeed9;
-  border-radius: 6px;
-  padding: 7px 9px;
+  color: #ffdbc0;
+  background: var(--md-sys-color-tertiary-container);
+  border-radius: 10px;
+  padding: 8px 10px;
   margin-bottom: 6px;
 }
 .reco-card-body .reco-aide b {
-  color: #6e4400;
+  color: #ffdbc0;
 }
 .reco-card-body .reco-sources {
   font-size: 11px;
-  color: #5c666f;
+  color: var(--md-sys-color-on-surface-variant);
   line-height: 1.5;
-  border-top: 1px solid var(--border);
+  border-top: 1px solid var(--md-sys-color-outline-variant);
   padding-top: 6px;
   margin-top: 6px;
 }
@@ -597,56 +786,46 @@
   display: inline-block;
   font-size: 10px;
   font-weight: 600;
-  padding: 2px 7px;
-  border-radius: 4px;
-  background: rgba(49, 111, 150, 0.12);
-  color: var(--brand-dark);
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(127, 203, 201, 0.15);
+  color: var(--md-sys-color-primary);
   margin-bottom: 6px;
 }
 .reco-empty {
-  color: #5c666f;
+  color: var(--md-sys-color-on-surface-variant);
   font-size: 13.5px;
   font-style: italic;
   margin-top: 6px;
 }
 
-/* ---- Export PDF ---- */
-#info-export-pdf {
-  display: block;
+/* ---- Export PDF (bouton M3, id lisible par le moteur) ---- */
+.info-export-btn {
   width: 100%;
-  margin-top: 12px;
-  padding: 9px 0;
-  border-radius: 8px;
-  background: var(--surface-alt);
-  border: 1px solid var(--border);
-  color: var(--brand-dark);
-  font-size: 12px;
-  font-weight: 700;
-  cursor: pointer;
-  font-family: inherit;
-  transition: all 0.15s;
-}
-#info-export-pdf:hover {
-  background: var(--brand-light);
-  border-color: var(--brand);
+  margin-top: 14px;
+  --md-elevated-button-container-color: var(--md-sys-color-primary-container);
+  --md-elevated-button-label-text-color: var(--md-sys-color-on-primary-container);
+  --md-elevated-button-label-text-size: 13px;
+  --md-elevated-button-icon-color: var(--md-sys-color-on-primary-container);
 }
 
-/* ---- Résultats artisans ---- */
+/* ---- Résultats artisans (injectés par le moteur) ---- */
 .artisan-search-btn {
   width: 100%;
   margin-top: 14px;
   padding: 11px 14px;
-  border: 0;
-  border-radius: 9px;
-  background: #146c94;
-  color: #fff;
-  font: 700 12px/1.3 var(--font-body);
+  border: none;
+  border-radius: 999px;
+  background: var(--md-sys-color-primary);
+  color: var(--md-sys-color-on-primary);
+  font: 700 12px/1.3 'Roboto', system-ui, sans-serif;
   cursor: pointer;
-  box-shadow: 0 5px 14px rgba(20, 108, 148, 0.18);
+  box-shadow: 0 5px 14px rgba(0, 0, 0, 0.3);
   transition: 0.18s ease;
 }
 .artisan-search-btn:hover {
-  background: #0e597c;
+  background: var(--md-sys-color-primary-container);
+  color: var(--md-sys-color-on-primary-container);
   transform: translateY(-1px);
 }
 .artisan-search-btn:disabled {
@@ -660,7 +839,7 @@
 .artisan-group {
   padding-top: 12px;
   margin-top: 12px;
-  border-top: 1px solid #e1e8ec;
+  border-top: 1px solid var(--md-sys-color-outline-variant);
 }
 .artisan-group-head {
   display: flex;
@@ -670,17 +849,17 @@
   margin-bottom: 9px;
 }
 .artisan-group-title {
-  color: #1e2a33;
+  color: var(--md-sys-color-on-surface);
   font-size: 12px;
   font-weight: 700;
   line-height: 1.35;
 }
 .artisan-group-badge {
   flex: 0 0 auto;
-  padding: 3px 7px;
+  padding: 3px 8px;
   border-radius: 999px;
-  background: #e7f3f8;
-  color: #146c94;
+  background: var(--md-sys-color-primary-container);
+  color: var(--md-sys-color-on-primary-container);
   font-size: 8px;
   font-weight: 800;
   letter-spacing: 0.06em;
@@ -691,17 +870,17 @@
   margin-top: 9px;
   padding: 12px;
   overflow: hidden;
-  border: 1px solid #dfe7eb;
-  border-radius: 10px;
-  background: #fff;
-  box-shadow: 0 4px 13px rgba(30, 42, 51, 0.055);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: 12px;
+  background: var(--md-sys-color-surface-container-high);
+  box-shadow: 0 4px 13px rgba(0, 0, 0, 0.25);
 }
 .artisan-card::before {
   content: '';
   position: absolute;
   inset: 0 auto 0 0;
   width: 3px;
-  background: #1f9d6c;
+  background: var(--d03-faible);
 }
 .artisan-card-top {
   display: flex;
@@ -710,9 +889,9 @@
   gap: 9px;
 }
 .artisan-name {
-  color: #1e2a33;
+  color: var(--md-sys-color-on-surface);
   font-size: 12px;
-  font-weight: 750;
+  font-weight: 700;
   line-height: 1.35;
   overflow-wrap: anywhere;
 }
@@ -723,8 +902,8 @@
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: #eaf7f2;
-  color: #147a55;
+  background: rgba(110, 158, 82, 0.2);
+  color: var(--d03-faible);
   font-size: 10px;
   font-weight: 800;
 }
@@ -739,7 +918,7 @@
   display: grid;
   gap: 5px;
   margin-top: 8px;
-  color: #5d6972;
+  color: var(--md-sys-color-on-surface-variant);
   font-size: 10.5px;
   line-height: 1.4;
 }
@@ -751,7 +930,7 @@
   overflow-wrap: anywhere;
 }
 .artisan-meta-icon {
-  color: #8c9aa3;
+  color: var(--md-sys-color-on-surface-variant);
   text-align: center;
 }
 .artisan-link {
@@ -760,18 +939,18 @@
   justify-content: center;
   margin-top: 10px;
   padding: 8px 10px;
-  border: 1px solid #146c94;
-  border-radius: 7px;
-  color: #146c94;
-  background: #f5fafc;
+  border: 1px solid var(--md-sys-color-primary);
+  border-radius: 999px;
+  color: var(--md-sys-color-primary);
+  background: transparent;
   text-decoration: none;
   font-size: 10.5px;
   font-weight: 700;
   transition: 0.15s ease;
 }
 .artisan-link:hover {
-  background: #146c94;
-  color: #fff;
+  background: var(--md-sys-color-primary);
+  color: var(--md-sys-color-on-primary);
 }
 .artisan-actions {
   display: grid;
@@ -785,10 +964,10 @@
   justify-content: center;
   min-height: 34px;
   padding: 7px 8px;
-  border: 1px solid #cbd6dc;
-  border-radius: 7px;
-  color: #334e5d;
-  background: #f8fafb;
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: 999px;
+  color: var(--md-sys-color-on-surface-variant);
+  background: var(--md-sys-color-surface-container-low);
   text-decoration: none;
   text-align: center;
   font-size: 10px;
@@ -796,44 +975,44 @@
   line-height: 1.2;
 }
 .artisan-action:hover {
-  border-color: #146c94;
-  color: #146c94;
-  background: #f5fafc;
+  border-color: var(--md-sys-color-primary);
+  color: var(--md-sys-color-primary);
 }
 .artisan-action.primary {
-  border-color: #146c94;
-  color: #fff;
-  background: #146c94;
+  border-color: var(--md-sys-color-primary);
+  color: var(--md-sys-color-on-primary);
+  background: var(--md-sys-color-primary);
 }
 .artisan-action.primary:hover {
-  background: #0e597c;
-  color: #fff;
+  background: var(--md-sys-color-primary-container);
+  border-color: var(--md-sys-color-primary-container);
+  color: var(--md-sys-color-on-primary-container);
 }
 .artisan-site-missing {
   margin-top: 9px;
-  color: #8b959d;
+  color: var(--md-sys-color-on-surface-variant);
   font-size: 9.5px;
   font-style: italic;
 }
 .artisan-note {
   display: block;
   margin-top: 10px;
-  color: #8b959d;
+  color: var(--md-sys-color-on-surface-variant);
   font-size: 9px;
   line-height: 1.4;
 }
 .artisan-empty,
 .artisan-error {
   padding: 10px;
-  border-radius: 8px;
-  background: #f6f8f9;
-  color: #68757e;
+  border-radius: 10px;
+  background: var(--md-sys-color-surface-container-high);
+  color: var(--md-sys-color-on-surface-variant);
   font-size: 11px;
   line-height: 1.4;
 }
 .artisan-error {
-  background: #fff0ec;
-  color: #a43e2e;
+  background: rgba(176, 48, 32, 0.16);
+  color: var(--md-sys-color-error);
 }
 
 /* ---- Indice bas de scène ---- */
@@ -841,9 +1020,17 @@
   position: absolute;
   bottom: 16px;
   left: 20px;
-  color: #5c666f;
-  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--md-sys-color-on-surface-variant);
+  font-size: 11px;
   z-index: 10;
+  font-family: var(--mono);
+}
+#hint md-icon {
+  font-size: 14px;
+  color: var(--md-sys-color-primary);
 }
 
 /* ---- Export PDF (impression du panneau d'info uniquement) ---- */
@@ -863,6 +1050,13 @@
     box-shadow: none;
     border: none;
     overflow: visible;
+    color: #111;
+  }
+  .jumeau-app #info-panel .reco b,
+  .jumeau-app #info-panel h3,
+  .jumeau-app #info-panel .reco-title,
+  .jumeau-app #info-panel .cs-value {
+    color: #111 !important;
   }
   .jumeau-app #info-export-pdf,
   .jumeau-app #info-risk-filter,
@@ -873,10 +1067,13 @@
 
 /* ---- Responsive ---- */
 @media (max-width: 880px) {
+  .jumeau-sovereign-badge {
+    display: none;
+  }
   #toggle-panel {
     top: 12px;
     left: 12px;
-    width: 240px;
+    width: 250px;
   }
   #info-panel {
     top: 12px;

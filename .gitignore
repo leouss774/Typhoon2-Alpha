@@ -63,3 +63,9 @@ frontend/site.webmanifest
 frontend/apple-icon.png@apple-icon.276b0535.png
 frontend/favicon.ico@favicon.06fbaff5.ico
 frontend/icon.png@icon.6bee2995.png
+
+nollahealth-mirror/
+
+.tools/
+
+wget.pid

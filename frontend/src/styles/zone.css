@@ -53,7 +53,10 @@
   --d03-eleve-bg: rgba(208, 112, 48, 0.14);
   --d03-critique-bg: rgba(176, 48, 32, 0.14);
 
-  --serif: 'Roboto Serif', Georgia, serif;
+  /* M3 : Roboto est la police par défaut de la type scale ; Roboto Mono est
+     recommandé pour les données chiffrées (m3.material.io/styles/typography/fonts).
+     --serif garde son nom historique mais aliase la typeface brand M3 (Roboto). */
+  --serif: 'Roboto', system-ui, sans-serif;
   --mono: 'Roboto Mono', 'IBM Plex Mono', monospace;
 
   display: flex;

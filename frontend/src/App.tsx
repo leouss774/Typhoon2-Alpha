@@ -9,8 +9,11 @@ import { Site } from './routes/Site';
 
 const nav = [
   { to: '/', label: 'Accueil' },
-  { to: '/zone', label: 'Diagnostic' },
-  { to: '/jumeau', label: 'Expérience' },
+  { to: '/zone', label: 'Zone' },
+  { to: '/jumeau', label: 'Jumeau 3D' },
+  { to: '/promoteurs', label: 'Promoteurs' },
+  { to: '/artisans', label: 'Artisans' },
+  { to: '/property-id', label: 'Property ID' },
   { to: '/site', label: 'Site' },
 ];
 
@@ -21,8 +24,8 @@ function TopNav() {
       <div className="brand">
         <div className="mark">T</div>
         <div>
-          <div className="brand-name">Nolla Health</div>
-          <div className="brand-tag">React mirror</div>
+          <div className="brand-name">Typhoon</div>
+          <div className="brand-tag">Material Web React</div>
         </div>
       </div>
       <nav className="nav">
@@ -38,7 +41,10 @@ function TopNav() {
 
 export default function App() {
   const location = useLocation();
-  const fullscreen = location.pathname === '/zone' || location.pathname === '/jumeau';
+  const fullscreen =
+    location.pathname === '/' ||
+    location.pathname === '/zone' ||
+    location.pathname === '/jumeau';
   return (
     <div>
       {!fullscreen && <TopNav />}
