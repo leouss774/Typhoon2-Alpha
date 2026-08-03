@@ -46,12 +46,19 @@
   /* ---- Légende couleurs de risque (pied de scène) ---- */
   #risk-legend {
     position: absolute; bottom: 18px; left: 50%; transform: translateX(-50%);
-    display: flex; align-items: center; gap: 16px; z-index: 10;
-    background: rgba(255,255,255,0.94); border: 1px solid #DCE6EC; border-radius: 999px;
-    padding: 8px 18px; backdrop-filter: blur(8px); box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+    z-index: 10; width: min(520px, calc(100vw - 48px)); box-sizing: border-box;
+    background: rgba(255,255,255,0.94); border: 1px solid #DCE6EC; border-radius: 12px;
+    padding: 8px 14px 7px; backdrop-filter: blur(8px); box-shadow: 0 4px 16px rgba(0,0,0,0.08);
   }
-  #risk-legend .rl-item { display: flex; align-items: center; gap: 6px; font-size: 11px; color: #3E4850; font-weight: 600; }
-  #risk-legend .rl-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+  #risk-legend .rl-levels { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 10px; color: #3E4850; font-weight: 700; }
+  #risk-legend .rl-gradient {
+    height: 10px; border-radius: 999px; border: 1px solid rgba(62,72,80,0.16);
+    background: linear-gradient(90deg, #22c55e 0%, #22c55e 25%, #eab308 40%, #f97316 55%, #ea580c 70%, #dc2626 85%, #991b1b 100%);
+  }
+  #risk-legend .rl-scale { position: relative; height: 15px; margin-top: 2px; color: #5B6670; font-size: 9px; font-weight: 600; }
+  #risk-legend .rl-scale span { position: absolute; transform: translateX(-50%); }
+  #risk-legend .rl-scale span:first-child { transform: none; }
+  #risk-legend .rl-scale span:last-child { transform: translateX(-100%); }
 
   /* ---- Panneaux du jumeau numérique (écran 3) ---- */
   #toggle-panel {
@@ -1784,10 +1791,13 @@
 <div id="loading-msg" style="position:absolute;inset:0;display:none;align-items:center;justify-content:center;color:#316f96;font-size:14px;z-index:20;"></div>
 <div id="zone-tooltip"></div>
 <div id="risk-legend">
-  <div class="rl-item"><span class="rl-dot" style="background:#1F9D6C;"></span>Faible</div>
-  <div class="rl-item"><span class="rl-dot" style="background:#D98A2B;"></span>Modéré</div>
-  <div class="rl-item"><span class="rl-dot" style="background:#BF5E00;"></span>Élevé</div>
-  <div class="rl-item"><span class="rl-dot" style="background:#C0392B;"></span>Critique</div>
+  <div class="rl-levels"><span>Faible</span><span>Modéré</span><span>Élevé</span><span>Critique</span></div>
+  <div class="rl-gradient" aria-label="Échelle continue du risque de 0 à 100"></div>
+  <div class="rl-scale" aria-hidden="true">
+    <span style="left:0%">0</span><span style="left:25%">25</span><span style="left:40%">40</span>
+    <span style="left:55%">55</span><span style="left:70%">70</span><span style="left:85%">85</span>
+    <span style="left:100%">100</span>
+  </div>
 </div>
 
 <div id="toggle-panel">
@@ -2332,31 +2342,133 @@ const WIRE_COLOR = 0x2f6f96;
 // sature, donc les couleurs de risque disparaissaient completement. On
 // utilise maintenant un blending normal (alpha), qui teinte reellement le
 // fond blanc et reste translucide.
-const LUMINOSITE = 2.9;
+// La teinte de risque doit rester dominante sur les textures de mur/toiture :
+// 0.16 * 4.25 = 0.68 pour les facades et la toiture ; les volumes a 0.18
+// atteignent le plafond de 0.72. La structure reste encore perceptible sous
+// le halo, mais ne peut plus masquer un rouge critique avec une brique orange.
+const LUMINOSITE = 4.25;
+const OPACITE_RISQUE_MAX = 0.72;
 const OPACITE_FILAIRE = 0.9;   // aretes : 0.85 a l'origine
 
 function makeWireMat() { return new THREE.LineBasicMaterial({ color: WIRE_COLOR, transparent: true, opacity: OPACITE_FILAIRE }); }
 function makeFillMat(color, opacity) {
-  // Plafond a 0.62 : assez couvrant pour que la couleur de risque
-  // (vert/orange/rouge) soit immediatement lisible sur fond blanc, tout en
-  // restant translucide (on voit toujours le volume/le filaire au travers).
-  const opacite = Math.min(0.62, (opacity ?? 0.16) * LUMINOSITE);
-  return new THREE.MeshBasicMaterial({ color, transparent: true, opacity: opacite, side: THREE.DoubleSide, blending: THREE.NormalBlending, depthWrite: false });
+  // Plafond a 0.72 : la couleur de risque domine clairement, tout en laissant
+  // encore deviner la texture du materiau sous-jacent.
+  // La couche de risque occupe volontairement la meme surface que la couche
+  // structurelle texturee. Apres tessellation, leurs nombreux triangles
+  // coplanaires rendaient le conflit de profondeur visible sous forme de
+  // stries sombres. polygonOffset tire uniquement le halo de risque vers la
+  // camera, sans deplacer la geometrie ni modifier le raycasting.
+  const opacite = Math.min(OPACITE_RISQUE_MAX, (opacity ?? 0.16) * LUMINOSITE);
+  return new THREE.MeshBasicMaterial({
+    // Blanc pour ne pas multiplier/ternir les couleurs RGB portees par les
+    // vertices. `color` reste accepte dans la signature pour ne pas changer
+    // les appels existants ; l'attribut geometry.color devient la source de
+    // verite visuelle de la couche de risque.
+    color: 0xffffff,
+    vertexColors: true,
+    transparent: true,
+    opacity: opacite,
+    side: THREE.DoubleSide,
+    blending: THREE.NormalBlending,
+    depthWrite: false,
+    polygonOffset: true,
+    polygonOffsetFactor: -1,
+    polygonOffsetUnits: -1
+  });
 }
+
+// La couche de risque a besoin de suffisamment de sommets pour porter une
+// heatmap continue. Les geometries structurelles/texturées restent intactes :
+// cette tessellation fabrique une NOUVELLE BufferGeometry, exclusivement pour
+// le halo translucide créé par addPart/addRawPart.
+//
+// Chaque triangle source est découpé suivant une grille barycentrique de
+// RISK_SUBDIVISIONS segments par côté. Six segments donnent 36 triangles de
+// risque par triangle original : assez fin pour lisser la couleur sans rendre
+// le raycasting ou les changements 2025/2050 inutilement coûteux.
+const RISK_SUBDIVISIONS = 6;
+function subdivideRiskGeometry(sourceGeometry, subdivisions = RISK_SUBDIVISIONS) {
+  const source = sourceGeometry.index ? sourceGeometry.toNonIndexed() : sourceGeometry;
+  const positions = source.getAttribute('position');
+  if (!positions || subdivisions <= 1) return sourceGeometry.clone();
+
+  const vertices = [];
+  const a = new THREE.Vector3(), b = new THREE.Vector3(), c = new THREE.Vector3();
+  const point = (i, j) => {
+    const u = i / subdivisions;
+    const v = j / subdivisions;
+    const w = 1 - u - v;
+    return new THREE.Vector3(
+      a.x * w + b.x * u + c.x * v,
+      a.y * w + b.y * u + c.y * v,
+      a.z * w + b.z * u + c.z * v
+    );
+  };
+  const pushTriangle = (p1, p2, p3) => {
+    vertices.push(p1.x, p1.y, p1.z, p2.x, p2.y, p2.z, p3.x, p3.y, p3.z);
+  };
+
+  for (let triangle = 0; triangle < positions.count; triangle += 3) {
+    a.fromBufferAttribute(positions, triangle);
+    b.fromBufferAttribute(positions, triangle + 1);
+    c.fromBufferAttribute(positions, triangle + 2);
+
+    for (let i = 0; i < subdivisions; i++) {
+      for (let j = 0; j < subdivisions - i; j++) {
+        const p00 = point(i, j);
+        const p10 = point(i + 1, j);
+        const p01 = point(i, j + 1);
+        pushTriangle(p00, p10, p01);
+
+        if (j < subdivisions - i - 1) {
+          const p11 = point(i + 1, j + 1);
+          pushTriangle(p10, p11, p01);
+        }
+      }
+    }
+  }
+
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+  // Couleur initiale uniforme : elle evite un flash blanc avant que setYear()
+  // applique le champ de risque lisse du dataset qui vient d'etre charge.
+  const initialColors = new Float32Array((vertices.length / 3) * 3);
+  const initialColor = new THREE.Color(0x9ca3af);
+  for (let i = 0; i < initialColors.length; i += 3) {
+    initialColors[i] = initialColor.r;
+    initialColors[i + 1] = initialColor.g;
+    initialColors[i + 2] = initialColor.b;
+  }
+  geometry.setAttribute('color', new THREE.BufferAttribute(initialColors, 3));
+  geometry.computeVertexNormals();
+  geometry.computeBoundingBox();
+  geometry.computeBoundingSphere();
+  return geometry;
+}
+
 function addPart(group, geometry, position, fillColor, opacity) {
-  const fill = new THREE.Mesh(geometry, makeFillMat(fillColor, opacity));
+  const riskGeometry = subdivideRiskGeometry(geometry);
+  const fill = new THREE.Mesh(riskGeometry, makeFillMat(fillColor, opacity));
+  fill.visible = true;
+  fill.renderOrder = 2;
   if (position) fill.position.copy(position);
   group.add(fill);
   const wire = new THREE.LineSegments(new THREE.EdgesGeometry(geometry), makeWireMat());
+  wire.renderOrder = 3;
   if (position) wire.position.copy(position);
   group.add(wire);
   return fill;
 }
 function addRawPart(group, bufferGeometry, fillColor, opacity) {
   bufferGeometry.computeVertexNormals();
-  const fill = new THREE.Mesh(bufferGeometry, makeFillMat(fillColor, opacity));
+  const riskGeometry = subdivideRiskGeometry(bufferGeometry);
+  const fill = new THREE.Mesh(riskGeometry, makeFillMat(fillColor, opacity));
+  fill.visible = true;
+  fill.renderOrder = 2;
   group.add(fill);
   const wire = new THREE.LineSegments(new THREE.EdgesGeometry(bufferGeometry), makeWireMat());
+  wire.renderOrder = 3;
   group.add(wire);
   return fill;
 }
@@ -2617,6 +2729,8 @@ function disposeHouse() {
 
 function registerFill(zoneName, fillMesh) {
   fillMesh.userData.zoneName = zoneName;
+  fillMesh.visible = true;
+  fillMesh.renderOrder = 2;
   zoneFillMeshes[zoneName].push(fillMesh);
   interactiveMeshes.push(fillMesh);
 }
@@ -2628,6 +2742,7 @@ function registerFill(zoneName, fillMesh) {
 function addStructureLayer(group, geometry, texture) {
   const mat = new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide });
   const mesh = new THREE.Mesh(geometry, mat);
+  mesh.renderOrder = 0;
   group.add(mesh);
   structureMeshes.push(mesh);
   return mesh;
@@ -2638,6 +2753,25 @@ function addStructureLayer(group, geometry, texture) {
 // (x = Est, z = Sud, origine au centre du bati) : aucune reprojection ici,
 // c'est `app/digital_twin/footprint.py` qui s'en charge cote backend.
 
+// Aire signee dans le plan XZ (formule du lacet) : positive pour un anneau
+// trigonometrie, negative pour un anneau horaire. Les sources BDNB ne
+// garantissent pas toutes le meme sens de parcours.
+function signedRingArea(ring) {
+  let twiceArea = 0;
+  for (let i = 0; i < ring.length; i++) {
+    const current = ring[i], next = ring[(i + 1) % ring.length];
+    twiceArea += current[0] * next[1] - next[0] * current[1];
+  }
+  return twiceArea / 2;
+}
+
+function orientFootprintRing(ring, counterClockwise) {
+  const area = signedRingArea(ring);
+  if (Math.abs(area) < 1e-9) return ring;
+  const orientationIsCorrect = counterClockwise ? area > 0 : area < 0;
+  return orientationIsCorrect ? ring : ring.slice().reverse();
+}
+
 function footprintPolygons(g) {
   const fp = g && g.footprint;
   if (!fp || !Array.isArray(fp.polygones)) return null;
@@ -2646,7 +2780,14 @@ function footprintPolygons(g) {
       ext: (p.exterieur || []).filter(pt => Array.isArray(pt) && pt.length >= 2).map(pt => [+pt[0], +pt[1]]),
       holes: (p.trous || []).map(t => t.filter(pt => Array.isArray(pt) && pt.length >= 2).map(pt => [+pt[0], +pt[1]])).filter(t => t.length >= 3)
     }))
-    .filter(p => p.ext.length >= 3 && p.ext.every(pt => isFinite(pt[0]) && isFinite(pt[1])));
+    .filter(p => p.ext.length >= 3 && p.ext.every(pt => isFinite(pt[0]) && isFinite(pt[1])))
+    // edgeNormal() attend un contour exterieur trigonometrie et des trous
+    // horaires. On impose ici cette convention au lieu de faire confiance au
+    // sens variable des anneaux recus du backend.
+    .map(p => ({
+      ext: orientFootprintRing(p.ext, true),
+      holes: p.holes.map(hole => orientFootprintRing(hole, false))
+    }));
   return polys.length ? polys : null;
 }
 
@@ -2728,10 +2869,10 @@ function quadsToGeometry(quads) {
   return geo;
 }
 
-// Normale sortante d'une arete : le contour exterieur arrive en sens
-// trigonometrique et les trous en sens horaire (garanti par le backend),
-// donc (dz, -dx) pointe toujours vers l'exterieur de la matiere — y compris
-// pour une cour interieure, ou elle pointe vers la cour.
+// Normale sortante d'une arete : footprintPolygons() normalise le contour
+// exterieur en sens trigonometrique et les trous en sens horaire. Ainsi,
+// (dz, -dx) pointe toujours vers l'exterieur de la matiere — y compris pour
+// une cour interieure, ou elle pointe vers la cour.
 function edgeNormal(p, q) {
   const dx = q[0] - p[0], dz = q[1] - p[1];
   const len = Math.hypot(dx, dz) || 1;
@@ -2995,6 +3136,18 @@ function menuiserieColor(materiauBrut) {
 // `house` restait donc figée en place pendant que le mur se déplaçait
 // légèrement autour de l'origine, et semblait se détacher ou disparaître.
 // L'attacher au même groupe que le mur la fait bouger avec lui.
+const OPENING_RENDER_ORDER = 4;
+function makeOpeningMaterial(color) {
+  return new THREE.MeshBasicMaterial({
+    color,
+    side: THREE.DoubleSide,
+    opacity: 1,
+    transparent: false,
+    depthTest: true,
+    depthWrite: true
+  });
+}
+
 function addWindowMesh(zone, a, b, normal, edgePos, y, largeur, hauteur, cadreColor) {
   const [ux, uz] = _axis2D(a, b);
   const cx = a[0] + ux * edgePos, cz = a[1] + uz * edgePos;
@@ -3004,18 +3157,22 @@ function addWindowMesh(zone, a, b, normal, edgePos, y, largeur, hauteur, cadreCo
 
   const vitrage = new THREE.Mesh(
     new THREE.PlaneGeometry(largeur, hauteur),
-    new THREE.MeshBasicMaterial({ color: 0x1a2430, side: THREE.DoubleSide })
+    makeOpeningMaterial(0x1a2430)
   );
   vitrage.position.z = 0.03;
+  vitrage.renderOrder = OPENING_RENDER_ORDER;
+  vitrage.userData.isOpening = true;
   group.add(vitrage);
 
   const cadre = new THREE.Mesh(
     new THREE.PlaneGeometry(largeur * 1.14, hauteur * 1.1),
-    new THREE.MeshBasicMaterial({ color: cadreColor, side: THREE.DoubleSide })
+    makeOpeningMaterial(cadreColor)
   );
   // Cadre en retrait (z=0.025 < vitrage z=0.03) : la profondeur reelle fait
   // la superposition visuelle, pas l'ordre d'ajout au groupe.
   cadre.position.z = 0.025;
+  cadre.renderOrder = OPENING_RENDER_ORDER;
+  cadre.userData.isOpening = true;
   group.add(cadre);
 
   zoneGroups[zone].add(group);
@@ -3041,16 +3198,20 @@ function addDoorMesh(zone, arete, wallsStartY) {
 
   const porte = new THREE.Mesh(
     new THREE.PlaneGeometry(largeur, hauteur),
-    new THREE.MeshBasicMaterial({ color: 0x4a3323, side: THREE.DoubleSide })
+    makeOpeningMaterial(0x1a2430)
   );
   porte.position.z = 0.03;
+  porte.renderOrder = OPENING_RENDER_ORDER;
+  porte.userData.isOpening = true;
   group.add(porte);
 
   const cadre = new THREE.Mesh(
     new THREE.PlaneGeometry(largeur * 1.16, hauteur * 1.06),
-    new THREE.MeshBasicMaterial({ color: 0xe8e6df, side: THREE.DoubleSide })
+    makeOpeningMaterial(0xe8e6df)
   );
   cadre.position.z = 0.02;
+  cadre.renderOrder = OPENING_RENDER_ORDER;
+  cadre.userData.isOpening = true;
   group.add(cadre);
 
   zoneGroups[zone].add(group);
@@ -3489,35 +3650,211 @@ function animateEffects(dt, elapsed) {
 }
 
 // ---------- 6. SCORE -> COULEUR + LABELS ----------
-function scoreToColor(score) {
-  if (score < 30) return 0x3fb950;
-  if (score < 60) return 0xd29922;
-  if (score < 80) return 0xdb6d28;
-  return 0xda3633;
+const MISSING_RISK_COLOR = new THREE.Color(0x9ca3af);
+const RISK_COLOR_STOPS = [
+  { score: 0,   color: new THREE.Color(0x22c55e) },
+  { score: 25,  color: new THREE.Color(0x22c55e) },
+  { score: 40,  color: new THREE.Color(0xeab308) },
+  { score: 55,  color: new THREE.Color(0xf97316) },
+  { score: 70,  color: new THREE.Color(0xea580c) },
+  { score: 85,  color: new THREE.Color(0xdc2626) },
+  { score: 100, color: new THREE.Color(0x991b1b) }
+];
+
+// Rampe FEA continue : aucune rupture de couleur aux seuils de lecture
+// faible/modere/eleve/critique. Une donnee absente reste explicitement grise.
+function scoreToRampColor(score, target = new THREE.Color()) {
+  if (typeof score !== 'number' || !Number.isFinite(score)) return target.copy(MISSING_RISK_COLOR);
+  const s = clamp(score, 0, 100);
+  for (let i = 0; i < RISK_COLOR_STOPS.length - 1; i++) {
+    const left = RISK_COLOR_STOPS[i], right = RISK_COLOR_STOPS[i + 1];
+    if (s <= right.score) {
+      const t = (s - left.score) / (right.score - left.score);
+      return target.lerpColors(left.color, right.color, t);
+    }
+  }
+  return target.copy(RISK_COLOR_STOPS[RISK_COLOR_STOPS.length - 1].color);
 }
+
+// Compatibilite des badges, labels et panneaux HTML existants qui attendent
+// encore un entier hexadecimal plutot qu'un THREE.Color.
+function scoreToColor(score) { return scoreToRampColor(score).getHex(); }
+
+// Adjacences physiques explicites utilisees par le lissage. Les murs opposes
+// ne sont pas voisins : une facade nord ne partage que ses angles avec est et
+// ouest. Chaque mur touche la toiture et les fondations ; les fondations
+// touchent a leur tour le sous-sol.
+const RISK_ZONE_ADJACENCY = {
+  murs_nord:  ['murs_est', 'murs_ouest', 'toiture', 'fondations'],
+  murs_sud:   ['murs_est', 'murs_ouest', 'toiture', 'fondations'],
+  murs_est:   ['murs_nord', 'murs_sud', 'toiture', 'fondations'],
+  murs_ouest: ['murs_nord', 'murs_sud', 'toiture', 'fondations'],
+  toiture:    ['murs_nord', 'murs_sud', 'murs_est', 'murs_ouest'],
+  fondations: ['murs_nord', 'murs_sud', 'murs_est', 'murs_ouest', 'sous_sol'],
+  sous_sol:   ['fondations']
+};
+
+// Le lissage entre zones est desactive : chaque composant conserve partout
+// la couleur correspondant exclusivement a son propre score.
+const RISK_BLEND_RATIO = 0;
+// Meme au coin de plusieurs zones, la somme des poids voisins ne depasse
+// jamais celle du score propre : la zone conserve donc au moins 50 % du poids.
+const RISK_MAX_TOTAL_NEIGHBOR_WEIGHT = 1;
+
+function validZoneScore(zoneName) {
+  const value = currentZones && currentZones[zoneName] && currentZones[zoneName].risque;
+  return typeof value === 'number' && Number.isFinite(value) ? clamp(value, 0, 100) : null;
+}
+
+function collectRiskZoneBounds() {
+  const bounds = {};
+  if (house) house.updateMatrixWorld(true);
+  Object.entries(zoneFillMeshes).forEach(([zoneName, meshes]) => {
+    const box = new THREE.Box3();
+    const horizontalSegments = [];
+    const segmentKeys = new Set();
+    let disponible = false;
+    (meshes || []).forEach(mesh => {
+      box.union(new THREE.Box3().setFromObject(mesh));
+      disponible = true;
+
+      // Une Box3 fusionnee n'est pas suffisante pour les murs d'une emprise
+      // en L/U : elle remplit le vide entre des facades distinctes et fait
+      // croire que tout le toit touche le mur. On conserve donc aussi les
+      // vrais segments projetes en XZ des triangles de chaque mur.
+      if (zoneName.startsWith('murs_')) {
+        const positions = mesh.geometry.getAttribute('position');
+        const points = [new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3()];
+        for (let i = 0; positions && i < positions.count; i += 3) {
+          for (let j = 0; j < 3; j++) {
+            points[j].fromBufferAttribute(positions, i + j);
+            mesh.localToWorld(points[j]);
+          }
+          [[0, 1], [1, 2], [2, 0]].forEach(([from, to]) => {
+            const a = points[from], b = points[to];
+            if (Math.hypot(b.x - a.x, b.z - a.z) < 1e-5) return;
+            const qa = `${a.x.toFixed(4)},${a.z.toFixed(4)}`;
+            const qb = `${b.x.toFixed(4)},${b.z.toFixed(4)}`;
+            const key = qa < qb ? `${qa}|${qb}` : `${qb}|${qa}`;
+            if (segmentKeys.has(key)) return;
+            segmentKeys.add(key);
+            horizontalSegments.push({ ax: a.x, az: a.z, bx: b.x, bz: b.z });
+          });
+        }
+      }
+    });
+    if (disponible && !box.isEmpty()) {
+      // Propriete additionnelle non utilisee par THREE.Box3 : les appels
+      // existants a distanceToPoint/getSize restent donc compatibles.
+      box.horizontalSegments = horizontalSegments;
+      bounds[zoneName] = box;
+    }
+  });
+  return bounds;
+}
+
+function horizontalDistanceToWall(vertexPosition, wallBounds) {
+  const segments = wallBounds && wallBounds.horizontalSegments;
+  if (!segments || !segments.length) return wallBounds.distanceToPoint(vertexPosition);
+  let nearest = Infinity;
+  segments.forEach(segment => {
+    const dx = segment.bx - segment.ax, dz = segment.bz - segment.az;
+    const lengthSq = dx * dx + dz * dz;
+    const t = lengthSq > 0
+      ? clamp(((vertexPosition.x - segment.ax) * dx + (vertexPosition.z - segment.az) * dz) / lengthSq, 0, 1)
+      : 0;
+    const closestX = segment.ax + t * dx;
+    const closestZ = segment.az + t * dz;
+    nearest = Math.min(nearest, Math.hypot(vertexPosition.x - closestX, vertexPosition.z - closestZ));
+  });
+  return nearest;
+}
+
+function riskBlendDistanceForZone(zoneName, zoneBounds) {
+  const box = zoneBounds[zoneName];
+  if (!box || box.isEmpty()) return 0;
+  const size = box.getSize(new THREE.Vector3());
+  // Une facade est presque sans epaisseur et une dalle est tres mince : on
+  // trie les trois dimensions et on retient la plus petite des DEUX grandes,
+  // pas la plus petite brute qui correspondrait a l'epaisseur du mesh.
+  const dimensions = [size.x, size.y, size.z]
+    .filter(value => Number.isFinite(value) && value > 1e-4)
+    .sort((a, b) => b - a);
+  if (!dimensions.length) return 0;
+  const relevantDimension = dimensions.length >= 2 ? dimensions[1] : dimensions[0];
+  return relevantDimension * RISK_BLEND_RATIO;
+}
+
+// Tous les vertices recoivent directement le score propre de leur zone. Les
+// limites et adjacences restent disponibles pour le diagnostic geometrique,
+// mais n'interviennent plus dans la couleur rendue.
+function computeSmoothedScore(zoneName, vertexPosition, zoneBounds) {
+  return validZoneScore(zoneName);
+}
+
 const ROOF_WEAR_COLOR = new THREE.Color(0x8a5a2b);
-function animateColor(mesh, targetHex, duration = 500) {
-  const mat = mesh.material;
-  const startColor = mat.color.clone();
-  const targetColor = new THREE.Color(targetHex);
+const RISK_COLOR_TRANSITION_MS = 650;
+function animateVertexColors(mesh, targetColors, duration = RISK_COLOR_TRANSITION_MS) {
+  const colors = mesh.geometry.getAttribute('color');
+  if (!colors || colors.array.length !== targetColors.length) return;
+  const startColors = new Float32Array(colors.array);
+  const animationId = (mesh.userData.riskColorAnimationId || 0) + 1;
+  mesh.userData.riskColorAnimationId = animationId;
   const startTime = performance.now();
   function step(now) {
+    if (mesh.userData.riskColorAnimationId !== animationId) return;
     const t = Math.min((now - startTime) / duration, 1);
-    mat.color.lerpColors(startColor, targetColor, t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t);
+    const eased = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+    for (let i = 0; i < targetColors.length; i++) {
+      colors.array[i] = startColors[i] + (targetColors[i] - startColors[i]) * eased;
+    }
+    colors.needsUpdate = true;
     if (t < 1) requestAnimationFrame(step);
   }
   requestAnimationFrame(step);
 }
-function updateZoneColor(zoneName, score, animated = true) {
+function updateZoneColor(zoneName, score, animated = true, sharedZoneBounds = null) {
   const meshes = zoneFillMeshes[zoneName];
   if (!meshes || !meshes.length) return;
-  let color = new THREE.Color(scoreToColor(score));
-  if (zoneName === 'toiture') {
-    const wear = mapRiskToEffect('toiture', score).tileWear || 0;
-    color = color.clone().lerp(ROOF_WEAR_COLOR, wear * 0.7);
-  }
-  const targetHex = color.getHex();
-  meshes.forEach(m => animated ? animateColor(m, targetHex) : m.material.color.set(targetHex));
+  const zoneBounds = sharedZoneBounds || collectRiskZoneBounds();
+  const vertex = new THREE.Vector3();
+  const color = new THREE.Color();
+  const wear = zoneName === 'toiture' && validZoneScore(zoneName) !== null
+    ? (mapRiskToEffect('toiture', score).tileWear || 0)
+    : 0;
+
+  meshes.forEach(mesh => {
+    const positions = mesh.geometry.getAttribute('position');
+    let colors = mesh.geometry.getAttribute('color');
+    let canAnimate = animated;
+    if (!colors || colors.count !== positions.count) {
+      colors = new THREE.BufferAttribute(new Float32Array(positions.count * 3), 3);
+      mesh.geometry.setAttribute('color', colors);
+      canAnimate = false;
+    }
+    const targetColors = new Float32Array(positions.count * 3);
+    for (let i = 0; i < positions.count; i++) {
+      vertex.fromBufferAttribute(positions, i);
+      mesh.localToWorld(vertex);
+      const smoothedScore = computeSmoothedScore(zoneName, vertex, zoneBounds);
+      scoreToRampColor(smoothedScore, color);
+      // L'usure reste une nuance secondaire : elle ne remplace jamais la
+      // rampe et son influence est volontairement plafonnee a 18 % pour que
+      // les oranges/rouges critiques demeurent vifs et lisibles.
+      if (wear > 0 && smoothedScore !== null) color.lerp(ROOF_WEAR_COLOR, wear * 0.18);
+      const offset = i * 3;
+      targetColors[offset] = color.r;
+      targetColors[offset + 1] = color.g;
+      targetColors[offset + 2] = color.b;
+    }
+    if (canAnimate) {
+      animateVertexColors(mesh, targetColors);
+    } else {
+      mesh.userData.riskColorAnimationId = (mesh.userData.riskColorAnimationId || 0) + 1;
+      colors.array.set(targetColors);
+      colors.needsUpdate = true;
+    }
+  });
   updateZoneLabel(zoneName, score);
   applyZoneEffect(zoneName, score);
 }
@@ -3655,6 +3992,7 @@ function getIntersects(event) {
 function setGroupGlow(group, on) {
   if (!group) return;
   group.traverse(obj => {
+    if (obj.userData.isOpening) return;
     if (obj.isMesh && obj.material && typeof obj.material.opacity === 'number') {
       if (obj.userData.baseOpacity === undefined) obj.userData.baseOpacity = obj.material.opacity;
       obj.material.opacity = on ? Math.min(0.95, obj.userData.baseOpacity * 1.9) : obj.userData.baseOpacity;
@@ -3670,7 +4008,7 @@ function showZoneTooltip(zoneName, clientX, clientY) {
   const data = currentZones && currentZones[zoneName];
   const niveau = data ? data.niveau : null;
   const niveauLabels = { faible: 'Risque faible', modere: 'Risque modéré', eleve: 'Risque élevé', critique: 'Risque critique' };
-  const niveauColors = { faible: '#1F9D6C', modere: '#D98A2B', eleve: '#BF5E00', critique: '#C0392B' };
+  const niveauColors = { faible: '#22c55e', modere: '#facc15', eleve: '#f97316', critique: '#dc2626' };
   const label = zoneName.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
   zoneTooltipEl.innerHTML = '<strong>' + label + '</strong>' +
     (niveau ? '<br><span style="color:' + (niveauColors[niveau] || '#8B959D') + ';">' + (niveauLabels[niveau] || niveau) + '</span>' : '');
@@ -3876,7 +4214,12 @@ function setYear(year, force) {
   currentZones = JSON.parse(JSON.stringify(source));
   document.getElementById('score-value').textContent = scoreGlobal;
   window.currentGlobalScore = scoreGlobal;
-  ZONE_NAMES.forEach(name => { if (currentZones[name]) updateZoneColor(name, currentZones[name].risque, !force); });
+  // Les limites sont partagees pour que toutes les zones utilisent exactement
+  // le meme etat geometrique pendant une transition 2025/2050.
+  const zoneBounds = collectRiskZoneBounds();
+  ZONE_NAMES.forEach(name => {
+    if (currentZones[name]) updateZoneColor(name, currentZones[name].risque, !force, zoneBounds);
+  });
   const infoPanel = document.getElementById('info-panel');
   if (infoPanel.style.display === 'block' && infoPanel.dataset.zone) showZonePanel(infoPanel.dataset.zone);
 }
