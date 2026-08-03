@@ -119,6 +119,12 @@ def build_diagnostic(
         "geometry": geometry,
         "score_global": risk_result["score_global"],
         "zones": zones_enriched,
+        # Risques par aléa (RGA, inondation, sismique, feu de forêt...) au
+        # niveau du bâtiment entier — distinct des 7 zones structurelles,
+        # utilisé par le radar "par aléa" du frontend (cf. risk_model.py,
+        # _compute_zones_for_period). "projection_2050" embarque déjà son
+        # propre "risques_par_alea" (dict transmis tel quel ci-dessous).
+        "risques_par_alea": risk_result.get("risques_par_alea", {}),
         "projection_2050": risk_result["projection_2050"],
         "climat": {
             "2050": {
