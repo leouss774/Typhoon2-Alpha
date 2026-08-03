@@ -1632,7 +1632,7 @@
     <nav id="home-nav">
       <a href="#home-features">Nos solutions</a>
       <a href="#modes">Comment ça marche</a>
-      <a href="property-id/">Property ID</a>
+   
       <a href="#">Nous contacter</a>
     </nav>
     <div id="home-header-actions">
@@ -5213,21 +5213,25 @@ loadDataset(DEFAULT_DATA);
     return { spacingKm: spacing, maxPoints: Math.min(200, total + 2), rows, cols };
   }
 
-  // Les 8 vrais aléas exposés par le backend (compute_risk_scores ->
-  // risques_par_alea), identiques à ceux du radar "par aléa" au niveau du
-  // bien (cf. index.html renderScoresPage) : même nomenclature partout,
-  // du bâtiment jusqu'à la zone/carte.
+  // Les aléas exposés par le backend (compute_risk_scores -> risques_par_alea),
+  // identiques à ceux du radar "par aléa" au niveau du bien (cf. index.html
+  // renderScoresPage) : même nomenclature partout, du bâtiment jusqu'à la
+  // zone/carte. "canicule" est volontairement exclu ici (boutons de filtre +
+  // légende "Aléas de la zone") : peu pertinent à l'échelle d'une carte de
+  // zone, cf. demande utilisateur — il reste disponible au niveau du bien.
   const PERIL_NAMES = {
     argile: { fr: 'Retrait-gonflement argiles' },
     inondation: { fr: 'Inondation' },
     mouvement_terrain: { fr: 'Mouvement de terrain' },
     sismique: { fr: 'Sismique' },
     radon: { fr: 'Radon' },
-    canicule: { fr: 'Canicule' },
     precipitation: { fr: 'Précipitations intenses' },
     feu_foret: { fr: 'Incendie' }
   };
-  const ALEA_ORDER = ['argile', 'inondation', 'feu_foret', 'canicule', 'sismique', 'mouvement_terrain', 'radon', 'precipitation'];
+  const ALEA_ORDER = ['argile', 'inondation', 'feu_foret', 'sismique', 'mouvement_terrain', 'radon', 'precipitation'];
+  // Clé backend à masquer partout où la carte affiche des données par aléa
+  // (légende, agrégats), même si le backend continue de la calculer.
+  const ZONE_MAP_HIDDEN_ALEAS = ['canicule'];
 
   // Aléa actuellement sélectionné pour la coloration de la carte : 'global'
   // (F/V combiné par zone structurelle, comme avant) ou l'une des 8 clés
@@ -5793,9 +5797,10 @@ loadDataset(DEFAULT_DATA);
   };
 
   // Légende "Aléas de la zone" (coin haut-gauche de la carte, cf. zone-legend-perils
-  // dans le HTML) : lecture rapide des 8 aléas directement sur la carte,
+  // dans le HTML) : lecture rapide des aléas directement sur la carte,
   // triés du plus au moins sévère (seul panneau de détail par péril restant,
-  // la sidebar affiche désormais les annonces à la place).
+  // la sidebar affiche désormais les annonces à la place). "canicule" est
+  // filtré (cf. ZONE_MAP_HIDDEN_ALEAS) : non pertinent à l'échelle zone.
   function updatePerilsLegend(perils) {
     const box = document.getElementById('zone-legend-perils');
     const rows = document.getElementById('zone-legend-perils-rows');
@@ -5804,8 +5809,13 @@ loadDataset(DEFAULT_DATA);
       return;
     }
     const entries = Object.entries(perils)
+      .filter(([key]) => ZONE_MAP_HIDDEN_ALEAS.indexOf(key) === -1)
       .map(([key, p]) => ({ key, moyenne: p.moyenne || 0 }))
       .sort((a, b) => b.moyenne - a.moyenne);
+    if (!entries.length) {
+      box.style.display = 'none';
+      return;
+    }
 
     rows.innerHTML = '';
     entries.forEach(({ key, moyenne }) => {
