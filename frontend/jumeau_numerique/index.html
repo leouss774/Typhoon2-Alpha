@@ -649,6 +649,25 @@
   .zone-legend-peril-row .pdot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
   .zone-legend-peril-row .pscore { font-weight: 700; }
 
+  /* ---- Filtre par aléa (barre de boutons en haut de la carte) : bascule
+     l'aplat isobandes entre la vue globale (tous aléas combinés, F/V par
+     zone) et un aléa unique (mêmes 8 aléas que le radar "par bien"), pour
+     isoler visuellement où un péril donné est réellement présent plutôt
+     que de tout mélanger dans une seule coloration. ---- */
+  #zone-alea-filter {
+    position: absolute; left: 50%; top: 14px; transform: translateX(-50%); z-index: 4;
+    display: flex; flex-wrap: wrap; gap: 6px; max-width: calc(100% - 220px);
+    justify-content: center;
+  }
+  .zone-alea-btn {
+    background: rgba(255,255,255,0.94); border: 1px solid var(--border);
+    color: var(--text); font-family: var(--font-body); font-size: 11px; font-weight: 600;
+    padding: 6px 12px; border-radius: 999px; cursor: pointer; white-space: nowrap;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08); transition: background .15s, color .15s, border-color .15s;
+  }
+  .zone-alea-btn:hover { border-color: var(--brand); color: var(--brand-dark); }
+  .zone-alea-btn.active { background: var(--brand); border-color: var(--brand); color: #fff; }
+
   #zone-precision-badge {
     position: absolute; right: 14px; top: 14px; z-index: 3;
     background: rgba(30,42,51,0.85); color: #fff; font-size: 10.5px; font-weight: 600;
@@ -1822,6 +1841,7 @@
       <!-- Map -->
       <div id="zone-map-container">
         <div id="zone-map"></div>
+        <div id="zone-alea-filter"></div>
         <div id="zone-legend">
           <div class="zone-legend-title">Niveau de risque</div>
           <div class="zone-legend-row"><span class="zone-legend-swatch" style="background:#1F9D6C;"></span>Faible (0–19)</div>
@@ -5168,13 +5188,49 @@ loadDataset(DEFAULT_DATA);
     return { spacingKm: spacing, maxPoints: Math.min(200, total + 2), rows, cols };
   }
 
+  // Les 8 vrais aléas exposés par le backend (compute_risk_scores ->
+  // risques_par_alea), identiques à ceux du radar "par aléa" au niveau du
+  // bien (cf. index.html renderScoresPage) : même nomenclature partout,
+  // du bâtiment jusqu'à la zone/carte.
   const PERIL_NAMES = {
+    argile: { fr: 'Retrait-gonflement argiles' },
     inondation: { fr: 'Inondation' },
-    rga: { fr: 'RGA (Argiles)' },
-    tempete: { fr: 'Tempête' },
-    incendie: { fr: 'Incendie' },
-    seisme: { fr: 'Séisme' }
+    mouvement_terrain: { fr: 'Mouvement de terrain' },
+    sismique: { fr: 'Sismique' },
+    radon: { fr: 'Radon' },
+    canicule: { fr: 'Canicule' },
+    precipitation: { fr: 'Précipitations intenses' },
+    feu_foret: { fr: 'Incendie' }
   };
+  const ALEA_ORDER = ['argile', 'inondation', 'feu_foret', 'canicule', 'sismique', 'mouvement_terrain', 'radon', 'precipitation'];
+
+  // Aléa actuellement sélectionné pour la coloration de la carte : 'global'
+  // (F/V combiné par zone structurelle, comme avant) ou l'une des 8 clés
+  // ci-dessus (score de cet aléa uniquement, cf. buildAleaFilterUI/
+  // renderZoneMapForAlea plus bas).
+  let selectedAlea = 'global';
+  let lastZoneData = null;
+
+  function buildAleaFilterUI() {
+    const box = document.getElementById('zone-alea-filter');
+    if (!box || box.dataset.built) return;
+    box.dataset.built = '1';
+    const makeBtn = (key, label) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'zone-alea-btn' + (key === 'global' ? ' active' : '');
+      btn.dataset.alea = key;
+      btn.textContent = label;
+      btn.addEventListener('click', () => {
+        selectedAlea = key;
+        box.querySelectorAll('.zone-alea-btn').forEach(b => b.classList.toggle('active', b.dataset.alea === key));
+        renderZoneMapForAlea();
+      });
+      return btn;
+    };
+    box.appendChild(makeBtn('global', 'Vue globale'));
+    ALEA_ORDER.forEach(key => box.appendChild(makeBtn(key, PERIL_NAMES[key].fr)));
+  }
 
   // === BAN Geocoding — toutes les villes de France ===
   async function searchCity(query) {
@@ -5226,16 +5282,14 @@ loadDataset(DEFAULT_DATA);
     });
     zoneMap.addControl(new maplibregl.NavigationControl(), 'bottom-right');
     zoneMap.addControl(new maplibregl.ScaleControl({ unit: 'metric' }));
+    buildAleaFilterUI();
 
     zoneMap.on('load', () => {
-      // Source des points d'échantillonnage (garde les points bruts, utile
-      // pour debug/inspection au clic, mais n'est plus l'aplat visuel principal)
-      zoneMap.addSource('sample-points', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
-
-      // AVANT : gros cercles translucides qui se chevauchaient pour simuler un aplat.
-      // MAINTENANT : vraies isobandes (turf.isobands) calculées sur la grille régulière
-      // renvoyée par le backend -> polygones lissés par palier de risque, comme une
-      // carte d'étages bioclimatiques. Voir buildIsobands().
+      // Seule visualisation du risque sur la carte : une coloration
+      // translucide globale (isobandes turf.isobands, zoom-adaptative),
+      // sans les points individuels affichés auparavant (retirés : la
+      // lecture par point surchargeait la carte sans apporter d'info que
+      // l'aplat ne donne déjà). Voir buildIsobands()/renderZoneMapForAlea().
       zoneMap.addSource('risk-isobands', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
       zoneMap.addLayer({
         id: 'risk-isobands-fill',
@@ -5252,34 +5306,6 @@ loadDataset(DEFAULT_DATA);
         type: 'line',
         source: 'risk-isobands',
         paint: { 'line-color': 'rgba(255,255,255,0.25)', 'line-width': 0.5 }
-      });
-
-      // Points individuels par-dessus : uniquement visibles en zoomant sur la ville,
-      // servent de repère précis (l'échantillon exact que le backend a scoré)
-      zoneMap.addLayer({
-        id: 'sample-dots',
-        type: 'circle',
-        source: 'sample-points',
-        minzoom: 13,
-        paint: {
-          'circle-radius': ['interpolate', ['linear'], ['zoom'],
-            13, 1.5,
-            15, 2.5,
-            17, 3.5,
-            18, 5
-          ],
-          'circle-color': [
-            'step', ['get', 'score'],
-            '#1F9D6C',
-            20, '#5ADB8A',
-            40, '#F5C542',
-            60, '#E27B2E',
-            80, '#C0392B'
-          ],
-          'circle-opacity': 0.85,
-          'circle-stroke-color': '#fff',
-          'circle-stroke-width': 1
-        }
       });
 
       // ---- Annonces "en vente" (données réelles uniquement : DVF ou base
@@ -5386,6 +5412,18 @@ loadDataset(DEFAULT_DATA);
   // utilisés pour les scores individuels (faible/modéré/élevé/critique).
   const RISK_BREAKS = [0, 20, 40, 60, 80, 100.01];
   const RISK_COLORS = ['#1F9D6C', '#5ADB8A', '#F5C542', '#E27B2E', '#C0392B'];
+
+  // Extrait le score (0-100) pertinent d'un point selon l'aléa sélectionné :
+  // 'global' = score combiné F/V par zone (comme avant), sinon l'un des 8
+  // aléas réels renvoyés par le backend (risques_par_alea, cf. zone_scoring.py
+  // _result_to_point_dict). Un point sans donnée pour cet aléa retombe à 0
+  // (zone non concernée par ce péril précis).
+  function scoreForAlea(pointScore, alea) {
+    if (!pointScore) return 0;
+    if (alea === 'global') return pointScore.score_global || 0;
+    const entry = pointScore[alea];
+    return entry ? (entry.score || 0) : 0;
+  }
 
   function buildIsobands(points) {
     // points: [{lat, lon, score}], doit former une grille rectangulaire complète
@@ -5753,23 +5791,23 @@ loadDataset(DEFAULT_DATA);
     }
     updatePerilsLegend(data.perils);
 
-    // Points bruts (repères précis, visibles à partir du zoom 13)
-    const ptsSource = zoneMap && zoneMap.getSource('sample-points');
-    const validPoints = (data.points_echantillon || [])
+    // Conserve la dernière réponse backend pour permettre de rebasculer
+    // entre "vue globale" et un aléa précis sans refaire d'appel réseau
+    // (cf. renderZoneMapForAlea, déclenché par les boutons #zone-alea-filter).
+    lastZoneData = data;
+    renderZoneMapForAlea();
+  }
+
+  // Recalcule et applique l'aplat isobandes pour l'aléa actuellement
+  // sélectionné (globale ou l'un des 8 aléas réels). Appelé après chaque
+  // nouvelle évaluation backend (displayZoneResults) et à chaque clic sur
+  // un bouton de #zone-alea-filter, en réutilisant les points déjà reçus.
+  function renderZoneMapForAlea() {
+    if (!lastZoneData) return;
+    const validPoints = (lastZoneData.points_echantillon || [])
       .filter(p => p.lat != null && p.lon != null)
-      .map(p => ({ lat: p.lat, lon: p.lon, score: p.score ? p.score.score_global : 50 }));
+      .map(p => ({ lat: p.lat, lon: p.lon, score: scoreForAlea(p.score, selectedAlea) }));
 
-    if (ptsSource) {
-      const features = validPoints.map(p => ({
-        type: 'Feature',
-        geometry: { type: 'Point', coordinates: [p.lon, p.lat] },
-        properties: { score: p.score }
-      }));
-      ptsSource.setData({ type: 'FeatureCollection', features });
-    }
-
-    // Isobandes : l'aplat coloré principal, recalculé à chaque évaluation
-    // (initiale ou auto-raffinée) sur la grille de points reçue.
     const isoSource = zoneMap && zoneMap.getSource('risk-isobands');
     if (isoSource) {
       isoSource.setData(buildIsobands(validPoints));
