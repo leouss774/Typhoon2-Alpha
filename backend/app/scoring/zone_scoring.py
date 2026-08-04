@@ -20,6 +20,7 @@ import time
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
+from typing import Any
 
 
 from app.scoring.risk_model import compute_risk_scores
@@ -415,8 +416,10 @@ async def run_zone_risk_assessment(
         nb_valides, nb_points, nb_erreurs, duree,
     )
 
-    # Agrégation par péril
-    noms_perils = ["inondation", "rga", "tempete", "incendie", "seisme"]
+    # Agrégation par péril — les 8 vrais aléas de compute_risk_scores
+    # (risques_par_alea), mêmes clés/libellés que le radar "par aléa" du
+    # bâtiment, pour que la carte de zone puisse filtrer par aléa exact.
+    noms_perils = ALEA_KEYS
     distributions: dict[str, DistributionPeril] = {}
     worst_overall = 0.0
     worst_peril_name: str | None = None
@@ -425,7 +428,7 @@ async def run_zone_risk_assessment(
         scores_peril = []
         for p in points_valides:
             if p.score:
-                scores_peril.append(_peril_score_from_zones(p.score, nom))
+                scores_peril.append(_peril_score(p.score, nom))
 
         if not scores_peril:
             continue
@@ -497,40 +500,39 @@ def _rating_from_mean(mean_score: float, worst_case: float) -> str:
     return "Faible"
 
 
-def _peril_score_from_zones(result: dict, peril: str) -> float:
-    """Extrait un score de péril (0-100) depuis les zones du resultat compute_risk_scores."""
-    zones = result.get("zones", {}) if result else {}
-    if peril == "inondation":
-        return float(zones.get("sous_sol", {}).get("risque", 0) or 0)
-    if peril == "rga":
-        return float(zones.get("fondations", {}).get("risque", 0) or 0)
-    if peril == "tempete":
-        murs = [zones.get(z, {}).get("risque", 0) or 0
-                for z in ["murs_nord", "murs_sud", "murs_est", "murs_ouest"]]
-        return sum(murs) / len(murs) if murs else 0.0
-    if peril == "incendie":
-        return float(zones.get("toiture", {}).get("risque", 0) or 0)
-    if peril == "seisme":
-        fondations = float(zones.get("fondations", {}).get("risque", 0) or 0)
-        murs = [zones.get(z, {}).get("risque", 0) or 0
-                for z in ["murs_nord", "murs_sud", "murs_est", "murs_ouest"]]
-        mur_moyen = sum(murs) / len(murs) if murs else 0.0
-        return (fondations + mur_moyen) / 2.0
-    return 0.0
+# Aléas réels exposés par compute_risk_scores() (cf. risk_model.py,
+# "risques_par_alea" — même nomenclature que le radar "par aléa" du
+# frontend au niveau du bâtiment, afin que la carte de zone "Vérifier une
+# zone" affiche exactement les mêmes 8 aléas avec les mêmes libellés,
+# plutôt que l'ancienne heuristique à 5 périls dérivée grossièrement des
+# zones structurelles (sous_sol/fondations/murs/toiture).
+ALEA_KEYS = [
+    "argile", "inondation", "mouvement_terrain", "sismique",
+    "radon", "canicule", "precipitation", "feu_foret",
+]
+
+
+def _peril_score(result: dict, peril: str) -> float:
+    """Extrait le score (0-100) d'un aléa depuis risques_par_alea (compute_risk_scores)."""
+    aleas = result.get("risques_par_alea", {}) if result else {}
+    entry = aleas.get(peril)
+    return float(entry.get("risque", 0) or 0) if entry else 0.0
 
 
 def _result_to_point_dict(result: dict) -> dict | None:
     """Convertit le dict compute_risk_scores en format compatible avec le frontend."""
     if not result:
         return None
-    return {
-        "score_global": result.get("score_global", 0),
-        "inondation": {"score": _peril_score_from_zones(result, "inondation")},
-        "rga": {"score": _peril_score_from_zones(result, "rga")},
-        "tempete": {"score": _peril_score_from_zones(result, "tempete")},
-        "incendie": {"score": _peril_score_from_zones(result, "incendie")},
-        "seisme": {"score": _peril_score_from_zones(result, "seisme")},
-    }
+    aleas = result.get("risques_par_alea", {}) or {}
+    point_dict: dict[str, Any] = {"score_global": result.get("score_global", 0)}
+    for key in ALEA_KEYS:
+        entry = aleas.get(key) or {}
+        point_dict[key] = {
+            "score": float(entry.get("risque", 0) or 0),
+            "niveau": entry.get("niveau"),
+            "label": entry.get("label"),
+        }
+    return point_dict
 
 
 def _point_to_dict(p: PointEchantillon) -> dict:
