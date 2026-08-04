@@ -13746,6 +13746,7 @@
         "prompt_version": "v1.0",
         "fichier_source": "Aide et pret action logement _ subvention travaux de rénovation énergétique.pdf"
       }
+<<<<<<< HEAD
     },
     {
       "type": "obligation_locale",
@@ -47004,6 +47005,8 @@
         "prompt_version": "v1.0",
         "fichier_source": "transcription-textuelle-infographie-pourquoi-comment-isoler-logement.pdf"
       }
+=======
+>>>>>>> 565653094351f2bb74c354c73f4ff02443987314
     }
   ]
 }

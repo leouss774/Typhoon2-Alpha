@@ -1,5 +1,6 @@
 """
 Test hors-ligne de bout en bout : POST /diagnostic -> collector_agent ->
+<<<<<<< HEAD
 scoring_agent -> digital_twin_agent -> contrat JSON, reseau mocke (meme
 principe que test_collector_offline.py — voir sa docstring pour le detail
 des limites reseau du sandbox de developpement).
@@ -8,6 +9,23 @@ Objectif : prouver que le graphe LangGraph complet et la route FastAPI
 fonctionnent ensemble et produisent un contrat conforme au schema attendu
 par `frontend/jumeau_numerique/index.html`, sans dependre d'un acces reseau
 reel ni d'un vrai telechargement Copernicus.
+=======
+scoring_agent -> recommandations_agent -> digital_twin_agent -> contrat
+JSON, reseau mocke (meme principe que test_collector_offline.py — voir sa
+docstring pour le detail des limites reseau du sandbox de developpement).
+
+Objectif : prouver que le graphe LangGraph complet (recommandations_agent
+inclus, cf. backend/recommendation_travaux-main/PROMPT_INTEGRATION_ouss.md)
+et la route FastAPI fonctionnent ensemble et produisent un contrat conforme
+au schema attendu par `frontend/jumeau_numerique/index.html`, sans dependre
+d'un acces reseau reel (ni Copernicus, ni Mistral) ni de credits API.
+
+Les appels Mistral (embeddings + chat) du noeud recommandations_agent sont
+mockes ici (`app.recommandations.mistral_client.embed_texts/chat_json`) :
+ce test verifie que le noeud est bien branche et alimente
+`zones[*].recommandations`, pas que le RAG Mistral reel fonctionne (pour
+ca, voir les commandes de test manuel avec un vrai POST /diagnostic).
+>>>>>>> 565653094351f2bb74c354c73f4ff02443987314
 
 A executer :
     PYTHONPATH=. python3 tests/test_api_diagnostic_offline.py
@@ -87,6 +105,32 @@ GEORISQUES_CATNAT = {
     ]
 }
 
+<<<<<<< HEAD
+=======
+# --- Mocks Mistral (agent recommandations, cf. app/recommandations/) ---
+# embed_texts : vecteur bidon de la bonne dimension (1024, cf.
+# app/recommandations/data/index.json) -- la recherche par similarite
+# cosinus tourne reellement contre l'index reel, seul l'appel reseau
+# Mistral est evite. chat_json : reponse fixe plutot qu'un vrai appel LLM.
+def _fake_embed_texts(texts):
+    return [[0.01] * 1024 for _ in texts]
+
+
+def _fake_chat_json(system_prompt, user_prompt):
+    return {
+        "recommandations": [
+            {
+                "mesure": "[TEST] mesure de reduction de vulnerabilite",
+                "explication": "[TEST] explication detaillee de la mesure et de son lien avec le risque.",
+                "type": "recommandation_source",
+                "cout_estime": None,
+                "aide": None,
+                "sources": [{"fiche_id": "test", "source_id": "S00", "extrait_exact": "..."}],
+            }
+        ]
+    }
+
+>>>>>>> 565653094351f2bb74c354c73f4ff02443987314
 
 def _mock_handler(request: httpx.Request) -> httpx.Response:
     path = request.url.path
@@ -129,7 +173,13 @@ def test_diagnostic_end_to_end():
             kwargs["transport"] = httpx.MockTransport(_mock_handler)
             return real_async_client(*args, **kwargs)
 
+<<<<<<< HEAD
         with patch("app.agents.collector_agent.httpx.AsyncClient", side_effect=patched_client):
+=======
+        with patch("app.agents.collector_agent.httpx.AsyncClient", side_effect=patched_client), \
+             patch("app.recommandations.service.embed_texts", side_effect=_fake_embed_texts), \
+             patch("app.recommandations.service.chat_json", side_effect=_fake_chat_json):
+>>>>>>> 565653094351f2bb74c354c73f4ff02443987314
             from app.main import app
             from fastapi.testclient import TestClient
 
@@ -161,6 +211,18 @@ def test_diagnostic_end_to_end():
     # le score sous_sol doit refleter les 2 arretes CATNAT inondation mockes
     assert "inondation" in contract["zones"]["sous_sol"]["justification"].lower()
 
+<<<<<<< HEAD
+=======
+    # --- recommandations_agent (nouveau noeud) : verifie que le contrat
+    # contient bien des recommandations sourcees pour les zones a risque
+    # non-faible (fondations, sous_sol -- cf. calcul risk_model ci-dessus),
+    # sans avoir appele le vrai Mistral (mocke plus haut).
+    for zone in ("fondations", "sous_sol"):
+        recos = contract["zones"][zone]["recommandations"]
+        assert recos, f"zone {zone} : aucune recommandation (noeud recommandations_agent non branche ?)"
+        assert recos[0]["mesure"] == "[TEST] mesure de reduction de vulnerabilite"
+
+>>>>>>> 565653094351f2bb74c354c73f4ff02443987314
     print("test_diagnostic_end_to_end OK. Contrat :")
     print(json.dumps({k: v for k, v in contract.items() if not k.startswith("_")}, indent=2, ensure_ascii=False)[:1500], "...")
 

@@ -1,0 +1,251 @@
+# Regles du peril P14 — Submersion marine
+# Constantes metier : ce fichier fait foi, jamais le code Python.
+peril_id: P14
+name: Submersion marine
+hazard_available: true
+commune_context_codes:
+- '117'
+- '126'
+frequency:
+  variables:
+  - key: site.distance_to_coast
+    raw_paths:
+    - derive.distance_to_coast
+    role: F
+    weight: 0.45
+    transform:
+      type: linear_ramp
+      points:
+      - - 0
+        - 1.0
+      - - 200
+        - 0.8
+      - - 1000
+        - 0.4
+      - - 5000
+        - 0.05
+    direction: increasing
+    unit: m
+    physical_mechanism: 'Distance au trait de cote : conditionne l''atteinte par la surcote et l''action
+      des vagues.'
+    min_source_rank: 2
+    allowed_scopes:
+    - parcel
+    - building
+    - building_group
+    allowed_time_horizons:
+    - current
+    on_missing: renormalize_if_dominant_present
+    on_conflict: keep_highest_rank
+    evidence_level: medium
+    references:
+    - 'Referentiel, grille Declencheurs & aggravants P14 : distance au trait de cote'
+    calibration_status: provisional_modeling_weight
+    dominant: true
+    notes: Non implemente. Calculable depuis geom_groupe (EPSG:2154) et une couche littorale (BD TOPO
+      / Histolitt).
+  - key: hazard.coastal.pprl_zone
+    raw_paths:
+    - georisques.pprl.zone
+    role: F
+    weight: 0.3
+    transform:
+      type: categorical
+      mapping:
+        blanche: 0.1
+        bleue: 0.6
+        rouge: 1.0
+      unmapped: null
+    direction: increasing
+    unit: class
+    physical_mechanism: Zonage reglementaire de submersion marine.
+    min_source_rank: 2
+    allowed_scopes:
+    - parcel
+    - building
+    - building_group
+    allowed_time_horizons:
+    - current
+    on_missing: renormalize_if_dominant_present
+    on_conflict: keep_highest_rank
+    evidence_level: high
+    references:
+    - 'Referentiel, taxonomie P14 : cartes PPRL'
+    calibration_status: published_threshold
+    notes: Endpoint PPRL non interroge par le collector.
+  - key: site.altitude
+    raw_paths:
+    - altitude_m
+    role: F
+    weight: 0.25
+    transform:
+      type: linear_ramp
+      points:
+      - - 0
+        - 1.0
+      - - 3
+        - 0.85
+      - - 10
+        - 0.35
+      - - 25
+        - 0.0
+    direction: decreasing
+    unit: m
+    physical_mechanism: 'Altitude du site : condition necessaire mais non suffisante de l''atteinte par
+      la mer.'
+    min_source_rank: 2
+    allowed_scopes:
+    - parcel
+    - building
+    - building_group
+    allowed_time_horizons:
+    - current
+    on_missing: renormalize_if_dominant_present
+    on_conflict: keep_highest_rank
+    evidence_level: medium
+    references:
+    - 'Referentiel CEPRI-01 : hauteur d''eau obtenue par cote d''eau - cote plancher'
+    calibration_status: provisional_modeling_weight
+    notes: Altitude ABSOLUE. Sans distance au littoral, elle ne distingue pas un bien de bord de mer d'un
+      bien a 20 km dans les terres.
+vulnerability:
+  variables:
+  - key: building.flood.floor_height_class
+    raw_paths:
+    - questionnaire.building.flood.floor_height_class
+    role: V
+    weight: 0.35
+    transform:
+      type: categorical
+      mapping:
+        lt_0_20: 1.0
+        0_20_to_0_50: 0.6
+        gt_0_50: 0.25
+      unmapped: null
+    direction: decreasing
+    unit: class
+    physical_mechanism: 'Hauteur du plancher bas : entree principale des courbes de dommage submersion.'
+    min_source_rank: 3
+    allowed_scopes:
+    - dwelling
+    - building
+    - building_group
+    allowed_time_horizons:
+    - current
+    on_missing: renormalize_if_dominant_present
+    on_conflict: keep_highest_rank
+    evidence_level: high
+    references:
+    - Referentiel CEPRI-01 ; AMC-01 (table officielle du ministere)
+    calibration_status: published_threshold
+    dominant: true
+  - key: questionnaire.building.basement
+    raw_paths:
+    - questionnaire.building.basement
+    role: V
+    weight: 0.25
+    transform:
+      type: categorical
+      mapping:
+        aucun: 0.0
+        vide_sanitaire: 0.3
+        cave_partielle: 0.7
+        sous_sol_total: 1.0
+      unmapped: null
+    direction: increasing
+    unit: class
+    physical_mechanism: 'Sous-sol ou garage enterre : courbe de dommage distincte et tres differente du
+      logement principal.'
+    min_source_rank: 3
+    allowed_scopes:
+    - dwelling
+    - building
+    - building_group
+    allowed_time_horizons:
+    - current
+    on_missing: renormalize_if_dominant_present
+    on_conflict: keep_highest_rank
+    evidence_level: high
+    references:
+    - 'Referentiel CEPRI-07 ; AMC-04 : courbes sous-sol distinctes'
+    calibration_status: published_threshold
+  - key: questionnaire.building.salt_sensitive_materials
+    raw_paths:
+    - questionnaire.building.salt_sensitive_materials
+    role: V
+    weight: 0.25
+    transform:
+      type: categorical
+      mapping:
+        maconnerie_pleine: 0.3
+        bois: 0.6
+        platre_ossature_metallique: 1.0
+      unmapped: null
+    direction: increasing
+    unit: class
+    physical_mechanism: 'En contexte salin, le second oeuvre est remplace systematiquement : les cloisons
+      platre sur ossature metallique sont les plus penalisees.'
+    min_source_rank: 3
+    allowed_scopes:
+    - dwelling
+    - building
+    - building_group
+    allowed_time_horizons:
+    - current
+    on_missing: renormalize_if_dominant_present
+    on_conflict: keep_highest_rank
+    evidence_level: high
+    references:
+    - 'Referentiel CEPRI-09 : materiaux sensibles au sel ; CEPRI-13 remplacement systematique'
+    calibration_status: provisional_modeling_weight
+  - key: questionnaire.building.flood.technical_equipment_low
+    raw_paths:
+    - questionnaire.building.flood.technical_equipment_low
+    role: V
+    weight: 0.15
+    transform:
+      type: boolean
+      'true': 1.0
+      'false': 0.0
+    direction: increasing
+    unit: bool
+    physical_mechanism: Equipements techniques au niveau bas, en contexte salin.
+    min_source_rank: 3
+    allowed_scopes:
+    - dwelling
+    - building
+    - building_group
+    allowed_time_horizons:
+    - current
+    on_missing: renormalize_if_dominant_present
+    on_conflict: keep_highest_rank
+    evidence_level: medium
+    references:
+    - 'Referentiel CEPRI-09 : canalisations et equipements sensibles au sel'
+    calibration_status: provisional_modeling_weight
+  - key: questionnaire.building.flood.barriers
+    raw_paths:
+    - questionnaire.building.flood.barriers
+    role: protection
+    weight: 0.0
+    transform:
+      type: boolean
+      'true': 1.0
+      'false': 0.0
+    direction: increasing
+    unit: bool
+    physical_mechanism: Batardeaux ou muret peripherique.
+    min_source_rank: 3
+    allowed_scopes:
+    - dwelling
+    - building
+    - building_group
+    allowed_time_horizons:
+    - current
+    on_missing: ignore
+    on_conflict: keep_highest_rank
+    evidence_level: low
+    references:
+    - 'Referentiel, grille Declencheurs & aggravants P14 : ouvrages'
+    calibration_status: provisional_modeling_weight
+    max_reduction: 0.15

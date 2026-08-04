@@ -1,0 +1,22 @@
+{
+  "building.structure.wall_material": {
+    "value": "beton arme",
+    "basis": "document"
+  },
+  "building.year_built": {
+    "value": 2015,
+    "basis": "document"
+  },
+  "building.seismic.chaining": {
+    "value": true,
+    "basis": "document"
+  },
+  "building.seismic.soft_storey": {
+    "value": false,
+    "basis": "observe"
+  },
+  "building.levels": {
+    "value": 2,
+    "basis": "observe"
+  }
+}

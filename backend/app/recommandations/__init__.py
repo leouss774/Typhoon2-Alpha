@@ -1,4 +1,5 @@
 """
+<<<<<<< HEAD
 Module recommandations de travaux (agent RAG "rag_agent" du graphe LangGraph Typhoon).
 
 Copie refactorée de recommendation_travaux-main (dépôt de la collègue en charge de ce
@@ -11,4 +12,20 @@ construit, embeddings Mistral) et data/referentiel.json (pour référence / audi
 phase de curation (agent1_extract.py, populate_registry.py, les PDF sources) reste
 dans le dépôt recommendation_travaux-main, qui fait foi si le référentiel doit être
 regénéré un jour.
+=======
+recommandations — noeud LangGraph "recommandations de travaux" (cf.
+PROMPT_INTEGRATION_ouss.md dans backend/recommendation_travaux-main/).
+
+Ce package est l'integration, dans le backend orchestrateur, de l'agent RAG
+fourni separement (dossier recommendation_travaux-main/ a la racine de
+backend/, garde tel quel comme reference / CLI autonome). Il expose :
+
+- `service.get_index()` / `service.generate_recommendations(...)` : le coeur
+  RAG (recherche + appel Mistral), rendu importable et sans I/O disque a
+  chaque appel (index charge une seule fois, cf. service.py).
+- `mapping.build_house_payload(...)` / `mapping.merge_recommendations(...)` :
+  la traduction entre le contrat de state.risk_scores (produit par
+  app.scoring.risk_model) et le contrat JSON attendu par l'agent RAG
+  (adresse/bien/zones[].risques), dans les deux sens.
+>>>>>>> 565653094351f2bb74c354c73f4ff02443987314
 """

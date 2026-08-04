@@ -1,4 +1,5 @@
 """
+<<<<<<< HEAD
 scoring_agent : deuxieme noeud du graphe LangGraph (voir README.md, section
 "Architecture multi-agents"). Consomme state["building_data"] (sortie de
 collector_agent) et produit state["risk_scores"].
@@ -35,10 +36,20 @@ Aucune valeur n'est inventee sur les DONNEES (materiaux, annee de construction) 
 si l'information n'est pas trouvee dans building_data, le champ reste None. En
 revanche l'association risque -> zone(s) de la maison est un choix de modelisation
 (RISQUE_VERS_ZONES ci-dessous), assume et documente, pas une donnee externe.
+=======
+scoring_agent — noeud LangGraph.
+
+Lit `state.building_data` (produit par collector_agent), ecrit
+`state.risk_scores`. Le calcul lui-meme (deterministe, base sur
+Georisques/BDNB/Open-Meteo) vit dans `app.scoring.risk_model` ; ce module
+n'est que le point de branchement dans le graphe, cf. README section
+"scoring_agent".
+>>>>>>> 565653094351f2bb74c354c73f4ff02443987314
 """
 
 from __future__ import annotations
 
+<<<<<<< HEAD
 import json
 import re
 import unicodedata
@@ -246,3 +257,19 @@ async def scoring_node(state: dict) -> dict:
     """Noeud LangGraph : lit state['building_data'], ecrit state['risk_scores']."""
     building_data = state["building_data"]
     return {"risk_scores": score_risks(building_data)}
+=======
+import time
+
+from app.agents.state import TyphoonState
+from app.core.logging import get_logger
+from app.scoring.risk_model import compute_risk_scores
+
+logger = get_logger(__name__)
+
+
+def run(state: TyphoonState) -> dict:
+    t0 = time.perf_counter()
+    risk_scores = compute_risk_scores(state["building_data"])
+    logger.info("scoring_agent (noeud) -- termine en %.2fs", time.perf_counter() - t0)
+    return {"risk_scores": risk_scores}
+>>>>>>> 565653094351f2bb74c354c73f4ff02443987314

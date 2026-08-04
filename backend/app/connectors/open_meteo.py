@@ -37,7 +37,8 @@ _PROJECTION_WINDOW = ("2041-01-01", "2050-12-31")
 @dataclass
 class ClimatePeriodSummary:
     periode: str
-    temperature_max_moyenne_c: float | None
+    temperature_max_moyenne_c: float | None  # moyenne annuelle des max quotidiens
+    temperature_max_absolue_c: float | None  # pic absolu sur toute la periode
     precipitation_annuelle_moyenne_mm: float | None
     jours_chaleur_extreme_par_an: float | None  # jours > 35 degC, moyenne annuelle
 
@@ -78,6 +79,7 @@ def _summarize(payload: dict, label: str) -> ClimatePeriodSummary:
     precip_values = [p for col in precip_cols for p in col if p is not None]
 
     temp_moy = round(statistics.mean(temp_values), 1) if temp_values else None
+    temp_max_abs = round(max(temp_values), 1) if temp_values else None
     jours_chaleur = None
     if temp_values:
         nb_annees = max(1, len(temp_values) / 365)
@@ -91,6 +93,7 @@ def _summarize(payload: dict, label: str) -> ClimatePeriodSummary:
     return ClimatePeriodSummary(
         periode=label,
         temperature_max_moyenne_c=temp_moy,
+        temperature_max_absolue_c=temp_max_abs,
         precipitation_annuelle_moyenne_mm=precip_annuelle,
         jours_chaleur_extreme_par_an=jours_chaleur,
     )

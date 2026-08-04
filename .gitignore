@@ -2,20 +2,32 @@
 *.zip
 backend/data/lookup/copernicus/
 backend/out/
-
+backend/recommendation_travaux-main/data
+.tmp/
+.pip-cache
 # Python
 __pycache__/
 *.pyc
 .venv/
 venv/
 
+backend/data/lookup/dvf/
+
 # Secrets
 .env
+backend/.env
 *.env
+# Explorateur Windows ajoute parfois .txt en enregistrant un .env : deja
+# arrive deux fois sur ce projet (backend/.env puis ce dossier-ci).
+*.env.txt
 
 # Node
 node_modules/
+frontend/.next/
+*.tsbuildinfo
 
 # OS / éditeurs
 .DS_Store
 Thumbs.db
+
+.freebuff/
