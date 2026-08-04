@@ -27,26 +27,6 @@
     onScroll();
   }
 
-  // ---- Apparition au scroll (.reveal / .reveal-stagger, IntersectionObserver) ----
-  function initReveal() {
-    const targets = home.querySelectorAll('.reveal');
-    if (!targets.length) return;
-    if (!('IntersectionObserver' in window)) {
-      targets.forEach((el) => el.classList.add('visible'));
-      return;
-    }
-    const root = isFixedScroller ? home : null;
-    const obs = new IntersectionObserver((entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('visible');
-          obs.unobserve(entry.target);
-        }
-      });
-    }, { root, threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
-    targets.forEach((el) => obs.observe(el));
-  }
-
   // ---- Entrée du hero (fade + slide-up au chargement, pas au scroll) ----
   function initHeroIntro() {
     const heroContent = document.getElementById('hero-content');
@@ -84,31 +64,53 @@
     videos.forEach((v) => obs.observe(v));
   }
 
-  // ---- Fond de page : transition douce du blanc vers un gris-bleu léger
-  // en descendant (pas de noir : reste dans la palette claire du site).
-  // Invisible derrière le hero (vidéo) et les sections à fond opaque
-  // (#home-ai, bandeau partenaires), visible entre les sections neutres.
-  function initScrollBackground() {
-    if (reduceMotion) return;
-    const from = [255, 255, 255];
-    const to = [227, 233, 237];
-    let ticking = false;
-    function update() {
-      ticking = false;
-      const scrollTop = isFixedScroller ? home.scrollTop : window.scrollY;
-      const total = (isFixedScroller
-        ? home.scrollHeight - home.clientHeight
-        : document.documentElement.scrollHeight - window.innerHeight) || 1;
-      const progress = Math.min(1, Math.max(0, scrollTop / (total * 0.45)));
-      const r = Math.round(from[0] + (to[0] - from[0]) * progress);
-      const g = Math.round(from[1] + (to[1] - from[1]) * progress);
-      const b = Math.round(from[2] + (to[2] - from[2]) * progress);
-      home.style.backgroundColor = 'rgb(' + r + ',' + g + ',' + b + ')';
+  // ---- Fond décoratif : vagues SVG bleues plein écran, animées en continu
+  // (morph du tracé) + léger parallax souris. Généré en JS pour rester
+  // partagé entre index.html et solutions.html sans dupliquer le HTML.
+  function initBgWaves() {
+    const bands = [
+      { cls: 'mk-wave-wrap-1', path: 'mk-wave-path-1', dur: '13s',
+        d0: 'M0,120 C300,40 650,220 950,140 C1200,75 1450,180 1600,110 L1600,300 C1450,370 1200,270 950,330 C650,410 300,230 0,320 Z',
+        d1: 'M0,150 C300,230 650,60 950,180 C1200,270 1450,110 1600,170 L1600,300 C1450,370 1200,270 950,330 C650,410 300,230 0,320 Z' },
+      { cls: 'mk-wave-wrap-2', path: 'mk-wave-path-2', dur: '17s',
+        d0: 'M0,420 C280,340 600,520 900,440 C1150,375 1400,480 1600,410 L1600,600 C1400,670 1150,570 900,630 C600,710 280,530 0,620 Z',
+        d1: 'M0,450 C280,540 600,360 900,460 C1150,540 1400,400 1600,470 L1600,600 C1400,670 1150,570 900,630 C600,710 280,530 0,620 Z' },
+      { cls: 'mk-wave-wrap-3', path: 'mk-wave-path-3', dur: '21s',
+        d0: 'M0,700 C300,630 650,800 950,730 C1200,670 1450,770 1600,710 L1600,900 L0,900 Z',
+        d1: 'M0,730 C300,790 650,650 950,720 C1200,770 1450,690 1600,740 L1600,900 L0,900 Z' }
+    ];
+    const wrap = document.createElement('div');
+    wrap.id = 'mk-bg-fx';
+    wrap.setAttribute('aria-hidden', 'true');
+    wrap.innerHTML = bands.map(function (b) {
+      var anim = reduceMotion ? '' :
+        '<animate attributeName="d" dur="' + b.dur + '" repeatCount="indefinite" calcMode="spline" ' +
+        'keySplines="0.45 0 0.55 1; 0.45 0 0.55 1" values="' + b.d0 + ';' + b.d1 + ';' + b.d0 + '"/>';
+      return '<div class="mk-wave-wrap ' + b.cls + '"><svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice">' +
+        '<path class="' + b.path + '" d="' + b.d0 + '">' + anim + '</path></svg></div>';
+    }).join('');
+    home.insertBefore(wrap, home.firstChild);
+    if (reduceMotion) return; // formes visibles mais statiques, pas de parallax souris
+
+    const waves = wrap.querySelectorAll('.mk-wave-wrap');
+    let targetX = 0, targetY = 0, curX = 0, curY = 0;
+
+    function onMove(e) {
+      targetX = (e.clientX / window.innerWidth - 0.5) * 2;
+      targetY = (e.clientY / window.innerHeight - 0.5) * 2;
     }
-    scrollerEl.addEventListener('scroll', () => {
-      if (!ticking) { requestAnimationFrame(update); ticking = true; }
-    }, { passive: true });
-    update();
+    window.addEventListener('mousemove', onMove, { passive: true });
+
+    function raf() {
+      curX += (targetX - curX) * 0.045;
+      curY += (targetY - curY) * 0.045;
+      waves.forEach((w, i) => {
+        const depth = (i + 1) * 10;
+        w.style.transform = 'translate(' + (curX * depth) + 'px,' + (curY * depth) + 'px)';
+      });
+      requestAnimationFrame(raf);
+    }
+    requestAnimationFrame(raf);
   }
 
   // ---- Parallax léger sur la vidéo du hero (pur CSS var, pas de lib) ----
@@ -136,10 +138,9 @@
   // pas de GSAP sauf nécessité réelle — un simple reveal n'en a pas besoin).
 
   initHeaderScrollState();
-  initReveal();
   initHeroIntro();
   initHeroVideo();
   initLazyVideos();
+  initBgWaves();
   initHeroParallax();
-  initScrollBackground();
 })();
