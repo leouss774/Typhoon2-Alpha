@@ -19,7 +19,7 @@ from __future__ import annotations
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.routes import artisans, diagnostic, health
+from app.api.routes import artisans, chat, diagnostic, health
 from app.api.routes import diagnostic, health, property_id as property_id_router
 from app.core.logging import configure_logging, get_logger
 from app.property_id.service import init_service as init_property_id_service
@@ -39,6 +39,7 @@ app.add_middleware(
 
 app.include_router(health.router)
 app.include_router(diagnostic.router)
+app.include_router(chat.router)
 app.include_router(artisans.router)
 app.include_router(artisans.legacy_router)
 app.include_router(property_id_router.router)
