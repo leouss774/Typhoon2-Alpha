@@ -4,7 +4,13 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Typhoon — Diagnostic Climatique Immobilier</title>
-<link rel="icon" href="data:,">
+<meta name="description" content="Typhoon anticipe le risque climatique d'un bien immobilier — jumeau numérique 3D, score de résilience et recommandations de travaux, à partir d'une simple adresse.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Typhoon — Diagnostic Climatique Immobilier">
+<meta property="og:description" content="Anticipez le risque climatique d'un bien, avant qu'il ne devienne un sinistre.">
+<meta property="og:image" content="assets/landing/og-share.jpg.jpeg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='6' fill='%23316f96'/%3E%3Cpath d='M12 4 6 6.5v5c0 4 2.5 6.8 6 8 3.5-1.2 6-4 6-8v-5z' fill='none' stroke='%23fff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='m9.3 12 1.7 1.7 3-3' fill='none' stroke='%23fff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -12,6 +18,11 @@
 <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet" />
 <!-- turf.js : génération des isobandes (aplats de risque lissés, cf. #zone-map isoband-fill) -->
 <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
+<!-- Design system + comportements de la vitrine (clair, premium/tech) — partagé avec solutions.html.
+     100% vanilla JS (IntersectionObserver) : pas de GSAP, la page ne fait que des reveals et un
+     parallax léger, ce qui ne justifie pas une librairie d'animation. -->
+<link rel="stylesheet" href="assets/landing/site.css">
+<script src="assets/landing/site.js" defer></script>
 <style>
   :root {
     --brand: #316f96;
@@ -63,12 +74,25 @@
   /* ---- Panneaux du jumeau numérique (écran 3) ---- */
   #toggle-panel {
     position: absolute; top: 20px; left: 20px;
-    background: rgba(255, 255, 255, 0.96); border: 1px solid #DCE6EC; border-radius: 10px;
-    padding: 14px 18px; color: #3E4850; z-index: 10; backdrop-filter: blur(8px);
-    box-shadow: 0 0 20px rgba(67, 134, 177, 0.15); width: 280px;
+    background: rgba(255, 255, 255, 0.92); border: 1px solid rgba(220, 230, 236, 0.8); border-radius: 16px;
+    padding: 16px 18px; color: #3E4850; z-index: 10; backdrop-filter: blur(10px);
+    box-shadow: 0 8px 28px rgba(30, 42, 51, 0.1); width: 280px;
   }
-  #toggle-panel h3 { margin: 0 0 8px 0; font-size: 12px; font-weight: 600; color: #316f96; text-transform: uppercase; letter-spacing: 0.08em; }
-  #toggle-panel .addr-line { font-size: 13px; color: #4E5860; margin: 0 0 10px 0; line-height: 1.4; }
+  /* Identité de marque en tête de panneau : remplace l'ancien label
+     "JUMEAU NUMÉRIQUE — DIAGNOSTIC" en majuscules par une composition
+     pictogramme + wordmark, cohérente avec le reste de l'interface
+     (cf. .typhoon-logo sur l'accueil). */
+  #toggle-panel-brand { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  #toggle-panel .tp-mark {
+    width: 32px; height: 32px; border-radius: 9px; flex-shrink: 0;
+    background: linear-gradient(135deg, #5B93FF, #316f96);
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 12px rgba(49, 111, 150, 0.35);
+  }
+  #toggle-panel .tp-brand-text { display: flex; flex-direction: column; line-height: 1.2; min-width: 0; }
+  #toggle-panel .tp-name { font-family: var(--font-head); font-size: 15px; font-weight: 700; color: #1E2A33; letter-spacing: 0.005em; }
+  #toggle-panel .tp-sub { font-size: 10px; font-weight: 700; color: #316f96; text-transform: uppercase; letter-spacing: 0.08em; margin-top: 2px; }
+  #toggle-panel .addr-line { font-size: 13px; color: #4E5860; margin: 0 0 12px 0; padding-bottom: 12px; line-height: 1.4; border-bottom: 1px solid rgba(220, 230, 236, 0.8); }
   #toggle-buttons button {
     background: rgba(241, 246, 249, 0.8); border: 1px solid #DCE6EC; color: #3E4850; padding: 8px 16px;
     border-radius: 6px; cursor: pointer; font-size: 13px; margin-right: 6px; transition: all .15s;
@@ -338,97 +362,14 @@
 
   #hint { position: absolute; bottom: 16px; left: 20px; color: #5C666F; font-size: 12px; z-index: 10; }
 
-  /* ==================== ECRAN 0 : SITE VITRINE / ACCUEIL ==================== */
+  /* ==================== ECRAN 0 : SITE VITRINE / ACCUEIL ====================
+     Design system (clair, premium/tech) : voir assets/landing/site.css.
+     Ne reste ici que ce qui est spécifique à l'app (positionnement fixe de
+     l'overlay, modale carte de prospection ci-dessous). ==================== */
   #home-screen {
     position: fixed; inset: 0; z-index: 150;
-    background: #FFFFFF; overflow-y: auto; -webkit-overflow-scrolling: touch;
+    overflow-y: auto; -webkit-overflow-scrolling: touch; scroll-behavior: smooth;
   }
-  #home-header {
-    position: sticky; top: 0; z-index: 5; background: rgba(255,255,255,0.92); backdrop-filter: blur(10px);
-    border-bottom: 1px solid #DCE6EC; padding: 16px 5vw;
-    display: flex; align-items: center; justify-content: space-between;
-  }
-  #home-nav { display: flex; align-items: center; gap: 30px; }
-  #home-nav a {
-    color: #4B5760; text-decoration: none; font-size: 14px; font-weight: 600;
-  }
-  #home-nav a:hover { color: #316f96; }
-
-  /* ---- Animation d'apparition au scroll ---- */
-  .reveal { opacity: 0; transform: translateY(28px); transition: opacity .7s ease, transform .7s ease; will-change: opacity, transform; }
-  .reveal.visible { opacity: 1; transform: translateY(0); }
-  .reveal-stagger > * { opacity: 0; transform: translateY(20px); transition: opacity .6s ease, transform .6s ease; }
-  .reveal-stagger.visible > * { opacity: 1; transform: translateY(0); }
-  .reveal-stagger.visible > *:nth-child(1) { transition-delay: .05s; }
-  .reveal-stagger.visible > *:nth-child(2) { transition-delay: .15s; }
-  .reveal-stagger.visible > *:nth-child(3) { transition-delay: .25s; }
-  .reveal-stagger.visible > *:nth-child(4) { transition-delay: .35s; }
-  @media (prefers-reduced-motion: reduce) {
-    .reveal, .reveal-stagger > * { opacity: 1 !important; transform: none !important; transition: none !important; }
-  }
-  #home-header-actions { display: flex; align-items: center; gap: 14px; }
-  .btn-ghost {
-    background: none; border: 1px solid #DCE6EC; color: #1E2A33; font-family: var(--font-body);
-    font-weight: 700; font-size: 13.5px; padding: 10px 18px; border-radius: 8px; cursor: pointer; transition: border-color .15s, color .15s;
-  }
-  .btn-ghost:hover { border-color: #316f96; color: #316f96; }
-  .btn-primary {
-    background: #316f96; border: none; color: #FFFFFF; font-family: var(--font-body);
-    font-weight: 700; font-size: 13.5px; padding: 10px 20px; border-radius: 8px; cursor: pointer;
-    transition: background .15s, transform .1s; box-shadow: 0 6px 18px rgba(67,134,177,0.3);
-  }
-  .btn-primary:hover { background: #204e6d; }
-  .btn-primary:active { transform: scale(0.98); }
-
-  #home-hero {
-    display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 40px; align-items: center;
-    padding: 70px 5vw 60px; max-width: 1280px; margin: 0 auto;
-  }
-  #home-hero .eyebrow {
-    display: inline-flex; align-items: center; gap: 6px; color: #316f96; background: #dceef4;
-    font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em;
-    padding: 6px 14px; border-radius: 999px; margin-bottom: 18px;
-  }
-  #home-hero h1 { font-size: 44px; line-height: 1.14; color: #1E2A33; margin: 0 0 18px 0; font-weight: 700; letter-spacing: -0.01em; }
-  #home-hero h1 em { color: #316f96; font-style: normal; }
-  #home-hero .lead { color: #4B5760; font-size: 16px; line-height: 1.6; max-width: 480px; margin: 0 0 30px 0; }
-  #home-hero .hero-ctas { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
-  #home-hero .hero-ctas .btn-primary { font-size: 15px; padding: 15px 26px; }
-  #home-hero .hero-link { color: #1E2A33; font-weight: 700; font-size: 14px; text-decoration: none; border-bottom: 2px solid #DCE6EC; padding-bottom: 2px; }
-  #home-hero .hero-link:hover { border-color: #316f96; color: #316f96; }
-
-  #home-hero-visual {
-    position: relative; border: 1px solid #DCE6EC; border-radius: 8px; padding: 28px;
-    min-height: 400px; display: flex; flex-direction: column; justify-content: flex-end;
-    overflow: hidden; background: #1E2A33 url('photo-maison.jpg') center/cover no-repeat;
-  }
-  #home-hero-visual::before {
-    content: ''; position: absolute; inset: 0;
-    background: linear-gradient(180deg, rgba(30,42,51,0.05) 0%, rgba(30,42,51,0.45) 55%, rgba(30,42,51,0.78) 100%);
-  }
-  #home-hero-visual .hv-stack { position: relative; z-index: 1; }
-  #home-hero-visual .hv-card {
-    background: rgba(255,255,255,0.97); border: 1px solid #DCE6EC; border-radius: 6px; padding: 14px 18px;
-    box-shadow: 0 10px 26px rgba(20,15,10,0.18); margin-bottom: 10px;
-  }
-  #home-hero-visual .hv-card:last-child { margin-bottom: 0; }
-  #home-hero-visual .hv-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-  #home-hero-visual .hv-label { color: #8B959D; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; }
-  #home-hero-visual .hv-value { color: #1E2A33; font-size: 15px; font-weight: 800; }
-  #home-hero-visual .hv-badge { font-size: 10.5px; font-weight: 800; padding: 3px 10px; border-radius: 999px; }
-  #home-hero-visual .hv-badge.risk-high { background: #FDE7E2; color: #DC4B39; }
-  #home-hero-visual .hv-badge.risk-mod { background: #FBEED9; color: #D98A2B; }
-  #home-hero-visual .hv-badge.risk-low { background: #E4F5EC; color: #1F9D6C; }
-  #home-hero-visual .hv-bar-track { height: 6px; border-radius: 999px; background: #E9EEF2; overflow: hidden; margin-top: 8px; }
-  #home-hero-visual .hv-bar-fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, #6fa8cc, #316f96); }
-
-  #home-trustbar {
-    border-top: 1px solid #DCE6EC; border-bottom: 1px solid #DCE6EC; background: #F1F6F9;
-    padding: 22px 5vw; display: flex; flex-wrap: wrap; justify-content: center; gap: 42px;
-  }
-  #home-trustbar .trust-stat { text-align: center; }
-  #home-trustbar .trust-stat .num { color: #1E2A33; font-size: 22px; font-weight: 700; font-family: var(--font-head); }
-  #home-trustbar .trust-stat .lbl { color: #8B959D; font-size: 12px; margin-top: 2px; }
 
   #zone-explorer { max-width: 1180px; margin: 0 auto; padding: 76px 5vw 20px; text-align: center; }
   #zone-explorer .section-eyebrow { color: #316f96; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px; }
@@ -551,12 +492,37 @@
   .badge-critique { background: #FDD8D4; color: #C0392B; }
   .zone-rating-meta { color: var(--text); font-size: 11px; margin-top: 6px; }
 
-  .zone-peril-item { margin-bottom: 10px; }
-  .zone-peril-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
-  .zone-peril-name { font-size: 12px; font-weight: 600; color: var(--ink); }
-  .zone-peril-score { font-size: 13px; font-weight: 700; }
-  .zone-peril-bar { height: 5px; border-radius: 999px; background: rgba(231,222,214,0.5); overflow: hidden; }
-  .zone-peril-fill { height: 100%; border-radius: 999px; transition: width .6s ease; }
+  /* ---- Annonces à proximité (remplace l'ancien détail par péril de la
+     sidebar, jugé peu utile : mêmes données réelles que les marqueurs de
+     la carte — prix, prix/m², score climat — cf. displayZoneAnnonces /
+     renderAnnoncesSidebar) ---- */
+  .zm-annonces-empty { font-size: 11px; color: var(--muted); padding: 4px 0; }
+  .zm-annonce-item {
+    display: flex; align-items: center; gap: 10px; padding: 9px 10px;
+    border: 1px solid var(--border); border-radius: 8px; margin-bottom: 8px;
+    cursor: pointer; transition: border-color .15s, background .15s;
+  }
+  .zm-annonce-item:hover { border-color: var(--brand); background: var(--brand-light); }
+  .zm-annonce-photo {
+    width: 40px; height: 40px; border-radius: 6px; object-fit: cover; flex-shrink: 0;
+    background: var(--surface-alt);
+  }
+  .zm-annonce-photo-placeholder {
+    width: 40px; height: 40px; border-radius: 6px; flex-shrink: 0;
+    background: var(--brand-light); display: flex; align-items: center; justify-content: center;
+  }
+  .zm-annonce-photo-placeholder svg { width: 18px; height: 18px; color: var(--brand); opacity: 0.75; }
+  .zm-annonce-info { flex: 1; min-width: 0; }
+  .zm-annonce-addr {
+    font-size: 11.5px; font-weight: 600; color: var(--ink); white-space: nowrap;
+    overflow: hidden; text-overflow: ellipsis;
+  }
+  .zm-annonce-meta { font-size: 10.5px; color: var(--muted); margin-top: 2px; }
+  .zm-annonce-price { font-size: 12px; font-weight: 800; color: #1F9D6C; }
+  .zm-annonce-score {
+    font-size: 10.5px; font-weight: 700; padding: 2px 7px; border-radius: 999px;
+    color: #fff; flex-shrink: 0; margin-left: 4px;
+  }
   .zone-worst-banner {
     background: rgba(220,75,57,0.08); border: 1px solid rgba(220,75,57,0.2);
     border-radius: 8px; padding: 10px 12px; margin-bottom: 14px;
@@ -636,6 +602,25 @@
   .zone-legend-peril-row .pdot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
   .zone-legend-peril-row .pscore { font-weight: 700; }
 
+  /* ---- Filtre par aléa (barre de boutons en haut de la carte) : bascule
+     l'aplat isobandes entre la vue globale (tous aléas combinés, F/V par
+     zone) et un aléa unique (mêmes 8 aléas que le radar "par bien"), pour
+     isoler visuellement où un péril donné est réellement présent plutôt
+     que de tout mélanger dans une seule coloration. ---- */
+  #zone-alea-filter {
+    position: absolute; left: 50%; top: 14px; transform: translateX(-50%); z-index: 4;
+    display: flex; flex-wrap: wrap; gap: 6px; max-width: calc(100% - 220px);
+    justify-content: center;
+  }
+  .zone-alea-btn {
+    background: rgba(255,255,255,0.94); border: 1px solid var(--border);
+    color: var(--text); font-family: var(--font-body); font-size: 11px; font-weight: 600;
+    padding: 6px 12px; border-radius: 999px; cursor: pointer; white-space: nowrap;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08); transition: background .15s, color .15s, border-color .15s;
+  }
+  .zone-alea-btn:hover { border-color: var(--brand); color: var(--brand-dark); }
+  .zone-alea-btn.active { background: var(--brand); border-color: var(--brand); color: #fff; }
+
   #zone-precision-badge {
     position: absolute; right: 14px; top: 14px; z-index: 3;
     background: rgba(30,42,51,0.85); color: #fff; font-size: 10.5px; font-weight: 600;
@@ -679,114 +664,10 @@
     #zone-sidebar { width: 100%; min-width: unset; max-height: 50vh; border-right: none; border-bottom: 1px solid var(--border); }
   }
 
-  #home-features { max-width: 1180px; margin: 0 auto; padding: 70px 5vw; text-align: center; }
-  #home-features .section-eyebrow { color: #316f96; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px; }
-  #home-features h2 { font-size: 30px; color: #1E2A33; margin: 0 0 12px 0; font-weight: 700; }
-  #home-features .section-lead { color: #4B5760; font-size: 15px; max-width: 620px; margin: 0 auto 46px; line-height: 1.6; }
-  #home-feature-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; text-align: left; }
-  .feature-card {
-    background: #FFFFFF; border: 1px solid #DCE6EC; border-radius: 6px; padding: 26px 24px;
-    transition: box-shadow .2s, transform .2s;
-  }
-  .feature-card:hover { box-shadow: 0 16px 34px rgba(30,20,15,0.08); transform: translateY(-3px); }
-  .feature-card .fc-icon {
-    width: 46px; height: 46px; border-radius: 6px; background: #dceef4; color: #316f96;
-    display: flex; align-items: center; justify-content: center; font-size: 22px; margin-bottom: 16px;
-  }
-  .feature-card h3 { font-size: 17px; color: #1E2A33; margin: 0 0 8px 0; font-weight: 700; }
-  .feature-card p { font-size: 13.5px; color: #4B5760; line-height: 1.55; margin: 0; }
-
-  /* ---- Section "deux modes" ---- */
-  #home-modes { max-width: 1180px; margin: 0 auto; padding: 6px 5vw 76px; }
-  .modes-head { text-align: center; max-width: 620px; margin: 0 auto 40px; }
-  #mode-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
-  .mode-card {
-    position: relative; border-radius: 12px; overflow: hidden; min-height: 430px;
-    display: flex; flex-direction: column; justify-content: flex-end;
-    padding: 30px 30px 28px; isolation: isolate;
-  }
-  .mode-card h3 { color: #FFFFFF; font-size: 23px; margin: 0 0 9px 0; font-weight: 700; }
-  .mode-card p { color: rgba(255,255,255,0.82); font-size: 13.5px; line-height: 1.6; margin: 0; max-width: 420px; }
-  .mode-card ul { list-style: none; margin: 16px 0 24px; padding: 0; display: flex; flex-direction: column; gap: 8px; }
-  .mode-card li { display: flex; align-items: flex-start; gap: 8px; color: rgba(255,255,255,0.92); font-size: 12.5px; line-height: 1.4; }
-  .mode-card li svg { margin-top: 2px; flex-shrink: 0; }
-  .mode-kicker {
-    position: relative; z-index: 2; display: inline-flex; align-self: flex-start; width: fit-content;
-    color: #FFFFFF; background: rgba(67,134,177,0.9); font-size: 11px; font-weight: 800;
-    text-transform: uppercase; letter-spacing: 0.08em; padding: 6px 13px; border-radius: 999px; margin-bottom: 14px;
-  }
-  .mode-kicker-b { background: rgba(93,178,255,0.16); color: #8fd0ff; border: 1px solid rgba(93,178,255,0.4); }
-
-  .mode-card.mode-a { background: #1E2A33 url('photo_famille.jpg') center/cover no-repeat; }
-  .mode-card.mode-a::before {
-    content: ''; position: absolute; inset: 0; z-index: 1;
-    background: linear-gradient(180deg, rgba(30,42,51,0.15) 0%, rgba(30,42,51,0.55) 55%, rgba(20,15,12,0.88) 100%);
-  }
-  .mode-card.mode-a > *:not(.mode-kicker) { position: relative; z-index: 2; }
-  .mode-card.mode-a h3, .mode-card.mode-a p, .mode-card.mode-a ul { position: relative; z-index: 2; }
-
-  .mode-card.mode-b { background: linear-gradient(165deg, #030509 0%, #0a1c38 55%, #123a6e 130%); }
-  .mode-card.mode-b .map-fx {
-    position: absolute; inset: 0; z-index: 1;
-    background-image:
-      linear-gradient(rgba(93,178,255,0.16) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(93,178,255,0.16) 1px, transparent 1px);
-    background-size: 34px 34px;
-    -webkit-mask-image: radial-gradient(ellipse 85% 85% at 50% 40%, #000 45%, transparent 100%);
-    mask-image: radial-gradient(ellipse 85% 85% at 50% 40%, #000 45%, transparent 100%);
-  }
-  .mode-card.mode-b .pin {
-    position: absolute; width: 10px; height: 10px; border-radius: 50%; z-index: 1;
-  }
-  .mode-card.mode-b .pin::after {
-    content: ''; position: absolute; inset: -6px; border-radius: 50%; border: 1px solid currentColor; opacity: 0.55;
-  }
-  .mode-card.mode-b .pin.low { background: #3FE28F; color: #3FE28F; box-shadow: 0 0 10px #3FE28F; }
-  .mode-card.mode-b .pin.mod { background: #FFB25C; color: #FFB25C; box-shadow: 0 0 10px #FFB25C; }
-  .mode-card.mode-b .pin.high { background: #FF6B57; color: #FF6B57; box-shadow: 0 0 10px #FF6B57; }
-  .mode-card.mode-b h3, .mode-card.mode-b p, .mode-card.mode-b ul, .mode-card.mode-b .mode-kicker-b, .mode-btn-b { position: relative; z-index: 2; }
-  .mode-btn-b { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.35); color: #FFFFFF; }
-  .mode-btn-b:hover { border-color: #7FCBFF; color: #7FCBFF; }
-
-  #home-trust { max-width: 1180px; margin: 0 auto; padding: 20px 5vw 76px; text-align: center; }
-  #home-trust .section-eyebrow { color: #316f96; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px; }
-  #home-trust h2 { font-size: 28px; color: #1E2A33; margin: 0 0 12px 0; font-weight: 700; }
-  #home-trust .section-lead { color: #4B5760; font-size: 15px; max-width: 620px; margin: 0 auto 40px; line-height: 1.6; }
-  #trust-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; text-align: left; }
-  .trust-card {
-    background: var(--surface-alt); border: 1px solid var(--border); border-radius: 14px;
-    padding: 26px 24px; transition: box-shadow .15s, transform .15s;
-  }
-  .trust-card:hover { box-shadow: 0 16px 34px rgba(30,20,15,0.08); transform: translateY(-3px); }
-  .trust-logos { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
-  .trust-logo {
-    font-family: var(--font-head); font-size: 12.5px; font-weight: 600; color: #8B959D;
-    background: #FFFFFF; border: 1px solid var(--border); border-radius: 999px; padding: 5px 12px;
-  }
-  .trust-icon {
-    width: 42px; height: 42px; border-radius: 10px; background: var(--brand-light); color: var(--brand-dark);
-    display: flex; align-items: center; justify-content: center; margin-bottom: 14px;
-  }
-  .trust-sector { color: #1E2A33; font-size: 16px; font-weight: 700; margin-bottom: 8px; }
-  .trust-usecase { color: #4B5760; font-size: 13.5px; line-height: 1.55; margin: 0; }
-
-  @media (max-width: 880px) {
-    #trust-grid { grid-template-columns: 1fr; }
-  }
-
-  #home-footer { border-top: 1px solid #DCE6EC; padding: 30px 5vw; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
-  #home-footer .footer-note { color: #8B959D; font-size: 12px; }
-  #home-footer .footer-links { display: flex; gap: 20px; }
-  #home-footer .footer-links a { color: #8B959D; font-size: 12.5px; text-decoration: none; }
-  #home-footer .footer-links a:hover { color: #316f96; }
-
-  @media (max-width: 880px) {
-    #home-hero { grid-template-columns: 1fr; padding-top: 40px; }
-    #home-hero-visual { min-height: 280px; }
-    #home-feature-grid { grid-template-columns: 1fr; }
-    #home-nav { display: none; }
-    #home-hero h1 { font-size: 32px; }
-  }
+  /* Styles de #home-hero, #home-missions, #home-ai, #home-sources et de
+     tous les composants de cartes/boutons : voir assets/landing/site.css.
+     #home-features, #home-trust (page "solutions") réutilisent les mêmes
+     classes, définies une seule fois dans site.css. */
 
   /* ==================== ECRAN 1 : FORMULAIRE ==================== */
   #form-screen {
@@ -856,9 +737,13 @@
   #loading-screen {
     position: fixed; inset: 0; z-index: 100; display: none;
     align-items: center; justify-content: center;
-    background: radial-gradient(circle at 50% 25%, #eef6fa 0%, #FFFFFF 65%);
+    background: #FFFFFF url('assets/landing/orchestration-bg.jpg.jpeg') center/cover no-repeat;
   }
-  #loading-card { width: 100%; max-width: 560px; padding: 0 20px; }
+  #loading-screen::before {
+    content: ''; position: absolute; inset: 0; z-index: 0;
+    background: radial-gradient(circle at 50% 35%, #FFFFFF 0%, rgba(255,255,255,0.94) 40%, rgba(255,255,255,0.72) 65%, rgba(255,255,255,0.5) 100%);
+  }
+  #loading-card { position: relative; z-index: 1; width: 100%; max-width: 560px; padding: 0 20px; }
   #loading-card .eyebrow {
     color: #316f96; font-size: 12px; font-weight: 700; text-transform: uppercase;
     letter-spacing: 0.12em; margin-bottom: 10px; text-align: center;
@@ -1566,168 +1451,265 @@
 <div id="home-screen">
   <header id="home-header">
     <div class="typhoon-logo" style="margin-bottom:0;">
-      <div class="mark"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5 3.5 9 8 11 4.5-2 8-6 8-11V5z"/><path d="m9 12 2 2 4-4"/></svg></div>
+      <img class="mark-img" src="assets/landing/SVG/logo-typhoon-blue.svg" alt="Typhoon" width="120" height="79">
       <div>
         <div class="name">TYPHOON</div>
         <div class="baseline">Diagnostic Climatique Immobilier</div>
       </div>
     </div>
     <nav id="home-nav">
-      <a href="#home-features">Nos solutions</a>
-      <a href="#modes">Comment ça marche</a>
-      <a href="property-id/">Property ID</a>
-      <a href="#">Nous contacter</a>
+      <a href="#home-missions">Nos missions</a>
+      <a href="#home-ai">Apport de l'IA</a>
+      <a href="#home-sources">Sources</a>
+      <a href="solutions.html">Comment ça marche</a>
     </nav>
-    <div id="home-header-actions">
-      <button class="btn-ghost" type="button">Espace professionnel</button>
-    </div>
   </header>
 
-  <section id="home-hero">
-    <div>
-      <div class="eyebrow">Diagnostic climatique immobilier</div>
-      <h1>Le diagnostic climatique qui éclaire <em>chaque décision immobilière</em></h1>
-      <p class="lead">Assureurs, banques, agents et promoteurs : évaluez en quelques minutes la résilience climatique d'un bien ou d'un terrain, à partir de sa seule adresse. Jumeau numérique, score de risque et recommandations de travaux chiffrées — toutes les données sont récupérées automatiquement via la BDNB, Géorisques et Copernicus, sans aucune saisie manuelle.</p>
+  <!-- ============ SECTION 1 — Hero / Proposition de valeur ============ -->
+  <section id="home-hero" aria-label="Proposition de valeur">
+    <div id="hero-video-wrap">
+      <!-- Poster affiché immédiatement ; remplacé par la vidéo une fois chargée
+           (cf. initHeroVideo dans site.js). Sert aussi de fallback connexion lente. -->
+      <img class="hero-poster-img" src="assets/landing/poster-hero.jpg" alt="" aria-hidden="true">
+      <video id="hero-video" data-src="assets/landing/hero-typhoon-house.mp4" muted loop playsinline aria-hidden="true"></video>
     </div>
-    <div id="home-hero-visual">
-      <div class="hv-stack">
-        <div class="hv-card">
-          <div class="hv-row">
-            <span class="hv-label">Score de résilience</span>
-            <span class="hv-badge risk-mod">Risque modéré</span>
-          </div>
-          <div class="hv-row" style="margin-top:6px;">
-            <span class="hv-value">58 / 100</span>
-          </div>
-          <div class="hv-bar-track"><div class="hv-bar-fill" style="width:58%;"></div></div>
-        </div>
-        <div class="hv-card">
-          <div class="hv-row">
-            <span class="hv-label">Fondations</span>
-            <span class="hv-badge risk-high">Aléa élevé</span>
-          </div>
-        </div>
-        <div class="hv-card">
-          <div class="hv-row">
-            <span class="hv-label">Toiture</span>
-            <span class="hv-badge risk-low">Aléa faible</span>
-          </div>
-        </div>
+    <div id="hero-overlay"></div>
+    <div id="hero-content">
+      <div class="mk-eyebrow">Diagnostic climatique immobilier</div>
+      <h1>Anticipez le risque climatique d'un bien, avant qu'il ne devienne un sinistre.</h1>
+      <p class="mk-lead">Typhoon analyse l'exposition actuelle et future de vos biens aux aléas climatiques (inondation, sécheresse, RGA) et propose des recommandations de travaux pour anticiper les sinistres.</p>
+      <div id="hero-alea-row" aria-hidden="true">
+        <div class="hero-alea-chip"><img src="assets/landing/risk-icon-inondation.png" alt=""><span>Inondation</span></div>
+        <div class="hero-alea-chip"><img src="assets/landing/risk-icon-canicule.png" alt=""><span>Sécheresse</span></div>
+        <div class="hero-alea-chip"><img src="assets/landing/risk-icon-rga.png" alt=""><span>RGA</span></div>
+      </div>
+     
+    </div>
+    <div id="hero-scroll-cue"><span></span>Défiler</div>
+  </section>
+
+  <!-- ============ SECTION 2 — Nos missions ============ -->
+  <section id="home-missions" class="reveal" aria-label="Nos missions">
+    <div class="missions-head">
+      <div class="mk-eyebrow">Nos missions</div>
+      <h2>Le risque climatique, évalué au bon moment</h2>
+    </div>
+    <div class="reveal reveal-stagger" id="missions-copy" style="max-width:820px; margin:0 auto 50px;">
+      <p class="mk-lead" style="margin-bottom:18px;">Aujourd'hui, le risque climatique d'un bien est rarement évalué au moment où il compte vraiment : à la souscription, au financement, à la construction. Typhoon comble ce vide en croisant données bâtimentaires et climatiques pour produire, en quelques minutes, un diagnostic clair et exploitable, pas juste un chiffre, mais une explication.</p>
+    </div>
+    <div id="mission-grid" class="reveal reveal-stagger">
+      <div class="mission-card">
+        <div class="mc-icon"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M4 21V9l8-6 8 6v12"/><path d="M9 21v-6h6v6"/></svg></div>
+        <h3>Banques &amp; assureurs</h3>
+        <p>Pour les banques et assureurs, cela agit comme un zonier à la granularité la plus fine possible, celle du bien immobilier. Typhoon éclaire la décision et vient nourrir vos propres modèles.</p>
+      </div>
+      <div class="mission-card">
+        <div class="mc-icon"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V11l7-6 7 6v10"/><path d="M9 21v-5h6v5"/><path d="M9 11h.01M15 11h.01"/></svg></div>
+        <h3>Promoteurs &amp; agents immobiliers</h3>
+        <p>Pour les promoteurs et agents immobilier, c'est la possibilité d'intégrer le risque climatique dès la construction du bien en repérant les points de vulnérabilité ce qui constitue un argument de vente.</p>
+      </div>
+    </div>
+
+    <div id="modes-head" class="reveal">
+      <div class="mk-eyebrow">Deux façons d'utiliser Typhoon</div>
+      <h3>Un même moteur, deux usages</h3>
+      <p>Une adresse précise à instruire, ou tout un secteur à prospecter — Typhoon s'adapte à la décision que vous devez prendre.</p>
+    </div>
+    <div id="mode-grid" class="reveal reveal-stagger">
+      <div class="mode-card mode-a">
+        <img class="mode-poster-img" src="assets/landing/poster-house.jpg" alt="">
+        <video class="lazy-video" data-src="assets/landing/mode-house-scan.mp4" muted loop playsinline aria-hidden="true"></video>
+        <div class="mode-kicker">Diagnostic approfondi</div>
+        <h3>Vérifier un bien</h3>
+        <p>Une adresse précise. Jumeau numérique 3D, score de risque zone par zone et simulateur « si je fais ces travaux ». Le mode qui convainc un assuré, un emprunteur ou un acquéreur.</p>
+        <ul>
+          <li><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Diagnostic zone par zone en jumeau numérique 3D</li>
+          <li><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Simulateur d'impact des travaux sur le score</li>
+          <li><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Devis et certification personnalisés</li>
+        </ul>
+        <button class="btn-primary" id="home-cta-mode-a" type="button">Vérifier une adresse →</button>
+      </div>
+      <div class="mode-card mode-b">
+        <img class="mode-poster-img" src="assets/landing/poster-zone.jpg" alt="">
+        <video class="lazy-video" data-src="assets/landing/zone-heatmap-aerial.mp4" muted loop playsinline aria-hidden="true"></video>
+        <div class="mode-kicker mode-kicker-b">Mode prospection</div>
+        <h3>Chercher un bien ou un terrain</h3>
+        <p>Une zone géographique entière. Vue carte, tri et filtre par score de risque. Le mode décision rapide, pour repérer en un coup d'œil les biens et parcelles les plus résilients d'un secteur.</p>
+        <ul>
+          <li><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Recherche par ville, code postal ou secteur</li>
+          <li><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Carte interactive, tri et filtre par score</li>
+          <li><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Bascule vers le diagnostic approfondi en un clic</li>
+        </ul>
+        <button class="btn-ghost mode-btn-b" id="home-cta-mode-b" type="button">Explorer une zone →</button>
       </div>
     </div>
   </section>
 
-  <div id="home-trustbar" class="reveal reveal-stagger">
-    <div class="trust-stat"><div class="num">12 400+</div><div class="lbl">biens et parcelles diagnostiqués</div></div>
-    <div class="trust-stat"><div class="num">3</div><div class="lbl">métiers accompagnés : assurance, banque, immobilier</div></div>
-    <div class="trust-stat"><div class="num">100%</div><div class="lbl">des données récupérées automatiquement (BDNB)</div></div>
-    <div class="trust-stat"><div class="num">3 min</div><div class="lbl">pour un diagnostic complet</div></div>
-  </div>
-
-  <section id="modes" class="reveal" aria-label="Les deux modes de Typhoon">
-    <div id="home-modes">
-      <div class="modes-head">
-        <div class="section-eyebrow">Deux façons d'utiliser Typhoon</div>
-        <h2>Un même moteur de diagnostic, deux usages</h2>
-        <p class="section-lead">Que vous ayez une adresse précise à instruire ou tout un secteur à prospecter, Typhoon s'adapte à la décision que vous devez prendre.</p>
-      </div>
-      <div id="mode-grid">
-        <div class="mode-card mode-a">
-          <div class="mode-kicker">Mode diagnostic approfondi</div>
-          <h3>Vérifier un bien</h3>
-          <p>Une adresse précise. Jumeau numérique 3D, score de risque zone par zone et simulateur « si je fais ces travaux ». Le mode qui convainc un assuré, un emprunteur ou un acquéreur.</p>
-          <ul>
-            <li><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#5da3c9" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Diagnostic zone par zone en jumeau numérique 3D</li>
-            <li><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#5da3c9" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Simulateur d'impact des travaux sur le score</li>
-            <li><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#5da3c9" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Devis et certification personnalisés</li>
-          </ul>
-          <button class="btn-primary" id="home-cta-mode-a" type="button">Vérifier une adresse →</button>
-        </div>
-        <div class="mode-card mode-b">
-          <div class="map-fx" aria-hidden="true">
-            <span class="pin low" style="left:22%; top:34%;"></span>
-            <span class="pin mod" style="left:38%; top:58%;"></span>
-            <span class="pin high" style="left:52%; top:28%;"></span>
-            <span class="pin low" style="left:64%; top:46%;"></span>
-            <span class="pin mod" style="left:76%; top:66%;"></span>
-            <span class="pin high" style="left:30%; top:74%;"></span>
-            <span class="pin low" style="left:58%; top:70%;"></span>
-          </div>
-          <div class="mode-kicker mode-kicker-b">Mode prospection</div>
-          <h3>Chercher un bien ou un terrain</h3>
-          <p>Une zone géographique entière. Vue carte, tri et filtre par score de risque. Le mode décision rapide, pour repérer en un coup d'œil les biens et parcelles les plus résilients d'un secteur.</p>
-          <ul>
-            <li><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#7FCBFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Recherche par ville, code postal ou secteur</li>
-            <li><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#7FCBFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Carte interactive, tri et filtre par score</li>
-            <li><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#7FCBFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Bascule vers le diagnostic approfondi en un clic</li>
-          </ul>
-          <button class="btn-ghost mode-btn-b" id="home-cta-mode-b" type="button">Explorer une zone →</button>
-        </div>
-      </div>
+  <!-- ============ SECTION 3 — Apport de l'IA ============ -->
+  <section id="home-ai" class="reveal" aria-label="Apport de l'intelligence artificielle">
+    <div class="mistral-badge">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5 3.5 9 8 11 4.5-2 8-6 8-11V5z"/><path d="m9 12 2 2 4-4"/></svg>
+      Propulsé par Mistral AI, le champion européen de l'IA
     </div>
-  </section>
-
-  <section id="home-features" class="reveal">
-    <div class="section-eyebrow">Comment ça marche</div>
-    <h2>Le moteur derrière les deux modes</h2>
-    <p class="section-lead">Notre orchestrateur multi-agents croise l'adresse ou la zone recherchée avec les bases de risques climatiques (Géorisques, Copernicus, BDNB) pour construire le jumeau numérique et calculer le score de résilience — sans aucune saisie manuelle.</p>
-    <div id="home-feature-grid" class="reveal-stagger">
+    <div class="mk-eyebrow">Apport de l'IA</div>
+    <h2>Une IA souveraine, fiable par conception</h2>
+    <p class="mk-lead">Pour répondre aux exigences strictes des banques, des assureurs et des institutions européennes en matière de sécurité, de conformité et de souveraineté des données, l'architecture de Typhoon repose sur les modèles de Mistral AI.</p>
+    <div id="ai-feature-grid" class="reveal reveal-stagger">
       <div class="feature-card">
-        <div class="fc-icon"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12l9-9 9 9"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/></svg></div>
-        <h3>Jumeau numérique du bien</h3>
-        <p>Une reconstitution 3D de votre maison qui visualise, zone par zone, son exposition aux risques climatiques actuels et futurs.</p>
-      </div>
-      <div class="feature-card">
-        <div class="fc-icon"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94z"/></svg></div>
-        <h3>Recommandations de travaux</h3>
-        <p>Des préconisations concrètes et chiffrées pour renforcer les zones les plus vulnérables de votre bien, classées par impact.</p>
+        <div class="fc-icon"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11H1l8-8 8 8h-8v8H9z"/><path d="M13 21h8v-8"/></svg></div>
+        <h3>Recommandations de travaux priorisées</h3>
+        <p>L'IA génère des plans d'action pour renforcer la résilience climatique du bien. Pour garantir la fiabilité et éliminer les hallucinations, elle exploite exclusivement une base documentaire interne via un système RAG.</p>
       </div>
       <div class="feature-card">
-        <div class="fc-icon"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5 3.5 9 8 11 4.5-2 8-6 8-11V5z"/><path d="m9 12 2 2 4-4"/></svg></div>
-        <h3>Certification &amp; prime réduite</h3>
-        <p>Engagez les travaux recommandés et obtenez la certification Climato-Résilient Typhoon, ouvrant droit à une prime sur votre cotisation.</p>
+        <div class="fc-icon"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></div>
+        <h3>Un assistant conversationnel</h3>
+        <p>Un chatbot contextuel répond aux questions de l'utilisateur sur les risques et les recommandations principales, pour guider sa démarche pas à pas.</p>
       </div>
     </div>
   </section>
 
-  <section id="home-trust" class="reveal" aria-label="Ils nous ont fait confiance">
-    <div class="section-eyebrow">Ils nous ont fait confiance</div>
-    <h2>Un diagnostic pensé pour trois métiers, trois décisions</h2>
-    <p class="section-lead">Banques, assureurs, agents et promoteurs utilisent Typhoon au moment précis où la résilience climatique d'un bien devient un critère de décision.</p>
-    <div id="trust-grid" class="reveal-stagger">
-      <div class="trust-card">
-        <div class="trust-logos">
-          <span class="trust-logo">Crédit&nbsp;Foncier</span>
-          <span class="trust-logo">BanquePop</span>
+  <!-- ============ SECTION 4 — Sources de données & méthodologie ============ -->
+  <section id="home-sources" class="reveal" aria-label="Sources de données et méthodologie">
+    <div id="home-sources-inner">
+      <div class="mk-eyebrow">Rigueur &amp; transparence</div>
+      <h2>Sources de données &amp; méthodologie</h2>
+      <p class="mk-lead">Chaque diagnostic Typhoon s'appuie exclusivement sur des sources publiques et expertes reconnues.</p>
+      <div id="sources-grid" class="reveal reveal-stagger">
+        <div class="source-card">
+          <div class="source-tag">BDNB</div>
+          <h3>Base de Données Nationale des Bâtiments</h3>
+          <p>Année de construction, matériaux, surface, usage, performance énergétique : la BDNB documente la vulnérabilité intrinsèque de chaque bâtiment français.</p>
         </div>
-        <div class="trust-icon"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M4 21V9l8-6 8 6v12"/><path d="M9 21v-6h6v6"/></svg></div>
-        <div class="trust-sector">Banques</div>
-        <p class="trust-usecase">Évaluez le risque climatique avant d'accorder un prêt immobilier.</p>
-      </div>
-      <div class="trust-card">
-        <div class="trust-logos">
-          <span class="trust-logo">Alea&nbsp;Assurances</span>
-          <span class="trust-logo">Groupe&nbsp;Sécuria</span>
+        <div class="source-card">
+          <div class="source-tag">Copernicus</div>
+          <h3>Copernicus Climate Data Store</h3>
+          <p>Le programme européen d'observation climatique fournit les données historiques et les projections utilisées pour estimer précipitations, sécheresses et événements extrêmes — aujourd'hui et à horizon 2050.</p>
         </div>
-        <div class="trust-icon"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5 3.5 9 8 11 4.5-2 8-6 8-11V5z"/><path d="m9 12 2 2 4-4"/></svg></div>
-        <div class="trust-sector">Assurance</div>
-        <p class="trust-usecase">Identifiez les biens à haut risque avant de les souscrire.</p>
-      </div>
-      <div class="trust-card">
-        <div class="trust-logos">
-          <span class="trust-logo">Nexity&nbsp;Partners</span>
-          <span class="trust-logo">Agences&nbsp;du&nbsp;Littoral</span>
+        <div class="source-card">
+          <div class="source-tag">Géorisques</div>
+          <h3>Géorisques</h3>
+          <p>L'intégration des données officielles pour qualifier l'exposition contextuelle des biens par zone géographique et par type de risque.</p>
         </div>
-        <div class="trust-icon"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V11l7-6 7 6v10"/><path d="M9 21v-5h6v5"/><path d="M9 11h.01M15 11h.01"/></svg></div>
-        <div class="trust-sector">Agents &amp; promoteurs</div>
-        <p class="trust-usecase">Faites de la résilience climatique un argument de vente.</p>
+        <div class="source-card">
+          <div class="source-tag">ADEME &amp; FFB</div>
+          <h3>ADEME &amp; Fédération Française du Bâtiment</h3>
+          <p>Ces sources expertes alimentent notre base de connaissances pour formuler des recommandations de travaux normées, réalistes et adaptées aux réalités du secteur.</p>
+        </div>
       </div>
+      <p id="sources-methodo">Notre méthodologie de calcul du risque s'appuie sur les standards académiques et les avancées récentes de la recherche, telles que documentées dans l'étude <em>A Modeling Study of Insurance and Real Estate Risk Assessment in the Context of Global Climate Change</em>, Lianshu Peng &amp; al.</p>
     </div>
   </section>
+
+  <!-- ============ Bandeau partenaires / sources de données (défilement continu) ============ -->
+  <div class="partners-loop"><style>
+.partners-loop{position:relative;z-index:1;background-color:var(--black,#090909);margin:0;padding:5rem 2.5rem 4.5rem;overflow:hidden;border-top:1px solid rgba(255,255,255,.08)}
+.partners-loop-inner{width:100%;max-width:1200px;margin:0 auto;display:flex;flex-direction:column;align-items:center;gap:2.25rem}
+.partners-loop-label{font-family:'Inter',sans-serif;font-size:11px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,.38);margin:0}
+.logoloop{position:relative;width:100%;--logoloop-gap:84px;--logoloop-logoHeight:44px}
+.logoloop__track{display:flex;width:max-content;will-change:transform;user-select:none;position:relative;z-index:0}
+.logoloop__list{display:flex;align-items:center;margin:0;padding:0;list-style:none}
+.logoloop__item{flex:0 0 auto;margin-right:var(--logoloop-gap);font-size:var(--logoloop-logoHeight);line-height:1}
+.logoloop__item:last-child{margin-right:var(--logoloop-gap)}
+.logoloop__item img{height:44px;width:auto;max-width:240px;object-fit:contain;vertical-align:middle}
+.logoloop__item img[alt="Copernicus"]{height:84px;max-width:96px}
+.logoloop__node{display:inline-flex;align-items:center;white-space:nowrap;font-family:'Inter',sans-serif;font-size:22px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.55);transition:transform .3s cubic-bezier(.4,0,.2,1),color .3s ease;cursor:default}
+.logoloop--scale-hover .logoloop__item:hover .logoloop__node{transform:scale(1.18);color:rgba(255,255,255,.9)}
+.logoloop--scale-hover .logoloop__item:hover img{transform:scale(1.12)}
+.logoloop__item img{transition:transform .3s cubic-bezier(.4,0,.2,1)}
+.logoloop--fade::before,.logoloop--fade::after{content:'';position:absolute;top:0;bottom:0;width:clamp(48px,10%,160px);pointer-events:none;z-index:10}
+.logoloop--fade::before{left:0;background:linear-gradient(to right,var(--black,#090909) 0%,rgba(0,0,0,0) 100%)}
+.logoloop--fade::after{right:0;background:linear-gradient(to left,var(--black,#090909) 0%,rgba(0,0,0,0) 100%)}
+@media (prefers-reduced-motion:reduce){.logoloop__track{transform:translate3d(0,0,0)!important}.logoloop__node{transition:none!important}.logoloop__item img{transition:none!important}}
+</style><div class="partners-loop-inner">
+    <p class="partners-loop-label">Nos sources de données</p>
+    <div class="logoloop logoloop--horizontal logoloop--fade logoloop--scale-hover" role="region" aria-label="Sources de données" data-speed="55" data-hover-speed="0">
+      <div class="logoloop__track">
+        <ul class="logoloop__list" role="list">
+          <li class="logoloop__item" role="listitem"><span class="logoloop__node">Mistral AI</span></li>
+          <li class="logoloop__item" role="listitem"><img src="assets/landing/georisques.svg" alt="Géorisques"></li>
+          <li class="logoloop__item" role="listitem"><img src="assets/landing/BDNB.svg" alt="BDNB"></li>
+          <li class="logoloop__item" role="listitem"><img src="assets/landing/copernicus-logo-png_seeklogo-436712.svg" alt="Copernicus"></li>
+          <li class="logoloop__item" role="listitem"><img src="assets/landing/IGN.svg" alt="IGN"></li>
+          <li class="logoloop__item" role="listitem"><img src="assets/landing/Openmeteo.svg" alt="Open-Meteo"></li>
+          <li class="logoloop__item" role="listitem"><img src="assets/landing/datagouvfr.svg" alt="data.gouv.fr"></li>
+        </ul>
+      </div>
+    </div>
+  </div></div>
+  <script>
+  (function () {
+    var loop = document.querySelector('.partners-loop .logoloop');
+    if (!loop) return;
+    var track = loop.querySelector('.logoloop__track');
+    var seed = loop.querySelector('.logoloop__list');
+    if (!track || !seed) return;
+    var SMOOTH_TAU = 0.25, MIN_COPIES = 2, HEADROOM = 2;
+    var speed = parseFloat(loop.getAttribute('data-speed')) || 110;
+    var hoverAttr = loop.getAttribute('data-hover-speed');
+    var hoverSpeed = hoverAttr === null ? 0 : parseFloat(hoverAttr);
+    var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var seqWidth = 0, velocity = 0, offset = 0, lastTs = null, rafId = null, isHovered = false;
+    var clones = [];
+    function buildCopies() {
+      var cw = loop.clientWidth || window.innerWidth || 1;
+      var n = Math.max(MIN_COPIES, Math.ceil(cw / seqWidth) + HEADROOM);
+      clones.forEach(function (c) { if (c.parentNode) c.parentNode.removeChild(c); });
+      clones = [];
+      for (var i = 0; i < n; i++) {
+        var li = seed.cloneNode(true);
+        li.setAttribute('aria-hidden', 'true');
+        track.appendChild(li);
+        clones.push(li);
+      }
+    }
+    function measure() {
+      var r = seed.getBoundingClientRect();
+      seqWidth = Math.ceil(r.width) || 1;
+      buildCopies();
+    }
+    function animate(ts) {
+      if (lastTs === null) lastTs = ts;
+      var dt = Math.max(0, (ts - lastTs) / 1000);
+      lastTs = ts;
+      var target = isHovered && hoverSpeed !== undefined ? hoverSpeed : speed;
+      velocity += (target - velocity) * (1 - Math.exp(-dt / SMOOTH_TAU));
+      offset = ((offset + velocity * dt) % seqWidth + seqWidth) % seqWidth;
+      track.style.transform = 'translate3d(' + (-offset) + 'px,0,0)';
+      rafId = requestAnimationFrame(animate);
+    }
+    function startAnim() { if (rafId === null) { lastTs = null; rafId = requestAnimationFrame(animate); } }
+    function stopAnim() { if (rafId !== null) { cancelAnimationFrame(rafId); rafId = null; lastTs = null; } }
+    measure();
+    if (reduceMotion) {
+      track.style.transform = 'translate3d(0,0,0)';
+    } else {
+      track.addEventListener('mouseenter', function () { isHovered = true; });
+      track.addEventListener('mouseleave', function () { isHovered = false; });
+      track.addEventListener('touchstart', function () { isHovered = true; }, { passive: true });
+      track.addEventListener('touchend', function () { isHovered = false; }, { passive: true });
+      var scroller = document.getElementById('home-screen');
+      var isFixedScroller = scroller && getComputedStyle(scroller).position === 'fixed';
+      if ('IntersectionObserver' in window) {
+        new IntersectionObserver(function (entries) {
+          entries.forEach(function (e) { if (e.isIntersecting) startAnim(); else stopAnim(); });
+        }, { root: isFixedScroller ? scroller : null, threshold: 0 }).observe(loop);
+      } else {
+        startAnim();
+      }
+    }
+    var remeasure = function () { measure(); };
+    if (window.ResizeObserver) { new ResizeObserver(remeasure).observe(loop); }
+    else { window.addEventListener('resize', remeasure); }
+    window.addEventListener('load', remeasure);
+    if (document.fonts && document.fonts.ready) { document.fonts.ready.then(remeasure); }
+    else { setTimeout(remeasure, 400); }
+  })();
+  </script>
 
   <footer id="home-footer">
     <div class="footer-note">© 2026 Typhoon — Diagnostics et devis indicatifs non contractuels.</div>
     <div class="footer-links">
+      <a href="solutions.html">Comment ça marche</a>
       <a href="#">Mentions légales</a>
       <a href="#">Confidentialité</a>
       <a href="#">Contact</a>
@@ -1799,8 +1781,8 @@
               <div class="zone-prix-meta" id="zm-prix-meta">Sélectionnez une ville pour voir les ventes DVF</div>
             </div>
 
-            <div class="zone-section-label">Détail par péril</div>
-            <div id="zm-perils"></div>
+            <div class="zone-section-label">Annonces à proximité</div>
+            <div id="zm-annonces-list"><div class="zm-annonces-empty">Sélectionnez une ville pour voir les biens en vente</div></div>
           </div>
         </div>
         <div id="zone-sample-info"></div>
@@ -1809,6 +1791,7 @@
       <!-- Map -->
       <div id="zone-map-container">
         <div id="zone-map"></div>
+        <div id="zone-alea-filter"></div>
         <div id="zone-legend">
           <div class="zone-legend-title">Niveau de risque</div>
           <div class="zone-legend-row"><span class="zone-legend-swatch" style="background:#1F9D6C;"></span>Faible (0–19)</div>
@@ -1938,7 +1921,15 @@
 </div>
 
 <div id="toggle-panel" class="tab-3d-only">
-  <h3>Jumeau numérique — Diagnostic</h3>
+  <div id="toggle-panel-brand">
+    <span class="tp-mark" aria-hidden="true">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5 3.5 9 8 11 4.5-2 8-6 8-11V5z"/><path d="m9 12 2 2 4-4"/></svg>
+    </span>
+    <div class="tp-brand-text">
+      <span class="tp-name">Jumeau numérique</span>
+      <span class="tp-sub">Diagnostic climatique</span>
+    </div>
+  </div>
   <div class="addr-line" id="addr-line">—</div>
   <div id="toggle-buttons">
     <button id="btn-2025" class="active">2025</button>
@@ -2489,6 +2480,18 @@ const DEFAULT_DATA = {
 };
 
 const ZONE_NAMES = ["fondations", "murs_nord", "murs_sud", "murs_est", "murs_ouest", "toiture", "sous_sol"];
+
+// Libellé affiché pour une zone : les 4 orientations de façade
+// (murs_nord/sud/est/ouest) sont des clés techniques internes, nécessaires
+// à la géométrie 3D et au raycasting, mais s'affichent toutes sous le même
+// terme générique "Murs" — plus simple à lire, sans jargon d'orientation.
+// Point d'entrée unique réutilisé par toute étiquette de zone dans le
+// fichier (info-bulle 3D, panneau rapide, pages du dashboard, Property ID).
+function zoneDisplayLabel(name) {
+  if (!name) return '';
+  if (String(name).indexOf('murs') === 0) return 'Murs';
+  return String(name).replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+}
 
 // ---------- 1. FONCTION DE MAPPING RISQUE -> EFFET VISUEL (pure, déterministe) ----------
 function mapRiskToEffect(zoneName, score) {
@@ -4128,7 +4131,7 @@ function makeLabelCanvasTexture(title, score) {
   ctx.fillStyle = 'rgba(10,16,26,0.9)'; ctx.strokeStyle = color; ctx.lineWidth = 3;
   roundRect(ctx, 4, 4, canvas.width - 8, canvas.height - 8, 12); ctx.fill(); ctx.stroke();
   ctx.fillStyle = '#cfe4ff'; ctx.font = '600 22px Segoe UI, sans-serif';
-  ctx.fillText(title.replace('_', ' '), 20, 36);
+  ctx.fillText(zoneDisplayLabel(title), 20, 36);
   ctx.fillStyle = color; ctx.font = '700 26px Segoe UI, sans-serif';
   ctx.fillText(score + ' / 100', 20, 70);
   return new THREE.CanvasTexture(canvas);
@@ -4232,7 +4235,7 @@ function showZoneTooltip(zoneName, clientX, clientY) {
   const niveau = data ? data.niveau : null;
   const niveauLabels = { faible: 'Risque faible', modere: 'Risque modéré', eleve: 'Risque élevé', critique: 'Risque critique' };
   const niveauColors = { faible: '#22c55e', modere: '#facc15', eleve: '#f97316', critique: '#dc2626' };
-  const label = zoneName.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  const label = zoneDisplayLabel(zoneName);
   zoneTooltipEl.innerHTML = '<strong>' + label + '</strong>' +
     (niveau ? '<br><span style="color:' + (niveauColors[niveau] || '#8B959D') + ';">' + (niveauLabels[niveau] || niveau) + '</span>' : '');
   zoneTooltipEl.style.left = (clientX + 16) + 'px';
@@ -4324,7 +4327,7 @@ function showZoneQuickInfo(zoneName) {
   if (!data || !panel) return;
   const meta = ZQI_NIVEAU_META[data.niveau] || { label: data.niveau || 'Risque', color: '#8B959D' };
 
-  document.getElementById('zone-quickinfo-name').textContent = zoneName.replace(/_/g, ' ');
+  document.getElementById('zone-quickinfo-name').textContent = zoneDisplayLabel(zoneName);
 
   const riskEl = document.getElementById('zone-quickinfo-risk');
   riskEl.innerHTML = '<strong>Risque</strong> — ' + (data.alea_principal ? escapeHtml(data.alea_principal) + ' ' : '')
@@ -4595,10 +4598,19 @@ function formatCoutEstime(cout) {
   return txt;
 }
 
+// Nettoyage éditorial du texte des recommandations : les tirets ("-") du
+// texte source (LLM ou données de démo, ex. "anti-retour", "auto-cohérent")
+// sont remplacés par un espace pour une lecture plus naturelle, sans jamais
+// coller deux mots ensemble.
+function stripHyphens(text) {
+  if (text === null || text === undefined) return text;
+  return String(text).replace(/-/g, ' ').replace(/\s{2,}/g, ' ').trim();
+}
+
 // Helpers partagés (chat + devis) pour lire indifféremment le schéma réel
 // (mesure/cout_estime objet/aide/sources) et le schéma d'exemple
 // (travaux/cout_estime chaîne/gain_resilience).
-function recoLabel(r) { return r.mesure || r.travaux || 'Travaux recommandés'; }
+function recoLabel(r) { return stripHyphens(r.mesure || r.travaux || 'Travaux recommandés'); }
 function recoCostRange(r) {
   const c = r.cout_estime;
   if (c && typeof c === 'object') {
@@ -4781,7 +4793,7 @@ function showZonePanel(zoneName) {
     const tab = document.createElement('span');
     tab.className = 'info-zone-tab' + ((z === zoneName) ? ' active' : '');
     if (!zData.recommandations || !zData.recommandations.length) tab.classList.add('tab-empty');
-    const label = z.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    const label = zoneDisplayLabel(z);
     const n = (zData.recommandations || []).length;
     tab.innerHTML = label + (n > 0 ? '<span class="tab-count">' + n + '</span>' : '');
     tab.onclick = () => showZonePanel(z);
@@ -4792,7 +4804,7 @@ function showZonePanel(zoneName) {
   }
 
   // ---- Zone header ----
-  document.getElementById('info-title').textContent = zoneName.replace(/_/g, ' ');
+  document.getElementById('info-title').textContent = zoneDisplayLabel(zoneName);
   const badge = document.getElementById('info-badge');
   badge.textContent = data.niveau.toUpperCase() + ' \u2014 ' + data.risque + '/100';
   const scoreColorHex = '#' + scoreToColor(data.risque).toString(16).padStart(6, '0');
@@ -4810,7 +4822,7 @@ function showZonePanel(zoneName) {
   const aggravantsDiv = document.getElementById('info-aggravants');
   const attenuantsDiv = document.getElementById('info-attenuants');
   if (data.conclusion) {
-    let zoneLabel = zoneName.replace(/_/g, ' ').replace(/\b\w/g, function(c) { return c.toUpperCase(); });
+    let zoneLabel = zoneDisplayLabel(zoneName);
     diagnosticHeader.textContent = 'Diagnostic ' + zoneLabel;
     etatDiv.textContent = 'Etat : ' + data.conclusion;
     conclusionDiv.style.display = 'block';
@@ -4892,7 +4904,7 @@ function showZonePanel(zoneName) {
       const card = document.createElement('div');
       card.className = 'reco-card';
 
-      const mesure = r.mesure || r.travaux || 'Travaux recommand\u00e9s';
+      const mesure = recoLabel(r);
       const risqueConcerne = r.risque_concerne || (Array.isArray(r.sources) && r.sources.length ? r.sources[0].source_id : '') || '';
       const cout = parseCoutEstime(r.cout_estime);
 
@@ -4916,7 +4928,7 @@ function showZonePanel(zoneName) {
         + '</div>'
         + '<div class="reco-card-body">'
         + (risqueConcerne ? '<div class="reco-risque-tag">' + escapeHtml(risqueConcerne) + '</div>' : '')
-        + (r.explication ? '<div class="reco-explication">' + escapeHtml(r.explication) + '</div>' : '')
+        + (r.explication ? '<div class="reco-explication">' + escapeHtml(stripHyphens(r.explication)) + '</div>' : '')
         + (r.type ? '<div class="reco-meta"><strong>Type :</strong> ' + escapeHtml(r.type.replace(/_/g, ' ')) + '</div>' : '')
         + (coutLabel ? '<div class="reco-meta"><strong>Cout estime :</strong> ' + escapeHtml(coutLabel) + '</div>' : '')
         + (r.gain_resilience ? '<div class="reco-meta"><strong>Gain resilience :</strong> +' + r.gain_resilience + '</div>' : '')
@@ -5126,13 +5138,53 @@ loadDataset(DEFAULT_DATA);
     return { spacingKm: spacing, maxPoints: Math.min(200, total + 2), rows, cols };
   }
 
+  // Les aléas exposés par le backend (compute_risk_scores -> risques_par_alea),
+  // identiques à ceux du radar "par aléa" au niveau du bien (cf. index.html
+  // renderScoresPage) : même nomenclature partout, du bâtiment jusqu'à la
+  // zone/carte. "canicule" est volontairement exclu ici (boutons de filtre +
+  // légende "Aléas de la zone") : peu pertinent à l'échelle d'une carte de
+  // zone, cf. demande utilisateur — il reste disponible au niveau du bien.
   const PERIL_NAMES = {
+    argile: { fr: 'Retrait-gonflement argiles' },
     inondation: { fr: 'Inondation' },
-    rga: { fr: 'RGA (Argiles)' },
-    tempete: { fr: 'Tempête' },
-    incendie: { fr: 'Incendie' },
-    seisme: { fr: 'Séisme' }
+    mouvement_terrain: { fr: 'Mouvement de terrain' },
+    sismique: { fr: 'Sismique' },
+    radon: { fr: 'Radon' },
+    precipitation: { fr: 'Précipitations intenses' },
+    feu_foret: { fr: 'Incendie' }
   };
+  const ALEA_ORDER = ['argile', 'inondation', 'feu_foret', 'sismique', 'mouvement_terrain', 'radon', 'precipitation'];
+  // Clé backend à masquer partout où la carte affiche des données par aléa
+  // (légende, agrégats), même si le backend continue de la calculer.
+  const ZONE_MAP_HIDDEN_ALEAS = ['canicule'];
+
+  // Aléa actuellement sélectionné pour la coloration de la carte : 'global'
+  // (F/V combiné par zone structurelle, comme avant) ou l'une des 8 clés
+  // ci-dessus (score de cet aléa uniquement, cf. buildAleaFilterUI/
+  // renderZoneMapForAlea plus bas).
+  let selectedAlea = 'global';
+  let lastZoneData = null;
+
+  function buildAleaFilterUI() {
+    const box = document.getElementById('zone-alea-filter');
+    if (!box || box.dataset.built) return;
+    box.dataset.built = '1';
+    const makeBtn = (key, label) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'zone-alea-btn' + (key === 'global' ? ' active' : '');
+      btn.dataset.alea = key;
+      btn.textContent = label;
+      btn.addEventListener('click', () => {
+        selectedAlea = key;
+        box.querySelectorAll('.zone-alea-btn').forEach(b => b.classList.toggle('active', b.dataset.alea === key));
+        renderZoneMapForAlea();
+      });
+      return btn;
+    };
+    box.appendChild(makeBtn('global', 'Vue globale'));
+    ALEA_ORDER.forEach(key => box.appendChild(makeBtn(key, PERIL_NAMES[key].fr)));
+  }
 
   // === BAN Geocoding — toutes les villes de France ===
   async function searchCity(query) {
@@ -5184,16 +5236,14 @@ loadDataset(DEFAULT_DATA);
     });
     zoneMap.addControl(new maplibregl.NavigationControl(), 'bottom-right');
     zoneMap.addControl(new maplibregl.ScaleControl({ unit: 'metric' }));
+    buildAleaFilterUI();
 
     zoneMap.on('load', () => {
-      // Source des points d'échantillonnage (garde les points bruts, utile
-      // pour debug/inspection au clic, mais n'est plus l'aplat visuel principal)
-      zoneMap.addSource('sample-points', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
-
-      // AVANT : gros cercles translucides qui se chevauchaient pour simuler un aplat.
-      // MAINTENANT : vraies isobandes (turf.isobands) calculées sur la grille régulière
-      // renvoyée par le backend -> polygones lissés par palier de risque, comme une
-      // carte d'étages bioclimatiques. Voir buildIsobands().
+      // Seule visualisation du risque sur la carte : une coloration
+      // translucide globale (isobandes turf.isobands, zoom-adaptative),
+      // sans les points individuels affichés auparavant (retirés : la
+      // lecture par point surchargeait la carte sans apporter d'info que
+      // l'aplat ne donne déjà). Voir buildIsobands()/renderZoneMapForAlea().
       zoneMap.addSource('risk-isobands', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
       zoneMap.addLayer({
         id: 'risk-isobands-fill',
@@ -5210,34 +5260,6 @@ loadDataset(DEFAULT_DATA);
         type: 'line',
         source: 'risk-isobands',
         paint: { 'line-color': 'rgba(255,255,255,0.25)', 'line-width': 0.5 }
-      });
-
-      // Points individuels par-dessus : uniquement visibles en zoomant sur la ville,
-      // servent de repère précis (l'échantillon exact que le backend a scoré)
-      zoneMap.addLayer({
-        id: 'sample-dots',
-        type: 'circle',
-        source: 'sample-points',
-        minzoom: 13,
-        paint: {
-          'circle-radius': ['interpolate', ['linear'], ['zoom'],
-            13, 1.5,
-            15, 2.5,
-            17, 3.5,
-            18, 5
-          ],
-          'circle-color': [
-            'step', ['get', 'score'],
-            '#1F9D6C',
-            20, '#5ADB8A',
-            40, '#F5C542',
-            60, '#E27B2E',
-            80, '#C0392B'
-          ],
-          'circle-opacity': 0.85,
-          'circle-stroke-color': '#fff',
-          'circle-stroke-width': 1
-        }
       });
 
       // ---- Annonces "en vente" (données réelles uniquement : DVF ou base
@@ -5344,6 +5366,18 @@ loadDataset(DEFAULT_DATA);
   // utilisés pour les scores individuels (faible/modéré/élevé/critique).
   const RISK_BREAKS = [0, 20, 40, 60, 80, 100.01];
   const RISK_COLORS = ['#1F9D6C', '#5ADB8A', '#F5C542', '#E27B2E', '#C0392B'];
+
+  // Extrait le score (0-100) pertinent d'un point selon l'aléa sélectionné :
+  // 'global' = score combiné F/V par zone (comme avant), sinon l'un des 8
+  // aléas réels renvoyés par le backend (risques_par_alea, cf. zone_scoring.py
+  // _result_to_point_dict). Un point sans donnée pour cet aléa retombe à 0
+  // (zone non concernée par ce péril précis).
+  function scoreForAlea(pointScore, alea) {
+    if (!pointScore) return 0;
+    if (alea === 'global') return pointScore.score_global || 0;
+    const entry = pointScore[alea];
+    return entry ? (entry.score || 0) : 0;
+  }
 
   function buildIsobands(points) {
     // points: [{lat, lon, score}], doit former une grille rectangulaire complète
@@ -5576,18 +5610,18 @@ loadDataset(DEFAULT_DATA);
     const source = zoneMap && zoneMap.getSource('annonces');
     if (!data || !data.disponible || !source) {
       if (badge) badge.classList.remove('visible');
+      renderAnnoncesSidebar([]);
       return;
     }
 
     // Filet de sécurité : n'affiche jamais un bien de démonstration, même si
     // une réponse mise en cache ou un ancien appel en contiendrait encore.
-    const features = (data.listings || [])
-      .filter(l => l.lat != null && l.lon != null && l.source !== 'demo')
-      .map(l => ({
-        type: 'Feature',
-        geometry: { type: 'Point', coordinates: [l.lon, l.lat] },
-        properties: l
-      }));
+    const listings = (data.listings || []).filter(l => l.lat != null && l.lon != null && l.source !== 'demo');
+    const features = listings.map(l => ({
+      type: 'Feature',
+      geometry: { type: 'Point', coordinates: [l.lon, l.lat] },
+      properties: l
+    }));
     source.setData({ type: 'FeatureCollection', features });
 
     const count = features.length;
@@ -5597,6 +5631,57 @@ loadDataset(DEFAULT_DATA);
       badge.textContent = `${count} bien(s)`;
     }
     badge.classList.add('visible');
+    renderAnnoncesSidebar(listings);
+  }
+
+  // Sidebar "Annonces à proximité" (remplace l'ancien "Détail par péril") :
+  // mêmes annonces réelles que les marqueurs de la carte (prix, prix/m²,
+  // score climat), triées par prix/m² croissant, limitées à un nombre
+  // raisonnable pour rester lisible. Clic -> recentre la carte et ouvre le
+  // popup complet (showAnnoncePopup), comme un clic direct sur le marqueur.
+  const ZM_ANNONCES_LIMIT = 12;
+  // Icône de repli (petite maison) affichée à la place d'une vraie photo
+  // quand l'annonce n'en fournit pas — plus soigné qu'un carré vide.
+  const ZM_ANNONCE_PLACEHOLDER_HTML = '<div class="zm-annonce-photo-placeholder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M9.5 21v-6h5v6"/></svg></div>';
+  // Exposée en global : appelée depuis l'attribut inline onerror="" de
+  // l'<img> ci-dessous (le photoHtml est injecté via innerHTML, donc ne
+  // peut pas fermer sur une fonction locale du script).
+  window.annoncePhotoFallback = function (imgEl) { imgEl.outerHTML = ZM_ANNONCE_PLACEHOLDER_HTML; };
+  function renderAnnoncesSidebar(listings) {
+    const box = document.getElementById('zm-annonces-list');
+    if (!box) return;
+    if (!listings || !listings.length) {
+      box.innerHTML = '<div class="zm-annonces-empty">Aucune offre réelle disponible pour cette zone</div>';
+      return;
+    }
+    const sorted = listings.slice().sort((a, b) => (a.prix_m2 || Infinity) - (b.prix_m2 || Infinity));
+    box.innerHTML = '';
+    sorted.slice(0, ZM_ANNONCES_LIMIT).forEach(l => {
+      const prixTxt = l.prix != null ? Math.round(l.prix).toLocaleString('fr-FR') + ' €' : '—';
+      const prixM2Txt = l.prix_m2 != null ? Math.round(l.prix_m2).toLocaleString('fr-FR') + ' €/m²' : '';
+      const score = l.climat_score;
+      const scoreColor = '#8B959D';
+      const photoHtml = l.photo
+        ? `<img src="${escapeHtml(l.photo)}" alt="" class="zm-annonce-photo" loading="lazy" onerror="annoncePhotoFallback(this)">`
+        : ZM_ANNONCE_PLACEHOLDER_HTML;
+      const item = document.createElement('div');
+      item.className = 'zm-annonce-item';
+      item.innerHTML = `
+        ${photoHtml}
+        <div class="zm-annonce-info">
+          <div class="zm-annonce-addr">${escapeHtml(l.adresse || 'Bien immobilier')}</div>
+          <div class="zm-annonce-meta"><span class="zm-annonce-price">${prixTxt}</span>${prixM2Txt ? ' · ' + prixM2Txt : ''}</div>
+        </div>
+        <span class="zm-annonce-score" style="background:${scoreColor}">${score != null ? Math.round(score) : '—'}</span>
+      `;
+      item.addEventListener('click', () => {
+        if (l.lat != null && l.lon != null && zoneMap) {
+          zoneMap.flyTo({ center: [l.lon, l.lat], zoom: Math.max(zoneMap.getZoom(), 14), duration: 800 });
+          showAnnoncePopup([l.lon, l.lat], l);
+        }
+      });
+      box.appendChild(item);
+    });
   }
 
   function showAnnoncePopup(coords, p) {
@@ -5637,8 +5722,10 @@ loadDataset(DEFAULT_DATA);
   };
 
   // Légende "Aléas de la zone" (coin haut-gauche de la carte, cf. zone-legend-perils
-  // dans le HTML) : reprend les mêmes 5 aléas que le détail sidebar (zmPerils),
-  // mais en lecture rapide sur la carte elle-même, triés du plus au moins sévère.
+  // dans le HTML) : lecture rapide des aléas directement sur la carte,
+  // triés du plus au moins sévère (seul panneau de détail par péril restant,
+  // la sidebar affiche désormais les annonces à la place). "canicule" est
+  // filtré (cf. ZONE_MAP_HIDDEN_ALEAS) : non pertinent à l'échelle zone.
   function updatePerilsLegend(perils) {
     const box = document.getElementById('zone-legend-perils');
     const rows = document.getElementById('zone-legend-perils-rows');
@@ -5647,8 +5734,13 @@ loadDataset(DEFAULT_DATA);
       return;
     }
     const entries = Object.entries(perils)
+      .filter(([key]) => ZONE_MAP_HIDDEN_ALEAS.indexOf(key) === -1)
       .map(([key, p]) => ({ key, moyenne: p.moyenne || 0 }))
       .sort((a, b) => b.moyenne - a.moyenne);
+    if (!entries.length) {
+      box.style.display = 'none';
+      return;
+    }
 
     rows.innerHTML = '';
     entries.forEach(({ key, moyenne }) => {
@@ -5674,7 +5766,6 @@ loadDataset(DEFAULT_DATA);
     const zmWorst = document.getElementById('zm-worst');
     const zmWorstPeril = document.getElementById('zm-worst-peril');
     const zmWorstScore = document.getElementById('zm-worst-score');
-    const zmPerils = document.getElementById('zm-perils');
     const zmSampleInfo = document.getElementById('zone-sample-info');
 
     zmScore.textContent = data.score_moyen != null ? Math.round(data.score_moyen) : '—';
@@ -5691,54 +5782,30 @@ loadDataset(DEFAULT_DATA);
       zmWorst.style.display = 'none';
     }
 
-    zmPerils.innerHTML = '';
-    if (data.perils) {
-      for (const [key, peril] of Object.entries(data.perils)) {
-        const info = PERIL_NAMES[key] || { fr: key };
-        const score = peril.moyenne || 0;
-        const color = score < 20 ? '#1F9D6C' : score < 45 ? '#D98A2B' : score < 70 ? '#204e6d' : '#C0392B';
-        const div = document.createElement('div');
-        div.className = 'zone-peril-item';
-        div.innerHTML = `
-          <div class="zone-peril-header">
-            <span class="zone-peril-name">${info.fr}</span>
-            <span class="zone-peril-score" style="color:${color}">${Math.round(score)}</span>
-          </div>
-          <div class="zone-peril-bar"><div class="zone-peril-fill" style="width:${score}%;background:${color}"></div></div>
-        `;
-        zmPerils.appendChild(div);
-      }
-    }
     updatePerilsLegend(data.perils);
 
-    // Points bruts (repères précis, visibles à partir du zoom 13)
-    const ptsSource = zoneMap && zoneMap.getSource('sample-points');
-    const validPoints = (data.points_echantillon || [])
+    // Conserve la dernière réponse backend pour permettre de rebasculer
+    // entre "vue globale" et un aléa précis sans refaire d'appel réseau
+    // (cf. renderZoneMapForAlea, déclenché par les boutons #zone-alea-filter).
+    lastZoneData = data;
+    renderZoneMapForAlea();
+  }
+
+  // Recalcule et applique l'aplat isobandes pour l'aléa actuellement
+  // sélectionné (globale ou l'un des 8 aléas réels). Appelé après chaque
+  // nouvelle évaluation backend (displayZoneResults) et à chaque clic sur
+  // un bouton de #zone-alea-filter, en réutilisant les points déjà reçus.
+  function renderZoneMapForAlea() {
+    if (!lastZoneData) return;
+    const validPoints = (lastZoneData.points_echantillon || [])
       .filter(p => p.lat != null && p.lon != null)
-      .map(p => ({ lat: p.lat, lon: p.lon, score: p.score ? p.score.score_global : 50 }));
+      .map(p => ({ lat: p.lat, lon: p.lon, score: scoreForAlea(p.score, selectedAlea) }));
 
-    if (ptsSource) {
-      const features = validPoints.map(p => ({
-        type: 'Feature',
-        geometry: { type: 'Point', coordinates: [p.lon, p.lat] },
-        properties: { score: p.score }
-      }));
-      ptsSource.setData({ type: 'FeatureCollection', features });
-    }
-
-    // Isobandes : l'aplat coloré principal, recalculé à chaque évaluation
-    // (initiale ou auto-raffinée) sur la grille de points reçue.
     const isoSource = zoneMap && zoneMap.getSource('risk-isobands');
     if (isoSource) {
       isoSource.setData(buildIsobands(validPoints));
     }
   }
-
-  const verifyAddrBtn = document.getElementById('home-cta-mode-a');
-  if (verifyAddrBtn) verifyAddrBtn.addEventListener('click', openDiagnosticForm);
-
-  const exploreZoneBtn = document.getElementById('home-cta-mode-b');
-  if (exploreZoneBtn) exploreZoneBtn.addEventListener('click', openZoneExplorer);
 
   zoneCloseBtn.addEventListener('click', closeZoneExplorer);
   zoneOverlay.addEventListener('click', function (e) {
@@ -5902,22 +5969,21 @@ loadDataset(DEFAULT_DATA);
     demoDataBtn.addEventListener('click', function () { goStraightToTwin(DEFAULT_DATA); });
   }
 
-  // ---- Animation d'apparition au scroll (page d'accueil) ----
-  const revealTargets = document.querySelectorAll('#home-screen .reveal');
-  if (revealTargets.length) {
-    if ('IntersectionObserver' in window) {
-      const revealObserver = new IntersectionObserver((entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add('visible');
-            revealObserver.unobserve(entry.target);
-          }
-        });
-      }, { root: homeScreen, threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
-      revealTargets.forEach((el) => revealObserver.observe(el));
-    } else {
-      revealTargets.forEach((el) => el.classList.add('visible'));
-    }
+  // ---- Vitrine (hero, reveal au scroll, boutons magnétiques...) : voir assets/landing/site.js ----
+
+  // Cartes "Vérifier un bien" / "Vérifier une zone" de la section Nos missions.
+  const verifyAddrBtn = document.getElementById('home-cta-mode-a');
+  if (verifyAddrBtn) verifyAddrBtn.addEventListener('click', openDiagnosticForm);
+  const exploreZoneBtn = document.getElementById('home-cta-mode-b');
+  if (exploreZoneBtn) exploreZoneBtn.addEventListener('click', openZoneExplorer);
+
+  // Les CTA "Vérifier une adresse" / "Explorer une zone" de solutions.html
+  // renvoient ici via #diagnostic / #zone (le mode prospection carte + le
+  // formulaire de diagnostic ne vivent que dans ce document).
+  if (location.hash === '#diagnostic') {
+    openDiagnosticForm();
+  } else if (location.hash === '#zone') {
+    openZoneExplorer();
   }
 })();
 </script>
@@ -6000,7 +6066,7 @@ loadDataset(DEFAULT_DATA);
   }
 
   function zoneLabel(name) {
-    return name.replace(/_/g, ' ');
+    return zoneDisplayLabel(name);
   }
 
   function reponseSynthese() {
@@ -6209,7 +6275,7 @@ loadDataset(DEFAULT_DATA);
 
   let items = [];
 
-  function zoneLabel(name) { return name.replace(/_/g, ' '); }
+  function zoneLabel(name) { return zoneDisplayLabel(name); }
 
   function buildItems() {
     const zones = (typeof currentZones !== 'undefined' && currentZones) ? currentZones : DEFAULT_DATA.zones;
@@ -6222,7 +6288,7 @@ loadDataset(DEFAULT_DATA);
           id: zoneName + '__' + idx + '__' + label.replace(/[^a-zA-Z0-9]/g, '_'),
           zone: zoneName,
           travaux: label,
-          cout_estime: cost.label,
+          cout_estime: (cost.label && cost.label !== '—') ? cost.label : '',
           gain_resilience: recoGain(r),
           min: cost.min, max: cost.max,
           checked: true
@@ -6615,9 +6681,9 @@ function pid_renderPropertyID(data) {
     recos.forEach(r => {
       const div = document.createElement('div');
       div.className = 'pid-reco-item';
-      const mesure = r.mesure || r.travaux || r.title || 'Travaux recommandés';
+      const mesure = stripHyphens(r.mesure || r.travaux || r.title || 'Travaux recommandés');
       const typeName = r.type || '';
-      const zoneName = r.zone ? r.zone.replace(/_/g, ' ') : '';
+      const zoneName = r.zone ? zoneDisplayLabel(r.zone) : '';
       const sources = r.sources || [];
       const coutText = r.cout_estime ? (typeof r.cout_estime === 'object' ? r.cout_estime.montant_min || '' : r.cout_estime) : '';
       div.innerHTML = '<svg class="ri" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>'
@@ -6627,7 +6693,7 @@ function pid_renderPropertyID(data) {
         + (zoneName ? '<span class="pid-zone-badge">' + zoneName + '</span>' : '')
         + (typeName ? '<span class="pid-type-badge">' + typeName.replace(/_/g, ' ') + '</span>' : '')
         + '</div>'
-        + (r.explication ? '<div class="rd">' + r.explication.slice(0, 300) + '</div>' : '')
+        + (r.explication ? '<div class="rd">' + stripHyphens(r.explication).slice(0, 300) + '</div>' : '')
         + '<div class="rm">'
         + (coutText ? '<span>' + coutText + '</span>' : '')
         + (r.gain_resilience ? '<span>Résilience +' + r.gain_resilience + '</span>' : '')
@@ -6674,12 +6740,19 @@ function pid_renderPropertyID(data) {
   const twinChips = pid_$('pid-twin-chips');
   twinChips.innerHTML = '';
   if (Object.keys(zones).length > 0) {
+    // Les 4 orientations de murs partagent le même libellé "Murs" (cf.
+    // zoneDisplayLabel) : une seule puce par groupe, sinon 4 puces
+    // identiques se répètent inutilement dans ce résumé.
+    const seenLabels = new Set();
     Object.entries(zones).forEach(([key, val]) => {
+      const label = zoneDisplayLabel(key);
+      if (seenLabels.has(label)) return;
+      seenLabels.add(label);
       const score = val.score != null ? val.score : 0;
       const level = score <= 25 ? 'faible' : score <= 50 ? 'modere' : score <= 75 ? 'eleve' : 'critique';
       const chip = document.createElement('span');
       chip.className = 'tchip ' + level;
-      chip.innerHTML = '<span class="cd"></span> ' + key.replace(/_/g, ' ');
+      chip.innerHTML = '<span class="cd"></span> ' + label;
       twinChips.appendChild(chip);
     });
   } else {
@@ -6732,7 +6805,7 @@ function pid_applyDevisOverrides(currentAddress) {
   if (stored.travaux_retenus && stored.travaux_retenus.length) {
     stored.travaux_retenus.forEach(t => {
       const li = document.createElement('li');
-      li.innerHTML = '<span><span class="wn">' + t.travaux + '</span><span class="wz"> — ' + (t.zone ? t.zone.replace(/_/g, ' ') : '') + '</span></span><span class="wc">' + (t.cout_estime || '—') + '</span>';
+      li.innerHTML = '<span><span class="wn">' + stripHyphens(t.travaux) + '</span><span class="wz"> — ' + (t.zone ? zoneDisplayLabel(t.zone) : '') + '</span></span><span class="wc">' + (t.cout_estime || '—') + '</span>';
       ul.appendChild(li);
     });
   }
@@ -6823,7 +6896,7 @@ function pid_showPropertyID() {
       zones: zones,
     },
     risk_summary: {
-      highest_risk: highestZone ? highestZone.replace(/_/g, ' ') : '—',
+      highest_risk: highestZone ? zoneDisplayLabel(highestZone) : '—',
       risk_level: riskZoneData.niveau || 'N/A',
       main_hazard: riskZoneData.alea_principal || 'N/A',
       zones: zones,
@@ -6934,7 +7007,7 @@ document.querySelectorAll('#home-nav a').forEach(function(a) {
     return 'tres eleve';
   }
   function dashZoneLabel(name) {
-    return String(name).replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    return zoneDisplayLabel(name);
   }
   function dashDataset() {
     return (typeof currentZones !== 'undefined' && currentZones) ? currentZones : DEFAULT_DATA.zones;
@@ -7011,14 +7084,22 @@ document.querySelectorAll('#home-nav a').forEach(function(a) {
     const rowsEl = document.getElementById('dash-zone-score-rows');
     if (rowsEl) {
       rowsEl.innerHTML = '';
+      // Les 4 orientations de murs partagent le même libellé "Murs" : une
+      // seule ligne (basée sur la première façade rencontrée, dont le
+      // risque est de toute façon identique aux 3 autres) plutôt que 4
+      // lignes identiques.
+      const seenLabels = new Set();
       ZONE_NAMES.forEach(name => {
         const z = dataset[name];
         if (!z) return;
+        const label = dashZoneLabel(name);
+        if (seenLabels.has(label)) return;
+        seenLabels.add(label);
         const meta = dashNiveauMeta(z.niveau);
         const row = document.createElement('div');
         row.className = 'dash-zone-score-row';
         row.innerHTML =
-          `<div class="dash-zone-score-name">${escapeHtml(dashZoneLabel(name))}</div>`
+          `<div class="dash-zone-score-name">${escapeHtml(label)}</div>`
           + `<div class="dash-zone-score-track"><div class="dash-zone-score-fill" style="width:${Math.max(0, Math.min(100, z.risque))}%; background:${meta.color};"></div></div>`
           + `<div class="dash-zone-score-num">${z.risque}</div>`
           + `<div class="dash-zone-score-badge" style="background:${meta.color};">${escapeHtml(meta.label)}</div>`
@@ -7072,7 +7153,6 @@ document.querySelectorAll('#home-nav a').forEach(function(a) {
   // réelle (le détail garde la trace de la façade d'origine).
   const DASH_WALL_ZONES = ['murs_nord', 'murs_sud', 'murs_est', 'murs_ouest'];
   function dashZoneGroupLabel(group, zones) {
-    if (group === 'murs') return 'Façades (' + zones.map(z => dashZoneLabel(z).replace('Murs ', '')).join(', ') + ')';
     return dashZoneLabel(group);
   }
 
@@ -7153,6 +7233,10 @@ document.querySelectorAll('#home-nav a').forEach(function(a) {
       const meta = dashNiveauMeta(item.niveau);
       const r = item.raw;
       const zoneLabelText = dashZoneGroupLabel(item.group, item.zones);
+      // Un coût inconnu renvoie un simple tiret ("—") côté recoCostRange :
+      // on ne l'affiche pas plutôt que de montrer un tiret orphelin sans
+      // valeur derrière.
+      const hasCost = !!(item.cost && item.cost.label && item.cost.label !== '—');
       const card = document.createElement('div');
       card.className = 'reco-card';
       card.innerHTML =
@@ -7162,16 +7246,16 @@ document.querySelectorAll('#home-nav a').forEach(function(a) {
         + '<div class="dash-reco-card-body">'
         + `<div class="dash-reco-zone-tag">${escapeHtml(zoneLabelText)}</div>`
         + '<div class="reco-title-wrap"><span class="reco-title">' + escapeHtml(item.mesure) + '</span>'
-        + (item.cost.label ? '<span class="reco-sub">' + escapeHtml(item.cost.label) + '</span>' : '')
+        + (hasCost ? '<span class="reco-sub">' + escapeHtml(item.cost.label) + '</span>' : '')
         + '</div></div></div>'
         + `<span class="reco-priority-badge" style="background:${meta.color};color:#fff;">${escapeHtml(meta.label)}</span>`
         + '</div>'
         + '<div class="reco-card-body">'
-        + (r.explication ? '<div class="reco-explication">' + escapeHtml(r.explication) + '</div>' : '')
+        + (r.explication ? '<div class="reco-explication">' + escapeHtml(stripHyphens(r.explication)) + '</div>' : '')
         + '<div class="reco-meta"><strong>Zone(s) concernée(s) :</strong> ' + escapeHtml(zoneLabelText) + '</div>'
         + (item.zoneDetails[0] && item.zoneDetails[0].alea_principal ? '<div class="reco-meta"><strong>Aléa principal :</strong> ' + escapeHtml(item.zoneDetails[0].alea_principal) + '</div>' : '')
         + (r.type ? '<div class="reco-meta"><strong>Type de travaux :</strong> ' + escapeHtml(String(r.type).replace(/_/g, ' ')) + '</div>' : '')
-        + (item.cost.label ? '<div class="reco-meta"><strong>Coût estimé :</strong> ' + escapeHtml(item.cost.label) + '</div>' : '')
+        + (hasCost ? '<div class="reco-meta"><strong>Coût estimé :</strong> ' + escapeHtml(item.cost.label) + '</div>' : '')
         + (item.gain != null ? '<div class="reco-meta"><strong>Gain de résilience :</strong> +' + item.gain + '%</div>' : '')
         + (r.aide && (r.aide.dispositif || r.aide.conditions) ? '<div class="reco-aide"><b>' + escapeHtml(r.aide.dispositif || 'Aide potentielle') + '</b>'
           + (r.aide.conditions ? '<div style="font-size:11px;margin-top:3px;">' + escapeHtml(r.aide.conditions) + '</div>' : '')
