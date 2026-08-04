@@ -16,7 +16,7 @@ from __future__ import annotations
 import json
 import time
 
-from mistralai import Mistral
+from mistralai.client import Mistral
 
 from app.core.config import settings
 
@@ -28,6 +28,12 @@ THROTTLE_SECONDS = 0.3  # reduit : le retry backoff gere les rares 429
 # Limite a 1000 tokens pour forcer la concision des recommandations
 # (cf. amelioration_recommandation.md, section 2)
 CHAT_MAX_TOKENS = 1000
+
+# Limite plus large pour le chat conversationnel (syntheses, tableaux) :
+# CHAT_MAX_TOKENS (1000) tronquait les reponses du chat en plein milieu
+# d'une synthese. Le prompt SYSTEM_PROMPT (route /chat) borne la longueur
+# attendue, ce max n'est qu'une securite contre les reponses fleuves.
+CHAT_TEXT_MAX_TOKENS = 1800
 
 _client: Mistral | None = None
 
@@ -81,6 +87,40 @@ def chat_json(system_prompt: str, user_prompt: str, max_retries: int = 5) -> dic
             print(f"    -> attente {wait:.0f}s avant nouvelle tentative")
             time.sleep(wait)
     raise RuntimeError(f"Echec appel Mistral (chat) apres {max_retries} tentatives: {last_err}")
+
+
+def chat_text(system_prompt: str, messages: list[dict], max_retries: int = 5) -> str:
+    """Appelle le modele de chat Mistral en texte libre, multi-tours.
+
+    `messages` : liste de {"role": "user"|"assistant", "content": str}
+    (l'historique de la conversation, le system prompt etant passe a
+    part). Contrairement a chat_json, la reponse n'est PAS forcee en JSON :
+    c'est le mode conversationnel du chat du jumeau numerique.
+    """
+    client = get_client()
+    last_err: Exception | None = None
+    for attempt in range(max_retries):
+        try:
+            response = client.chat.complete(
+                model=CHAT_MODEL,
+                messages=[{"role": "system", "content": system_prompt}, *messages],
+                temperature=0.7,
+                max_tokens=CHAT_TEXT_MAX_TOKENS,
+            )
+            content = response.choices[0].message.content
+            time.sleep(THROTTLE_SECONDS)
+            # SDK mistralai : `content` est soit un str, soit une liste de
+            # blocs content (modalites) selon la version — on normalise.
+            if isinstance(content, list):
+                return "".join(getattr(part, "text", "") or "" for part in content)
+            return content or ""
+        except Exception as e:
+            last_err = e
+            wait = _backoff_seconds(e, attempt)
+            print(f"    [retry {attempt + 1}/{max_retries}] erreur Mistral chat_text: {e}")
+            print(f"    -> attente {wait:.0f}s avant nouvelle tentative")
+            time.sleep(wait)
+    raise RuntimeError(f"Echec appel Mistral (chat_text) apres {max_retries} tentatives: {last_err}")
 
 
 def embed_texts(texts: list[str], max_retries: int = 5) -> list[list[float]]:
