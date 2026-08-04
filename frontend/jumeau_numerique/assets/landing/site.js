@@ -84,6 +84,33 @@
     videos.forEach((v) => obs.observe(v));
   }
 
+  // ---- Fond de page : transition douce du blanc vers un gris-bleu léger
+  // en descendant (pas de noir : reste dans la palette claire du site).
+  // Invisible derrière le hero (vidéo) et les sections à fond opaque
+  // (#home-ai, bandeau partenaires), visible entre les sections neutres.
+  function initScrollBackground() {
+    if (reduceMotion) return;
+    const from = [255, 255, 255];
+    const to = [227, 233, 237];
+    let ticking = false;
+    function update() {
+      ticking = false;
+      const scrollTop = isFixedScroller ? home.scrollTop : window.scrollY;
+      const total = (isFixedScroller
+        ? home.scrollHeight - home.clientHeight
+        : document.documentElement.scrollHeight - window.innerHeight) || 1;
+      const progress = Math.min(1, Math.max(0, scrollTop / (total * 0.45)));
+      const r = Math.round(from[0] + (to[0] - from[0]) * progress);
+      const g = Math.round(from[1] + (to[1] - from[1]) * progress);
+      const b = Math.round(from[2] + (to[2] - from[2]) * progress);
+      home.style.backgroundColor = 'rgb(' + r + ',' + g + ',' + b + ')';
+    }
+    scrollerEl.addEventListener('scroll', () => {
+      if (!ticking) { requestAnimationFrame(update); ticking = true; }
+    }, { passive: true });
+    update();
+  }
+
   // ---- Parallax léger sur la vidéo du hero (pur CSS var, pas de lib) ----
   function initHeroParallax() {
     if (reduceMotion) return;
@@ -114,4 +141,5 @@
   initHeroVideo();
   initLazyVideos();
   initHeroParallax();
+  initScrollBackground();
 })();
