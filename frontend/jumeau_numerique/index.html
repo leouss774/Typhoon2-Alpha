@@ -21,8 +21,8 @@
 <!-- Design system + comportements de la vitrine (clair, premium/tech) — partagé avec solutions.html.
      100% vanilla JS (IntersectionObserver) : pas de GSAP, la page ne fait que des reveals et un
      parallax léger, ce qui ne justifie pas une librairie d'animation. -->
-<link rel="stylesheet" href="assets/landing/site.css?v=6">
-<script src="assets/landing/site.js?v=6" defer></script>
+<link rel="stylesheet" href="assets/landing/site.css?v=8">
+<script src="assets/landing/site.js?v=8" defer></script>
 <style>
   :root {
     --brand: #316f96;
@@ -1459,10 +1459,14 @@
     </div>
     <nav id="home-nav">
       <a href="#home-missions">Nos missions</a>
+      <a href="#features">Fonctionnalités</a>
+      <a href="#demo">Démo</a>
       <a href="#home-ai">Apport de l'IA</a>
       <a href="#home-sources">Sources</a>
-      <a href="#features">Fonctionnalités</a>
     </nav>
+    <div id="home-header-actions">
+      <a class="btn-primary" href="#contact">Contactez-nous</a>
+    </div>
   </header>
 
   <!-- ============ SECTION 1 — Hero / Proposition de valeur ============ -->
@@ -1522,7 +1526,7 @@
     </div></section>
 
   <!-- ============ SECTION : Deux façons d'utiliser Typhoon ============ -->
-  <section id="modes" class="reveal" aria-label="Les deux modes de Typhoon">
+  <section id="demo" class="reveal" aria-label="Les deux modes de Typhoon">
     <div id="modes-head" class="reveal">
       <div class="mk-eyebrow">Deux façons d'utiliser Typhoon</div>
       <h3>Un même moteur, deux usages</h3>
@@ -1613,9 +1617,22 @@
     </div>
   </section>
 
+  <!-- ============ SECTION : Contact ============ -->
+  <section id="contact"><div class="wrap">
+        <header class="contact-heading reveal"><div class="kicker">Construisons ensemble</div><h2>Contactez-nous</h2><p>Découvrez comment Typhoon peut transformer la lecture climatique de votre portefeuille immobilier.</p></header>
+        <img class="contact-photo reveal" src="equipe.jpg" alt="L'équipe Typhoon">
+        <div class="contact-steps reveal reveal-stagger">
+          <article class="contact-step"><span class="contact-number">01</span><div class="contact-step-icon"><svg viewBox="0 0 32 32"><path d="M7 5h18v22H7Z"/><path d="M11 10h10M11 15h10M11 20h6"/></svg></div><h3>Réservez un appel</h3><p>Réservez une <strong>démo gratuite de notre plateforme</strong> : c'est simple et sans engagement.</p><i></i></article>
+          <article class="contact-step"><span class="contact-number">02</span><div class="contact-step-icon"><svg viewBox="0 0 32 32"><circle cx="14" cy="14" r="8"/><path d="m20 20 7 7M10 14h8M14 10v8"/></svg></div><h3>Audit de votre portefeuille</h3><p>Nous vous contactons à la date souhaitée pour <strong>analyser vos besoins spécifiques.</strong></p><i></i></article>
+          <article class="contact-step"><span class="contact-number">03</span><div class="contact-step-icon"><svg viewBox="0 0 32 32"><path d="m5 22 8-8 5 5 9-10"/><path d="M20 9h7v7"/><path d="M5 27h22"/></svg></div><h3>Mise en place</h3><p><strong>Nous détaillons vos besoins</strong> et sélectionnons les indicateurs pertinents pour votre activité.</p><i></i></article>
+        </div>
+        <div class="contact-action"><a class="contact-button" href="mailto:contact@typhoon.fr"><span>Réserver une démonstration</span><i>↗</i></a><small>Réponse sous 24 heures ouvrées</small></div>
+      </div>
+    </section>
+
   <!-- ============ Bandeau partenaires / sources de données (défilement continu) ============ -->
   <div class="partners-loop"><style>
-.partners-loop{position:relative;z-index:1;background-color:var(--black,#090909);margin:0;padding:5rem 2.5rem 4.5rem;overflow:hidden;border-top:1px solid rgba(255,255,255,.08)}
+.partners-loop{position:relative;z-index:1;background-color:var(--black,#1e2a33);margin:0;padding:5rem 2.5rem 4.5rem;overflow:hidden;border-top:1px solid rgba(255,255,255,.08)}
 .partners-loop-inner{width:100%;max-width:1200px;margin:0 auto;display:flex;flex-direction:column;align-items:center;gap:2.25rem}
 .partners-loop-label{font-family:'Inter',sans-serif;font-size:11px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,.38);margin:0}
 .logoloop{position:relative;width:100%;--logoloop-gap:84px;--logoloop-logoHeight:44px}
@@ -1630,8 +1647,8 @@
 .logoloop--scale-hover .logoloop__item:hover img{transform:scale(1.12)}
 .logoloop__item img{transition:transform .3s cubic-bezier(.4,0,.2,1)}
 .logoloop--fade::before,.logoloop--fade::after{content:'';position:absolute;top:0;bottom:0;width:clamp(48px,10%,160px);pointer-events:none;z-index:10}
-.logoloop--fade::before{left:0;background:linear-gradient(to right,var(--black,#090909) 0%,rgba(0,0,0,0) 100%)}
-.logoloop--fade::after{right:0;background:linear-gradient(to left,var(--black,#090909) 0%,rgba(0,0,0,0) 100%)}
+.logoloop--fade::before{left:0;background:linear-gradient(to right,var(--black,#1e2a33) 0%,rgba(0,0,0,0) 100%)}
+.logoloop--fade::after{right:0;background:linear-gradient(to left,var(--black,#1e2a33) 0%,rgba(0,0,0,0) 100%)}
 @media (prefers-reduced-motion:reduce){.logoloop__track{transform:translate3d(0,0,0)!important}.logoloop__node{transition:none!important}.logoloop__item img{transition:none!important}}
 </style><div class="partners-loop-inner">
     <p class="partners-loop-label">Nos sources de données</p>
@@ -1720,13 +1737,16 @@
   </script>
 
   <footer id="home-footer">
-    <div class="footer-note">© 2026 Typhoon — Diagnostics et devis indicatifs non contractuels.</div>
-    <div class="footer-links">
-      <a href="#features">Fonctionnalités</a>
-      <a href="#">Mentions légales</a>
-      <a href="#">Confidentialité</a>
-      <a href="#">Contact</a>
+    <div id="home-footer-row">
+      <div class="footer-note">© 2026 Typhoon — Diagnostics et devis indicatifs non contractuels.</div>
+      <div class="footer-links">
+        <a href="#features">Fonctionnalités</a>
+        <a href="#">Mentions légales</a>
+        <a href="#">Confidentialité</a>
+        <a href="#">Contact</a>
+      </div>
     </div>
+    <div class="footer-ai-note">Cette application a été générée avec l'intelligence artificielle</div>
   </footer>
 </div>
 
