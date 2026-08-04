@@ -23,11 +23,42 @@ Le service tourne sur un port distinct (`8001`) de l'API interne
 (`8000` par defaut) : les deux peuvent tourner en parallele sur la meme
 machine. Documentation interactive : `http://localhost:8001/docs`.
 
+## Authentification
+
+Toutes les routes sous `/v1` exigent une cle API dans le header
+`X-API-Key`. Les cles valides sont definies dans `backend/.env` :
+
+```
+PARTNER_API_KEYS=groupeA:cle_groupe_a,groupeB:cle_groupe_b
+```
+
+Une entree `nom:cle` par partenaire, separees par des virgules — le nom
+sert uniquement a l'identifier dans les logs serveur (`partenaire=...`
+sur chaque appel), il n'est jamais renvoye au client. Generez une cle
+avec :
+
+```bash
+python -c "import secrets; print(secrets.token_urlsafe(24))"
+```
+
+Reponses d'erreur :
+- `401` — cle absente ou invalide.
+- `503` — aucune cle configuree cote serveur (`PARTNER_API_KEYS` vide).
+
 ## Endpoint
 
 ### `POST /v1/analyze`
 
 Requete :
+
+```bash
+curl -X POST https://<url-du-service>/v1/analyze \
+  -H "X-API-Key: cle_groupe_a" \
+  -H "Content-Type: application/json" \
+  -d '{"address": "12 rue des Lilas, 33000 Bordeaux"}'
+```
+
+Corps :
 
 ```json
 { "address": "12 rue des Lilas, 33000 Bordeaux" }
@@ -100,19 +131,11 @@ Codes d'erreur :
 - `422` — adresse non geocodable (texte incomplet, hors de France...).
 - `502` — echec d'une etape du pipeline (voir `detail` du message).
 
-## Exemple
-
-```bash
-curl -X POST http://localhost:8001/v1/analyze \
-  -H "Content-Type: application/json" \
-  -d '{"address": "12 rue des Lilas, 33000 Bordeaux"}'
-```
-
 ## Limites actuelles
 
-- **Pas d'authentification.** Choix explicite le temps d'identifier les
-  partenaires reels — a ajouter (cle API par partenaire, header
-  `X-API-Key`) avant toute exposition hors du reseau interne.
+- **Cles API en clair, sans rotation/expiration.** Suffisant pour un
+  nombre restreint de groupes partenaires connus ; a revoir (hachage,
+  expiration, rate-limiting par cle) avant une ouverture plus large.
 - **Temps de reponse** : l'appel enchaine collecte reseau (BDNB,
   Georisques, IGN, Open-Meteo, eventuellement Copernicus) puis generation
   des recommandations par zone via Mistral (RAG) — plusieurs secondes a

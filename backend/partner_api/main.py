@@ -12,9 +12,8 @@ Lancement (depuis backend/, meme racine que l'API interne pour que
     cd backend
     uvicorn partner_api.main:app --reload --port 8001
 
-Pas d'authentification pour l'instant (choix explicite le temps
-d'identifier les partenaires reels) : a ajouter (cle API par partenaire,
-header X-API-Key) avant toute exposition en dehors du reseau interne.
+Authentification par cle API (header X-API-Key, une cle par partenaire) —
+voir partner_api/auth.py et PARTNER_API_KEYS dans backend/.env.
 """
 
 from __future__ import annotations
