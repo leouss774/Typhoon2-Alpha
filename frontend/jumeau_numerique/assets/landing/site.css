@@ -66,9 +66,7 @@
   box-shadow: 0 6px 24px rgba(30,42,51,0.06);
 }
 #home-screen .typhoon-logo { display: flex; align-items: center; gap: 10px; margin-bottom: 0; text-decoration: none; }
-#home-screen .typhoon-logo .mark-img { height: 32px; width: auto; display: block; animation: mk-logo-spin 46s linear infinite; transform-origin: 50% 50%; }
-@keyframes mk-logo-spin { to { transform: rotate(360deg); } }
-@media (prefers-reduced-motion: reduce) { #home-screen .typhoon-logo .mark-img { animation: none; } }
+#home-screen .typhoon-logo .mark-img { height: 32px; width: auto; display: block; }
 #home-screen .typhoon-logo .name { font-family: var(--font-head); font-size: 15px; font-weight: 700; letter-spacing: 0.02em; color: var(--mk-ink); line-height: 1.1; }
 #home-screen .typhoon-logo .baseline { font-size: 10.5px; letter-spacing: 0.03em; color: var(--mk-muted); }
 #home-nav { display: flex; align-items: center; gap: 32px; }
