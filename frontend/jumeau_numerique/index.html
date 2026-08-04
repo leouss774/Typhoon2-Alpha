@@ -1463,9 +1463,6 @@
       <a href="#home-sources">Sources</a>
       <a href="solutions.html">Comment ça marche</a>
     </nav>
-    <div id="home-header-actions">
-      <button class="btn-ghost" type="button">Espace professionnel</button>
-    </div>
   </header>
 
   <!-- ============ SECTION 1 — Hero / Proposition de valeur ============ -->
@@ -1480,14 +1477,13 @@
     <div id="hero-content">
       <div class="mk-eyebrow">Diagnostic climatique immobilier</div>
       <h1>Anticipez le risque climatique d'un bien, avant qu'il ne devienne un sinistre.</h1>
-      <p class="mk-lead">Typhoon analyse l'exposition actuelle et future de vos biens aux aléas climatiques (inondation, sécheresse, submersion) et propose des recommandations de travaux pour anticiper les sinistres.</p>
+      <p class="mk-lead">Typhoon analyse l'exposition actuelle et future de vos biens aux aléas climatiques (inondation, sécheresse, RGA) et propose des recommandations de travaux pour anticiper les sinistres.</p>
       <div id="hero-alea-row" aria-hidden="true">
         <div class="hero-alea-chip"><img src="assets/landing/risk-icon-inondation.png" alt=""><span>Inondation</span></div>
-        <div class="hero-alea-chip"><img src="assets/landing/risk-icon-rga.png" alt=""><span>Sécheresse</span></div>
-        <div class="hero-alea-chip"><img src="assets/landing/risk-icon-tempete.png" alt=""><span>Submersion</span></div>
+        <div class="hero-alea-chip"><img src="assets/landing/risk-icon-canicule.png" alt=""><span>Sécheresse</span></div>
+        <div class="hero-alea-chip"><img src="assets/landing/risk-icon-rga.png" alt=""><span>RGA</span></div>
       </div>
       <div class="hero-ctas">
-        <button class="btn-primary magnetic" id="hero-cta-diagnostic" type="button">Lancer un diagnostic gratuit →</button>
         <a class="hero-link" href="#home-missions">Découvrir nos missions</a>
       </div>
     </div>
@@ -1533,7 +1529,7 @@
           <li><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Simulateur d'impact des travaux sur le score</li>
           <li><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Devis et certification personnalisés</li>
         </ul>
-        <button class="btn-primary magnetic" id="home-cta-mode-a" type="button">Vérifier une adresse →</button>
+        <button class="btn-primary" id="home-cta-mode-a" type="button">Vérifier une adresse →</button>
       </div>
       <div class="mode-card mode-b">
         <img class="mode-poster-img" src="assets/landing/poster-zone.jpg" alt="">
@@ -1546,7 +1542,7 @@
           <li><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Carte interactive, tri et filtre par score</li>
           <li><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Bascule vers le diagnostic approfondi en un clic</li>
         </ul>
-        <button class="btn-ghost mode-btn-b magnetic" id="home-cta-mode-b" type="button">Explorer une zone →</button>
+        <button class="btn-ghost mode-btn-b" id="home-cta-mode-b" type="button">Explorer une zone →</button>
       </div>
     </div>
   </section>
@@ -5870,10 +5866,6 @@ loadDataset(DEFAULT_DATA);
   }
 
   // ---- Vitrine (hero, reveal au scroll, boutons magnétiques...) : voir assets/landing/site.js ----
-
-  // Le hero de l'accueil déclenche directement le formulaire de diagnostic.
-  const heroCtaDiagnostic = document.getElementById('hero-cta-diagnostic');
-  if (heroCtaDiagnostic) heroCtaDiagnostic.addEventListener('click', openDiagnosticForm);
 
   // Cartes "Vérifier un bien" / "Vérifier une zone" de la section Nos missions.
   const verifyAddrBtn = document.getElementById('home-cta-mode-a');

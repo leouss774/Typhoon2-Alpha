@@ -27,24 +27,6 @@
     onScroll();
   }
 
-  // ---- Boutons magnétiques (suivent légèrement le curseur) ----
-  function initMagnetic() {
-    if (reduceMotion) return;
-    home.querySelectorAll('.magnetic').forEach((btn) => {
-      btn.addEventListener('mousemove', (e) => {
-        const r = btn.getBoundingClientRect();
-        const mx = (e.clientX - r.left - r.width / 2) * 0.3;
-        const my = (e.clientY - r.top - r.height / 2) * 0.3;
-        btn.style.setProperty('--mx', mx.toFixed(1));
-        btn.style.setProperty('--my', my.toFixed(1));
-      });
-      btn.addEventListener('mouseleave', () => {
-        btn.style.setProperty('--mx', 0);
-        btn.style.setProperty('--my', 0);
-      });
-    });
-  }
-
   // ---- Apparition au scroll (.reveal / .reveal-stagger, IntersectionObserver) ----
   function initReveal() {
     const targets = home.querySelectorAll('.reveal');
@@ -127,7 +109,6 @@
   // pas de GSAP sauf nécessité réelle — un simple reveal n'en a pas besoin).
 
   initHeaderScrollState();
-  initMagnetic();
   initReveal();
   initHeroIntro();
   initHeroVideo();
