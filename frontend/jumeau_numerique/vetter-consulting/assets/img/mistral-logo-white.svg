@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet" viewBox="0 0 512 164" role="img" aria-labelledby="title">
+  <title id="title">Mistral AI</title>
+  <g fill="#fff">
+    <path d="M0 0h30.731v30.731H0zm0 30.731h30.731v30.732H0zm0 30.732h30.731v30.731H0zm0 30.731h30.731v30.731H0zm0 30.731h30.731v30.731H0z"/>
+    <path d="M15.366 0h30.731v30.731H15.366zm0 30.731h30.731v30.732H15.366zm30.731 0h30.731v30.732H46.097zm30.731 30.732h30.731v30.731H76.828zm30.732-30.732h30.731v30.732H107.56z"/>
+    <path d="M122.925 0h30.732v30.731h-30.732zm15.366 0h30.731v30.731h-30.731zm0 30.731h30.731v30.732h-30.731zm0 30.732h30.731v30.731h-30.731zm0 30.731h30.731v30.731h-30.731zm0 30.731h30.731v30.731h-30.731z"/>
+    <path d="M92.194 30.731h30.731v30.732H92.194zM76.828 61.463h30.731v30.731H76.828zM61.463 92.194h30.731v30.731H61.463zM122.925 92.194h30.732v30.731h-30.732v30.731h30.732v-30.731h15.365V92.194z"/>
+    <text x="214" y="76" font-family="Arial, Helvetica, sans-serif" font-size="64" font-weight="800" letter-spacing="4">MISTRAL</text>
+    <text x="214" y="151" font-family="Arial, Helvetica, sans-serif" font-size="64" font-weight="800" letter-spacing="5">AI</text>
+    <rect x="303" y="155" width="36" height="8" rx="1"/>
+  </g>
+</svg>
