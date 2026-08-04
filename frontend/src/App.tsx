@@ -6,6 +6,8 @@ import { Promoteurs } from './routes/Promoteurs';
 import { Artisans } from './routes/Artisans';
 import { PropertyId } from './routes/PropertyId';
 import { Site } from './routes/Site';
+import { Faq } from './routes/Faq';
+import { Contact } from './routes/Contact';
 
 const nav = [
   { to: '/', label: 'Accueil' },
@@ -43,6 +45,8 @@ export default function App() {
   const location = useLocation();
   const fullscreen =
     location.pathname === '/' ||
+    location.pathname === '/faq' ||
+    location.pathname === '/contact' ||
     location.pathname === '/zone' ||
     location.pathname === '/jumeau';
   return (
@@ -56,6 +60,8 @@ export default function App() {
         <Route path="/artisans" element={<Artisans />} />
         <Route path="/property-id" element={<PropertyId />} />
         <Route path="/site" element={<Site />} />
+        <Route path="/faq" element={<Faq />} />
+        <Route path="/contact" element={<Contact />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </div>
