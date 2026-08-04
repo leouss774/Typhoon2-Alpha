@@ -155,6 +155,36 @@ async def test_georisques_partial_failure():
     print("test_georisques_partial_failure OK ->", json.dumps(data["erreurs"], ensure_ascii=False))
 
 
+async def test_bdnb_geocodeur_format_geojson_feature():
+    """Regression : sur une vraie adresse (26 Rue Victor Hugo, Bourgueil),
+    le geocodeur BDNB a repondu avec un objet GeoJSON Feature unique
+    (`properties.id`, pas de "id" au premier niveau) plutot que la liste
+    plate simulee par BDNB_GEOCODAGE_RESPONSE ci-dessus. Avant le correctif
+    de `_geocode_bdnb`, ce format faisait planter la collecte -> bdnb
+    restait a None pour toute adresse ou l'API repond sous cette forme."""
+    geojson_feature_response = {
+        "type": "Feature",
+        "geometry": {"type": "Point", "coordinates": [0.169251, 47.283669]},
+        "properties": {
+            "id": "37031_1591_00026",
+            "label": "26 Rue Victor Hugo 37140 Bourgueil",
+            "citycode": "37031",
+        },
+    }
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path.endswith("/v1/bdnb/geocodage"):
+            return httpx.Response(200, json=geojson_feature_response)
+        if request.url.path.endswith("/v1/bdnb/donnees/batiment_groupe_complet/adresse"):
+            return httpx.Response(200, json=[{"cle_interop_adr": "37031_1591_00026", "nb_niveau": 2}])
+        raise AssertionError(f"URL non geree : {request.url}")
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        result = await bdnb_connector.fetch_bdnb(client, "26 Rue Victor Hugo, 37140 Bourgueil")
+    assert result["cle_interop_adr"] == "37031_1591_00026"
+    print("test_bdnb_geocodeur_format_geojson_feature OK ->", result)
+
+
 async def test_bdnb_deux_etapes():
     """Verifie la procedure BDNB en 2 appels : geocodage -> cle_interop_adr,
     puis donnees/batiment_groupe_complet/adresse avec cette cle exacte.
@@ -263,7 +293,13 @@ async def test_full_collect_pipeline():
     assert building_data["climat_open_meteo"]["reference_2015_2024"]["temperature_max_moyenne_c"] is not None
     assert "rcp4_5_yearly__heatwave_days" in building_data["climat_copernicus"]
     erreurs_sources = {e["source"] for e in building_data["erreurs"]}
-    assert "dvf_local" in erreurs_sources  # aucun CSV DVF telecharge dans ce test
+    # DVF est desactive par defaut sur un poste sans les volumineux CSV locaux.
+    # Une source desactivee n'est pas une erreur de collecte.
+    if core_config.settings.dvf_enabled:
+        assert "dvf_local" in erreurs_sources
+    else:
+        assert building_data["dvf_local"] is None
+        assert "dvf_local" not in erreurs_sources
     assert "copernicus" not in erreurs_sources
     print("\ntest_full_collect_pipeline OK. Extrait :")
     print(json.dumps(building_data, indent=2, ensure_ascii=False)[:1200], "...")
@@ -274,6 +310,7 @@ async def _run_all():
     await test_altitude()
     await test_climate_open_meteo()
     await test_georisques_partial_failure()
+    await test_bdnb_geocodeur_format_geojson_feature()
     await test_bdnb_deux_etapes()
     test_copernicus_refuse_sans_configuration()
     test_copernicus_request_est_bien_celle_fournie()

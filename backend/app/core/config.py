@@ -25,7 +25,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+    # Chemin absolu : la configuration reste identique que Uvicorn soit lancé
+    # depuis la racine du dépôt ou depuis le dossier backend.
+    model_config = SettingsConfigDict(env_file=BASE_DIR / ".env", extra="ignore")
 
     # BDNB (aucune cle necessaire, confirme par un test reel - voir le guide)
     bdnb_api_key: str | None = None
@@ -44,12 +46,37 @@ class Settings(BaseSettings):
     open_meteo_climate_url: str = "https://climate-api.open-meteo.com/v1/climate"
 
     # Copernicus Climate Data Store (compte + jeton requis, voir le guide
-    # et le docstring de app/connectors/copernicus.py). Chemin absolu ancre
-    # sur le projet (donc sous D:) plutot que relatif au repertoire courant.
+    # et le docstring de app/connectors/copernicus.py). Desactive par defaut
+    # car le premier lancement declenche un telechargement multi-gigaoctets.
+    # --- CHANGEZ ICI --- passez a True pour activer Copernicus dans le workflow.
+    # Vous pouvez aussi le definir via COPERNICUS_ENABLED=true dans .env.
+    copernicus_enabled: bool = True
     copernicus_cache_dir: str = str(BASE_DIR / "data" / "lookup" / "copernicus")
 
-    # Lookup local DVF - meme logique de chemin absolu.
+    # Lookup local DVF - meme logique de chemin absolu. Les CSV par
+    # departement (voir backend/data/lookup/dvf/README.md) ne sont pas
+    # versionnes dans le repo et pesent lourd : chaque poste doit les
+    # telecharger localement. Ce flag permet de desactiver DVF en un
+    # instant sur un poste qui ne les a pas encore (evite de voir
+    # "dvf_local" en erreur sur chaque diagnostic), sans toucher au code.
+    # --- CHANGEZ ICI --- passez a False si les CSV ne sont pas presents
+    # sur ce poste. Vous pouvez aussi le definir via DVF_ENABLED=false
+    # dans .env (pratique pour ne pas modifier ce fichier vous-meme et
+    # eviter les allers-retours si plusieurs personnes partagent le repo).
+    dvf_enabled: bool = False
     dvf_lookup_dir: str = str(BASE_DIR / "data" / "lookup" / "dvf")
+
+    # Mistral (agent recommandations — RAG travaux, cf.
+    # app/recommandations/ et backend/recommendation_travaux-main/)
+    mistral_api_key: str | None = None
+
+    # Annonces immobilieres "en vente" (carte zone, marqueurs colores par
+    # score climatique - cf. app/connectors/annonces_lookup.py). Source :
+    # backend/data/annonces_maisons_france.csv, une base constituee a la
+    # main par l'utilisateur (liens PAP.fr reels) - gratuit, pas d'appel
+    # reseau. Aucune option RapidAPI ici : un essai reel a facture des la
+    # premiere requete meme avec une cle valide, ce chemin a ete retire du
+    # code entierement plutot que juste desactive.
 
     # Divers
     http_timeout_seconds: float = 15.0

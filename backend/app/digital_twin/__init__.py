@@ -1,7 +1,5 @@
-"""digital_twin_agent — assemble le contrat 3D consomme par le frontend.
+"""digital_twin — assemble le diagnostic 3D de vulnérabilité climatique.
 
-Pour l'instant, seule la partie deterministe de la geometrie est
-implementee (`geometry_builder.py`). Reste a faire : `contract.py`
-(assemblage geometry + risk_scores + recommendations dans le contrat
-final, cf. README racine) et le noeud LangGraph correspondant.
+- `geometry_builder.py` : reconstruction géométrique déterministe depuis la BDNB
+- `diagnostic_builder.py` : assemblage final du diagnostic (geometry + scores + interpretations)
 """

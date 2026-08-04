@@ -22,7 +22,13 @@ Deux familles de champs, traitees differemment :
 
 Aucune dependance geo externe (pas de shapely) : le rectangle englobant
 minimal est calcule via une enveloppe convexe + rotating calipers ecrits a
-la main, pour rester dans le perimetre de `requirements.txt` actuel.
+la main, pour rester dans le perimetre de `requirements.txt` actuel. Ces
+primitives vivent desormais dans `app.digital_twin.footprint`, qui produit
+en plus l'EMPRISE POLYGONALE REELLE (bloc `footprint`) consommee par la
+scene 3D. Le rectangle englobant reste calcule ici, mais il n'est plus la
+seule description du bati : c'est le repli pour les biens sans geometrie
+BDNB exploitable, et le socle de retro-compatibilite du contrat
+(`largeur_m` / `longueur_m` / `orientation_deg`, toujours renseignes).
 """
 
 from __future__ import annotations
@@ -30,74 +36,19 @@ from __future__ import annotations
 import math
 from typing import Any, TypedDict
 
+from app.digital_twin.footprint import (
+    classify_type_batiment,
+    convex_hull as _convex_hull,
+    estimate_street_facing_zone,
+    extract_footprint,
+    min_area_rect as _min_area_rect,
+)
+
 # ---------------------------------------------------------------------------
 # 1. Geometrie plane : enveloppe convexe + rectangle englobant minimal
 # ---------------------------------------------------------------------------
 
 Point = tuple[float, float]
-
-
-def _convex_hull(points: list[Point]) -> list[Point]:
-    """Enveloppe convexe (monotone chain d'Andrew). O(n log n)."""
-    pts = sorted(set(points))
-    if len(pts) <= 2:
-        return pts
-
-    def cross(o: Point, a: Point, b: Point) -> float:
-        return (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0])
-
-    lower: list[Point] = []
-    for p in pts:
-        while len(lower) >= 2 and cross(lower[-2], lower[-1], p) <= 0:
-            lower.pop()
-        lower.append(p)
-
-    upper: list[Point] = []
-    for p in reversed(pts):
-        while len(upper) >= 2 and cross(upper[-2], upper[-1], p) <= 0:
-            upper.pop()
-        upper.append(p)
-
-    return lower[:-1] + upper[:-1]
-
-
-def _min_area_rect(hull: list[Point]) -> tuple[float, float, float]:
-    """Rectangle englobant minimal (rotating calipers) sur une enveloppe convexe.
-
-    Retourne (largeur, longueur, angle_deg) ou angle_deg est l'orientation
-    du cote le plus long du rectangle, en degres, mesuree depuis l'axe Est
-    (X), sens trigonometrique — a reprojeter en cap compas par l'appelant si
-    besoin.
-    """
-    n = len(hull)
-    if n < 3:
-        # Degenere (polygone quasi ponctuel/lineaire) : pas de rectangle
-        # sense, l'appelant retombera sur un defaut.
-        return (0.0, 0.0, 0.0)
-
-    best_area = math.inf
-    best = (0.0, 0.0, 0.0)
-
-    for i in range(n):
-        ax, ay = hull[i]
-        bx, by = hull[(i + 1) % n]
-        edge_angle = math.atan2(by - ay, bx - ax)
-        cos_a, sin_a = math.cos(-edge_angle), math.sin(-edge_angle)
-
-        xs = [px * cos_a - py * sin_a for px, py in hull]
-        ys = [px * sin_a + py * cos_a for px, py in hull]
-        width = max(xs) - min(xs)
-        height = max(ys) - min(ys)
-        area = width * height
-
-        if area < best_area:
-            best_area = area
-            long_side_angle_deg = math.degrees(edge_angle)
-            if height > width:
-                long_side_angle_deg += 90.0
-            best = (min(width, height), max(width, height), long_side_angle_deg % 180.0)
-
-    return best
 
 
 def _extract_polygon_points(geom_groupe: dict[str, Any] | None) -> list[Point]:
@@ -235,10 +186,56 @@ class GeometryResult(TypedDict):
 # l'etape LLM contrainte (README §4) ou par le formulaire (priorite 1).
 _CHAMPS_A_COMPLETER = ["has_basement", "has_cellar", "has_garage", "has_garden"]
 
+_ORIENTATIONS_VALIDES = {"nord", "sud", "est", "ouest"}
+
+
+def _ouvertures_from_bdnb(batiment: dict[str, Any]) -> dict[str, Any]:
+    """Fenetres/menuiseries/balcon reels, issus du DPE du batiment (quand il
+    existe dans la BDNB — voir README section "Jumeau numerique 3D").
+
+    Champs source : `l_orientation_baie_vitree` (liste des facades qui ont
+    reellement des fenetres) et `pourcentage_surface_baie_vitree_exterieur`
+    (ratio reel de surface vitree) proviennent du DPE ; ils ne sont PAS
+    toujours renseignes (couverture DPE partielle du parc). Quand ils sont
+    absents, `disponible` reste a False et aucune fenetre n'est fabriquee —
+    conformement au principe du projet de ne jamais inventer une donnee de
+    facade qui n'existe dans aucune source.
+
+    `has_balcony` est verifie independamment (peut etre connu meme si les
+    baies vitrees ne le sont pas, ou inversement, dans quelques reponses
+    BDNB observees).
+    """
+    orientations_brutes = batiment.get("l_orientation_baie_vitree")
+    ratio = batiment.get("pourcentage_surface_baie_vitree_exterieur")
+
+    facades: list[str] = []
+    if isinstance(orientations_brutes, list):
+        facades = [
+            f"murs_{mot.strip().lower()}"
+            for mot in orientations_brutes
+            if isinstance(mot, str) and mot.strip().lower() in _ORIENTATIONS_VALIDES
+        ]
+
+    disponible = bool(facades) and isinstance(ratio, (int, float))
+
+    presence_balcon = batiment.get("presence_balcon")
+    has_balcony = bool(presence_balcon) if isinstance(presence_balcon, bool) else None
+
+    return {
+        "disponible": disponible,
+        "facades_avec_vitrage": facades if disponible else [],
+        "ratio_vitrage": round(float(ratio), 3) if disponible else None,
+        "has_balcony": has_balcony,
+        "menuiserie_materiau": batiment.get("type_materiaux_menuiserie"),
+        "fermeture_type": batiment.get("type_fermeture"),
+        "vitrage_type": batiment.get("type_vitrage"),
+    }
+
 
 def build_geometry_from_bdnb(
     batiment: dict[str, Any],
     formulaire: dict[str, Any] | None = None,
+    adresse: dict[str, Any] | None = None,
 ) -> GeometryResult:
     """Construit le bloc `geometry` du contrat digital_twin_agent.
 
@@ -248,13 +245,26 @@ def build_geometry_from_bdnb(
 
     `formulaire` : champs saisis explicitement par l'utilisateur (priorite 1
     sur l'inference BDNB, cf. README section "digital_twin_agent").
+
+    `adresse` : bloc `building_data["adresse"]` de collector_agent (label,
+    lat, lon...). Sert uniquement a estimer la facade orientee vers la rue
+    (`entree_facade`), a partir du point d'adresse geocode — voir
+    `app.digital_twin.footprint.estimate_street_facing_zone`. Aucun impact
+    sur le reste de la geometrie si absent.
     """
     formulaire = formulaire or {}
     champs_manquants: list[str] = []
     champs_ok: list[str] = []
 
-    # -- emprise au sol --
-    rect = bounding_rect_from_geom_groupe(batiment.get("geom_groupe"))
+    # -- emprise au sol : polygone reel (prioritaire) + rectangle englobant --
+    # Le polygone est ce qui permet a la scene 3D d'extruder la vraie forme
+    # du bati (L, U, immeuble en cour, multipolygone...) au lieu d'une boite.
+    # Le rectangle reste calcule dans tous les cas : le contrat expose
+    # toujours largeur/longueur/orientation, et c'est le seul repli quand la
+    # BDNB ne fournit pas de geometrie exploitable.
+    geom_groupe = batiment.get("geom_groupe")
+    footprint = extract_footprint(geom_groupe)
+    rect = bounding_rect_from_geom_groupe(geom_groupe)
     if formulaire.get("largeur_m") and formulaire.get("longueur_m"):
         largeur_m = formulaire["largeur_m"]
         longueur_m = formulaire["longueur_m"]
@@ -294,9 +304,50 @@ def build_geometry_from_bdnb(
     pente_toit_deg = formulaire.get("pente_toit_deg") or _pente_from_materiau_toiture(materiau_toiture)
     champs_ok += ["roof_shape", "pente_toit_deg"]
 
+    # -- forme et type de bati, deduits du polygone reel --
+    # `footprint_shape` etait jusqu'ici fige a "rectangulaire" : il reflete
+    # maintenant la forme reellement classee a partir des sommets BDNB.
+    forme_emprise = formulaire.get("footprint_shape") or (footprint or {}).get("forme") or "rectangulaire"
+    surface_emprise = (footprint or {}).get("surface_m2") or batiment.get("surface_emprise_sol") or batiment.get("s_geom_groupe")
+    type_batiment = formulaire.get("type_batiment") or classify_type_batiment(
+        floors_count=floors_count,
+        hauteur_m=batiment.get("hauteur_mean"),
+        surface_emprise_m2=surface_emprise,
+        usage_bdnb=batiment.get("usage_niveau_1_txt"),
+    )
+    if footprint:
+        champs_ok += ["footprint", "footprint_shape", "type_batiment"]
+    else:
+        champs_manquants.append("footprint")
+        champs_ok.append("type_batiment")
+
+    # -- ouvertures reelles (DPE) : fenetres/balcon/menuiserie --
+    ouvertures = _ouvertures_from_bdnb(batiment)
+    if ouvertures["disponible"]:
+        champs_ok.append("ouvertures")
+    else:
+        champs_manquants.append("ouvertures")
+    if ouvertures["has_balcony"] is not None:
+        champs_ok.append("ouvertures.has_balcony")
+
+    # -- facade orientee rue, pour la porte d'entree --
+    # Estimee a partir du point d'adresse geocode (voir docstring de
+    # `estimate_street_facing_zone`) : jamais une position arbitraire, mais
+    # jamais garantie non plus (rue non determinable -> None, pas de porte).
+    entree_facade = None
+    if adresse:
+        entree_facade = estimate_street_facing_zone(geom_groupe, adresse.get("lat"), adresse.get("lon"))
+    if entree_facade:
+        champs_ok.append("entree_facade")
+    else:
+        champs_manquants.append("entree_facade")
+
     # -- champs non couverts par la BDNB : formulaire ou a completer --
     geometry: dict[str, Any] = {
-        "footprint_shape": formulaire.get("footprint_shape", "rectangulaire"),
+        "footprint_shape": forme_emprise,
+        "footprint": footprint,
+        "type_batiment": type_batiment,
+        "surface_emprise_m2": round(surface_emprise, 1) if isinstance(surface_emprise, (int, float)) else None,
         "largeur_m": largeur_m,
         "longueur_m": longueur_m,
         "orientation_deg": orientation_deg,
@@ -306,6 +357,8 @@ def build_geometry_from_bdnb(
         "pente_toit_deg": pente_toit_deg,
         "materiau_mur": materiau_mur,
         "materiau_toiture": materiau_toiture,
+        "ouvertures": ouvertures,
+        "entree_facade": entree_facade,
     }
 
     for champ in _CHAMPS_A_COMPLETER:
