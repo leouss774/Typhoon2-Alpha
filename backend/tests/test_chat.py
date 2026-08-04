@@ -63,6 +63,22 @@ def test_chat_appelle_mistral_avec_le_contexte():
     assert "Isolation thermique renforcée" in system_prompt
     assert messages == [{"role": "user", "content": "Quels travaux sont recommandés pour ma toiture ?"}]
 
+    # Les regles de style/structure du chat doivent etre presentes (ton pro,
+    # concision, hiérarchie, estimations) pour eviter les regressions.
+    assert "emoji" in system_prompt
+    assert "mots maximum" in system_prompt
+    assert "ESTIMATIONS" in system_prompt
+    assert "Souhaitez-vous le détail" in system_prompt
+    # Le format compact par zone (demande utilisateur) doit etre impose :
+    # zone en gras avec score/niveau, actions en sous-puces, cout en gras,
+    # détails uniquement à la demande.
+    # Fragments stables (pas de dépendance au tiret exact) pour ne pas
+    # casser le test à la moindre retouche typographique du prompt.
+    assert "FORMAT DES RECOMMANDATIONS" in system_prompt
+    assert "Sous-sol (75/100" in system_prompt
+    assert "**Coût estimé :" in system_prompt
+    assert "DÉTAILS À LA DEMANDE" in system_prompt
+
 
 def test_chat_sans_cle_api_renvoie_503():
     from app.core.config import settings

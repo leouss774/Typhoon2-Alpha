@@ -29,6 +29,12 @@ THROTTLE_SECONDS = 0.3  # reduit : le retry backoff gere les rares 429
 # (cf. amelioration_recommandation.md, section 2)
 CHAT_MAX_TOKENS = 1000
 
+# Limite plus large pour le chat conversationnel (syntheses, tableaux) :
+# CHAT_MAX_TOKENS (1000) tronquait les reponses du chat en plein milieu
+# d'une synthese. Le prompt SYSTEM_PROMPT (route /chat) borne la longueur
+# attendue, ce max n'est qu'une securite contre les reponses fleuves.
+CHAT_TEXT_MAX_TOKENS = 1800
+
 _client: Mistral | None = None
 
 
@@ -99,7 +105,7 @@ def chat_text(system_prompt: str, messages: list[dict], max_retries: int = 5) ->
                 model=CHAT_MODEL,
                 messages=[{"role": "system", "content": system_prompt}, *messages],
                 temperature=0.7,
-                max_tokens=CHAT_MAX_TOKENS,
+                max_tokens=CHAT_TEXT_MAX_TOKENS,
             )
             content = response.choices[0].message.content
             time.sleep(THROTTLE_SECONDS)
