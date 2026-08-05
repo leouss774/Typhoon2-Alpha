@@ -16,7 +16,11 @@ from __future__ import annotations
 import json
 import time
 
-from mistralai import Mistral
+# Import depuis le sous-module `client` : l'init de paquet top-level n'est
+# pas present dans toutes les versions installees du SDK mistralai (en 2.8.0
+# l'import `from mistralai import Mistral` echoue sur un paquet namespace
+# vide), alors que `mistralai.client` expose toujours la classe Mistral.
+from mistralai.client import Mistral
 
 from app.core.config import settings
 

@@ -26,8 +26,12 @@ netCDF4
 chromadb
 
 # --- Agent recommandations (RAG travaux, cf. app/recommandations/) ---
-# La branche 2.x crée des chemins de modules dépassant MAX_PATH sous Windows.
-mistralai>=1.5.0,<2.0.0
+# Le code (app/recommandations/mistral_client.py) utilise l'API 2.x
+# (Mistral(api_key=..., timeout_ms=...), client.chat.complete,
+# client.embeddings.create) : il faut donc mistralai>=2.0.0. L'import se
+# fait via `from mistralai.client import Mistral` (l'init de paquet
+# top-level n'est pas present dans toutes les builds 2.x).
+mistralai>=2.0.0,<3.0.0
 numpy>=1.26.0
 
 # --- Divers ---

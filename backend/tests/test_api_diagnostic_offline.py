@@ -104,6 +104,8 @@ def _fake_embed_texts(texts):
 
 
 def _fake_chat_json(system_prompt, user_prompt):
+    # Un seul dict pour les DEUX consommateurs : le noeud recommandations
+    # lit "recommandations", le noeud interpretation lit conclusion/...
     return {
         "recommandations": [
             {
@@ -114,7 +116,11 @@ def _fake_chat_json(system_prompt, user_prompt):
                 "aide": None,
                 "sources": [{"fiche_id": "test", "source_id": "S00", "extrait_exact": "..."}],
             }
-        ]
+        ],
+        "conclusion": "[TEST] conclusion de vulnerabilite.",
+        "facteurs_aggravants": [],
+        "facteurs_attenuants": [],
+        "vulnerabilite": "moderee",
     }
 
 
@@ -159,9 +165,14 @@ def test_diagnostic_end_to_end():
             kwargs["transport"] = httpx.MockTransport(_mock_handler)
             return real_async_client(*args, **kwargs)
 
+        # NB : les deux agents appellent `chat_json` importé directement
+        # depuis app.recommandations.mistral_client (et non via
+        # app.recommandations.service) : c'est donc leur namespace qu'il
+        # faut patcher pour rester hors-ligne, pas service.chat_json.
         with patch("app.agents.collector_agent.httpx.AsyncClient", side_effect=patched_client), \
              patch("app.recommandations.service.embed_texts", side_effect=_fake_embed_texts), \
-             patch("app.recommandations.service.chat_json", side_effect=_fake_chat_json):
+             patch("app.agents.recommandations_agent.chat_json", side_effect=_fake_chat_json), \
+             patch("app.agents.interpretation_agent.chat_json", side_effect=_fake_chat_json):
             from app.main import app
             from fastapi.testclient import TestClient
 
