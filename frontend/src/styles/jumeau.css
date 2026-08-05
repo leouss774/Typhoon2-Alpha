@@ -50,11 +50,11 @@
   --d03-eleve: #d07030;
   --d03-critique: #b03020;
 
-  /* M3 : Roboto est la police par défaut de la type scale ; Roboto Mono est
-     recommandé pour les données chiffrées (m3.material.io/styles/typography/fonts).
-     --serif garde son nom historique mais aliase la typeface brand M3 (Roboto). */
-  --serif: 'Roboto', system-ui, sans-serif;
-  --mono: 'Roboto Mono', 'IBM Plex Mono', monospace;
+  /* Typographie Gemini : Google Sans pour l'UI, Google Sans Code pour les
+     données chiffrées (même rôle que Roboto Mono côté M3).
+     --serif garde son nom historique mais aliase la typeface brand (Google Sans). */
+  --serif: 'Google Sans', system-ui, sans-serif;
+  --mono: 'Google Sans Code', 'Roboto Mono', monospace;
 
   position: fixed;
   inset: 0;
@@ -63,7 +63,7 @@
   flex-direction: column;
   background: var(--md-sys-color-surface);
   color: var(--md-sys-color-on-surface);
-  font-family: 'Roboto', system-ui, sans-serif;
+  font-family: 'Google Sans', system-ui, sans-serif;
   overflow: hidden;
 }
 
@@ -818,7 +818,7 @@
   border-radius: 999px;
   background: var(--md-sys-color-primary);
   color: var(--md-sys-color-on-primary);
-  font: 700 12px/1.3 'Roboto', system-ui, sans-serif;
+  font: 700 12px/1.3 'Google Sans', system-ui, sans-serif;
   cursor: pointer;
   box-shadow: 0 5px 14px rgba(0, 0, 0, 0.3);
   transition: 0.18s ease;

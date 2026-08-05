@@ -1,7 +1,6 @@
+import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { ACCENTS, BRAND_ACCENT, useTyphoonTheme } from './useTyphoonTheme';
-
-const CALENDLY = 'https://calendly.com/tobias-vetter/erstberatung';
 
 function ThemeIconSun() {
   return (
@@ -95,24 +94,38 @@ export function TyphoonControls() {
 
 export function TyphoonNavbar({ current }: { current?: 'home' | 'faq' | 'contact' }) {
   const location = useLocation();
+  const [menuOpen, setMenuOpen] = useState(false);
   const is = (key: 'home' | 'faq' | 'contact') =>
     current === key || (!current && location.pathname === (key === 'home' ? '/' : `/${key}`));
 
   return (
     <div className="navbar landingpage">
-      <div role="banner" className="webflow-native-navbar w-nav">
+      <div
+        data-animation="default"
+        data-collapse="medium"
+        data-duration="400"
+        data-easing="ease"
+        data-easing2="ease"
+        role="banner"
+        className="webflow-native-navbar w-nav"
+      >
         <div className="navbar-outer">
           <div className="navbar-inner">
-            <Link to="/" className="navbar-logo-div visible-on-desktop w-nav-brand">
-              <img src="/vetter-consulting/assets/img/typhoon-logo.svg" alt="Typhoon" className="logo" />
+            <Link
+              to="/"
+              aria-current={is('home') ? 'page' : undefined}
+              className="navbar-logo-div visible-on-desktop w-nav-brand"
+              aria-label="home"
+            >
+              <img src="/vetter-consulting/assets/img/typhoon-logo.svg" loading="eager" alt="Typhoon" className="logo" />
             </Link>
             <div className="nav-static-item">
               <div className="nav-arrow-div">
-                <img src="/vetter-consulting/assets/img/typhoon-logo.svg" alt="Typhoon" className="nav-arrow" />
+                <img src="/vetter-consulting/assets/img/typhoon-logo.svg" loading="lazy" alt="Typhoon" className="nav-arrow" />
               </div>
-              <div className="nav-link-static">Menu</div>
+              <div className="nav-link-static">Menü</div>
             </div>
-            <nav role="navigation" className="nav-menu-wrapper w-nav-menu">
+            <nav role="navigation" className={`nav-menu-wrapper w-nav-menu ${menuOpen ? 'menu-open' : ''}`}>
               <ul role="list" className="nav-menu-right w-list-unstyled">
                 <li className="nav-item">
                   <Link to="/" className={`nav-link ${is('home') ? 'w--current' : ''}`}>
@@ -130,18 +143,40 @@ export function TyphoonNavbar({ current }: { current?: 'home' | 'faq' | 'contact
                   </Link>
                 </li>
                 <li className="nav-item">
-                  <a href={CALENDLY} className="primary-btn w-inline-block" target="_blank" rel="noreferrer">
+                  <Link to="/zone" className="primary-btn w-inline-block">
                     <span className="btn-txt-container">
-                      <span className="btn-txt">Réserver une démo</span>
-                      <span className="btn-txt">Réserver une démo</span>
+                      <span className="btn-txt">C'est parti</span>
+                      <span className="btn-txt">C'est parti</span>
                     </span>
-                  </a>
+                  </Link>
                 </li>
                 <li className="mobile-margin-top-10" />
               </ul>
             </nav>
+            <div className="nav-area-left mobile">
+              <div
+                className={`menu-button w-nav-button ${menuOpen ? 'w--open' : ''}`}
+                style={{ WebkitUserSelect: 'text' }}
+                aria-label="menu"
+                role="button"
+                tabIndex={0}
+                aria-controls="w-nav-overlay-0"
+                aria-haspopup="menu"
+                aria-expanded={menuOpen}
+                onClick={() => setMenuOpen((o) => !o)}
+              >
+                <div className="hamburger-menu-dark">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" style={{ width: '100%', height: '100%' }} preserveAspectRatio="xMidYMid meet">
+                    <path fill="rgb(255,255,255)" d="M0.25,12.25 C0.25,12.25 18.25,12.25 18.25,12.25 C18.25,12.25 18.25,10.25 18.25,10.25 C18.25,10.25 0.25,10.25 0.25,10.25 C0.25,10.25 0.25,12.25 0.25,12.25z" />
+                    <path fill="rgb(255,255,255)" d="M0.25,7.25 C0.25,7.25 18.25,7.25 18.25,7.25 C18.25,7.25 18.25,5.25 18.25,5.25 C18.25,5.25 0.25,5.25 0.25,5.25 C0.25,5.25 0.25,7.25 0.25,7.25z" />
+                    <path fill="rgb(255,255,255)" d="M0.25,0.25 C0.25,0.25 18.25,0.25 18.25,0.25 C18.25,0.25 18.25,2.25 18.25,2.25 C18.25,2.25 0.25,2.25 0.25,2.25 C0.25,2.25 0.25,0.25 0.25,0.25z" />
+                  </svg>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
+        <div className="w-nav-overlay" data-wf-ignore="" id="w-nav-overlay-0" />
       </div>
       <TyphoonControls />
     </div>

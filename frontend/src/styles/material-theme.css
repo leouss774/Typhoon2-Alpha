@@ -42,8 +42,8 @@
 
   /* ---- Typographie M3 : typefaces (md.ref.typeface.*) ----
      Roboto est la police par défaut de la M3 typescale. */
-  --md-ref-typeface-brand: 'Roboto', system-ui, sans-serif;
-  --md-ref-typeface-plain: 'Roboto', system-ui, sans-serif;
+  --md-ref-typeface-brand: 'Google Sans', system-ui, sans-serif;
+  --md-ref-typeface-plain: 'Google Sans', system-ui, sans-serif;
   --md-ref-typeface-weight-regular: 400;
   --md-ref-typeface-weight-medium: 500;
   --md-ref-typeface-weight-bold: 700;

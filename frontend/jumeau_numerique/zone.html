@@ -7,7 +7,7 @@
 <meta name="description" content="Saisissez une adresse française pour obtenir le diagnostic géo-risque souverain Typhoon (Géorisques / BAN / D03).">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600;700&family=Google+Sans+Code:wght@400;500;600&display=swap" rel="stylesheet">
 <!-- OpenLayers 9 -->
 <script src="https://cdn.jsdelivr.net/npm/ol@9.2.4/dist/ol.js"></script>
 <link href="https://cdn.jsdelivr.net/npm/ol@9.2.4/ol.css" rel="stylesheet" />
@@ -35,9 +35,9 @@
   --d03-eleve:       #D07030;
   --d03-critique:    #B03020;
 
-  --serif: 'Fraunces', Georgia, serif;
-  --mono:  'IBM Plex Mono', monospace;
-  --sans:  'Inter', system-ui, sans-serif;
+  --serif: 'Google Sans', system-ui, sans-serif;
+  --mono:  'Google Sans Code', 'Roboto Mono', monospace;
+  --sans:  'Google Sans', system-ui, sans-serif;
   --radius: 8px;
 }
 
@@ -401,7 +401,6 @@ html, body { height: 100%; background: var(--ink); color: var(--paper); font-fam
     <div class="idle-placeholder" id="idle-placeholder">
       <h2>Diagnostic géo-risque</h2>
       <p>Saisissez une adresse française pour afficher le rapport de risques Géorisques et positionner le bien sur la carte.</p>
-      <p style="font-family:var(--mono);font-size:10px;color:var(--fog);">Sources : IGN Géoplateforme · Géorisques (BRGM/MTE) · Souverain FR/UE</p>
     </div>
 
     <div class="map-strip">

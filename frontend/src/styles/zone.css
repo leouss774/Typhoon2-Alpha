@@ -1,42 +1,49 @@
 /* ============================================================================
-   TYPHOON — /zone : thème sombre D03 (Material 3 via @material/web)
+   TYPHOON — /zone : thème Material 3 (via @material/web)
    Tokens scoped sur .zone-app pour ne pas perturber le reste de l'app.
+   Palette alignée sur la marque landing (accent #4386B1) — les tokens M3
+   (light + dark) dérivent de l'accent ; les bandes D03 restent métier.
    Vocabulaire D03 : ink #0B1410 · storm #46A3A2 · clay #C27040 · paper #E8E6DC
 ============================================================================ */
 
 .zone-app {
   color-scheme: dark;
 
-  /* Material 3 — dark scheme dérivé de la palette D03 */
-  --md-sys-color-primary: #7fcbc9;
-  --md-sys-color-on-primary: #003735;
-  --md-sys-color-primary-container: #1e4e4c;
-  --md-sys-color-on-primary-container: #9ce7e4;
-  --md-sys-color-secondary: #b0ccc8;
-  --md-sys-color-on-secondary: #1b3531;
-  --md-sys-color-secondary-container: #2f4b47;
-  --md-sys-color-on-secondary-container: #cbe9e4;
-  --md-sys-color-tertiary: #e3ad84;
-  --md-sys-color-on-tertiary: #41250d;
-  --md-sys-color-tertiary-container: #5c3a20;
-  --md-sys-color-on-tertiary-container: #ffdbc0;
+  /* Accent marque (surchargé en inline depuis useTyphoonTheme) */
+  --accent: #4386b1;
+
+  /* Material 3 — dark scheme dérivé de l'accent (--accent, choisi dans les
+     réglages). Les tokens chromatiques suivent l'accent via color-mix ; les
+     surfaces / outlines restent neutres (démarche M3). */
+  --md-sys-color-primary: color-mix(in srgb, var(--accent) 55%, #ffffff);
+  --md-sys-color-on-primary: color-mix(in srgb, var(--accent) 30%, #000000);
+  --md-sys-color-primary-container: color-mix(in srgb, var(--accent) 46%, #0e1216);
+  --md-sys-color-on-primary-container: color-mix(in srgb, var(--accent) 30%, #ffffff);
+  --md-sys-color-secondary: color-mix(in srgb, var(--accent) 42%, #b7c3ce);
+  --md-sys-color-on-secondary: color-mix(in srgb, var(--accent) 32%, #000000);
+  --md-sys-color-secondary-container: color-mix(in srgb, var(--accent) 36%, #141a1f);
+  --md-sys-color-on-secondary-container: color-mix(in srgb, var(--accent) 26%, #ffffff);
+  --md-sys-color-tertiary: color-mix(in srgb, var(--accent) 40%, #b8d3ca);
+  --md-sys-color-on-tertiary: color-mix(in srgb, var(--accent) 30%, #000000);
+  --md-sys-color-tertiary-container: color-mix(in srgb, var(--accent) 35%, #10201b);
+  --md-sys-color-on-tertiary-container: color-mix(in srgb, var(--accent) 24%, #ffffff);
   --md-sys-color-error: #ffb4ab;
   --md-sys-color-on-error: #690005;
   --md-sys-color-error-container: #93000a;
   --md-sys-color-on-error-container: #ffdad6;
 
-  --md-sys-color-surface: #0b1410;
-  --md-sys-color-surface-dim: #0b1410;
-  --md-sys-color-surface-bright: #323a36;
-  --md-sys-color-surface-container-lowest: #060e0b;
-  --md-sys-color-surface-container-low: #131c18;
-  --md-sys-color-surface-container: #17201c;
-  --md-sys-color-surface-container-high: #222b26;
-  --md-sys-color-surface-container-highest: #2c3631;
-  --md-sys-color-on-surface: #e8e6dc;
-  --md-sys-color-on-surface-variant: #bfc9c4;
-  --md-sys-color-outline: #89948f;
-  --md-sys-color-outline-variant: #263630;
+  --md-sys-color-surface: #101418;
+  --md-sys-color-surface-dim: #101418;
+  --md-sys-color-surface-bright: #363b40;
+  --md-sys-color-surface-container-lowest: #0a0e12;
+  --md-sys-color-surface-container-low: #181d22;
+  --md-sys-color-surface-container: #1c2126;
+  --md-sys-color-surface-container-high: #262b31;
+  --md-sys-color-surface-container-highest: #31363c;
+  --md-sys-color-on-surface: #e0e5ea;
+  --md-sys-color-on-surface-variant: #bec7d0;
+  --md-sys-color-outline: #89929b;
+  --md-sys-color-outline-variant: #273139;
   --md-sys-color-scrim: #000000;
   --md-sys-color-shadow: #000000;
 
@@ -53,25 +60,294 @@
   --d03-eleve-bg: rgba(208, 112, 48, 0.14);
   --d03-critique-bg: rgba(176, 48, 32, 0.14);
 
-  /* M3 : Roboto est la police par défaut de la type scale ; Roboto Mono est
-     recommandé pour les données chiffrées (m3.material.io/styles/typography/fonts).
-     --serif garde son nom historique mais aliase la typeface brand M3 (Roboto). */
-  --serif: 'Roboto', system-ui, sans-serif;
-  --mono: 'Roboto Mono', 'IBM Plex Mono', monospace;
+  /* Typographie Gemini : Google Sans pour l'UI, Google Sans Code pour les
+     données chiffrées (même rôle que Roboto Mono côté M3).
+     --serif garde son nom historique mais aliase la typeface brand (Google Sans). */
+  --serif: 'Google Sans', system-ui, sans-serif;
+  --mono: 'Google Sans Code', 'Roboto Mono', monospace;
 
-  display: flex;
-  flex-direction: column;
+  --sidenav-w: 264px;
+  --sidenav-w-collapsed: 72px;
+
+  /* Sidenav à gauche + colonne principale : grid pleine hauteur */
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: 1fr;
   height: 100dvh;
   background: var(--md-sys-color-surface);
   color: var(--md-sys-color-on-surface);
-  font-family: 'Roboto', system-ui, sans-serif;
+  font-family: 'Google Sans', system-ui, sans-serif;
   overflow: hidden;
+}
+
+/* ── Thème clair (toggle dans les réglages, synchro landing via useTyphoonTheme) ── */
+.zone-app.theme-light {
+  color-scheme: light;
+  --md-sys-color-primary: color-mix(in srgb, var(--accent) 78%, #0a0e12);
+  --md-sys-color-on-primary: #ffffff;
+  --md-sys-color-primary-container: color-mix(in srgb, var(--accent) 22%, #ffffff);
+  --md-sys-color-on-primary-container: color-mix(in srgb, var(--accent) 70%, #000000);
+  --md-sys-color-secondary: color-mix(in srgb, var(--accent) 55%, #3a3f44);
+  --md-sys-color-on-secondary: #ffffff;
+  --md-sys-color-secondary-container: color-mix(in srgb, var(--accent) 16%, #ffffff);
+  --md-sys-color-on-secondary-container: color-mix(in srgb, var(--accent) 55%, #000000);
+  --md-sys-color-tertiary: color-mix(in srgb, var(--accent) 50%, #3f4a46);
+  --md-sys-color-on-tertiary: #ffffff;
+  --md-sys-color-tertiary-container: color-mix(in srgb, var(--accent) 16%, #ffffff);
+  --md-sys-color-on-tertiary-container: color-mix(in srgb, var(--accent) 55%, #000000);
+  --md-sys-color-error: #ba1a1a;
+  --md-sys-color-on-error: #ffffff;
+  --md-sys-color-error-container: #ffdad6;
+  --md-sys-color-on-error-container: #410002;
+  --md-sys-color-surface: #f7f9fc;
+  --md-sys-color-surface-dim: #d9dfe5;
+  --md-sys-color-surface-bright: #f7f9fc;
+  --md-sys-color-surface-container-lowest: #ffffff;
+  --md-sys-color-surface-container-low: #f1f5f8;
+  --md-sys-color-surface-container: #ebf0f4;
+  --md-sys-color-surface-container-high: #e5eaef;
+  --md-sys-color-surface-container-highest: #e0e5ea;
+  --md-sys-color-on-surface: #1a1e24;
+  --md-sys-color-on-surface-variant: #43474d;
+  --md-sys-color-outline: #73777e;
+  --md-sys-color-outline-variant: #c3c7cd;
+  --md-sys-color-scrim: #000000;
+  --md-sys-color-shadow: #000000;
 }
 
 .zone-app *,
 .zone-app *::before,
 .zone-app *::after {
   box-sizing: border-box;
+}
+
+/* ============================================================================
+   SIDENAV (navigation rétractable, façon Gemini)
+   Desktop : rail pleine largeur ↔ colonne d'icônes (.nav-collapsed).
+   Mobile  : drawer hors-écran (.zone-scrim + .drawer-open).
+============================================================================ */
+
+.zone-sidenav {
+  grid-column: 1;
+  grid-row: 1;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  width: var(--sidenav-w);
+  min-width: 0;
+  background: var(--md-sys-color-surface-container-low);
+  border-right: 1px solid var(--md-sys-color-outline-variant);
+  overflow: hidden;
+  transition: width 0.28s cubic-bezier(0.2, 0, 0, 1);
+}
+
+/* Replié : seule la colonne d'icônes reste visible */
+.zone-app.nav-collapsed .zone-sidenav {
+  width: var(--sidenav-w-collapsed);
+}
+
+.zone-main {
+  grid-column: 2;
+  grid-row: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
+.sidenav-header {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  height: 64px;
+  padding: 0 12px 0 16px;
+  border-bottom: 1px solid var(--md-sys-color-outline-variant);
+}
+.sidenav-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  text-decoration: none;
+  color: var(--md-sys-color-on-surface);
+}
+/* Wordmark teinté par l'accent (suit le sélecteur de couleur --accent) : le
+   SVG blanc sert de masque alpha, la couleur de fond = var(--accent). Plus
+   besoin de l'invert en thème clair — l'accent est lisible sur les deux
+   thèmes. aspect-ratio = viewBox du SVG (766.43 × 140.93). */
+.sidenav-wordmark-img {
+  display: block;
+  flex-shrink: 0;
+  height: 30px;
+  aspect-ratio: 766.43 / 140.93;
+  background-color: var(--accent);
+  -webkit-mask: url('/vetter-consulting/assets/img/typhoon-wordmark.svg') no-repeat center / contain;
+  mask: url('/vetter-consulting/assets/img/typhoon-wordmark.svg') no-repeat center / contain;
+}
+/* Replié (desktop) : seule l'icône d'expansion reste dans l'en-tête (centrée) */
+@media (min-width: 901px) {
+  .zone-app.nav-collapsed .sidenav-header {
+    padding: 0 12px;
+    justify-content: center;
+  }
+}
+
+.sidenav-collapse,
+.sidenav-settings,
+.sidenav-expand {
+  --md-icon-button-icon-size: 22px;
+  --md-icon-button-icon-color: var(--md-sys-color-on-surface-variant);
+  --md-icon-button-unselected-icon-color: var(--md-sys-color-on-surface-variant);
+  flex-shrink: 0;
+}
+.sidenav-collapse:hover,
+.sidenav-settings:hover,
+.sidenav-expand:hover {
+  --md-icon-button-icon-color: var(--md-sys-color-primary);
+  --md-icon-button-unselected-icon-color: var(--md-sys-color-primary);
+}
+
+/* ── Navigation (liste M3 dépliée) ── */
+.sidenav-nav {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px 12px;
+  --md-list-container-color: transparent;
+  --md-list-item-label-text-size: 13px;
+  --md-list-item-container-shape: 999px;
+  --md-list-item-hover-state-layer-color: var(--md-sys-color-primary);
+  --md-list-item-hover-state-layer-opacity: 0.1;
+  --md-list-item-icon-color: var(--md-sys-color-on-surface-variant);
+}
+.sidenav-nav md-list-item {
+  cursor: pointer;
+  margin-bottom: 2px;
+}
+/* Item « Nouveau diagnostic » façon bouton (+ New chat) */
+.sidenav-nav md-list-item.sidenav-new {
+  --md-list-item-container-color: var(--md-sys-color-primary-container);
+  --md-list-item-label-text-color: var(--md-sys-color-on-primary-container);
+  --md-list-item-icon-color: var(--md-sys-color-on-primary-container);
+  --md-list-item-hover-state-layer-color: var(--md-sys-color-primary);
+  margin-bottom: 14px;
+}
+
+/* ── Colonne d'icônes repliée ── */
+.sidenav-rail {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 16px 0;
+  overflow-y: auto;
+}
+.sidenav-rail md-icon-button {
+  --md-icon-button-icon-size: 22px;
+  --md-icon-button-icon-color: var(--md-sys-color-on-surface-variant);
+  --md-icon-button-unselected-icon-color: var(--md-sys-color-on-surface-variant);
+}
+.sidenav-rail md-icon-button:hover {
+  --md-icon-button-icon-color: var(--md-sys-color-primary);
+  --md-icon-button-unselected-icon-color: var(--md-sys-color-primary);
+}
+
+.sidenav-footer {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 60px;
+  border-top: 1px solid var(--md-sys-color-outline-variant);
+}
+.zone-app:not(.nav-collapsed) .sidenav-footer {
+  justify-content: flex-end;
+  padding: 0 14px;
+}
+
+/* ── Menu réglages (M3 md-menu) ── */
+.sidenav-menu {
+  --md-menu-container-color: var(--md-sys-color-surface-container-high);
+  --md-menu-container-shape: 16px;
+  min-width: 240px;
+}
+.sidenav-menu md-menu-item {
+  --md-menu-item-label-text-size: 13px;
+}
+.sidenav-accent-block {
+  padding: 10px 16px 12px;
+}
+.sidenav-accent-title {
+  display: block;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--md-sys-color-on-surface-variant);
+  margin-bottom: 8px;
+}
+.sidenav-accent-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.sidenav-accent-swatch {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  background: var(--swatch);
+  cursor: pointer;
+  padding: 0;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.sidenav-accent-swatch:hover {
+  transform: scale(1.15);
+}
+.sidenav-accent-swatch.active {
+  border-color: var(--md-sys-color-on-surface);
+  box-shadow: 0 0 0 2px var(--swatch);
+}
+.sidenav-accent-reset {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  padding: 5px 10px;
+  border: none;
+  background: none;
+  color: var(--md-sys-color-primary);
+  font-size: 11px;
+  cursor: pointer;
+  border-radius: 999px;
+  transition: background 0.15s;
+}
+.sidenav-accent-reset:hover {
+  background: var(--md-sys-color-primary-container);
+}
+.sidenav-accent-reset md-icon {
+  font-size: 14px;
+}
+
+/* ── Scrim (drawer mobile) ── */
+.zone-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 55;
+  background: rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s;
+}
+.zone-scrim.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Hamburger du stepper : desktop uniquement invisible */
+.sidenav-hamburger {
+  display: none;
 }
 
 /* ============================================================================
@@ -88,22 +364,13 @@
 }
 
 .topbar-main {
-  /* Barre M3 : 64px de haut. La recherche occupe toute la largeur
-     disponible après la marque (gauche). */
+  /* Barre M3 : 64px de haut. Recherche · actions (la sidebar gère la navigation). */
   display: grid;
-  grid-template-columns: auto 1fr;
+  grid-template-columns: 1fr auto;
   align-items: center;
   gap: 16px;
   height: 64px;
   padding: 4px 16px;
-}
-
-.topbar-brand {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 0;
-  justify-self: start;
 }
 
 .topbar-search {
@@ -117,6 +384,24 @@
 .topbar-search .input-wrap {
   flex: 1;
   min-width: 0;
+}
+
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  justify-self: end;
+}
+.panel-toggle {
+  --md-icon-button-icon-size: 22px;
+  --md-icon-button-icon-color: var(--md-sys-color-on-surface-variant);
+  --md-icon-button-unselected-icon-color: var(--md-sys-color-on-surface-variant);
+  --md-icon-button-selected-icon-color: var(--md-sys-color-primary);
+  --md-icon-button-selected-fill-icon-color: var(--md-sys-color-primary);
+}
+.panel-toggle:hover {
+  --md-icon-button-icon-color: var(--md-sys-color-primary);
+  --md-icon-button-unselected-icon-color: var(--md-sys-color-primary);
 }
 
 /* Champ M3 : 56px de haut (défaut), forme pilule (chip circulaire), caret primaire */
@@ -166,7 +451,13 @@
   opacity: 0.55;
 }
 .step-item:hover {
-  background: var(--md-sys-color-surface-container-high);
+  background: color-mix(in srgb, var(--md-sys-color-primary-container) 60%, transparent);
+}
+.step-item:not(.error):hover .step-label {
+  color: var(--md-sys-color-primary);
+}
+.step-item:not(.error):hover .step-dot {
+  border-color: var(--md-sys-color-primary);
 }
 .step-dot {
   width: 28px;
@@ -192,7 +483,7 @@
   text-overflow: ellipsis;
 }
 .step-item.active {
-  color: var(--md-sys-color-on-surface);
+  color: var(--md-sys-color-primary);
 }
 .step-item.active .step-dot {
   background: var(--md-sys-color-primary);
@@ -233,6 +524,7 @@
 .zone-hero {
   flex: 1;
   min-height: 0;
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -241,9 +533,92 @@
   padding: 40px 24px;
   overflow-y: auto;
   overflow-x: hidden;
+  background: var(--md-sys-color-surface);
+}
+
+/* Aurora façon Gemini — large halo lumineux centré sur la zone de saisie
+   (titre + champ), bien visible, qui s'installe en fondu puis dérive très
+   lentement. Les halos suivent l'accent (--accent) et rayonnent sur tout
+   le hero, pas seulement autour du champ. */
+.zone-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
   background:
-    radial-gradient(1100px 520px at 50% -10%, rgba(127, 203, 201, 0.08), transparent 60%),
-    var(--md-sys-color-surface);
+    radial-gradient(55% 52% at 50% 62%, color-mix(in srgb, var(--accent) 32%, transparent), transparent 68%),
+    radial-gradient(38% 38% at 50% 62%, color-mix(in srgb, var(--accent) 16%, transparent), transparent 70%),
+    radial-gradient(95% 75% at 50% 58%, color-mix(in srgb, var(--accent) 22%, transparent), transparent 76%);
+  opacity: 0;
+  animation:
+    zone-aurora-in 1.8s cubic-bezier(0.22, 1, 0.36, 1) 0.1s forwards,
+    zone-aurora-drift 26s ease-in-out infinite alternate;
+  will-change: opacity, transform;
+}
+
+@keyframes zone-aurora-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes zone-aurora-drift {
+  from {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  to {
+    transform: translate3d(0, 1.5%, 0) scale(1.05);
+  }
+}
+
+/* Thème clair : halos plus doux pour rester lisibles sur surface claire */
+.zone-app.theme-light .zone-hero::before {
+  background:
+    radial-gradient(55% 52% at 50% 62%, color-mix(in srgb, var(--accent) 22%, transparent), transparent 68%),
+    radial-gradient(38% 38% at 50% 62%, color-mix(in srgb, var(--accent) 12%, transparent), transparent 70%),
+    radial-gradient(95% 75% at 50% 58%, color-mix(in srgb, var(--accent) 15%, transparent), transparent 76%);
+}
+
+/* Le contenu du hero passe au-dessus de l'aurora */
+.zone-hero .hero-brand,
+.zone-hero .hero-search {
+  position: relative;
+  z-index: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .zone-hero::before {
+    animation: zone-aurora-in 1.2s ease-out forwards;
+  }
+  .hero-brand h1 {
+    animation: none;
+  }
+  .hero-pill,
+  .hero-pill-label,
+  .hero-pill-input {
+    transition: none;
+  }
+  .hero-pill-spinner {
+    animation-duration: 1.2s;
+  }
+  .hero-thinking-dots i {
+    animation: none;
+    opacity: 0.6;
+  }
+  .alea-card,
+  .report-section,
+  .report-obligations,
+  .hero-hints span,
+  .pdf-btn,
+  .report-export,
+  .step-item,
+  .legend-row {
+    transition: none;
+  }
 }
 .hero-brand {
   display: flex;
@@ -252,33 +627,47 @@
   gap: 12px;
   text-align: center;
 }
-.hero-logo {
-  width: 64px;
-  height: 64px;
-  border-radius: 18px;
-  display: grid;
-  place-items: center;
-  background: var(--md-sys-color-primary-container);
-  color: var(--md-sys-color-on-primary-container);
-  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
-}
-.hero-logo md-icon {
-  font-size: 32px;
-}
 .hero-brand h1 {
   margin: 0;
   font-family: var(--serif);
   font-size: 40px;
-  font-weight: 600;
+  font-weight: 400;
+  /* Google Sans a des métriques hautes (encrage ≈ 1.24em) : le line-height
+     hérité (2.5rem = 40px) égalait le font-size et l'encrage débordait de
+     la boîte — le dégradé background-clip:text ne peignait pas les bords
+     (titre « croppé »). 1.3 laisse l'encre respirer. */
+  line-height: 1.3;
   color: var(--md-sys-color-on-surface);
+  /* Monte depuis le bas avec un fondu + léger flou, façon hero Gemini. */
+  animation: zone-h1-rise 0.85s cubic-bezier(0.22, 1, 0.36, 1) 0.15s both;
+  will-change: opacity, transform, filter;
 }
-.hero-brand p {
-  margin: 0;
-  font-family: var(--mono);
-  font-size: 10px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--md-sys-color-on-surface-variant);
+/* Titre en dégradé : on-surface (haut) → accent (bas), façon hero Gemini */
+@supports (-webkit-background-clip: text) or (background-clip: text) {
+  .hero-brand h1 {
+    color: transparent;
+    background: linear-gradient(
+      180deg,
+      var(--md-sys-color-on-surface) 22%,
+      color-mix(in srgb, var(--md-sys-color-primary) 88%, var(--md-sys-color-on-surface)) 100%
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+}
+
+@keyframes zone-h1-rise {
+  from {
+    opacity: 0;
+    transform: translateY(32px);
+    filter: blur(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
 }
 .hero-search {
   width: min(680px, 100%);
@@ -318,11 +707,57 @@
   border-radius: 999px;
   border: 1px solid var(--md-sys-color-outline-variant);
   background: var(--md-sys-color-surface-container-lowest);
-  transition: border-color 0.15s, box-shadow 0.15s;
+  box-shadow:
+    0 0 24px color-mix(in srgb, var(--accent) 22%, transparent),
+    0 8px 30px rgba(0, 0, 0, 0.35);
+  /* Morph pilule → champ M3 façon Gemini (rayon, élévation, lueur). */
+  transition:
+    border-color 0.25s,
+    box-shadow 0.3s,
+    border-radius 0.3s cubic-bezier(0.2, 0, 0, 1),
+    background 0.25s,
+    transform 0.25s;
 }
 .hero-pill:focus-within {
   border-color: var(--md-sys-color-primary);
-  box-shadow: 0 0 0 3px rgba(127, 203, 201, 0.18);
+  border-radius: 18px;
+  background: var(--md-sys-color-surface-container-lowest);
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, var(--accent) 30%, transparent),
+    0 0 48px color-mix(in srgb, var(--accent) 40%, transparent);
+  transform: translateY(-1px);
+}
+/* Le champ garde sa forme M3 tant qu'il contient du texte. */
+.hero-pill:has(input:not(:placeholder-shown)) {
+  border-radius: 18px;
+}
+
+/* ── Label flottant (façon md-outlined-text-field) ── */
+.hero-pill-label {
+  position: absolute;
+  left: 50px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 15px;
+  color: var(--md-sys-color-on-surface-variant);
+  pointer-events: none;
+  opacity: 0;
+  transition:
+    top 0.28s cubic-bezier(0.2, 0, 0, 1),
+    opacity 0.22s,
+    font-size 0.28s cubic-bezier(0.2, 0, 0, 1),
+    color 0.28s;
+}
+.hero-pill:focus-within .hero-pill-label,
+.hero-pill:has(input:not(:placeholder-shown)) .hero-pill-label {
+  opacity: 1;
+  top: 9px;
+  font-size: 11px;
+  color: var(--md-sys-color-primary);
+}
+.hero-pill-error:focus-within .hero-pill-label,
+.hero-pill-error:has(input:not(:placeholder-shown)) .hero-pill-label {
+  color: var(--md-sys-color-error);
 }
 .hero-pill-error {
   border-color: var(--md-sys-color-error);
@@ -348,6 +783,15 @@
   font-size: 15px;
   appearance: none;
   -webkit-appearance: none;
+  transition:
+    padding-top 0.28s cubic-bezier(0.2, 0, 0, 1),
+    padding-bottom 0.28s cubic-bezier(0.2, 0, 0, 1);
+}
+/* Le texte recule pour laisser la place au label flottant. */
+.hero-pill:focus-within .hero-pill-input,
+.hero-pill:has(input:not(:placeholder-shown)) .hero-pill-input {
+  padding-top: 18px;
+  padding-bottom: 2px;
 }
 .hero-pill-input::placeholder {
   color: var(--md-sys-color-on-surface-variant);
@@ -366,6 +810,26 @@
   --md-icon-button-icon-color: var(--md-sys-color-primary);
   --md-icon-button-unselected-icon-color: var(--md-sys-color-primary);
   --md-icon-button-hover-state-layer-color: var(--md-sys-color-primary-container);
+}
+/* Spinner dans la pilule pendant le diagnostic (remplace la flèche). */
+.hero-pill-spinner {
+  position: absolute;
+  top: 50%;
+  right: 18px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid var(--md-sys-color-outline-variant);
+  border-top-color: var(--md-sys-color-primary);
+  animation: zone-spin 0.8s linear infinite;
+}
+@keyframes zone-spin {
+  from {
+    transform: translateY(-50%) rotate(0deg);
+  }
+  to {
+    transform: translateY(-50%) rotate(360deg);
+  }
 }
 @keyframes zone-shake {
   0%,
@@ -390,6 +854,7 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
+  min-height: 26px;
   font-family: var(--mono);
   font-size: 11px;
   color: var(--md-sys-color-error);
@@ -398,6 +863,48 @@
 .hero-error md-icon {
   font-size: 15px;
   flex-shrink: 0;
+}
+
+/* ── Indicateur « en cours » façon Gemini (trois points) ── */
+.hero-thinking {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 26px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--md-sys-color-primary);
+  animation: zone-error-in 0.25s ease;
+}
+.hero-thinking-dots {
+  display: inline-flex;
+  gap: 4px;
+}
+.hero-thinking-dots i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--md-sys-color-primary);
+  animation: zone-think 1.2s ease-in-out infinite;
+}
+.hero-thinking-dots i:nth-child(2) {
+  animation-delay: 0.15s;
+}
+.hero-thinking-dots i:nth-child(3) {
+  animation-delay: 0.3s;
+}
+@keyframes zone-think {
+  0%,
+  60%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.4;
+  }
+  30% {
+    transform: translateY(-4px);
+    opacity: 1;
+  }
 }
 @keyframes zone-error-in {
   from {
@@ -423,6 +930,13 @@
   border-radius: 999px;
   padding: 4px 10px;
   background: var(--md-sys-color-surface-container-low);
+  transition: border-color 0.18s, color 0.18s, transform 0.18s, box-shadow 0.18s;
+}
+.hero-hints span:hover {
+  border-color: var(--md-sys-color-primary);
+  color: var(--md-sys-color-primary);
+  transform: translateY(-1px);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
 }
 
 /* ============================================================================
@@ -448,7 +962,7 @@
   grid-column: 1;
   grid-row: 1;
   display: grid;
-  grid-template-columns: 64px auto 1fr; /* rail | panneau | carte */
+  grid-template-columns: auto 1fr; /* panneau | carte */
   grid-template-rows: 1fr;
   min-height: 0;
   height: 100%;
@@ -480,7 +994,7 @@
   margin: 0;
   font-family: var(--serif);
   font-size: 24px;
-  color: var(--md-sys-color-on-surface);
+  color: color-mix(in srgb, var(--md-sys-color-primary) 30%, var(--md-sys-color-on-surface));
 }
 .zone-empty-step p {
   margin: 0;
@@ -516,7 +1030,7 @@
   margin: 0;
   font-family: var(--serif);
   font-size: 24px;
-  color: var(--md-sys-color-on-surface);
+  color: color-mix(in srgb, var(--md-sys-color-primary) 30%, var(--md-sys-color-on-surface));
 }
 .report-meta {
   margin: 6px 0 0;
@@ -527,6 +1041,10 @@
 .report-export {
   --md-elevated-button-label-text-size: 12px;
   flex-shrink: 0;
+  transition: transform 0.18s;
+}
+.report-export:hover {
+  transform: translateY(-1px);
 }
 .report-intro {
   font-size: 14px;
@@ -543,10 +1061,12 @@
   background: var(--md-sys-color-surface-container-low);
   border: 1px solid var(--md-sys-color-outline-variant);
   border-radius: 14px;
-  transition: border-color 0.15s;
+  transition: border-color 0.18s, transform 0.18s, box-shadow 0.18s;
 }
 .report-section:hover {
   border-color: var(--md-sys-color-primary);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
 }
 .report-section h3 {
   margin: 0 0 8px;
@@ -591,6 +1111,12 @@
   background: var(--md-sys-color-surface-container-low);
   border: 1px solid var(--md-sys-color-outline-variant);
   border-radius: 14px;
+  transition: border-color 0.18s, transform 0.18s, box-shadow 0.18s;
+}
+.report-obligations:hover {
+  border-color: var(--md-sys-color-primary);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
 }
 .report-obligations h3 {
   margin: 0 0 10px;
@@ -650,7 +1176,7 @@
   margin: 0;
   font-family: var(--serif);
   font-size: 22px;
-  color: var(--md-sys-color-on-surface);
+  color: color-mix(in srgb, var(--md-sys-color-primary) 30%, var(--md-sys-color-on-surface));
 }
 .report-empty p {
   margin: 0;
@@ -660,30 +1186,6 @@
 }
 .report-empty md-linear-progress {
   width: min(360px, 80%);
-}
-
-/* ── Rail latéral (toolbar d'icônes, toujours visible) ── */
-.zone-rail {
-  grid-column: 1;
-  grid-row: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-  padding: 12px 0;
-  background: var(--md-sys-color-surface-container);
-  border-right: 1px solid var(--md-sys-color-outline-variant);
-}
-.rail-toggle,
-.rail-search {
-  --md-icon-button-icon-size: 22px;
-  --md-icon-button-icon-color: var(--md-sys-color-on-surface-variant);
-  --md-icon-button-unselected-icon-color: var(--md-sys-color-on-surface-variant);
-}
-.rail-toggle:hover,
-.rail-search:hover {
-  --md-icon-button-icon-color: var(--md-sys-color-primary);
-  --md-icon-button-unselected-icon-color: var(--md-sys-color-primary);
 }
 
 /* ── État vide du panneau (avant diagnostic) ── */
@@ -715,7 +1217,7 @@
 ============================================================================ */
 
 .zone-sidebar {
-  grid-column: 2;
+  grid-column: 1;
   grid-row: 1;
   display: flex;
   flex-direction: column;
@@ -742,25 +1244,6 @@
 .zone-sidebar::-webkit-scrollbar-thumb {
   background: var(--md-sys-color-outline-variant);
   border-radius: 2px;
-}
-
-/* ── Brand (utilisé dans la topbar) ── */
-.brand-back {
-  display: grid;
-  place-items: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  color: var(--md-sys-color-on-surface-variant);
-  text-decoration: none;
-  transition: background 0.15s;
-}
-.brand-back:hover {
-  background: var(--md-sys-color-surface-container-high);
-  color: var(--md-sys-color-primary);
-}
-.brand-back md-icon {
-  font-size: 22px;
 }
 
 /* ── Suggestions (dropdown sous la recherche topbar) ── */
@@ -792,51 +1275,6 @@
   --md-list-item-hover-state-layer-opacity: 0.12;
 }
 
-/* ── Overlay de statut (pendant le diagnostic) ── */
-.diagnosis-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 60;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(11, 20, 16, 0.55);
-  backdrop-filter: blur(3px);
-  cursor: default;
-}
-.overlay-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 14px;
-  width: 340px;
-  max-width: calc(100vw - 48px);
-  padding: 24px 28px;
-  background: var(--md-sys-color-surface-container-high);
-  border: 1px solid var(--md-sys-color-outline-variant);
-  border-radius: 16px;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.55);
-  text-align: center;
-}
-.overlay-card md-linear-progress {
-  width: 100%;
-  --md-linear-progress-track-color: var(--md-sys-color-outline-variant);
-  --md-linear-progress-active-indicator-color: var(--md-sys-color-primary);
-}
-.overlay-msg {
-  font-family: var(--mono);
-  font-size: 12px;
-  line-height: 1.5;
-  color: var(--md-sys-color-on-surface);
-}
-.diagnosis-overlay.overlay-error .overlay-msg {
-  color: var(--md-sys-color-error);
-}
-.overlay-hint {
-  font-size: 10px;
-  font-family: var(--mono);
-  color: var(--md-sys-color-on-surface-variant);
-}
 
 /* ============================================================================
    RÉSULTATS
@@ -856,7 +1294,7 @@
   font-size: 17px;
   line-height: 1.35;
   margin-bottom: 6px;
-  color: var(--md-sys-color-on-surface);
+  color: color-mix(in srgb, var(--md-sys-color-primary) 35%, var(--md-sys-color-on-surface));
 }
 .addr-heading .meta {
   font-family: var(--mono);
@@ -874,7 +1312,6 @@
   display: flex;
   align-items: flex-end;
   gap: 14px;
-  margin-bottom: 12px;
 }
 .score-num {
   font-family: var(--serif);
@@ -892,13 +1329,16 @@
   font-size: 9.5px;
   text-transform: uppercase;
   letter-spacing: 0.12em;
-  color: var(--md-sys-color-on-surface-variant);
+  color: color-mix(in srgb, var(--md-sys-color-primary) 45%, var(--md-sys-color-on-surface-variant));
 }
 .pdf-btn {
   --md-elevated-button-container-shape: 12px;
   --md-elevated-button-label-text-size: 12px;
-  width: 100%;
   height: 40px;
+  transition: transform 0.18s;
+}
+.pdf-btn:hover {
+  transform: translateY(-1px);
 }
 
 /* ── Pastille D03 ── */
@@ -963,12 +1403,14 @@
   font-size: 10px;
   text-transform: uppercase;
   letter-spacing: 0.12em;
-  color: var(--md-sys-color-on-surface-variant);
+  color: color-mix(in srgb, var(--md-sys-color-primary) 45%, var(--md-sys-color-on-surface-variant));
   margin-bottom: 14px;
 }
 .toggle-all {
   --md-text-button-label-text-size: 10px;
   --md-text-button-label-text-color: var(--md-sys-color-primary);
+  --md-text-button-icon-color: var(--md-sys-color-primary);
+  --md-text-button-icon-size: 16px;
 }
 
 .alea-cards {
@@ -985,11 +1427,13 @@
   border-radius: 12px;
   background: var(--md-sys-color-surface-container);
   border: 1px solid var(--md-sys-color-outline-variant);
-  transition: border-color 0.15s, background 0.15s;
+  transition: border-color 0.18s, background 0.18s, transform 0.18s, box-shadow 0.18s;
 }
 .alea-card:hover {
   border-color: var(--md-sys-color-primary);
   background: var(--md-sys-color-surface-container-high);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28);
 }
 .alea-card.absent .alea-name {
   color: var(--md-sys-color-on-surface-variant);
@@ -1153,6 +1597,8 @@
   --md-list-item-label-text-size: 11px;
   --md-list-item-supporting-text-size: 10px;
   --md-list-item-supporting-text-color: var(--md-sys-color-on-surface-variant);
+  --md-list-item-hover-state-layer-color: var(--md-sys-color-primary);
+  --md-list-item-hover-state-layer-opacity: 0.1;
 }
 
 /* ── Bannières ── */
@@ -1207,7 +1653,7 @@
 ============================================================================ */
 
 .zone-map-wrap {
-  grid-column: 3;
+  grid-column: 2;
   grid-row: 1;
   position: relative;
   background: var(--md-sys-color-surface);
@@ -1378,6 +1824,13 @@
   margin-bottom: 5px;
   font-size: 11px;
   color: var(--md-sys-color-on-surface);
+  padding: 2px 6px;
+  margin-left: -6px;
+  border-radius: 6px;
+  transition: background 0.15s;
+}
+.legend-row:hover {
+  background: color-mix(in srgb, var(--md-sys-color-primary-container) 60%, transparent);
 }
 .legend-row:last-child {
   margin-bottom: 0;
@@ -1461,34 +1914,53 @@
    RESPONSIVE
 ============================================================================ */
 
+/* Breakpoint 900px — garder synchro avec useIsMobile() dans Zone.tsx */
 @media (max-width: 900px) {
+  .zone-app {
+    grid-template-columns: 1fr;
+  }
+  /* Sidenav → drawer hors-écran (hamburger du stepper pour l'ouvrir) */
+  .zone-sidenav {
+    position: fixed;
+    inset: 0 auto 0 0;
+    z-index: 60;
+    width: min(304px, 86vw);
+    transform: translateX(-100%);
+    transition: transform 0.28s cubic-bezier(0.2, 0, 0, 1);
+  }
+  .zone-app.nav-collapsed .zone-sidenav {
+    width: min(304px, 86vw);
+  }
+  .zone-app.drawer-open .zone-sidenav {
+    transform: translateX(0);
+    box-shadow: 12px 0 40px rgba(0, 0, 0, 0.4);
+  }
+  .sidenav-hamburger {
+    display: inline-flex;
+  }
   .zone-hero {
     justify-content: flex-start;
     padding-top: 9vh;
     gap: 24px;
+  }
+  /* Mobile : hero aligné en haut → le halo suit le champ, plus haut. */
+  .zone-hero::before {
+    background:
+      radial-gradient(60% 45% at 50% 36%, color-mix(in srgb, var(--accent) 30%, transparent), transparent 70%),
+      radial-gradient(45% 35% at 50% 36%, color-mix(in srgb, var(--accent) 15%, transparent), transparent 72%),
+      radial-gradient(100% 60% at 50% 40%, color-mix(in srgb, var(--accent) 20%, transparent), transparent 78%);
   }
   .hero-brand h1 {
     font-size: 30px;
   }
   .zone-workspace {
     grid-template-columns: 1fr;
-    grid-template-rows: auto auto 1fr;
+    grid-template-rows: auto 1fr;
     overflow-y: auto;
-  }
-  .zone-rail {
-    grid-column: 1;
-    grid-row: 1;
-    flex-direction: row;
-    justify-content: flex-start;
-    width: 100%;
-    height: 48px;
-    padding: 0 12px;
-    border-right: none;
-    border-bottom: 1px solid var(--md-sys-color-outline-variant);
   }
   .zone-sidebar {
     grid-column: 1;
-    grid-row: 2;
+    grid-row: 1;
     width: 100%;
     max-height: 0;
     overflow: hidden;
@@ -1496,13 +1968,14 @@
     transition: max-height 0.28s ease;
   }
   .zone-app.sidebar-open .zone-sidebar {
+    width: 100%;
     max-height: 52dvh;
     overflow-y: auto;
     border-bottom: 1px solid var(--md-sys-color-outline-variant);
   }
   .zone-map-wrap {
     grid-column: 1;
-    grid-row: 3;
+    grid-row: 2;
     min-height: 48dvh;
   }
   .topbar-main {
@@ -1512,8 +1985,8 @@
     height: auto;
     padding: 10px 16px;
   }
-  .topbar-brand {
-    grid-column: 1;
+  .topbar-actions {
+    grid-column: 2;
     grid-row: 1;
   }
   .topbar-search {

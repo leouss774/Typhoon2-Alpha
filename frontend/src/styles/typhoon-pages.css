@@ -58,7 +58,7 @@
 
   background-color: var(--black);
   color: var(--white);
-  font-family: 'Neue Montreal', sans-serif;
+  font-family: 'Google Sans', 'Neue Montreal', sans-serif;
   min-height: 100vh;
   margin: 0;
   -webkit-font-smoothing: antialiased;
@@ -80,6 +80,46 @@
 
 .typhoon-page a {
   text-decoration: none;
+}
+
+/* ---- Webflow base classes (mirror of the landing stylesheet) ---- */
+.typhoon-page .w-inline-block {
+  max-width: 100%;
+  display: inline-block;
+}
+
+.typhoon-page .w-list-unstyled {
+  padding-left: 0;
+  list-style: none;
+}
+
+.typhoon-page .w-nav-brand {
+  float: left;
+  color: #333;
+  text-decoration: none;
+  position: relative;
+}
+
+.typhoon-page .w-nav-menu {
+  float: right;
+  position: relative;
+}
+
+.typhoon-page .w-nav-button {
+  float: right;
+  cursor: pointer;
+  -webkit-tap-highlight-color: #0000;
+  -webkit-user-select: none;
+  user-select: none;
+  padding: 18px;
+  font-size: 24px;
+  display: none;
+  position: relative;
+}
+
+.typhoon-page .hamburger-menu-dark {
+  width: 100%;
+  height: 100%;
 }
 
 /* ---- Navbar (fixed, centered pill) ---- */
@@ -110,8 +150,8 @@
   height: 3.75rem;
   display: flex;
   box-shadow: 0 20px 40px #0000000d;
-  order: 1;
-  width: 75%;
+  width: auto;
+  position: relative;
 }
 
 .typhoon-page .navbar-outer {
@@ -166,12 +206,17 @@
   z-index: 2;
   justify-content: flex-end;
   align-items: center;
+  margin-top: 0;
   margin-bottom: 0;
   margin-left: -1px;
   padding-left: 0;
   display: flex;
   position: relative;
   list-style: none;
+}
+
+.typhoon-page .nav-area-left {
+  display: none;
 }
 
 .typhoon-page .nav-item {
@@ -186,7 +231,7 @@
   margin-left: 0.1rem;
   margin-right: 0.1rem;
   padding: 1rem 1.2rem;
-  font-family: 'Neue Montreal', sans-serif;
+  font-family: 'Google Sans', 'Neue Montreal', sans-serif;
   font-size: 1rem;
   font-weight: 400;
   line-height: 1em;
@@ -230,14 +275,23 @@
   color: var(--black);
   text-align: center;
   letter-spacing: 0;
-  font-family: 'Neue Montreal', sans-serif;
+  font-family: 'Google Sans', 'Neue Montreal', sans-serif;
+  font-size: 0.875rem;
   font-weight: 500;
+  height: 1.5rem;
+  line-height: 1.5rem;
   position: relative;
   display: block;
+  transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform;
 }
 
 .typhoon-page .btn-txt:nth-child(2) {
   color: #101112;
+}
+
+.typhoon-page .btn-txt-container:hover .btn-txt {
+  transform: translateY(-100%);
 }
 
 .typhoon-page .btn-txt-container:hover .btn-txt:nth-child(2) {
@@ -266,7 +320,7 @@
   cursor: pointer;
   flex-shrink: 0;
   transition: all 0.2s;
-  font-family: 'Neue Montreal', sans-serif;
+  font-family: 'Google Sans', 'Neue Montreal', sans-serif;
 }
 
 .typhoon-page .theme-toggle:hover,
@@ -343,7 +397,7 @@
 
 .typhoon-page .accent-panel-title {
   color: var(--white);
-  font-family: 'Neue Montreal', sans-serif;
+  font-family: 'Google Sans', 'Neue Montreal', sans-serif;
   font-size: 0.72rem;
   font-weight: 500;
   letter-spacing: 0.12em;
@@ -391,7 +445,7 @@
   border: 0.8px solid #ffffff1f;
   border-radius: 10px;
   color: var(--white);
-  font-family: 'Neue Montreal', sans-serif;
+  font-family: 'Google Sans', 'Neue Montreal', sans-serif;
   font-size: 0.78rem;
   font-weight: 500;
   cursor: pointer;
@@ -435,17 +489,63 @@
   display: grid;
 }
 
+/* Disposition en quinconce fidèle à la maquette Webflow */
+.typhoon-page ._3x3-grid.v1 {
+  grid-template-areas:
+    'a1 a5 a3'
+    'a4 a2 a6'
+    'a8 a7 a9';
+}
+
+.typhoon-page .faq-item.a1 {
+  grid-area: a1;
+}
+
+.typhoon-page .faq-item.a2 {
+  grid-area: a2;
+}
+
+.typhoon-page .faq-item.a3 {
+  grid-area: a3;
+}
+
+.typhoon-page .faq-item.a4 {
+  grid-area: a4;
+}
+
+.typhoon-page .faq-item.a5 {
+  grid-area: a5;
+}
+
+.typhoon-page .faq-item.a6 {
+  grid-area: a6;
+}
+
+.typhoon-page .faq-item.a7 {
+  grid-area: a7;
+}
+
+.typhoon-page .faq-item.a8 {
+  grid-area: a8;
+}
+
+.typhoon-page .faq-item.a9 {
+  grid-area: a9;
+}
+
 .typhoon-page .faq-item {
   background-color: var(--dark-grey);
   width: 100%;
   max-width: 33.3vw;
-  height: 33.3vh;
+  min-height: 33.3vh;
+  overflow: hidden;
 }
 
+.typhoon-page .faq-item.a1,
 .typhoon-page .faq-item.a2,
-.typhoon-page .faq-item.a4,
-.typhoon-page .faq-item.a6,
-.typhoon-page .faq-item.a8 {
+.typhoon-page .faq-item.a3,
+.typhoon-page .faq-item.a8,
+.typhoon-page .faq-item.a9 {
   background-color: var(--black);
 }
 
@@ -463,7 +563,7 @@
   color: var(--white);
   text-align: left;
   letter-spacing: -0.25px;
-  font-family: 'Neue Montreal', sans-serif;
+  font-family: 'Google Sans', 'Neue Montreal', sans-serif;
   font-size: 27px;
   font-weight: 400;
   line-height: 1.2em;
@@ -480,7 +580,7 @@
 .typhoon-page .faq-txt {
   color: var(--light-grey);
   margin-bottom: 0;
-  font-family: 'Neue Montreal', sans-serif;
+  font-family: 'Google Sans', 'Neue Montreal', sans-serif;
   font-size: 18px;
   line-height: 1.3em;
 }
@@ -556,7 +656,7 @@
   color: var(--light-grey);
   text-align: center;
   letter-spacing: -0.25px;
-  font-family: 'Neue Montreal', sans-serif;
+  font-family: 'Google Sans', 'Neue Montreal', sans-serif;
   font-size: 30px;
   font-weight: 400;
   line-height: 1.1em;
@@ -596,7 +696,7 @@
 .typhoon-page .copytext {
   color: var(--light-grey);
   margin-bottom: 0;
-  font-family: 'Neue Montreal', sans-serif;
+  font-family: 'Google Sans', 'Neue Montreal', sans-serif;
   font-size: 18px;
   line-height: 1.3em;
 }
@@ -636,7 +736,7 @@
   text-align: left;
   letter-spacing: -0.2px;
   margin-bottom: 0;
-  font-family: 'Neue Montreal', sans-serif;
+  font-family: 'Google Sans', 'Neue Montreal', sans-serif;
   font-size: 16px;
   font-weight: 400;
   line-height: 1.5em;
@@ -649,7 +749,7 @@
   border-radius: 8px;
   margin-top: 0.3rem;
   padding: 1.5rem 0.75rem;
-  font-family: 'Neue Montreal', sans-serif;
+  font-family: 'Google Sans', 'Neue Montreal', sans-serif;
   font-weight: 400;
   width: 100%;
 }
@@ -687,7 +787,7 @@
   min-width: 12rem;
   margin-top: 1rem;
   padding: 0.9rem 1.75rem;
-  font-family: 'Neue Montreal', sans-serif;
+  font-family: 'Google Sans', 'Neue Montreal', sans-serif;
   font-size: 14px;
   font-weight: 500;
   transition: all 0.2s;
@@ -709,7 +809,7 @@
 
 .typhoon-page .succes-txt {
   color: var(--white);
-  font-family: 'Neue Montreal', sans-serif;
+  font-family: 'Google Sans', 'Neue Montreal', sans-serif;
   font-size: 16px;
   line-height: 1.4em;
 }
@@ -723,7 +823,7 @@
 
 .typhoon-page .error-txt {
   color: #e63946;
-  font-family: 'Neue Montreal', sans-serif;
+  font-family: 'Google Sans', 'Neue Montreal', sans-serif;
   font-size: 15px;
 }
 
@@ -803,7 +903,7 @@
 .typhoon-page .footer-url {
   color: var(--white);
   text-align: left;
-  font-family: 'Neue Montreal', sans-serif;
+  font-family: 'Google Sans', 'Neue Montreal', sans-serif;
   font-size: 1.6rem;
   font-weight: 400;
   line-height: 1.4em;
@@ -821,7 +921,7 @@
 .typhoon-page .footer-txt {
   color: var(--white);
   text-align: left;
-  font-family: 'Neue Montreal', sans-serif;
+  font-family: 'Google Sans', 'Neue Montreal', sans-serif;
   font-size: 1.6rem;
   font-weight: 400;
   line-height: 1.4em;
@@ -836,7 +936,7 @@
   color: var(--white);
   text-align: justify;
   letter-spacing: -0.1px;
-  font-family: 'Neue Montreal', sans-serif;
+  font-family: 'Google Sans', 'Neue Montreal', sans-serif;
   font-size: 1.2rem;
   font-weight: 400;
   line-height: 1.5em;
@@ -954,7 +1054,8 @@
 /* ---- Responsive ---- */
 @media (max-width: 991px) {
   .typhoon-page .webflow-native-navbar {
-    width: 100%;
+    order: 1;
+    width: 75%;
   }
 
   .typhoon-page .navbar {
@@ -975,6 +1076,54 @@
   .typhoon-page .navbar-logo-div {
     justify-content: flex-start;
     padding-left: 1rem;
+  }
+
+  .typhoon-page .nav-area-left.mobile {
+    display: block;
+  }
+
+  .typhoon-page .menu-button {
+    justify-content: center;
+    align-items: center;
+    width: 60px;
+    height: 60px;
+    padding: 12px;
+    display: flex;
+  }
+
+  .typhoon-page .menu-button.w--open {
+    color: #fff;
+    background-color: #a6b1bf00;
+  }
+
+  .typhoon-page .nav-menu-wrapper {
+    display: none;
+  }
+
+  .typhoon-page .nav-menu-wrapper.menu-open {
+    background-color: var(--dark-grey);
+    border: 0.8px solid #ffffff1a;
+    border-radius: 16px;
+    margin-top: 3px;
+    margin-left: 0;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    display: flex;
+    overflow: hidden;
+  }
+
+  .typhoon-page .nav-menu-right {
+    flex-flow: column wrap;
+    justify-content: space-around;
+    align-items: center;
+    margin-left: 0;
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+    padding-left: 0;
+    display: flex;
+    overflow: hidden;
   }
 
   .typhoon-page ._1x2-grid.in-contact {
@@ -1044,7 +1193,7 @@
     padding-right: 0;
   }
 
-  .typhoon-page .nav-menu-wrapper {
+  .typhoon-page .nav-menu-wrapper.menu-open {
     background-color: var(--dark-grey);
     border: 0.8px solid #ffffff1a;
     border-radius: 16px;

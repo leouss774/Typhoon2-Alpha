@@ -2215,7 +2215,7 @@ textarea.w-input, textarea.w-select {
   letter-spacing: -.5px;
   margin-top: 0;
   margin-bottom: 0;
-  font-family: Neue Montreal, sans-serif;
+  font-family: 'Google Sans', 'Neue Montreal', sans-serif;
   font-size: 50px;
   font-weight: 500;
   line-height: 1.1em;
@@ -2273,7 +2273,7 @@ textarea.w-input, textarea.w-select {
 .copytext {
   color: var(--light-grey);
   margin-bottom: 0;
-  font-family: Neue Montreal, sans-serif;
+  font-family: 'Google Sans', 'Neue Montreal', sans-serif;
   font-size: 18px;
   line-height: 1.3em;
 }
@@ -2361,7 +2361,7 @@ textarea.w-input, textarea.w-select {
   color: var(--black);
   text-align: center;
   letter-spacing: 0;
-  font-family: Neue Montreal, sans-serif;
+  font-family: 'Google Sans', 'Neue Montreal', sans-serif;
   font-weight: 500;
   position: relative;
 }
@@ -2441,7 +2441,7 @@ textarea.w-input, textarea.w-select {
   align-items: center;
   margin-top: 0;
   margin-bottom: 0;
-  font-family: Neue Montreal, sans-serif;
+  font-family: 'Google Sans', 'Neue Montreal', sans-serif;
   font-size: 50px;
   font-weight: 500;
   line-height: 1.1em;
@@ -2528,7 +2528,7 @@ textarea.w-input, textarea.w-select {
   color: var(--white);
   margin-top: 0;
   margin-bottom: 0;
-  font-family: Neue Montreal, sans-serif;
+  font-family: 'Google Sans', 'Neue Montreal', sans-serif;
   font-size: 18px;
   font-weight: 400;
   line-height: 1.1em;
@@ -2605,7 +2605,7 @@ textarea.w-input, textarea.w-select {
 .question-mark-txt {
   color: var(--white);
   text-align: center;
-  font-family: Neue Montreal, sans-serif;
+  font-family: 'Google Sans', 'Neue Montreal', sans-serif;
   font-size: 350px;
   font-weight: 400;
   line-height: .9em;
@@ -2617,7 +2617,7 @@ textarea.w-input, textarea.w-select {
   letter-spacing: -.25px;
   margin-top: 0;
   margin-bottom: 0;
-  font-family: Neue Montreal, sans-serif;
+  font-family: 'Google Sans', 'Neue Montreal', sans-serif;
   font-size: 30px;
   font-weight: 400;
   line-height: 1.1em;
@@ -2750,7 +2750,7 @@ textarea.w-input, textarea.w-select {
   letter-spacing: -.25px;
   margin-top: 0;
   margin-bottom: 0;
-  font-family: Neue Montreal, sans-serif;
+  font-family: 'Google Sans', 'Neue Montreal', sans-serif;
   font-size: 27px;
   font-weight: 400;
   line-height: 1.2em;
@@ -2878,7 +2878,7 @@ textarea.w-input, textarea.w-select {
   color: var(--white);
   text-align: center;
   letter-spacing: -5px;
-  font-family: Neue Montreal, sans-serif;
+  font-family: 'Google Sans', 'Neue Montreal', sans-serif;
   font-size: 200px;
   font-weight: 500;
   line-height: 1em;
@@ -3053,7 +3053,7 @@ textarea.w-input, textarea.w-select {
 .tag-txt {
   color: var(--orange);
   margin-bottom: 0;
-  font-family: Neue Montreal, sans-serif;
+  font-family: 'Google Sans', 'Neue Montreal', sans-serif;
   font-size: 14px;
   font-weight: 500;
   line-height: 1.3em;
@@ -3382,7 +3382,7 @@ textarea.w-input, textarea.w-select {
   margin-left: .1rem;
   margin-right: .1rem;
   padding: 1rem 1.2rem;
-  font-family: Neue Montreal, sans-serif;
+  font-family: 'Google Sans', 'Neue Montreal', sans-serif;
   font-size: 1rem;
   font-weight: 400;
   line-height: 1em;
@@ -3520,7 +3520,7 @@ textarea.w-input, textarea.w-select {
   letter-spacing: 0;
   margin-left: 1.2rem;
   margin-right: 1.2rem;
-  font-family: Neue Montreal, sans-serif;
+  font-family: 'Google Sans', 'Neue Montreal', sans-serif;
   font-size: 1rem;
   font-weight: 500;
   line-height: 1em;
@@ -3618,7 +3618,7 @@ textarea.w-input, textarea.w-select {
   flex-flow: column;
   justify-content: space-between;
   align-items: center;
-  font-family: Neue Montreal, sans-serif;
+  font-family: 'Google Sans', 'Neue Montreal', sans-serif;
   font-size: 190px;
   font-weight: 600;
   line-height: 1em;
@@ -3714,7 +3714,7 @@ textarea.w-input, textarea.w-select {
   max-width: 80rem;
   margin-top: 0;
   margin-bottom: 0;
-  font-family: Neue Montreal, sans-serif;
+  font-family: 'Google Sans', 'Neue Montreal', sans-serif;
   font-size: 90px;
   font-weight: 600;
   line-height: 1.1em;
@@ -3784,7 +3784,7 @@ textarea.w-input, textarea.w-select {
   letter-spacing: -.1px;
   margin-top: 0;
   margin-bottom: 0;
-  font-family: Neue Montreal, sans-serif;
+  font-family: 'Google Sans', 'Neue Montreal', sans-serif;
   font-size: 1.2rem;
   font-weight: 400;
   line-height: 1.5em;
@@ -3841,7 +3841,7 @@ textarea.w-input, textarea.w-select {
   text-align: left;
   margin-top: 0;
   margin-bottom: 0;
-  font-family: Neue Montreal, sans-serif;
+  font-family: 'Google Sans', 'Neue Montreal', sans-serif;
   font-size: 1.6rem;
   font-weight: 400;
   line-height: 1.4em;
@@ -3987,7 +3987,7 @@ textarea.w-input, textarea.w-select {
   text-align: left;
   margin-top: 0;
   margin-bottom: 0;
-  font-family: Neue Montreal, sans-serif;
+  font-family: 'Google Sans', 'Neue Montreal', sans-serif;
   font-size: 1.6rem;
   font-weight: 400;
   line-height: 1.4em;
@@ -4021,7 +4021,7 @@ textarea.w-input, textarea.w-select {
   border-radius: 8px;
   margin-top: .3rem;
   padding: 1.5rem .75rem;
-  font-family: Neue Montreal, sans-serif;
+  font-family: 'Google Sans', 'Neue Montreal', sans-serif;
   font-weight: 400;
 }
 
@@ -4060,7 +4060,7 @@ textarea.w-input, textarea.w-select {
 
 .succes-txt {
   color: var(--white);
-  font-family: Neue Montreal, sans-serif;
+  font-family: 'Google Sans', 'Neue Montreal', sans-serif;
   font-weight: 500;
 }
 
@@ -4073,7 +4073,7 @@ textarea.w-input, textarea.w-select {
   min-width: 12rem;
   margin-top: 1rem;
   padding: .9rem 1.75rem;
-  font-family: Neue Montreal, sans-serif;
+  font-family: 'Google Sans', 'Neue Montreal', sans-serif;
   font-size: 14px;
   font-weight: 500;
   transition: all .2s;
@@ -4140,7 +4140,7 @@ textarea.w-input, textarea.w-select {
   text-align: left;
   letter-spacing: -.2px;
   margin-bottom: 0;
-  font-family: Neue Montreal, sans-serif;
+  font-family: 'Google Sans', 'Neue Montreal', sans-serif;
   font-size: 16px;
   font-weight: 400;
   line-height: 1.5em;
@@ -4267,7 +4267,7 @@ textarea.w-input, textarea.w-select {
 
 .ck-desc {
   color: var(--white);
-  font-family: Neue Montreal, sans-serif;
+  font-family: 'Google Sans', 'Neue Montreal', sans-serif;
   font-size: 16px;
   font-weight: 400;
   text-decoration: none;
@@ -4275,7 +4275,7 @@ textarea.w-input, textarea.w-select {
 
 .ck-button__txt {
   padding-top: 0;
-  font-family: Neue Montreal, sans-serif;
+  font-family: 'Google Sans', 'Neue Montreal', sans-serif;
   font-size: 14px;
   font-weight: 400;
   text-decoration: none;
@@ -4299,7 +4299,7 @@ textarea.w-input, textarea.w-select {
 .ck-title.is--small {
   color: var(--white);
   margin-bottom: .7875em;
-  font-family: Neue Montreal, sans-serif;
+  font-family: 'Google Sans', 'Neue Montreal', sans-serif;
   font-size: 1.1875rem;
   font-weight: 500;
 }
@@ -4415,7 +4415,7 @@ textarea.w-input, textarea.w-select {
   color: var(--white);
   text-align: center;
   letter-spacing: -5px;
-  font-family: Neue Montreal, sans-serif;
+  font-family: 'Google Sans', 'Neue Montreal', sans-serif;
   font-size: 160px;
   font-weight: 500;
   line-height: 1em;
@@ -4457,7 +4457,7 @@ textarea.w-input, textarea.w-select {
 .faq-txt {
   color: var(--light-grey);
   margin-bottom: 0;
-  font-family: Neue Montreal, sans-serif;
+  font-family: 'Google Sans', 'Neue Montreal', sans-serif;
   font-size: 18px;
   line-height: 1.3em;
 }
@@ -4528,13 +4528,13 @@ textarea.w-input, textarea.w-select {
 
 .selected {
   color: var(--white);
-  font-family: Neue Montreal, sans-serif;
+  font-family: 'Google Sans', 'Neue Montreal', sans-serif;
   font-weight: 500;
 }
 
 .unselected {
   color: var(--light-grey);
-  font-family: Neue Montreal, sans-serif;
+  font-family: 'Google Sans', 'Neue Montreal', sans-serif;
   font-weight: 500;
 }
 

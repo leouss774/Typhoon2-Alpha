@@ -11,9 +11,12 @@
 //   erreur + message) si l'on tente de les atteindre sans rapport.
 // =============================================================================
 
-import { useEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
-import { Link } from 'react-router-dom';
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode, type RefObject } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import type { Menu } from '@material/web/menu/menu.js';
+import type { MdSwitch } from '@material/web/switch/switch.js';
 import { ZoneMap } from '../components/ZoneMap';
+import { ACCENTS, useTyphoonTheme } from '../typhoon/useTyphoonTheme';
 import {
   API,
   D03,
@@ -39,19 +42,51 @@ const STEPS = [
   { id: 'rapport', label: 'Rapport IA' },
 ] as const;
 
-interface Status {
-  text: string;
-  kind: '' | 'loading' | 'error' | 'ok';
-}
-
 export function Zone() {
+  const navigate = useNavigate();
+  const { theme, accent, toggleTheme, pickAccent, resetAccent } = useTyphoonTheme();
+  const isMobile = useIsMobile();
+  const [navCollapsed, setNavCollapsed] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const settingsMenuRef = useRef<Menu | null>(null);
+  const themeSwitchRef = useRef<MdSwitch | null>(null);
+  const sidenavRef = useRef<HTMLElement | null>(null);
+
+  /* Ouverture du drawer mobile : amener le focus dans la navigation. */
+  useEffect(() => {
+    if (!isMobile || !drawerOpen) return;
+    const first = sidenavRef.current?.querySelector<HTMLElement>(
+      'a, [tabindex]:not([tabindex="-1"])'
+    );
+    first?.focus();
+  }, [isMobile, drawerOpen]);
+
+  /* Le menu réglages se referme de lui-même (clic extérieur / Échap) → on
+     resynchronise l'état React sur l'événement `closed` du md-menu. */
+  useEffect(() => {
+    const menu = settingsMenuRef.current;
+    if (!menu) return;
+    const onClosed = () => setSettingsOpen(false);
+    menu.addEventListener('closed', onClosed);
+    return () => menu.removeEventListener('closed', onClosed);
+  }, []);
+
+  /* md-switch émet `change` (custom element) — on écoute via le ref. */
+  useEffect(() => {
+    const sw = themeSwitchRef.current;
+    if (!sw) return;
+    const onChange = () => toggleTheme();
+    sw.addEventListener('change', onChange);
+    return () => sw.removeEventListener('change', onChange);
+  }, [toggleTheme]);
+
   const [step, setStep] = useState(0);
   const [stepError, setStepError] = useState(false);
   const [suggestions, setSuggestions] = useState<GeocodeSuggestion[]>([]);
   const [suggestionsOpen, setSuggestionsOpen] = useState(false);
-  const [status, setStatus] = useState<Status>({ text: '', kind: '' });
-  const [progress, setProgress] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [diagError, setDiagError] = useState<string | null>(null);
   const [report, setReport] = useState<RisqueReport | null>(null);
   const [rapport, setRapport] = useState<RapportNarratif | null>(null);
   const [rapportLoading, setRapportLoading] = useState(false);
@@ -85,6 +120,7 @@ export function Zone() {
   function onQueryChange(value: string) {
     lastQuery.current = value;
     setStepError(false); // l'erreur « adresse manquante » se dissipe dès la saisie
+    setDiagError(null); // l'erreur d'API se dissipe aussi dès la saisie
     if (banTimeout.current) window.clearTimeout(banTimeout.current);
     if (value.trim().length < 3) {
       hideSuggestions();
@@ -103,21 +139,19 @@ export function Zone() {
   async function runDiagnosis(q: string) {
     const value = q.trim();
     if (!value) {
-      setStatus({ text: 'Saisissez une adresse.', kind: 'error' });
+      setDiagError('Saisissez une adresse.');
       return;
     }
     hideSuggestions();
+    setDiagError(null);
     setLoading(true);
     setReport(null);
     setRapport(null);
     setRapportError(null);
     setSidebarOpen(false);
-    setStatus({ text: 'Géocodage IGN Géoplateforme…', kind: 'loading' });
-    setProgress(15);
 
     try {
       const resp = await fetch(`${API}/diagnostic/adresse?q=${encodeURIComponent(value)}`);
-      setProgress(75);
 
       if (!resp.ok) {
         let detail = `Erreur ${resp.status}`;
@@ -127,8 +161,7 @@ export function Zone() {
         } catch {
           /* corps non-JSON */
         }
-        setStatus({ text: detail, kind: 'error' });
-        setProgress(0);
+        setDiagError(detail);
         return;
       }
 
@@ -140,15 +173,8 @@ export function Zone() {
       setVisibleLayerKeys(
         new Set((r.aleas || []).filter((a) => a.present === true).map((a) => a.code))
       );
-      setStatus({
-        text: `${r.alea_count} aléa(s) recensé(s) — rapport généré le ${r.date_generation}`,
-        kind: 'ok',
-      });
-      setProgress(100);
-      window.setTimeout(() => setProgress(0), 600);
     } catch {
-      setStatus({ text: 'Erreur réseau — backend inaccessible ?', kind: 'error' });
-      setProgress(0);
+      setDiagError('Erreur réseau — backend inaccessible ?');
     } finally {
       setLoading(false);
     }
@@ -187,6 +213,7 @@ export function Zone() {
   function goToStep(i: number) {
     if (i > 0 && !report) {
       setStepError(true); // étape Adresse → état d'erreur, navigation bloquée
+      setDiagError(null); // le message du stepper prime sur une erreur d'API antérieure
       window.setTimeout(() => heroInputRef.current?.focus(), 80);
       return;
     }
@@ -215,7 +242,7 @@ export function Zone() {
 
   function setAllVisible(visible: boolean) {
     if (!report) return;
-    const codes = (report.aleas || []).filter((a) => a.present === true).map((a) => a.code);
+    const codes = (report.aleas || []).map((a) => a.code);
     setVisibleLayerKeys(visible ? new Set(codes) : new Set());
   }
 
@@ -242,14 +269,52 @@ export function Zone() {
 
   const allPresentVisible =
     report !== null &&
-    presentAleas.length > 0 &&
-    presentAleas.every((a) => visibleLayerKeys.has(a.code));
+    (report.aleas || []).length > 0 &&
+    (report.aleas || []).every((a) => visibleLayerKeys.has(a.code));
 
   return (
-    <main className={`zone-app${sidebarOpen ? ' sidebar-open' : ''}`}>
-      {/* ===== STEPPER (indicateur d'étapes, linéaire) ===== */}
-      <nav className="zone-stepper" aria-label="Étapes du diagnostic">
-        {STEPS.map((s, i) => {
+    <main
+      className={`zone-app${theme === 'light' ? ' theme-light' : ''}${
+        sidebarOpen ? ' sidebar-open' : ''
+      }${navCollapsed && !isMobile ? ' nav-collapsed' : ''}${drawerOpen ? ' drawer-open' : ''}`}
+      style={{ '--accent': accent } as CSSProperties}
+    >
+      {/* ===== SIDENAV rétractable (navigation façon Gemini) ===== */}
+      <ZoneSidenav
+        sidenavRef={sidenavRef}
+        collapsed={navCollapsed && !isMobile}
+        mobile={isMobile}
+        hidden={isMobile && !drawerOpen}
+        theme={theme}
+        accent={accent}
+        settingsOpen={settingsOpen}
+        settingsMenuRef={settingsMenuRef}
+        themeSwitchRef={themeSwitchRef}
+        onToggleCollapse={() =>
+          isMobile ? setDrawerOpen(false) : setNavCollapsed((c) => !c)
+        }
+        onPickAccent={pickAccent}
+        onResetAccent={resetAccent}
+        onOpenSettings={() => setSettingsOpen((o) => !o)}
+        onCloseDrawer={() => setDrawerOpen(false)}
+        onNewDiagnostic={() => {
+          setDrawerOpen(false);
+          goToStep(0);
+        }}
+      />
+
+      {/* ===== COLONNE PRINCIPALE ===== */}
+      <div className="zone-main">
+        {/* ===== STEPPER (indicateur d'étapes, linéaire) ===== */}
+        <nav className="zone-stepper" aria-label="Étapes du diagnostic">
+          <md-icon-button
+            className="sidenav-hamburger"
+            aria-label="Ouvrir le menu"
+            onClick={() => setDrawerOpen(true)}
+          >
+            <md-icon>menu</md-icon>
+          </md-icon-button>
+          {STEPS.map((s, i) => {
           const active = i === step;
           const done = i < step;
           const isError = i === 0 && stepError;
@@ -280,23 +345,19 @@ export function Zone() {
               )}
             </div>
           );
-        })}
-      </nav>
+          })}
+        </nav>
 
-      {/* ===== ÉTAPE 1 — ADRESSE (hero façon Gemini) ===== */}
+        {/* ===== ÉTAPE 1 — ADRESSE (hero façon Gemini) ===== */}
       {step === 0 && (
         <section className="zone-hero">
           <div className="hero-brand">
-            <div className="hero-logo">
-              <md-icon>shield</md-icon>
-            </div>
             <h1>Diagnostic géo-risque</h1>
-            <p>Typhoon · IGN Géoplateforme · Géorisques (BRGM / MTE) · Souverain FR/UE</p>
           </div>
 
           <div className="hero-search">
             <div className="input-wrap">
-              <div className={`hero-field${stepError ? ' shake' : ''}`}>
+              <div className={`hero-field${stepError || diagError ? ' shake' : ''}`}>
                 <HeroAddressField
                   fieldRef={heroInputRef}
                   initialValue={lastQuery.current}
@@ -307,19 +368,37 @@ export function Zone() {
                   onPick={pickSuggestion}
                   onDiagnose={(v) => void runDiagnosis(v)}
                   stepError={stepError}
+                  loading={loading}
+                  error={diagError}
                 />
               </div>
-              {stepError && (
-                <div className="hero-error" role="alert">
-                  <md-icon>error</md-icon>
-                  <span>Saisissez d'abord une adresse pour accéder aux étapes suivantes.</span>
+              {loading ? (
+                <div className="hero-thinking" role="status" aria-live="polite">
+                  <span className="hero-thinking-dots" aria-hidden="true">
+                    <i />
+                    <i />
+                    <i />
+                  </span>
+                  <span className="hero-thinking-txt">Diagnostic en cours…</span>
                 </div>
+              ) : (
+                (stepError || diagError) && (
+                  <div className="hero-error" role="alert">
+                    <md-icon>error</md-icon>
+                    <span>
+                      {diagError ||
+                        "Saisissez d'abord une adresse pour accéder aux étapes suivantes."}
+                    </span>
+                  </div>
+                )
               )}
             </div>
-            <div className="hero-hints">
-              <span>ex. 14 Avenue des Palmiers 06000 Nice</span>
-              <span>Entrée ↵ pour diagnostiquer</span>
-            </div>
+            {!loading && (
+              <div className="hero-hints">
+                <span>ex. 14 Avenue des Palmiers 06000 Nice</span>
+                <span>Entrée ↵ pour diagnostiquer</span>
+              </div>
+            )}
           </div>
         </section>
       )}
@@ -329,12 +408,6 @@ export function Zone() {
         <>
           <header className="zone-topbar">
             <div className="topbar-main">
-              <div className="topbar-brand">
-                <Link to="/" className="brand-back" aria-label="Retour à l'accueil">
-                  <md-icon>arrow_back</md-icon>
-                </Link>
-              </div>
-
               <div className="topbar-search">
                 <div className="input-wrap">
                   <AddressField
@@ -352,6 +425,21 @@ export function Zone() {
                   </AddressField>
                 </div>
               </div>
+
+              <div className="topbar-actions">
+                <md-icon-button
+                  toggle
+                  selected={sidebarOpen}
+                  className="panel-toggle"
+                  aria-label="Afficher / masquer le panneau des aléas"
+                  title="Panneau des aléas"
+                  aria-pressed={sidebarOpen}
+                  onClick={toggleSidebar}
+                >
+                  <md-icon>view_sidebar</md-icon>
+                  <md-icon slot="selected">view_sidebar</md-icon>
+                </md-icon-button>
+              </div>
             </div>
           </header>
 
@@ -359,27 +447,6 @@ export function Zone() {
             {/* Workspace — toujours monté pour préserver la carte OpenLayers
                 (masqué via [hidden] hors de l'étape Cartographie) */}
             <div className="zone-workspace" hidden={step !== 1}>
-              {/* RAIL (toolbar latérale toujours visible) */}
-              <nav className="zone-rail" aria-label="Panneau latéral">
-                <md-icon-button
-                  className="rail-toggle"
-                  aria-label={
-                    sidebarOpen ? 'Réduire le panneau latéral' : 'Déplier le panneau latéral'
-                  }
-                  aria-expanded={sidebarOpen}
-                  onClick={toggleSidebar}
-                >
-                  <md-icon>{sidebarOpen ? 'menu_open' : 'menu'}</md-icon>
-                </md-icon-button>
-                <md-icon-button
-                  className="rail-search"
-                  aria-label="Rechercher une adresse"
-                  onClick={() => inputRef.current?.focus()}
-                >
-                  <md-icon>search</md-icon>
-                </md-icon-button>
-              </nav>
-
               {/* SIDEBAR (couches + résultats) */}
               <aside className="zone-sidebar">
                 {report ? (
@@ -406,38 +473,35 @@ export function Zone() {
                           </div>
                         ))}
                       </div>
-                    </details>
-
-                    <div className="score-block">
-                      <div className="score-row">
-                        <span className="score-num" style={{ color: band?.color }}>
-                          {maxScore ?? '—'}
-                        </span>
-                        <div className="score-meta">
-                          <span className="score-label">Score de risque global /100</span>
-                          <span className={`d03-pill ${band ? band.cls : ''}`}>
-                            {band ? band.label : 'Indéterminé'}
-                          </span>
-                        </div>
-                      </div>
-                      <md-elevated-button
-                        href={pdfUrl}
-                        target="_blank"
-                        rel="noopener"
-                        className="pdf-btn"
-                      >
-                        <md-icon slot="icon">picture_as_pdf</md-icon>
-                        Rapport PDF
-                      </md-elevated-button>
-                    </div>
+                    </details>      <div className="score-block">
+        <div className="score-row">
+          <span className="score-num" style={{ color: band?.color }}>
+            {maxScore ?? '—'}
+          </span>
+          <div className="score-meta">
+            <span className="score-label">Score de risque global /100</span>
+            <span className={`d03-pill ${band ? band.cls : ''}`}>
+              {band ? band.label : 'Indéterminé'}
+            </span>
+          </div>
+        </div>
+      </div>
 
                     <div className="aleas-section">
                       <div className="section-heading">
                         <span>Aléas recensés — Géorisques</span>
                         <md-text-button
                           className="toggle-all"
+                          aria-label={
+                            allPresentVisible
+                              ? 'Masquer toutes les couches sur la carte'
+                              : 'Afficher toutes les couches sur la carte'
+                          }
                           onClick={() => setAllVisible(!allPresentVisible)}
                         >
+                          <md-icon slot="icon">
+                            {allPresentVisible ? 'visibility' : 'visibility_off'}
+                          </md-icon>
                           {allPresentVisible ? 'Tout masquer' : 'Tout afficher'}
                         </md-text-button>
                       </div>
@@ -644,27 +708,14 @@ export function Zone() {
           </div>
         </>
       )}
+      </div>
 
-      {/* ===== OVERLAY de statut (pendant le diagnostic) ===== */}
-      {(loading || status.kind === 'error') && (
-        <div
-          className={`diagnosis-overlay${status.kind === 'error' ? ' overlay-error' : ''}`}
-          role={status.kind === 'error' ? 'alert' : 'status'}
-          aria-live="polite"
-          onClick={
-            status.kind === 'error' ? () => setStatus({ text: '', kind: '' }) : undefined
-          }
-        >
-          <div className="overlay-card">
-            <span className="overlay-msg">{status.text}</span>
-            {loading ? (
-              <md-linear-progress value={progress / 100}></md-linear-progress>
-            ) : (
-              <span className="overlay-hint">Cliquez pour fermer</span>
-            )}
-          </div>
-        </div>
-      )}
+      {/* Scrim du drawer mobile */}
+      <div
+        className={`zone-scrim${drawerOpen ? ' visible' : ''}`}
+        aria-hidden="true"
+        onClick={() => setDrawerOpen(false)}
+      />
     </main>
   );
 }
@@ -683,6 +734,8 @@ function HeroAddressField({
   onPick,
   onDiagnose,
   stepError,
+  loading,
+  error,
 }: {
   fieldRef: RefObject<HTMLInputElement | null>;
   initialValue: string;
@@ -693,6 +746,8 @@ function HeroAddressField({
   onPick: (s: GeocodeSuggestion) => void;
   onDiagnose: (value: string) => void;
   stepError: boolean;
+  loading: boolean;
+  error: string | null;
 }) {
   /* Écouteurs attachés au montage ; la valeur initiale restaure la dernière
      requête saisie (lastQuery) lorsque le champ est (ré)monté. */
@@ -726,10 +781,17 @@ function HeroAddressField({
 
   return (
     <>
-      <div className={`hero-pill${stepError ? ' hero-pill-error' : ''}`}>
+      <div
+        className={`hero-pill${stepError || error ? ' hero-pill-error' : ''}${
+          loading ? ' hero-pill-loading' : ''
+        }`}
+      >
         <md-icon className="hero-pill-icon" aria-hidden="true">
           search
         </md-icon>
+        <label className="hero-pill-label" htmlFor="addr-input-hero">
+          Rechercher une adresse
+        </label>
         <input
           ref={fieldRef}
           id="addr-input-hero"
@@ -741,16 +803,20 @@ function HeroAddressField({
           className="hero-pill-input"
           aria-label="Rechercher une adresse"
         />
-        <md-icon-button
-          className="hero-send"
-          aria-label="Diagnostiquer cette adresse"
-          onClick={() => {
-            const el = fieldRef.current;
-            if (el) void onDiagnose(el.value);
-          }}
-        >
-          <md-icon>arrow_forward</md-icon>
-        </md-icon-button>
+        {loading ? (
+          <span className="hero-pill-spinner" aria-hidden="true" />
+        ) : (
+          <md-icon-button
+            className="hero-send"
+            aria-label="Diagnostiquer cette adresse"
+            onClick={() => {
+              const el = fieldRef.current;
+              if (el) void onDiagnose(el.value);
+            }}
+          >
+            <md-icon>arrow_forward</md-icon>
+          </md-icon-button>
+        )}
       </div>
       {suggestionsOpen && suggestions.length > 0 && (
         <Suggestions suggestions={suggestions} onPick={handlePick} />
@@ -912,8 +978,11 @@ function AleaCard({
       <div className="alea-right">
         <md-icon-button
           className="eye-btn"
-          aria-label="Afficher/masquer la couche sur la carte"
-          aria-pressed={visible}
+          aria-label={
+            visible
+              ? `Masquer la couche ${alea.libelle} sur la carte`
+              : `Afficher la couche ${alea.libelle} sur la carte`
+          }
           onClick={onToggle}
         >
           <md-icon>{visible ? 'visibility' : 'visibility_off'}</md-icon>
@@ -928,5 +997,210 @@ function AleaCard({
         ) : null}
       </div>
     </div>
+  );
+}
+
+/* ── Détection mobile — 900px, même breakpoint que @media (max-width:900px)
+   dans zone.css (garder les deux synchronisés) ── */
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window !== 'undefined' && window.matchMedia('(max-width: 900px)').matches
+  );
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 900px)');
+    const onChange = () => setIsMobile(mq.matches);
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, []);
+  return isMobile;
+}
+
+/* ── Sidenav rétractable (navigation façon Gemini) ──
+   Desktop : rail pleine largeur ↔ colonne d'icônes (collapsed).
+   Mobile  : drawer hors-écran ouvert via le hamburger du stepper + scrim. */
+function ZoneSidenav({
+  sidenavRef,
+  collapsed,
+  mobile,
+  hidden,
+  theme,
+  accent,
+  settingsOpen,
+  settingsMenuRef,
+  themeSwitchRef,
+  onToggleCollapse,
+  onPickAccent,
+  onResetAccent,
+  onOpenSettings,
+  onCloseDrawer,
+  onNewDiagnostic,
+}: {
+  sidenavRef: RefObject<HTMLElement | null>;
+  collapsed: boolean;
+  mobile: boolean;
+  hidden: boolean;
+  theme: 'dark' | 'light';
+  accent: string;
+  settingsOpen: boolean;
+  settingsMenuRef: RefObject<Menu | null>;
+  themeSwitchRef: RefObject<MdSwitch | null>;
+  onToggleCollapse: () => void;
+  onPickAccent: (hex: string) => void;
+  onResetAccent: () => void;
+  onOpenSettings: () => void;
+  onCloseDrawer: () => void;
+  onNewDiagnostic: () => void;
+}) {
+  const navigate = useNavigate();
+
+  const navGo = (path: string) => {
+    onCloseDrawer();
+    navigate(path);
+  };
+
+  return (
+    <aside
+      ref={sidenavRef}
+      className="zone-sidenav"
+      aria-label="Navigation principale"
+      inert={hidden}
+      aria-hidden={hidden}
+    >
+      <header className="sidenav-header">
+        {collapsed ? (
+          /* Replié : l'icône d'expansion remplace le logo (clic → déplier) */
+          <md-icon-button
+            className="sidenav-expand"
+            aria-label="Déplier le menu"
+            title="Déplier le menu"
+            onClick={onToggleCollapse}
+          >
+            <md-icon>chevron_right</md-icon>
+          </md-icon-button>
+        ) : (
+          <>
+            <Link
+              to="/"
+              className="sidenav-brand"
+              aria-label="Typhoon — accueil"
+              onClick={onCloseDrawer}
+            >
+              {/* Wordmark teinté par l'accent : le SVG blanc sert de masque
+                  alpha, la couleur est --accent (voir zone.css). Le lien a déjà
+                  aria-label — le span est décoratif. */}
+              <span className="sidenav-wordmark-img" aria-hidden="true" />
+            </Link>
+            <md-icon-button
+              className="sidenav-collapse"
+              aria-label={mobile ? 'Fermer le menu' : 'Replier le menu'}
+              title={mobile ? 'Fermer le menu' : 'Replier le menu'}
+              onClick={onToggleCollapse}
+            >
+              <md-icon>{mobile ? 'close' : 'menu_open'}</md-icon>
+            </md-icon-button>
+          </>
+        )}
+      </header>
+
+      {collapsed ? (
+        /* ── Mode replié : colonne d'icônes ── */
+        <nav className="sidenav-rail" aria-label="Raccourcis">
+          <md-icon-button title="Nouveau diagnostic" aria-label="Nouveau diagnostic" onClick={onNewDiagnostic}>
+            <md-icon>add_circle</md-icon>
+          </md-icon-button>
+          <md-icon-button title="Accueil" aria-label="Accueil" onClick={() => navGo('/')}>
+            <md-icon>home</md-icon>
+          </md-icon-button>
+          <md-icon-button title="FAQ" aria-label="FAQ" onClick={() => navGo('/faq')}>
+            <md-icon>help</md-icon>
+          </md-icon-button>
+          <md-icon-button title="Contact" aria-label="Contact" onClick={() => navGo('/contact')}>
+            <md-icon>mail</md-icon>
+          </md-icon-button>
+        </nav>
+      ) : (
+        /* ── Mode déplié : liste M3 ── */
+        <md-list className="sidenav-nav">
+          <md-list-item
+            className="sidenav-new"
+            type="button"
+            onClick={onNewDiagnostic}
+          >
+            <md-icon slot="start">add_circle</md-icon>
+            <span slot="headline">Nouveau diagnostic</span>
+          </md-list-item>
+          <md-list-item type="button" onClick={() => navGo('/')}>
+            <md-icon slot="start">home</md-icon>
+            <span slot="headline">Accueil</span>
+          </md-list-item>
+          <md-list-item type="button" onClick={() => navGo('/faq')}>
+            <md-icon slot="start">help</md-icon>
+            <span slot="headline">FAQ</span>
+          </md-list-item>
+          <md-list-item type="button" onClick={() => navGo('/contact')}>
+            <md-icon slot="start">mail</md-icon>
+            <span slot="headline">Contact</span>
+          </md-list-item>
+        </md-list>
+      )}
+
+      <footer className="sidenav-footer">
+        <md-icon-button
+          id="settings-anchor"
+          className="sidenav-settings"
+          aria-label="Réglages"
+          title="Réglages"
+          aria-expanded={settingsOpen}
+          aria-haspopup="menu"
+          onClick={onOpenSettings}
+        >
+          <md-icon>settings</md-icon>
+        </md-icon-button>
+
+        <md-menu
+          ref={settingsMenuRef}
+          anchor="settings-anchor"
+          positioning="popover"
+          open={settingsOpen}
+          className="sidenav-menu"
+        >
+          <md-menu-item keepOpen>
+            <span slot="headline">Mode sombre</span>
+            <md-switch slot="end" ref={themeSwitchRef} selected={theme === 'dark'} icons>
+              <md-icon slot="on-icon">dark_mode</md-icon>
+              <md-icon slot="off-icon">light_mode</md-icon>
+            </md-switch>
+          </md-menu-item>
+
+          <div className="sidenav-accent-block">
+            <span className="sidenav-accent-title">Couleur d'accent</span>
+            <div className="sidenav-accent-swatches">
+              {ACCENTS.map((hex) => (
+                <button
+                  key={hex}
+                  type="button"
+                  className={`sidenav-accent-swatch${
+                    accent.toLowerCase() === hex.toLowerCase() ? ' active' : ''
+                  }`}
+                  style={{ '--swatch': hex } as CSSProperties}
+                  aria-label={`Accent ${hex}`}
+                  title={hex}
+                  onClick={() => onPickAccent(hex)}
+                />
+              ))}
+            </div>
+            <button type="button" className="sidenav-accent-reset" onClick={onResetAccent}>
+              <md-icon>restart_alt</md-icon>
+              <span>Rétablir le bleu d'origine</span>
+            </button>
+          </div>
+
+          <md-menu-item type="button" onClick={() => navGo('/')}>
+            <md-icon slot="start">home</md-icon>
+            <span slot="headline">Retour à l'accueil</span>
+          </md-menu-item>
+        </md-menu>
+      </footer>
+    </aside>
   );
 }

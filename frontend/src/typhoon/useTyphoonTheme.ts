@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, type CSSProperties } from 'react';
+import { useCallback, useState, useSyncExternalStore, type CSSProperties } from 'react';
 
 export const BRAND_ACCENT = '#4386B1';
 
@@ -30,39 +30,46 @@ function readStorage() {
   return { theme, accent };
 }
 
+type ThemeState = { theme: 'dark' | 'light'; accent: string };
+
+let state: ThemeState = readStorage();
+const listeners = new Set<() => void>();
+
+function setState(next: ThemeState) {
+  state = next;
+  try {
+    localStorage.setItem('typhoon-theme', next.theme);
+    localStorage.setItem('typhoon-accent', next.accent);
+  } catch {
+    /* ignore */
+  }
+  listeners.forEach((l) => l());
+}
+
+function subscribe(listener: () => void) {
+  listeners.add(listener);
+  return () => listeners.delete(listener);
+}
+
+function getSnapshot(): ThemeState {
+  return state;
+}
+
 export function useTyphoonTheme() {
-  const [state] = useState(readStorage);
-  const [theme, setTheme] = useState<'dark' | 'light'>(state.theme);
-  const [accent, setAccent] = useState<string>(state.accent);
+  const { theme, accent } = useSyncExternalStore(subscribe, getSnapshot);
   const [panelOpen, setPanelOpen] = useState(false);
 
-  useEffect(() => {
-    try {
-      localStorage.setItem('typhoon-theme', theme);
-    } catch {
-      /* ignore */
-    }
-  }, [theme]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('typhoon-accent', accent);
-    } catch {
-      /* ignore */
-    }
-  }, [accent]);
-
   const toggleTheme = useCallback(() => {
-    setTheme((t) => (t === 'dark' ? 'light' : 'dark'));
+    setState({ ...state, theme: state.theme === 'dark' ? 'light' : 'dark' });
   }, []);
 
   const resetAccent = useCallback(() => {
-    setAccent(BRAND_ACCENT);
+    setState({ ...state, accent: BRAND_ACCENT });
     setPanelOpen(false);
   }, []);
 
   const pickAccent = useCallback((hex: string) => {
-    setAccent(hex);
+    setState({ ...state, accent: hex });
     setPanelOpen(false);
   }, []);
 
