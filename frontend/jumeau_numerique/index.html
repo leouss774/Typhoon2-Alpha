@@ -10,7 +10,7 @@
 <meta property="og:description" content="Anticipez le risque climatique d'un bien, avant qu'il ne devienne un sinistre.">
 <meta property="og:image" content="assets/landing/og-share.jpg.jpeg">
 <meta name="twitter:card" content="summary_large_image">
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='6' fill='%23316f96'/%3E%3Cpath d='M12 4 6 6.5v5c0 4 2.5 6.8 6 8 3.5-1.2 6-4 6-8v-5z' fill='none' stroke='%23fff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='m9.3 12 1.7 1.7 3-3' fill='none' stroke='%23fff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="icon" type="image/svg+xml" href="assets/landing/SVG/logo-typhoon-blue.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -83,12 +83,7 @@
      pictogramme + wordmark, cohérente avec le reste de l'interface
      (cf. .typhoon-logo sur l'accueil). */
   #toggle-panel-brand { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
-  #toggle-panel .tp-mark {
-    width: 32px; height: 32px; border-radius: 9px; flex-shrink: 0;
-    background: linear-gradient(135deg, #5B93FF, #316f96);
-    display: flex; align-items: center; justify-content: center;
-    box-shadow: 0 4px 12px rgba(49, 111, 150, 0.35);
-  }
+  #toggle-panel .tp-mark { height: 28px; width: auto; flex-shrink: 0; display: block; }
   #toggle-panel .tp-brand-text { display: flex; flex-direction: column; line-height: 1.2; min-width: 0; }
   #toggle-panel .tp-name { font-family: var(--font-head); font-size: 15px; font-weight: 700; color: #1E2A33; letter-spacing: 0.005em; }
   #toggle-panel .tp-sub { font-size: 10px; font-weight: 700; color: #316f96; text-transform: uppercase; letter-spacing: 0.08em; margin-top: 2px; }
@@ -957,12 +952,7 @@
   .typhoon-logo {
     display: flex; align-items: center; gap: 10px; margin-bottom: 22px;
   }
-  .typhoon-logo .mark {
-    width: 38px; height: 38px; border-radius: 10px; flex-shrink: 0;
-    background: linear-gradient(135deg, #5da3c9, #316f96);
-    display: flex; align-items: center; justify-content: center;
-    font-size: 19px; box-shadow: 0 0 18px rgba(67,134,177,0.45);
-  }
+  .typhoon-logo .mark-img { height: 34px; width: auto; flex-shrink: 0; display: block; }
   .typhoon-logo .name { color: #1E2A33; font-size: 19px; font-weight: 700; letter-spacing: 0.02em; line-height: 1.1; }
   .typhoon-logo .baseline { color: #316f96; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; }
 
@@ -974,11 +964,7 @@
     padding: 7px 16px 7px 10px; backdrop-filter: blur(8px); transition: border-color .15s;
   }
   #brand-watermark:hover { border-color: #316f96; color: #316f96; }
-  #brand-watermark .mark {
-    width: 22px; height: 22px; border-radius: 6px;
-    background: linear-gradient(135deg, #5da3c9, #316f96);
-    display: flex; align-items: center; justify-content: center; font-size: 12px;
-  }
+  #brand-watermark .mark-img { height: 18px; width: auto; display: block; }
 
   /* ==================== BOUTON CTA DEVIS ==================== */
   #devis-cta {
@@ -1116,13 +1102,7 @@
 #property-id-screen .pid-logo {
   display: flex; align-items: center; gap: 10px;
 }
-#property-id-screen .pid-logo .mark {
-  width: 32px; height: 32px; border-radius: 8px;
-  background: linear-gradient(135deg, #5da3c9, var(--brand));
-  display: flex; align-items: center; justify-content: center;
-  box-shadow: 0 0 14px rgba(67,134,177,0.3); flex-shrink: 0;
-}
-#property-id-screen .pid-logo .mark svg { width: 18px; height: 18px; stroke: #fff; stroke-width: 2.5; fill: none; }
+#property-id-screen .pid-logo .mark-img { height: 28px; width: auto; flex-shrink: 0; display: block; }
 #property-id-screen .pid-logo .name { font-family: var(--font-head); color: var(--ink); font-size: 16px; font-weight: 700; }
 #property-id-screen .pid-logo .baseline { color: var(--brand); font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; }
 #property-id-screen .pid-close-btn {
@@ -1850,7 +1830,7 @@
 <div id="form-screen">
   <div id="form-card">
     <div class="typhoon-logo">
-      <div class="mark"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5 3.5 9 8 11 4.5-2 8-6 8-11V5z"/><path d="m9 12 2 2 4-4"/></svg></div>
+      <img class="mark-img" src="assets/landing/SVG/logo-typhoon-blue.svg" alt="Typhoon">
       <div>
         <div class="name">TYPHOON</div>
         <div class="baseline">Diagnostic Climatique Immobilier</div>
@@ -1895,7 +1875,7 @@
 <div id="loading-screen">
   <div id="loading-card">
     <div class="typhoon-logo" style="justify-content:center;">
-      <div class="mark"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5 3.5 9 8 11 4.5-2 8-6 8-11V5z"/><path d="m9 12 2 2 4-4"/></svg></div>
+      <img class="mark-img" src="assets/landing/SVG/logo-typhoon-blue.svg" alt="Typhoon">
       <div>
         <div class="name">TYPHOON</div>
         <div class="baseline">Diagnostic Climatique Immobilier</div>
@@ -1957,9 +1937,7 @@
 
 <div id="toggle-panel" class="tab-3d-only">
   <div id="toggle-panel-brand">
-    <span class="tp-mark" aria-hidden="true">
-      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5 3.5 9 8 11 4.5-2 8-6 8-11V5z"/><path d="m9 12 2 2 4-4"/></svg>
-    </span>
+    <img class="tp-mark" src="assets/landing/SVG/logo-typhoon-blue.svg" alt="" aria-hidden="true">
     <div class="tp-brand-text">
       <span class="tp-name">Jumeau numérique</span>
       <span class="tp-sub">Diagnostic climatique</span>
@@ -2066,7 +2044,7 @@
 <div id="hint" class="tab-3d-only">Glisser = orbiter · Molette = zoom · Clic sur une zone = détails</div>
 
 <div id="brand-watermark" class="tab-3d-only" title="Retour à l'accueil">
-  <div class="mark"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5 3.5 9 8 11 4.5-2 8-6 8-11V5z"/><path d="m9 12 2 2 4-4"/></svg></div>
+  <img class="mark-img" src="assets/landing/SVG/logo-typhoon-blue.svg" alt="Typhoon">
   <span>TYPHOON</span>
 </div>
 
@@ -2082,7 +2060,7 @@
 
     <div id="devis-select-view">
       <div class="typhoon-logo" style="margin-bottom:14px;">
-        <div class="mark"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5 3.5 9 8 11 4.5-2 8-6 8-11V5z"/><path d="m9 12 2 2 4-4"/></svg></div>
+        <img class="mark-img" src="assets/landing/SVG/logo-typhoon-blue.svg" alt="Typhoon">
         <div>
           <div class="name" style="font-size:15px;">TYPHOON</div>
           <div class="baseline">Devis Climat-Résilience</div>
@@ -2163,12 +2141,7 @@
   <!-- Brand bar -->
   <div class="pid-brand-bar pid-fade" id="pid-section-brand">
     <div class="pid-logo">
-      <div class="mark" aria-label="Logo Typhoon Property ID">
-        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M12 2 4 5v6c0 5 3.5 9 8 11 4.5-2 8-6 8-11V5z"/>
-          <path d="m9 12 2 2 4-4"/>
-        </svg>
-      </div>
+      <img class="mark-img" src="assets/landing/SVG/logo-typhoon-blue.svg" alt="Logo Typhoon Property ID">
       <div>
         <div class="name">TYPHOON</div>
         <div class="baseline">Property ID</div>
