@@ -11,12 +11,14 @@
 // =============================================================================
 
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import type { RisqueReport } from '../zone/config';
 import { API } from '../zone/config';
 
 export function ZoneBIM({ report }: { report: RisqueReport | null }) {
   const [loaded, setLoaded] = useState(false);
   const [attempt, setAttempt] = useState(0);
+  const navigate = useNavigate();
 
   /* Nouveau diagnostic ou rechargement manuel → on réaffiche le voile de
      chargement le temps que l'iframe remonte. */
@@ -35,9 +37,11 @@ export function ZoneBIM({ report }: { report: RisqueReport | null }) {
   }
 
   const batiment = report.bdnb?.batiment || null;
+  // `_r` : cache-buster — l'endpoint répond Cache-Control max-age=3600, sans
+  // lui le bouton « Recharger » resservirait le .glb du cache navigateur.
   const modelUrl = `${API}/diagnostic/adresse/gltf?q=${encodeURIComponent(
     report.adresse_saisie
-  )}`;
+  )}&_r=${attempt}`;
   const iframeSrc = `/bim-viewer/projects/remote?model=${encodeURIComponent(modelUrl)}`;
   const iframeKey = `${attempt}-${report.adresse_saisie}`;
 
@@ -52,6 +56,16 @@ export function ZoneBIM({ report }: { report: RisqueReport | null }) {
           </p>
         </div>
         <div className="bim-actions">
+          <md-elevated-button
+            className="bim-action"
+            aria-label="Ouvrir le jumeau risques 3D pour cette adresse"
+            onClick={() =>
+              navigate(`/jumeau?adresse=${encodeURIComponent(report.adresse_saisie)}`)
+            }
+          >
+            <md-icon slot="icon">warning</md-icon>
+            Jumeau risques
+          </md-elevated-button>
           <md-filled-button
             className="bim-action"
             aria-label="Recharger le modèle 3D"

@@ -11,6 +11,18 @@ let _mouseMoveHandler = null;
 let _canvas = null;
 let _renderer = null;
 const _elementHandlers = [];
+// Pont vers le diagnostic reel : assigne par initScene() (loadDataset et
+// fetchRecommandations vivent dans sa fermeture), consomme par la route React
+// via loadFromAddress(). Reprend le flux du front natif (index.html §submit) :
+// /diagnostic/fast -> maison + scores immediats, puis recommandations en fond.
+let _loadFromAddress = null;
+
+export function loadFromAddress(adresse) {
+  if (!_loadFromAddress) {
+    return Promise.reject(new Error('Scène 3D non initialisée'));
+  }
+  return _loadFromAddress(adresse);
+}
 
 export function initScene() {
 /* =========================================================================
@@ -2222,6 +2234,31 @@ window.addEventListener('resize', _resizeHandler);
 // ---------- 11. DÉMARRAGE ----------
 loadDataset(DEFAULT_DATA);
 
+// Diagnostic reel par adresse (meme flux que le formulaire du front natif) :
+// /diagnostic/fast renvoie maison + scores tout de suite, les recommandations
+// RAG arrivent ensuite en tache de fond via fetchRecommandations.
+_loadFromAddress = function (adresse) {
+  const apiBaseInput = document.getElementById('api-base-input');
+  const apiBase = ((apiBaseInput && apiBaseInput.value) || window.TYPHOON_API || '').trim();
+  return fetch(apiBase + '/diagnostic/fast', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ adresse }),
+  })
+    .then(async response => {
+      if (!response.ok) {
+        const bodyText = await response.text();
+        throw new Error(`${response.status} ${response.statusText} — ${bodyText.slice(0, 300)}`);
+      }
+      return response.json();
+    })
+    .then(contract => {
+      loadDataset(contract);
+      fetchRecommandations(apiBase, contract);
+      return contract;
+    });
+};
+
 _canvas = renderer.domElement;
 _renderer = renderer;
 }
@@ -2242,5 +2279,6 @@ export function disposeScene() {
     _renderer = null;
   }
   _canvas = null; _resizeHandler = null; _mouseUpHandler = null; _mouseMoveHandler = null;
+  _loadFromAddress = null;
 }
 

@@ -14,12 +14,44 @@
 //   seuls les styles sont redéfinis en M3 sombre (jumeau.css).
 // =============================================================================
 
-import { useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { API } from '../zone/config';
 import '../styles/jumeau.css';
 
+type SceneEngine = typeof import('../jumeau/scene-engine');
+type DiagStatus = 'demo' | 'loading' | 'ready' | 'error';
+
 export function JumeauNumerique() {
+  const engineRef = useRef<SceneEngine | null>(null);
+  const loadingRef = useRef(false);
+  const [adresse, setAdresse] = useState(
+    () => new URLSearchParams(window.location.search).get('adresse') ?? ''
+  );
+  const [status, setStatus] = useState<DiagStatus>('demo');
+  const [error, setError] = useState('');
+
+  const runDiagnostic = (addr: string) => {
+    const engine = engineRef.current;
+    const value = addr.trim();
+    if (!engine || !value || loadingRef.current) return;
+    loadingRef.current = true;
+    setStatus('loading');
+    setError('');
+    engine
+      .loadFromAddress(value)
+      .then(() => setStatus('ready'))
+      .catch((err: unknown) => {
+        setStatus('error');
+        setError(
+          err instanceof Error ? err.message : 'Erreur inconnue — vérifiez que le backend tourne.'
+        );
+      })
+      .finally(() => {
+        loadingRef.current = false;
+      });
+  };
+
   useEffect(() => {
     // Import dynamique : three.js (≈600 ko) n'est chargé que sur cette
     // route, pas dans le bundle principal (le build garde ainsi le chunk
@@ -29,7 +61,8 @@ export function JumeauNumerique() {
     let disposed = false;
     let stop: (() => void) | null = null;
     import('../jumeau/scene-engine')
-      .then(({ initScene, disposeScene }) => {
+      .then((engine) => {
+        const { initScene, disposeScene } = engine;
         // En StrictMode (dev), le premier .then voit toujours disposed === true
         // et appelle disposeScene() : c'est un no-op sûr (état encore vierge),
         // il précède l'initScene du second montage dans l'ordre d'exécution.
@@ -39,6 +72,11 @@ export function JumeauNumerique() {
         }
         initScene();
         stop = disposeScene;
+        engineRef.current = engine;
+        // Arrivée depuis /zone (ou lien partagé) : ?adresse=... lance le
+        // diagnostic réel dès que la scène est prête, sans clic supplémentaire.
+        const fromUrl = new URLSearchParams(window.location.search).get('adresse');
+        if (fromUrl && fromUrl.trim()) runDiagnostic(fromUrl);
       })
       .catch((err) => {
         const el = document.getElementById('scene-container');
@@ -53,8 +91,10 @@ export function JumeauNumerique() {
       });
     return () => {
       disposed = true;
+      engineRef.current = null;
       stop?.();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
@@ -70,8 +110,60 @@ export function JumeauNumerique() {
             <div className="jumeau-brand-tag">Diagnostic climatique immobilier</div>
           </div>
         </div>
+        {/* ── Diagnostic réel par adresse (flux /diagnostic/fast) ── */}
+        <form
+          className="jumeau-addr-form"
+          onSubmit={(e) => {
+            e.preventDefault();
+            runDiagnostic(adresse);
+          }}
+        >
+          <input
+            className="jumeau-addr-input"
+            type="text"
+            value={adresse}
+            onChange={(e) => setAdresse(e.target.value)}
+            placeholder="8 Allée du Port Maillard, 44000 Nantes"
+            aria-label="Adresse du bien à diagnostiquer"
+            disabled={status === 'loading'}
+          />
+          <md-filled-button trailing-icon type="submit" disabled={status === 'loading' || !adresse.trim()}>
+            {status === 'loading' ? 'Diagnostic…' : 'Diagnostiquer'}
+            <md-icon slot="icon" aria-hidden="true">view_in_ar</md-icon>
+          </md-filled-button>
+        </form>
         <span className="jumeau-sovereign-badge">Souverain FR / UE</span>
       </header>
+
+      {/* Bandeau d'état sous la topbar : démo / chargement / erreur */}
+      {status === 'demo' && (
+        <div className="jumeau-status is-demo" role="status">
+          <md-icon aria-hidden="true">info</md-icon>
+          <span>
+            Données de démonstration affichées — saisissez l'adresse du bien pour générer son
+            jumeau réel (emprise BDNB, scores de risque, recommandations).
+          </span>
+        </div>
+      )}
+      {status === 'loading' && (
+        <div className="jumeau-status is-loading" role="status" aria-live="polite">
+          <md-icon aria-hidden="true">progress_activity</md-icon>
+          <span>
+            Diagnostic en cours — géocodage, Géorisques, BDNB, scoring… La maison s'affiche dès
+            que les scores sont prêts ; les recommandations arrivent ensuite en arrière-plan.
+          </span>
+          <md-linear-progress indeterminate />
+        </div>
+      )}
+      {status === 'error' && (
+        <div className="jumeau-status is-error" role="alert">
+          <md-icon aria-hidden="true">error</md-icon>
+          <span>Échec du diagnostic : {error}</span>
+          <button type="button" className="jumeau-status-retry" onClick={() => runDiagnostic(adresse)}>
+            Réessayer
+          </button>
+        </div>
+      )}
 
       {/* ── Scène (zone plein écran) ── */}
       <div className="jumeau-scene">

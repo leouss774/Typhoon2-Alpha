@@ -6,3 +6,4 @@
 
 export function initScene(): void;
 export function disposeScene(): void;
+export function loadFromAddress(adresse: string): Promise<unknown>;

@@ -1197,6 +1197,15 @@ def _materials_for(mat_mur: str | None, mat_toit: str | None) -> list[dict[str, 
             },
             "doubleSided": False,
         },
+        {
+            "name": "Sol",
+            "pbrMetallicRoughness": {
+                "baseColorFactor": [0.36, 0.45, 0.30, 1.0],
+                "metallicFactor": 0.0,
+                "roughnessFactor": 1.0,
+            },
+            "doubleSided": True,
+        },
     ]
 
 
@@ -1231,7 +1240,7 @@ def build_glb_bim(
     # -- Étages / hauteur de niveau --
     if not floors or floors < 1:
         floors = max(1, round(hauteur_m / 2.7))
-    floors = min(max(int(floors), 1), 6)
+    floors = min(max(int(floors), 1), 30)
     level_h = min(max(hauteur_m / floors, 2.2), 3.4)
 
     # -- Toiture : pente + axe du faîtage --
@@ -1271,14 +1280,37 @@ def build_glb_bim(
         ridge_h = hauteur_m
         eave_h = max(ridge_h - montee, hauteur_m * 0.45)
     else:
+        # Toit plat (terrasse) : les murs montent jusqu'a la dalle de toiture.
+        # (L'ancien eave_h = floors × level_h laissait la dalle flotter au
+        # dessus des murs des que la hauteur BDNB depassait ~20 m.)
         ridge_h = hauteur_m
-        eave_h = min(floors * level_h, hauteur_m * 0.92)
-        eave_h = max(eave_h, hauteur_m * 0.55)
+        eave_h = hauteur_m
 
     parts = _build_bim_parts(
         polygones, eave_h, ridge_h, ridge_axis_deg, floors, level_h, roof_pitched,
         facades_avec_vitrage, ratio_vitrage, entree_facade,
     )
+
+    # -- Sol : plan d'assise sous le bâtiment (contexte visuel, évite la
+    # maison "flottante" dans le viewer). Légèrement sous y=0 pour ne pas
+    # z-fighter avec la dalle du rez-de-chaussée.
+    all_pts = [pt for poly in polygones for pt in (poly.get("exterieur") or [])]
+    if all_pts:
+        xs = [p[0] for p in all_pts]
+        zs = [p[1] for p in all_pts]
+        marge = max(12.0, 0.6 * max(max(xs) - min(xs), max(zs) - min(zs)))
+        x0, x1 = min(xs) - marge, max(xs) + marge
+        z0, z1 = min(zs) - marge, max(zs) + marge
+        y_sol = -0.05
+        sol_v: list[Point3D] = []
+        sol_t: list[tuple[int, int, int]] = []
+        _push_quad(
+            sol_v, sol_t,
+            (x0, y_sol, z0), (x1, y_sol, z0), (x1, y_sol, z1), (x0, y_sol, z1),
+            (0.0, 1.0, 0.0),
+        )
+        parts["sol"] = (sol_v, sol_t)
+
     materials = _materials_for(mat_mur, mat_toit)
 
     return _serialise_parts_glb(parts, materials, label)
@@ -1368,6 +1400,28 @@ def build_glb_from_bdnb(
             pente_toit = _pente_from_materiau_toiture(_slugify(mat_toit))
         except Exception:
             pente_toit = 35.0
+
+        # Toit deux pans seulement pour une maison basse à l'emprise
+        # ~rectangulaire. Sur un immeuble collectif ou une emprise en
+        # L/T/U/multipolygone, le faîtage unique projeté sur l'axe dominant
+        # produit des pans absurdes : on force la toiture-terrasse (le
+        # standard du bâti collectif).
+        forme = footprint_data.get("forme") or ""
+        rectangularite = footprint_data.get("rectangularite") or 0.0
+        surface_emprise = footprint_data.get("surface_m2") or 0.0
+        a_trous = any(p.get("trous") for p in polygones)
+        immeuble = (
+            isinstance(nb_niveau, (int, float)) and nb_niveau >= 4
+        ) or float(hauteur_mean) >= 12.0
+        emprise_complexe = (
+            (forme and forme != "rectangulaire")
+            or rectangularite < 0.80
+            or len(polygones) > 1
+            or a_trous
+            or surface_emprise > 400.0
+        )
+        if immeuble or emprise_complexe:
+            pente_toit = 0.0
 
         return build_glb_bim(
             polygones=polygones,
