@@ -1,0 +1,650 @@
+/* =========================================================================
+   ÉconomieDashboard — styles adaptés au design system TYPHOON (Material 3)
+   Couleurs : --md-sys-color-primary (#316f96), tertiary (#1f9d6c), etc.
+   ========================================================================= */
+
+/* ── HERO ─────────────────────────────────────────────── */
+.economie-hero {
+  position: relative;
+  overflow: hidden;
+  margin: 22px 0 20px;
+  border-radius: 24px;
+  background: linear-gradient(140deg, #0d3147 0%, #1e2a33 55%, #316f96 100%);
+  color: #fff;
+  box-shadow: 0 18px 44px rgba(13, 49, 71, 0.22);
+}
+.economie-heroGlow {
+  position: absolute;
+  top: -140px;
+  right: -80px;
+  width: 420px;
+  height: 420px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(49, 111, 150, 0.28), transparent 65%);
+  pointer-events: none;
+}
+.economie-heroInner {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: 36px;
+  align-items: center;
+  padding: 42px 44px;
+}
+@media (max-width: 900px) {
+  .economie-heroInner { grid-template-columns: 1fr; padding: 28px 22px; gap: 24px; }
+}
+.economie-heroText { min-width: 0; }
+.economie-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(49, 111, 150, 0.16);
+  border: 1px solid rgba(49, 111, 150, 0.4);
+  color: #9fc8e1;
+  font-size: 11.5px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 6px 13px;
+  border-radius: 999px;
+  margin-bottom: 16px;
+}
+.economie-heroTitle {
+  margin: 0 0 12px;
+  font-size: 34px;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+}
+.economie-heroTitle em {
+  font-style: normal;
+  color: #9fc8e1;
+}
+@media (max-width: 640px) {
+  .economie-heroTitle { font-size: 25px; }
+}
+.economie-heroLead {
+  margin: 0 0 18px;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 14.5px;
+  line-height: 1.6;
+  max-width: 560px;
+}
+
+/* ── Boutons (design system TYPHOON) ─────────────────── */
+.economie-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: none;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: inherit;
+  white-space: nowrap;
+  text-decoration: none;
+  line-height: 1;
+}
+.economie-btn:active {
+  transform: scale(0.98);
+}
+.economie-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+}
+.economie-btn-primary {
+  background: #316f96;
+  color: #fff;
+  box-shadow: 0 6px 18px rgba(49, 111, 150, 0.3);
+}
+.economie-btn-primary:hover:not(:disabled) {
+  background: #204e6d;
+  transform: translateY(-1px);
+}
+
+/* ── Carte de recherche ─────────────────────────────── */
+.economie-searchCard {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 18px;
+  padding: 20px;
+  backdrop-filter: blur(10px);
+}
+.economie-searchLabel {
+  display: block;
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.6);
+  margin-bottom: 8px;
+}
+.economie-searchRow { display: flex; gap: 10px; }
+@media (max-width: 640px) {
+  .economie-searchRow { flex-direction: column; }
+}
+.economie-searchInput {
+  flex: 1;
+  min-width: 0;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: #fff;
+  border-radius: 10px;
+  padding: 11px 14px;
+  font-size: 13.5px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.15s, background 0.15s;
+}
+.economie-searchInput::placeholder { color: rgba(255, 255, 255, 0.4); }
+.economie-searchInput:focus { border-color: #9fc8e1; background: rgba(255, 255, 255, 0.12); }
+
+/* ── Bannière erreur ─────────────────────────── */
+.economie-sourceBanner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 12.5px;
+  padding: 11px 16px;
+  border-radius: 12px;
+  margin: 0 0 18px;
+  border: 1px solid;
+}
+.economie-sourceErr {
+  background: #fde7e2;
+  border-color: rgba(220, 75, 57, 0.35);
+  color: #7c2318;
+}
+.economie-bannerDot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
+}
+
+/* ── Loading ─────────────────────────────────────────── */
+.economie-loadingPanel {
+  background: #fff;
+  border: 1px solid #dce6ec;
+  border-radius: 12px;
+  padding: 22px 24px;
+  margin-bottom: 18px;
+  box-shadow: 0 8px 24px rgba(13, 49, 71, 0.07);
+}
+.economie-loadingHead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  color: #1e2a33;
+  margin-bottom: 14px;
+}
+.economie-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid #dce6ec;
+  border-top-color: #316f96;
+  border-radius: 50%;
+  animation: economie-spin 0.6s linear infinite;
+  display: inline-block;
+}
+@keyframes economie-spin { to { transform: rotate(360deg); } }
+.economie-stepList {
+  list-style: none;
+  margin: 0 0 16px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+.economie-stepList li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: #8b959d;
+  transition: color 0.2s;
+}
+.economie-stepIcon {
+  width: 18px;
+  text-align: center;
+  color: #8b959d;
+  flex-shrink: 0;
+}
+.economie-stepList .economie-stepActive { color: #1e2a33; font-weight: 700; }
+.economie-stepList .economie-stepActive .economie-stepIcon { color: #316f96; }
+.economie-stepList .economie-stepDone { color: #1f9d6c; }
+.economie-stepList .economie-stepDone .economie-stepIcon { color: #1f9d6c; }
+.economie-progressTrack {
+  height: 5px;
+  border-radius: 999px;
+  background: rgba(220, 230, 236, 0.5);
+  overflow: hidden;
+}
+.economie-progressFill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #9fc8e1, #316f96);
+  transition: width 0.35s ease;
+}
+
+/* ── Hero badge ───────────────────────────────────────── */
+.economie-heroBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 12px;
+  padding: 6px 12px;
+  background: rgba(31, 157, 108, 0.15);
+  border: 1px solid rgba(31, 157, 108, 0.3);
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #7cd3a8;
+}
+
+/* ── KPI Grid (hero) ──────────────────────────────────── */
+.economie-kpiGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-top: 18px;
+}
+@media (max-width: 480px) {
+  .economie-kpiGrid { grid-template-columns: 1fr; }
+}
+.economie-kpiCard {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  padding: 14px 16px;
+  transition: all 0.2s;
+}
+.economie-kpiCard:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-2px);
+}
+.economie-kpiCardAccent {
+  background: rgba(49, 111, 150, 0.15);
+  border-color: rgba(49, 111, 150, 0.35);
+}
+.economie-kpiContent { flex: 1; min-width: 0; }
+.economie-kpiLabel {
+  font-size: 10px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.65);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 4px;
+}
+.economie-kpiValue {
+  font-size: 18px;
+  font-weight: 800;
+  color: #fff;
+  line-height: 1.2;
+}
+.economie-kpiSub {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.5);
+  margin-top: 2px;
+}
+
+/* ── Universal Guide ──────────────────────────────────── */
+.economie-universalGuide {
+  background: #f5f8fa;
+  border: 1px solid #dce6ec;
+  border-radius: 12px;
+  padding: 20px 24px;
+  margin-bottom: 20px;
+}
+.economie-universalGuideTitle {
+  margin: 0 0 16px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #1e2a33;
+}
+.economie-universalGuideGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+}
+.economie-guideItem {
+  padding: 12px 14px;
+  background: #fff;
+  border: 1px solid #dce6ec;
+  border-radius: 8px;
+}
+.economie-guideLabel {
+  font-size: 11px;
+  font-weight: 700;
+  color: #316f96;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 6px;
+}
+.economie-guideText {
+  margin: 0;
+  font-size: 11.5px;
+  color: #4b5760;
+  line-height: 1.55;
+}
+
+/* ── Content ──────────────────────────────────────────── */
+.economie-content {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* ── Cards ────────────────────────────────────────────── */
+.economie-card {
+  background: #fff;
+  border: 1px solid #dce6ec;
+  border-radius: 12px;
+  padding: 18px 20px;
+  box-shadow: 0 8px 24px rgba(13, 49, 71, 0.07);
+  transition: all 0.3s ease;
+}
+.economie-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 32px rgba(13, 49, 71, 0.12);
+}
+.economie-highlightCard {
+  background: linear-gradient(135deg, #f5f8fa 0%, #fff 100%);
+  border-color: rgba(49, 111, 150, 0.3);
+  box-shadow: 0 8px 24px rgba(49, 111, 150, 0.1);
+}
+.economie-cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+.economie-cardTitle {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: #1e2a33;
+}
+.economie-scoreBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  background: #d9f4e8;
+  color: #1f9d6c;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+}
+.economie-scoreDisplay {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+.economie-scoreBig {
+  font-size: 36px;
+  font-weight: 800;
+  color: #316f96;
+  line-height: 1;
+}
+.economie-scoreArrow {
+  font-size: 24px;
+  color: #8b959d;
+  font-weight: 800;
+}
+.economie-scoreAfterColor {
+  color: #1f9d6c;
+}
+.economie-scoreBar {
+  height: 10px;
+  background: #f5f8fa;
+  border-radius: 999px;
+  overflow: hidden;
+  margin-top: 12px;
+}
+.economie-scoreBarFill {
+  height: 100%;
+  background: linear-gradient(90deg, #316f96, #1f9d6c);
+  border-radius: 999px;
+  transition: width 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ── Zone list ────────────────────────────────────────── */
+.economie-zoneList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.economie-zoneItem {
+  display: grid;
+  grid-template-columns: 100px 1fr 90px;
+  gap: 12px;
+  align-items: center;
+}
+@media (max-width: 640px) {
+  .economie-zoneItem { grid-template-columns: 1fr; gap: 6px; }
+}
+.economie-zoneName {
+  font-size: 13px;
+  font-weight: 700;
+  color: #4b5760;
+}
+.economie-zoneBar {
+  height: 8px;
+  background: #f5f8fa;
+  border-radius: 999px;
+  overflow: hidden;
+}
+.economie-zoneBarFill {
+  height: 100%;
+  background: linear-gradient(90deg, #316f96, #1f9d6c);
+  border-radius: 999px;
+  transition: width 0.6s ease;
+}
+.economie-zoneValues {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  font-weight: 700;
+  color: #4b5760;
+}
+.economie-zoneDelta {
+  color: #1f9d6c;
+  font-weight: 800;
+}
+.economie-zoneSummary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 8px 12px;
+  background: #f5f8fa;
+  border-radius: 8px;
+  font-size: 12px;
+  color: #8b959d;
+  font-weight: 600;
+}
+.economie-zoneSummaryIcon { font-size: 16px; }
+
+/* ── Coûts - Design amélioré ─────────────────────────── */
+.economie-costsHighlight {
+  background: linear-gradient(135deg, #f5f8fa 0%, #fff 100%);
+  border-color: rgba(49, 111, 150, 0.3);
+}
+.economie-costVisual {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+.economie-costCircle {
+  width: 160px;
+  height: 160px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(49, 111, 150, 0.15), rgba(49, 111, 150, 0.05));
+  border: 3px solid rgba(49, 111, 150, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.economie-costCircleInner { text-align: center; padding: 16px; }
+.economie-costCircleLabel {
+  font-size: 10px;
+  font-weight: 800;
+  color: #8b959d;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 6px;
+}
+.economie-costCircleValue {
+  font-size: 18px;
+  font-weight: 800;
+  color: #316f96;
+  line-height: 1.2;
+}
+.economie-costDetails {
+  flex: 1;
+  min-width: 200px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.economie-costRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: #f5f8fa;
+  border: 1px solid #dce6ec;
+  border-radius: 10px;
+  transition: all 0.2s;
+}
+.economie-costRow:hover {
+  border-color: #316f96;
+  transform: translateX(4px);
+}
+.economie-costIcon { font-size: 24px; flex-shrink: 0; }
+.economie-costInfo { flex: 1; min-width: 0; }
+.economie-costLabelSmall {
+  font-size: 10px;
+  font-weight: 700;
+  color: #8b959d;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 3px;
+}
+.economie-costValueSmall {
+  font-size: 15px;
+  font-weight: 800;
+  color: #1e2a33;
+}
+
+/* ── ROI - Design amélioré ───────────────────────────── */
+.economie-roiHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+.economie-roiBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 12px;
+  background: #d9f4e8;
+  color: #1f9d6c;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.economie-roiVisual {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.economie-roiMain,
+.economie-roiBenefice {
+  flex: 1;
+  min-width: 200px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 18px;
+  background: #f5f8fa;
+  border: 1px solid #dce6ec;
+  border-radius: 12px;
+  transition: all 0.2s;
+}
+.economie-roiMain:hover,
+.economie-roiBenefice:hover {
+  border-color: #316f96;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(13, 49, 71, 0.1);
+}
+.economie-roiIcon { font-size: 32px; flex-shrink: 0; }
+.economie-roiContent { flex: 1; min-width: 0; }
+.economie-roiLabel {
+  font-size: 10px;
+  font-weight: 700;
+  color: #8b959d;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 4px;
+}
+.economie-roiValue {
+  font-size: 20px;
+  font-weight: 800;
+  color: #316f96;
+  line-height: 1.2;
+}
+.economie-roiArrow {
+  font-size: 28px;
+  color: #8b959d;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+@media (max-width: 640px) {
+  .economie-roiArrow { display: none; }
+}
+.economie-roiFormula {
+  display: inline-block;
+  padding: 8px 14px;
+  background: #f5f8fa;
+  border: 1px dashed #dce6ec;
+  border-radius: 8px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #8b959d;
+  font-family: 'SF Mono', ui-monospace, monospace;
+}
+
+/* ── Honesty banner ───────────────────────────────────── */
+.economie-honesty {
+  margin-top: 24px;
+  padding: 14px 18px;
+  background: #f5f8fa;
+  border-left: 4px solid #316f96;
+  border-radius: 10px;
+  font-size: 12.5px;
+  color: #4b5760;
+  line-height: 1.6;
+}
+.economie-honesty strong {
+  color: #316f96;
+  font-weight: 800;
+}

@@ -8,6 +8,7 @@ import { PropertyId } from './routes/PropertyId';
 import { Site } from './routes/Site';
 import { Faq } from './routes/Faq';
 import { Contact } from './routes/Contact';
+import Economie from './routes/Economie';
 
 const nav = [
   { to: '/', label: 'Accueil' },
@@ -15,6 +16,7 @@ const nav = [
   { to: '/jumeau', label: 'Jumeau 3D' },
   { to: '/promoteurs', label: 'Promoteurs' },
   { to: '/artisans', label: 'Artisans' },
+  { to: '/economie', label: 'Économie' },
   { to: '/property-id', label: 'Property ID' },
   { to: '/site', label: 'Site' },
 ];
@@ -58,6 +60,7 @@ export default function App() {
         <Route path="/jumeau" element={<JumeauNumerique />} />
         <Route path="/promoteurs" element={<Promoteurs />} />
         <Route path="/artisans" element={<Artisans />} />
+        <Route path="/economie" element={<Economie />} />
         <Route path="/property-id" element={<PropertyId />} />
         <Route path="/site" element={<Site />} />
         <Route path="/faq" element={<Faq />} />
