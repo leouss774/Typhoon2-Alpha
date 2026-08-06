@@ -350,10 +350,10 @@ def test_gltf_builder_bim_multimateriaux_et_toiture_pentue():
     doc = json.loads(glb[20 : 20 + json_len].decode("utf-8"))
 
     names = [m["name"] for m in doc["materials"]]
-    assert names == ["Murs", "Toiture", "Planchers"]
+    assert names == ["Murs", "Toiture", "Planchers", "Sol"]
 
     prims = doc["meshes"][0]["primitives"]
-    assert len(prims) == 3
+    assert len(prims) == 4
 
     def positions_of(prim_idx: int):
         pos = doc["accessors"][prims[prim_idx]["attributes"]["POSITION"]]
@@ -408,10 +408,10 @@ def test_gltf_builder_bim_fenetres_et_porte():
     doc = json.loads(glb[20 : 20 + json_len].decode("utf-8"))
 
     names = [m["name"] for m in doc["materials"]]
-    assert names == ["Murs", "Toiture", "Planchers", "Cadres", "Vitrage", "Porte"]
+    assert names == ["Murs", "Toiture", "Planchers", "Cadres", "Vitrage", "Porte", "Sol"]
 
     prims = doc["meshes"][0]["primitives"]
-    assert len(prims) == 6
+    assert len(prims) == 7
 
     # Vitrage translucide (alphaMode BLEND) et double face
     vitrage_mat = doc["materials"][4]
@@ -456,7 +456,7 @@ def test_gltf_builder_bim_fenetres_et_porte():
     json_len2, _ = struct.unpack("<II", glb2[12:20])
     doc2 = json.loads(glb2[20 : 20 + json_len2].decode("utf-8"))
     names2 = [m["name"] for m in doc2["materials"]]
-    assert names2 == ["Murs", "Toiture", "Planchers", "Cadres", "Vitrage", "Porte"]
+    assert names2 == ["Murs", "Toiture", "Planchers", "Cadres", "Vitrage", "Porte", "Sol"]
     prims2 = doc2["meshes"][0]["primitives"]
     porte_pos = doc2["accessors"][prims2[5]["attributes"]["POSITION"]]
     assert porte_pos["count"] > 0, "porte absente malgre un point d'adresse fourni"
@@ -474,11 +474,11 @@ def test_gltf_builder_bim_fenetres_et_porte():
     json_len3, _ = struct.unpack("<II", glb3[12:20])
     doc3 = json.loads(glb3[20 : 20 + json_len3].decode("utf-8"))
     names3 = [m["name"] for m in doc3["materials"]]
-    # 5 materiaux seulement : pas de Vitrage (mais Cadres = le cadre de la
-    # porte est une menuiserie) et la porte presente
-    assert names3 == ["Murs", "Toiture", "Planchers", "Cadres", "Porte"]
+    # Pas de Vitrage (mais Cadres = le cadre de la porte est une menuiserie),
+    # la porte presente, et le Sol toujours en derniere position
+    assert names3 == ["Murs", "Toiture", "Planchers", "Cadres", "Porte", "Sol"]
     prims3 = doc3["meshes"][0]["primitives"]
-    porte3 = doc3["accessors"][prims3[-1]["attributes"]["POSITION"]]
+    porte3 = doc3["accessors"][prims3[names3.index("Porte")]["attributes"]["POSITION"]]
     assert porte3["count"] > 0, "porte absente sans donnees de vitrage"
     assert not any(m["name"] == "Vitrage" for m in doc3["materials"])
 
