@@ -177,6 +177,10 @@
       @font-face { font-family: 'Neue Montreal'; src: url('vetter-consulting/assets/fonts/66a20363e5bbc5dbaa1b5959_PPNeueMontreal-SemiBold.otf') format('opentype'); font-weight: 600; font-style: normal; font-display: swap; }
       @font-face { font-family: 'Neue Montreal'; src: url('vetter-consulting/assets/fonts/66a20363e5bbc5dbaa1b595e_PPNeueMontreal-Bold.otf') format('opentype'); font-weight: 700; font-style: normal; font-display: swap; }
       .w-webflow-badge { display: none !important; }
+      /* Timer retiré : ni l'écran de préchargement à compte à rebours, ni
+         l'horloge fixe du template. !important pour battre les styles
+         inline posés par les interactions Webflow (IX2). */
+      .preloader, .clock { display: none !important; }
       html, body { margin: 0; padding: 0; } .hero-wrapper.v2 { isolation: isolate; } .hero-layer-video { position: absolute; inset: 0; z-index: 2; overflow: hidden; pointer-events: none; opacity: 0.6; background: #000; } .hero-layer-video iframe, .hero-layer-video video { width: 100%; height: 100%; border: 0; transform: scale(1.18); transform-origin: center; object-fit: cover; display: block; }       .hero-layer-1 { z-index: 0; }
     </style>
     <style>

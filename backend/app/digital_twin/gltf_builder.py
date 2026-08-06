@@ -37,6 +37,7 @@ from __future__ import annotations
 import json
 import math
 import struct
+from pathlib import Path
 from typing import Any
 
 # ---------------------------------------------------------------------------
@@ -835,6 +836,7 @@ _MUR_COULEURS: dict[str, list[float]] = {
     "pierre":      [0.82, 0.78, 0.70],
     "meuliere":    [0.80, 0.74, 0.64],
     "parpaing":    [0.74, 0.72, 0.68],
+    "agglomere":   [0.74, 0.72, 0.68],  # FFO "AGGLOMERE" = parpaing
     "beton":       [0.66, 0.66, 0.68],
     "bois":        [0.56, 0.42, 0.28],
     "pan_de_bois": [0.56, 0.42, 0.28],
@@ -854,14 +856,166 @@ _DEFAUT_MUR  = [0.76, 0.71, 0.65]  # pierre claire
 _DEFAUT_TOIT = [0.35, 0.33, 0.31]  # gris sombre
 
 
-def _couleur_slug(slug: str | None, palette: dict[str, list[float]], defaut: list[float]) -> list[float]:
-    if not slug:
-        return defaut
-    s = slug.lower()
-    for key, rgb in palette.items():
-        if key in s:
-            return rgb
+def _couleur_slug(
+    slug: str | None,
+    palette: dict[str, list[float]],
+    defaut: list[float],
+    priorites: list[str] | None = None,
+) -> list[float]:
+    key = _meilleur_slug(slug, priorites if priorites is not None else list(palette.keys()))
+    if key is not None and key in palette:
+        return palette[key]
     return defaut
+
+
+# -- Textures matériaux (fichiers seamless embarqués dans le .glb) ----------
+# Même logique de correspondance par sous-chaîne que _couleur_slug. Un
+# matériau sans fichier texture (absent du mapping OU fichier manquant sur
+# disque) garde sa couleur unie : le rendu reste fail-soft.
+_TEXTURES_DIR = Path(__file__).resolve().parent / "textures"
+
+_MUR_TEXTURES: dict[str, str] = {
+    "brique":    "mur_brique.jpg",
+    "pierre":    "mur_pierre.jpg",
+    "meuliere":  "mur_meuliere.jpg",
+    "parpaing":  "mur_agglomere.jpg",
+    "agglomere": "mur_agglomere.jpg",
+    "beton":     "mur_beton.jpg",
+    "bois":      "mur_bois.jpg",
+}
+# Variante immeuble : la pierre d'un collectif urbain est de la pierre de
+# taille (appareillage lisse a joints fins, type haussmannien), pas les
+# moellons ruraux de mur_pierre.jpg.
+_MUR_TEXTURES_IMMEUBLE: dict[str, str] = {
+    **_MUR_TEXTURES,
+    "pierre": "mur_pierre_taille.jpg",
+}
+_TOIT_TEXTURES: dict[str, str] = {
+    "tuile":    "toit_tuiles.jpg",
+    "ardoise":  "toit_ardoises.jpg",
+    "zinc":     "toit_zinc.jpg",
+    "beton":    "toit_beton.jpg",
+}
+# Repli quand le matériau BDNB est INDETERMINE/AUTRES/absent : enduit neutre
+# pour les murs ; pas de fichier toit_defaut pour l'instant → couleur unie.
+_MUR_TEXTURE_DEFAUT = "mur_defaut.jpg"
+_TOIT_TEXTURE_DEFAUT = "toit_defaut.jpg"
+
+# Textures fixes (indépendantes de la BDNB) des autres surfaces.
+_SOL_TEXTURE = "sol_herbe.jpg"
+_PLANCHER_TEXTURE = "plancher_granite.jpg"
+_PORTE_TEXTURE = "porte.jpg"
+
+# Taille "monde" d'un carreau de texture, en mètres (une texture 1K seamless
+# répétée tous les N mètres). Clé = nom de matériau glTF.
+_TEXTURE_TILE_M: dict[str, float] = {
+    "Murs": 3.0,
+    "Toiture": 3.0,
+    "Sol": 5.0,
+    "Planchers": 2.0,
+}
+
+# Matériaux dont la texture est AJUSTÉE à la partie (une seule occurrence de
+# l'image, pas de répétition) — la porte affiche l'image entière du vantail.
+_TEXTURE_FIT_MATERIALS = {"Porte"}
+
+_MIME_BY_EXT = {".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png"}
+
+
+def _texture_file(filename: str | None) -> Path | None:
+    if not filename:
+        return None
+    path = _TEXTURES_DIR / filename
+    return path if path.is_file() else None
+
+
+# Les libellés FFO/BDNB sont souvent COMPOSITES ("BRIQUES - PIERRE",
+# "BETON - ZINC ALUMINIUM") : plusieurs matériaux dans un même mur/toit.
+# On choisit alors le matériau qui domine l'ASPECT de la façade (parement),
+# pas le premier du libellé : sur l'haussmannien "BRIQUES - PIERRE", la
+# structure est en brique mais ce que l'on voit est la pierre de taille.
+_MUR_PRIORITE = [
+    "pierre", "meuliere", "brique", "beton",
+    "agglomere", "parpaing", "pan_de_bois", "bois", "torchis",
+]
+_TOIT_PRIORITE = ["tuile", "ardoise", "zinc", "bac_acier", "vegetalise", "beton"]
+
+
+def _meilleur_slug(label: str | None, priorites: list[str]) -> str | None:
+    """Clé matériau retenue pour un libellé BDNB (composite ou non), par
+    ordre de priorité visuelle. None si aucun matériau connu."""
+    if not label:
+        return None
+    s = label.lower().replace(" ", "_").replace("-", "_")
+    for key in priorites:
+        if key in s:
+            return key
+    return None
+
+
+def _texture_for_slug(
+    slug: str | None,
+    mapping: dict[str, str],
+    defaut: str | None = None,
+    priorites: list[str] | None = None,
+) -> Path | None:
+    """Fichier texture correspondant au libellé matériau. Sans correspondance
+    (ou fichier du mapping manquant), essaie `defaut` ; None en dernier
+    ressort (repli couleur unie)."""
+    if slug:
+        key = _meilleur_slug(slug, priorites if priorites is not None else list(mapping.keys()))
+        if key is not None and key in mapping:
+            return _texture_file(mapping[key]) or _texture_file(defaut)
+    return _texture_file(defaut)
+
+
+def _fit_uvs(vertices: list[Point3D]) -> list[tuple[float, float]]:
+    """UV ajustés au rectangle englobant de la partie : u = position le long
+    de l'axe horizontal dominant, v = du haut (0) vers le bas (1), convention
+    glTF. Utilisé pour la porte (une occurrence entière de l'image)."""
+    xs = [v[0] for v in vertices]
+    ys = [v[1] for v in vertices]
+    zs = [v[2] for v in vertices]
+    dx = max(xs) - min(xs)
+    dz = max(zs) - min(zs)
+    dy = (max(ys) - min(ys)) or 1.0
+    horiz = xs if dx >= dz else zs
+    hmin = min(horiz)
+    hspan = (max(horiz) - hmin) or 1.0
+    y_max = max(ys)
+    return [
+        ((h - hmin) / hspan, (y_max - y) / dy)
+        for h, y in zip(horiz, ys)
+    ]
+
+
+def _planar_uvs(
+    vertices: list[Point3D],
+    triangles: list[tuple[int, int, int]],
+    tile_m: float,
+) -> list[tuple[float, float]]:
+    """UV par projection planaire sur l'axe dominant de chaque face (les
+    sommets ne sont pas partagés entre triangles : pas de couture à gérer).
+    La projection est en coordonnées monde → la texture reste continue entre
+    faces coplanaires adjacentes, et se répète tous les `tile_m` mètres."""
+    uvs: list[tuple[float, float]] = [(0.0, 0.0)] * len(vertices)
+    inv = 1.0 / max(tile_m, 0.1)
+    for a, b, c in triangles:
+        n = _tri_normal(vertices[a], vertices[b], vertices[c])
+        ax, ay, az = abs(n[0]), abs(n[1]), abs(n[2])
+        for i in (a, b, c):
+            x, y, z = vertices[i]
+            if ay >= ax and ay >= az:
+                # Face horizontale (toit plat, plancher, sol) : plan XZ.
+                uvs[i] = (x * inv, z * inv)
+            elif ax >= az:
+                # Face verticale orientée ±X : plan ZY (v = -y : le haut de
+                # l'image vers le haut du mur, convention glTF v vers le bas).
+                uvs[i] = (z * inv, -y * inv)
+            else:
+                # Face verticale orientée ±Z : plan XY.
+                uvs[i] = (x * inv, -y * inv)
+    return uvs
 
 
 def _build_bim_parts(
@@ -951,7 +1105,9 @@ def _build_bim_parts(
     # les murs (sous un toit pentu, eave_h < hauteur).
     y_max = eave_h - 0.15
     for k in range(floors):
-        y = min(k * level_h, y_max)
+        # 3 cm au-dessus de y=0 pour la dalle du RDC : évite le z-fighting
+        # avec le sol du .glb (-5 cm) ET le plan d'herbe du viewer (y=0).
+        y = max(min(k * level_h, y_max), 0.03)
         for poly in polygones:
             ext = poly.get("exterieur") or []
             if len(ext) < 3:
@@ -1106,11 +1262,85 @@ def _serialise_parts_glb(
             "min": pos_min,
             "max": pos_max,
         })
+        attributes: dict[str, int] = {"POSITION": acc_base + 1}
+
+        # -- TEXCOORD_0 : seulement pour les parties dont le matériau porte
+        # une texture (UV planaires monde, cf. _planar_uvs).
+        mat_def = materials[mat_index[_orig_i]]
+        if "_texture" in mat_def and vertices:
+            if mat_def.get("name") in _TEXTURE_FIT_MATERIALS:
+                uvs = _fit_uvs(vertices)
+            else:
+                tile_m = _TEXTURE_TILE_M.get(mat_def.get("name", ""), 3.0)
+                uvs = _planar_uvs(vertices, triangles, tile_m)
+            uv_data: list[float] = []
+            for u, v in uvs:
+                uv_data.extend([u, v])
+            uv_bytes = _pack_f32(uv_data)
+            buffer_views.append({
+                "buffer": 0,
+                "byteOffset": byte_cursor,
+                "byteLength": len(uv_bytes),
+                "target": 34962,  # ARRAY_BUFFER
+            })
+            byte_cursor += len(uv_bytes)
+            bin_parts.append(uv_bytes)
+            accessors.append({
+                "bufferView": len(buffer_views) - 1,
+                "byteOffset": 0,
+                "componentType": 5126,
+                "count": len(vertices),
+                "type": "VEC2",
+            })
+            attributes["TEXCOORD_0"] = len(accessors) - 1
+
         primitives.append({
-            "attributes": {"POSITION": acc_base + 1},
+            "attributes": attributes,
             "indices": acc_base,
             "material": mat_index[_orig_i],
         })
+
+    # -- Textures : embarquer chaque image (une fois) dans le buffer binaire,
+    # brancher baseColorTexture, retirer la clé privée "_texture".
+    images: list[dict[str, Any]] = []
+    textures: list[dict[str, Any]] = []
+    samplers: list[dict[str, Any]] = []
+    texture_index_by_path: dict[str, int] = {}
+    for mat_def in materials:
+        tex_path = mat_def.pop("_texture", None)
+        if tex_path is None:
+            continue
+        key = str(tex_path)
+        if key not in texture_index_by_path:
+            try:
+                img_bytes = Path(tex_path).read_bytes()
+            except OSError:
+                continue  # fichier illisible → repli couleur unie
+            if not samplers:
+                samplers.append({
+                    "magFilter": 9729,  # LINEAR
+                    "minFilter": 9987,  # LINEAR_MIPMAP_LINEAR
+                    "wrapS": 10497,     # REPEAT
+                    "wrapT": 10497,     # REPEAT
+                })
+            img_aligned = _align4(img_bytes)
+            buffer_views.append({
+                "buffer": 0,
+                "byteOffset": byte_cursor,
+                "byteLength": len(img_bytes),
+            })
+            byte_cursor += len(img_aligned)
+            bin_parts.append(img_aligned)
+            images.append({
+                "bufferView": len(buffer_views) - 1,
+                "mimeType": _MIME_BY_EXT.get(Path(tex_path).suffix.lower(), "image/jpeg"),
+                "name": Path(tex_path).stem,
+            })
+            textures.append({"sampler": 0, "source": len(images) - 1})
+            texture_index_by_path[key] = len(textures) - 1
+        mat_def["pbrMetallicRoughness"]["baseColorTexture"] = {
+            "index": texture_index_by_path[key]
+        }
 
     bin_buffer = b"".join(bin_parts)
 
@@ -1134,32 +1364,60 @@ def _serialise_parts_glb(
         "bufferViews": buffer_views,
         "buffers": [{"byteLength": len(bin_buffer)}],
     }
+    if textures:
+        gltf["samplers"] = samplers
+        gltf["images"] = images
+        gltf["textures"] = textures
 
     return _assemble_glb(gltf, bin_buffer)
 
 
-def _materials_for(mat_mur: str | None, mat_toit: str | None) -> list[dict[str, Any]]:
-    mur = _couleur_slug(mat_mur, _MUR_COULEURS, _DEFAUT_MUR)
-    toit = _couleur_slug(mat_toit, _TOIT_COULEURS, _DEFAUT_TOIT)
-    return [
-        {
-            "name": "Murs",
-            "pbrMetallicRoughness": {
-                "baseColorFactor": mur + [1.0],
-                "metallicFactor": 0.0,
-                "roughnessFactor": 0.9,
-            },
-            "doubleSided": False,
+def _materials_for(
+    mat_mur: str | None, mat_toit: str | None, immeuble: bool = False
+) -> list[dict[str, Any]]:
+    mur = _couleur_slug(mat_mur, _MUR_COULEURS, _DEFAUT_MUR, _MUR_PRIORITE)
+    toit = _couleur_slug(mat_toit, _TOIT_COULEURS, _DEFAUT_TOIT, _TOIT_PRIORITE)
+
+    # Texture selon le matériau BDNB. Quand une texture existe, la couleur de
+    # base passe au blanc (le facteur MULTIPLIE la texture en glTF : garder la
+    # couleur palette assombrirait/teinterait l'image). La clé privée
+    # "_texture" est consommée puis retirée par _serialise_parts_glb.
+    murs_mat: dict[str, Any] = {
+        "name": "Murs",
+        "pbrMetallicRoughness": {
+            "baseColorFactor": mur + [1.0],
+            "metallicFactor": 0.0,
+            "roughnessFactor": 0.9,
         },
-        {
-            "name": "Toiture",
-            "pbrMetallicRoughness": {
-                "baseColorFactor": toit + [1.0],
-                "metallicFactor": 0.0,
-                "roughnessFactor": 0.8,
-            },
-            "doubleSided": True,
+        "doubleSided": False,
+    }
+    tex_mur = _texture_for_slug(
+        mat_mur,
+        _MUR_TEXTURES_IMMEUBLE if immeuble else _MUR_TEXTURES,
+        _MUR_TEXTURE_DEFAUT,
+        _MUR_PRIORITE,
+    )
+    if tex_mur is not None:
+        murs_mat["_texture"] = tex_mur
+        murs_mat["pbrMetallicRoughness"]["baseColorFactor"] = [1.0, 1.0, 1.0, 1.0]
+
+    toit_mat: dict[str, Any] = {
+        "name": "Toiture",
+        "pbrMetallicRoughness": {
+            "baseColorFactor": toit + [1.0],
+            "metallicFactor": 0.0,
+            "roughnessFactor": 0.8,
         },
+        "doubleSided": True,
+    }
+    tex_toit = _texture_for_slug(mat_toit, _TOIT_TEXTURES, _TOIT_TEXTURE_DEFAUT, _TOIT_PRIORITE)
+    if tex_toit is not None:
+        toit_mat["_texture"] = tex_toit
+        toit_mat["pbrMetallicRoughness"]["baseColorFactor"] = [1.0, 1.0, 1.0, 1.0]
+
+    mats: list[dict[str, Any]] = [
+        murs_mat,
+        toit_mat,
         {
             "name": "Planchers",
             "pbrMetallicRoughness": {
@@ -1208,6 +1466,18 @@ def _materials_for(mat_mur: str | None, mat_toit: str | None) -> list[dict[str, 
         },
     ]
 
+    # Textures fixes (indépendantes de la BDNB) : sol, planchers, porte.
+    # Même contrat fail-soft : fichier absent → couleur unie conservée.
+    statiques = {"Sol": _SOL_TEXTURE, "Planchers": _PLANCHER_TEXTURE, "Porte": _PORTE_TEXTURE}
+    for mat_def in mats:
+        filename = statiques.get(mat_def["name"])
+        tex = _texture_file(filename) if filename else None
+        if tex is not None:
+            mat_def["_texture"] = tex
+            mat_def["pbrMetallicRoughness"]["baseColorFactor"] = [1.0, 1.0, 1.0, 1.0]
+
+    return mats
+
 
 def build_glb_bim(
     polygones: list[dict[str, Any]],
@@ -1221,6 +1491,7 @@ def build_glb_bim(
     facades_avec_vitrage: list[str] | None = None,
     ratio_vitrage: float | None = None,
     entree_facade: str | None = None,
+    immeuble: bool = False,
 ) -> bytes:
     """
     Build a BIM-grade .glb from footprint polygons (footprint.py convention:
@@ -1311,7 +1582,7 @@ def build_glb_bim(
         )
         parts["sol"] = (sol_v, sol_t)
 
-    materials = _materials_for(mat_mur, mat_toit)
+    materials = _materials_for(mat_mur, mat_toit, immeuble=immeuble)
 
     return _serialise_parts_glb(parts, materials, label)
 
@@ -1434,6 +1705,7 @@ def build_glb_from_bdnb(
             facades_avec_vitrage=facades_vitrage,
             ratio_vitrage=ratio_vitrage,
             entree_facade=entree_facade,
+            immeuble=immeuble,
         )
 
     # Fallback: build a simple rectangle from surface_emprise_sol
