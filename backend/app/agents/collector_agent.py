@@ -51,6 +51,9 @@ from app.connectors import dvf_lookup
 from app.connectors import georisques as georisques_connector
 from app.connectors import ign_altitude
 from app.connectors import open_meteo
+from app.connectors import overpass
+from app.connectors import sirene
+from app.connectors import drias
 from app.connectors.geocoding import geocode_address, reverse_geocode
 from app.core.config import settings
 from app.core.logging import get_logger
@@ -176,6 +179,21 @@ async def collect(address: str, enable_copernicus: bool = True, enable_dvf: bool
                 open_meteo.fetch_climate_summary(client, geocode.lat, geocode.lon),
                 erreurs,
             ),
+            "type_batiment": _safe_call(
+                "overpass",
+                overpass.detecter_type_batiment_osm(client, geocode.lat, geocode.lon),
+                erreurs,
+            ),
+            "sirene": _safe_call(
+                "sirene",
+                sirene.fetch_sirene(client, geo_coords=(geocode.lat, geocode.lon)),
+                erreurs,
+            ),
+            "climat_drias": _safe_call(
+                "drias",
+                drias.fetch_drias_summary(client, geocode.lat, geocode.lon),
+                erreurs,
+            ),
         }
 
         # DVF (lookup local synchrone, CSV a telecharger a la main - cf.
@@ -210,6 +228,7 @@ async def collect(address: str, enable_copernicus: bool = True, enable_dvf: bool
         climat = resolved["climat"]
         dvf_data = resolved.get("dvf")
         climat_copernicus = resolved.get("copernicus")
+        type_batiment = resolved.get("type_batiment")
 
     # Etape 3 - fan-in : assemblage du building_data final
     logger.info("etape 3/3 -- assemblage building_data (%d erreur(s) de source)", len(erreurs))
@@ -232,6 +251,7 @@ async def collect(address: str, enable_copernicus: bool = True, enable_dvf: bool
         "climat_open_meteo": _climate_to_dict(climat),
         "climat_copernicus": climat_copernicus,
         "dvf_local": dvf_data,
+        "type_batiment": type_batiment,
         "erreurs": erreurs,
         "genere_le": datetime.now(timezone.utc).isoformat(),
     }

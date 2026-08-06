@@ -198,6 +198,28 @@ def _simuler_georisques(lat: float, lon: float) -> dict:
     else:
         zone_sismique = "1"
 
+    # --- ICPE / SSP / PPRT : simulation technologique (zones industrielles) ---
+    # Proximité des zones industrielles : plus forte près des grands axes
+    # industriels (Rhône, Fos-sur-Mer, Étang de Berre)
+    n_icpe = int(round(_noise(lat, lon, 14) * 8))
+    icpe_list = [{"statut_seveso": "non Seveso", "lib_statut_seveso": "non Seveso"} for _ in range(n_icpe)]
+    if _noise(lat, lon, 15) > 0.85:
+        icpe_list.append({"statut_seveso": "Seveso seuil haut", "lib_statut_seveso": "Seveso seuil haut"})
+
+    n_ssp = int(round(_noise(lat, lon, 16) * 5))
+    ssp_list = [{"code": f"SSP{1000+i}"} for i in range(n_ssp)]
+
+    n_pprt = int(round(_noise(lat, lon, 17) * 2))
+    pprt_list = [{"libelle_statut": "PPRT prescrit"} for _ in range(n_pprt)]
+    if _noise(lat, lon, 18) > 0.9:
+        pprt_list.append({"libelle_statut": "PPRT approuvé"})
+
+    # Risques technologiques dans GASPAR
+    if _noise(lat, lon, 19) > 0.75:
+        risques_detail.append({"libelle_risque_long": "Transport de matières dangereuses", "type_risque": "TMD"})
+    if _noise(lat, lon, 20) > 0.95:
+        risques_detail.append({"libelle_risque_long": "Industriel", "type_risque": "Industriel"})
+
     return {
         "risques_commune": {
             "data": [{
@@ -210,6 +232,10 @@ def _simuler_georisques(lat: float, lon: float) -> dict:
         "mouvements_de_terrain": [{"type": "glissement"}] * mvt_count,
         "zones_inondables": inondation_score > 35,
         "radon": [{"classe_potentiel": radon_classe}],
+        # --- Extensions industrielles simulées ---
+        "icpe": icpe_list,
+        "ssp": ssp_list,
+        "pprt": pprt_list,
     }
 
 
@@ -509,6 +535,8 @@ def _rating_from_mean(mean_score: float, worst_case: float) -> str:
 ALEA_KEYS = [
     "argile", "inondation", "mouvement_terrain", "sismique",
     "radon", "canicule", "precipitation", "feu_foret",
+    # --- Aléas industriels/technologiques (extensions usines) ---
+    "icpe", "ssp", "pprt", "risque_technologique",
 ]
 
 

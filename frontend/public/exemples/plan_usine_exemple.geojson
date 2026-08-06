@@ -1,0 +1,53 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "nom": "Zone de production",
+        "type": "production",
+        "surface_m2": 2500
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[0, 0], [50, 0], [50, 50], [0, 50], [0, 0]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "nom": "Zone de stockage",
+        "type": "stockage",
+        "surface_m2": 1800
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[50, 0], [80, 0], [80, 50], [50, 50], [50, 0]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "nom": "Zone cuves",
+        "type": "cuves",
+        "surface_m2": 600
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[0, 50], [30, 50], [30, 70], [0, 70], [0, 50]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "nom": "Bureaux",
+        "type": "bureaux",
+        "surface_m2": 400
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[50, 50], [80, 50], [80, 70], [50, 70], [50, 50]]]
+      }
+    }
+  ]
+}

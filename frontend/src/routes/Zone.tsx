@@ -3,8 +3,8 @@
 //   Étapes :
 //     1. Adresse      — hero centré façon Gemini (champ de recherche au centre)
 //     2. Cartographie — carte OpenLayers + panneau aléas (data viz Géorisques)
-//     3. Analyse      — réservé (vide pour l'instant)
-//     4. Rapport IA   — rapport narratif Mistral + export PDF
+//     3. Analyse      — risques industriels & technologiques
+//     4. Rapport IA   — rapport narratif Mistral + module économie
 //
 //   Stepper linéaire : les étapes 2-4 sont bloquées tant qu'aucune adresse
 //   n'a été diagnostiquée — l'étape Adresse passe en état d'erreur (icône
@@ -31,6 +31,9 @@ import {
   type RapportNarratif,
   type GeocodeSuggestion,
 } from '../zone/config';
+import { runEconomiePipeline } from './economie/api';
+import type { ResultatEconomie } from './economie/types';
+import { PlanUsinePanel, TYPES_ZONE_LABELS, type PlanUsine } from './PlanUsine';
 import '../styles/zone.css';
 
 const LEGEND_RANGES = ['<20', '20–39', '40–59', '60–79', '≥80'];
@@ -91,6 +94,13 @@ export function Zone() {
   const [rapport, setRapport] = useState<RapportNarratif | null>(null);
   const [rapportLoading, setRapportLoading] = useState(false);
   const [rapportError, setRapportError] = useState<string | null>(null);
+  const [economie, setEconomie] = useState<ResultatEconomie | null>(null);
+  const [economieLoading, setEconomieLoading] = useState(false);
+  const [economieError, setEconomieError] = useState<string | null>(null);
+  const [planUsineOpen, setPlanUsineOpen] = useState(false);
+  const [planUsineResult, setPlanUsineResult] = useState<any>(null);
+  const [planUsineLoading, setPlanUsineLoading] = useState(false);
+  const [planUsineError, setPlanUsineError] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [visibleLayerKeys, setVisibleLayerKeys] = useState<ReadonlySet<string>>(new Set());
 
@@ -148,6 +158,8 @@ export function Zone() {
     setReport(null);
     setRapport(null);
     setRapportError(null);
+    setEconomie(null);
+    setEconomieError(null);
     setSidebarOpen(false);
 
     try {
@@ -209,6 +221,64 @@ export function Zone() {
     }
   }
 
+  /* ── Module économie — utilise la MÊME adresse analysée (workflow fluide) ── */
+  async function loadEconomie() {
+    if (!lastQuery.current.trim() || economie || economieLoading) return;
+    setEconomieLoading(true);
+    setEconomieError(null);
+    try {
+      const res = await runEconomiePipeline(lastQuery.current);
+      setEconomie(res);
+    } catch (err) {
+      setEconomieError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setEconomieLoading(false);
+    }
+  }
+
+  /* ── Niveau 2 — Plan d'usine (enrichit le score) ── */
+  async function enrichirPlanUsine(plan: PlanUsine) {
+    if (planUsineLoading) return;
+    setPlanUsineLoading(true);
+    setPlanUsineError(null);
+    try {
+      // Récupérer les risk_scores via le pipeline fast (même adresse)
+      const fast = await fetch(`${API}/diagnostic/fast`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ adresse: lastQuery.current, copernicus: false }),
+      });
+      if (!fast.ok) {
+        const err = await fast.json().catch(() => ({}));
+        throw new Error(err.detail?.detail || `HTTP ${fast.status}`);
+      }
+      const fastData = await fast.json();
+      const resume = fastData._resume;
+      if (!resume) throw new Error('Contrat rapide sans _resume');
+
+      const resp = await fetch(`${API}/diagnostic/plan-usine`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          risk_scores: resume.risk_scores,
+          plan,
+          adresse: lastQuery.current,
+        }),
+      });
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({}));
+        throw new Error(err.detail?.detail || `HTTP ${resp.status}`);
+      }
+      const resultat = await resp.json();
+      setPlanUsineResult(resultat);
+      setPlanUsineOpen(false);
+    } catch (err) {
+      setPlanUsineError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setPlanUsineLoading(false);
+    }
+  }
+
   /* ── Navigation du stepper (linéaire : impossible de sauter l'adresse) ── */
   function goToStep(i: number) {
     if (i > 0 && !report) {
@@ -220,7 +290,10 @@ export function Zone() {
     setStepError(false);
     setStep(i);
     if (i === 0) window.setTimeout(() => heroInputRef.current?.focus(), 80);
-    if (i === 3 && report) void loadRapport();
+    if (i === 3 && report) {
+      void loadRapport();
+      void loadEconomie();
+    }
   }
 
   /* ── Visibilité des couches ── */
@@ -473,19 +546,20 @@ export function Zone() {
                           </div>
                         ))}
                       </div>
-                    </details>      <div className="score-block">
-        <div className="score-row">
-          <span className="score-num" style={{ color: band?.color }}>
-            {maxScore ?? '—'}
-          </span>
-          <div className="score-meta">
-            <span className="score-label">Score de risque global /100</span>
-            <span className={`d03-pill ${band ? band.cls : ''}`}>
-              {band ? band.label : 'Indéterminé'}
-            </span>
-          </div>
-        </div>
-      </div>
+                    </details>
+                    <div className="score-block">
+                      <div className="score-row">
+                        <span className="score-num" style={{ color: band?.color }}>
+                          {maxScore ?? '—'}
+                        </span>
+                        <div className="score-meta">
+                          <span className="score-label">Score de risque global /100</span>
+                          <span className={`d03-pill ${band ? band.cls : ''}`}>
+                            {band ? band.label : 'Indéterminé'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
 
                     <div className="aleas-section">
                       <div className="section-heading">
@@ -594,18 +668,310 @@ export function Zone() {
               </section>
             </div>
 
-            {/* ÉTAPE 3 — ANALYSE (réservé) */}
-            <section className="zone-empty-step" hidden={step !== 2}>
-              <md-icon>auto_awesome</md-icon>
-              <h2>Analyse approfondie</h2>
-              <p>
-                Cette étape est en préparation — croisements de données, comparaison de scénarios
-                et sources complémentaires (Copernicus, BDNB) y seront intégrés.
-              </p>
-            </section>
+            {/* ÉTAPE 3 — ANALYSE (risques industriels & technologiques) */}
+            <section className="zone-analysis" hidden={step !== 2}>
+              {!report ? (
+                <div className="report-empty">
+                  <md-icon>search</md-icon>
+                  <h2>Aucun diagnostic</h2>
+                  <p>Diagnostiquez d'abord une adresse pour voir l'analyse approfondie.</p>
+                </div>
+              ) : (
+                <>
+                  <header className="analysis-header">
+                    <div className="analysis-title">
+                      <h2>Analyse des risques</h2>
+                      <p className="report-meta">
+                        {report.adresse_normalisee} · {report.alea_count} aléa(s) recensé(s)
+                      </p>
+                    </div>
+                  </header>
 
-            {/* ÉTAPE 4 — RAPPORT IA (Mistral) */}
-            <section className="zone-report" hidden={step !== 3}>
+                  {/* Score global */}
+                  <div className="analysis-score-block">
+                    <div className="score-row">
+                      <span className="score-num" style={{ color: band?.color }}>
+                        {maxScore ?? '—'}
+                      </span>
+                      <div className="score-meta">
+                        <span className="score-label">Score de risque global /100</span>
+                        <span className={`d03-pill ${band ? band.cls : ''}`}>
+                          {band ? band.label : 'Indéterminé'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Synthèse des aléas */}
+                  <div className="analysis-section">
+                    <h3>Aléas recensés</h3>
+                    <div className="analysis-grid">
+                      {(report.aleas || []).map((a) => {
+                        const aband = a.niveau ? bandForKey(a.niveau) : undefined;
+                        const aicon = ALEA_ICONS[a.code] || ALEA_ICON_FALLBACK;
+                        return (
+                          <div
+                            key={a.code}
+                            className={`analysis-card${a.present === true ? ' present' : ''}${
+                              a.present === null ? ' error-partial' : ''
+                            }`}
+                          >
+                            <span className={`alea-icon ${aband ? aband.cls : ''}`}>
+                              <md-icon>{aicon}</md-icon>
+                            </span>
+                            <div className="analysis-card-body">
+                              <span className="analysis-card-name">{a.libelle}</span>
+                              {a.present === true ? (
+                                <span className={`d03-pill ${aband ? aband.cls : ''}`}>
+                                  {aband ? aband.label : 'Présent'}
+                                </span>
+                              ) : a.present === null ? (
+                                <span className="status-chip chip-off">
+                                  <md-icon>cloud_off</md-icon> source indisponible
+                                </span>
+                              ) : (
+                                <span className="status-chip chip-off">
+                                  <md-icon>check_circle</md-icon> non concerné
+                                </span>
+                              )}
+                              {a.zonage ? <p className="analysis-card-zone">{a.zonage}</p> : null}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Risques industriels & technologiques */}
+                  <div className="analysis-section analysis-section-industry">
+                    <h3>🏭 Risques industriels & technologiques</h3>
+                    <div className="analysis-industry-banner">
+                      <md-icon>factory</md-icon>
+                      <span>
+                        <strong>Sites industriels (ICPE), sols pollués et plans de prévention
+                        des risques technologiques (PPRT)</strong> sont intégrés à l'analyse.
+                        Ces données proviennent de Géorisques (BRGM / MTE).
+                      </span>
+                    </div>
+                    <div className="analysis-industry-list">
+                      {['icpe', 'ssp', 'pprt', 'canalisations'].map((code) => {
+                        const alea = (report.aleas || []).find((x) => x.code === code);
+                        if (!alea) return null;
+                        const aband = alea.niveau ? bandForKey(alea.niveau) : undefined;
+                        const aicon = ALEA_ICONS[code] || ALEA_ICON_FALLBACK;
+                        return (
+                          <div className="analysis-industry-row" key={code}>
+                            <span className={`alea-icon ${aband ? aband.cls : ''}`}>
+                              <md-icon>{aicon}</md-icon>
+                            </span>
+                            <div className="analysis-industry-info">
+                              <span className="analysis-industry-name">{alea.libelle}</span>
+                              {alea.zonage ? (
+                                <span className="analysis-industry-zone">{alea.zonage}</span>
+                              ) : null}
+                            </div>
+                            {alea.present === true ? (
+                              <span className={`d03-pill ${aband ? aband.cls : ''}`}>
+                                {aband ? aband.label : 'Présent'}
+                              </span>
+                            ) : alea.present === null ? (
+                              <span className="status-chip chip-off">
+                                <md-icon>cloud_off</md-icon>
+                              </span>
+                            ) : (
+                              <span className="status-chip chip-off">
+                                <md-icon>check_circle</md-icon> non concerné
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Plan du bâtiment (niveau 2) — disponible pour tous, adapté pour les usines */}
+                  <div className="analysis-section analysis-section-usine">
+                    <h3>
+                      🏗️ Plan du bâtiment (niveau 2 — optionnel)
+                      {report?.type_batiment?.type === 'industriel' && ' — Usine détectée'}
+                    </h3>
+                    <div className="analysis-usine-note">
+                      <md-icon>info</md-icon>
+                      <span>
+                        Enrichissez le score de risque avec le plan réel du bâtiment : zones,
+                        équipements critiques, matières dangereuses.
+                        {report?.type_batiment?.type === 'industriel' && (
+                          <span> Pour les <strong>usines</strong>, le score intègre également les{' '}
+                            <strong>zones industrielles spécifiques</strong> (charpente, équipements
+                            de production, stockage, cuves/réservoirs) et une{' '}
+                            <strong>vulnérabilité adaptée</strong>.</span>
+                        )}
+                        <br />
+                        Formats supportés : Images (JPG, PNG) · GeoJSON · JSON · CSV · DXF.
+                      </span>
+                    </div>
+
+                      {/* Niveau 2 — Plan d'usine (optionnel, uniquement pour les usines) */}
+                      {!planUsineOpen && (
+                        <div className="plan-usine-banner">
+                          <div className="plan-usine-banner-info">
+                            <strong>
+                              📐 Niveau 2 — Plan de l'usine (optionnel)
+                            </strong>
+                            <span>
+                              Enrichissez le score avec le plan réel de l'usine : zones, équipements critiques, matières dangereuses.
+                            </span>
+                          </div>
+                          <md-filled-button onClick={() => setPlanUsineOpen(true)}>
+                            <md-icon slot="icon">map</md-icon>
+                            Importer le plan
+                          </md-filled-button>
+                        </div>
+                      )}
+
+                      {planUsineOpen && (
+                        <PlanUsinePanel
+                          onEnrichir={(plan) => void enrichirPlanUsine(plan)}
+                          onClose={() => setPlanUsineOpen(false)}
+                        />
+                      )}
+
+                      {planUsineLoading && (
+                        <div className="plan-usine-loading">
+                          <md-linear-progress indeterminate></md-linear-progress>
+                          <span>Enrichissement du score avec le plan…</span>
+                        </div>
+                      )}
+
+                      {planUsineError && (
+                        <div className="plan-usine-error">
+                          <md-icon>error</md-icon>
+                          <span>{planUsineError}</span>
+                        </div>
+                      )}
+
+                      {planUsineResult?.plan_usine && (
+                        <div className="plan-usine-result">
+                          <h4>✅ Score enrichi avec le plan</h4>
+                          <div className="plan-usine-result-grid">
+                            <div className="plan-usine-result-kpi">
+                              <span className="plan-usine-result-label">Score global plan</span>
+                              <span className="plan-usine-result-value">
+                                {planUsineResult.plan_usine.score_plan_global}/100
+                              </span>
+                            </div>
+                            <div className="plan-usine-result-kpi">
+                              <span className="plan-usine-result-label">Zones personnalisées</span>
+                              <span className="plan-usine-result-value">
+                                {planUsineResult.plan_usine.nb_zones}
+                              </span>
+                            </div>
+                            <div className="plan-usine-result-kpi">
+                              <span className="plan-usine-result-label">Équipements</span>
+                              <span className="plan-usine-result-value">
+                                {planUsineResult.plan_usine.nb_equipements}
+                              </span>
+                            </div>
+                            <div className="plan-usine-result-kpi plan-usine-result-kpi-accent">
+                              <span className="plan-usine-result-label">Confiance</span>
+                              <span className="plan-usine-result-value">
+                                {planUsineResult.plan_usine.confiance_plan.score}/100
+                              </span>
+                              <span className="plan-usine-result-sub">
+                                {planUsineResult.plan_usine.confiance_plan.message}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="plan-usine-result-zones">
+                            <h5>Vulnérabilité par zone</h5>
+                            {Object.keys(planUsineResult.plan_usine.zones_plan || {}).map((zoneId) => {
+                              const zones = planUsineResult.plan_usine.zones_plan as Record<string, any>;
+                              const zone = zones[zoneId];
+                              const zband = zone.niveau ? bandForKey(zone.niveau) : undefined;
+                              return (
+                                <div className="plan-usine-result-zone" key={zoneId}>
+                                  <div className="plan-usine-result-zone-top">
+                                    <span className="plan-usine-result-zone-name">{zone.nom}</span>
+                                    <span className="plan-usine-result-zone-type">
+                                      {TYPES_ZONE_LABELS[zone.type] || zone.type}
+                                    </span>
+                                    {zband ? (
+                                      <span className={`d03-pill ${zband.cls}`}>{zband.label}</span>
+                                    ) : null}
+                                  </div>
+                                  <div className="plan-usine-result-zone-values">
+                                    <span className="plan-usine-result-zone-value">
+                                      Risque {zone.risque}/100
+                                    </span>
+                                    <span className="plan-usine-result-zone-sub">
+                                      Vulnérabilité {zone.vulnerabilite}/100
+                                    </span>
+                                  </div>
+                                  {(zone.description || zone.justification) && (
+                                    <p className="plan-usine-result-zone-desc">
+                                      {zone.description || zone.justification}
+                                    </p>
+                                  )}
+                                  {zone.equipements?.length > 0 && (
+                                    <div className="plan-usine-result-zone-eqs">
+                                      <span className="plan-usine-result-zone-eqs-label">
+                                        Équipements :
+                                      </span>
+                                      {zone.equipements.map((eq: any, i: number) => (
+                                        <span
+                                          className={`plan-usine-result-zone-eq${
+                                            eq.matieres_dangereuses || eq.critique_production
+                                              ? ' critical'
+                                              : ''
+                                          }`}
+                                          key={i}
+                                        >
+                                          {eq.nom || eq.type || 'Équipement'}
+                                          {eq.matieres_dangereuses && (
+                                            <md-icon title="Matières dangereuses">warning</md-icon>
+                                          )}
+                                          {eq.critique_production && (
+                                            <md-icon title="Critique production">bolt</md-icon>
+                                          )}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                  {report.erreurs_partielles?.length > 0 && (
+                    <div className="partial-banner">
+                      <md-icon>warning</md-icon>
+                      <span>
+                        <strong>Sources partiellement indisponibles :</strong>{' '}
+                        {escHtml(report.erreurs_partielles.join(' · '))}.
+                      </span>
+                    </div>
+                  )}
+
+                  <div className="avertissement">
+                    <md-icon>info</md-icon>
+                    <span>
+                      <strong>⚠ Ce rapport ne remplace pas l'ERRIAL officiel.</strong> Il agrège
+                      les données publiques Géorisques (BRGM / MTE) et intègre les risques
+                      industriels et technologiques pour les sites industriels.
+                    </span>
+                  </div>
+                </>
+              )}
+            </section>
+          </div>
+        </>
+      )}
+
+      {/* ÉTAPE 4 — RAPPORT IA (Mistral) + Module économie */}
+      <section className="zone-report" hidden={step !== 3}>
               {!report ? (
                 <div className="report-empty">
                   <md-icon>description</md-icon>
@@ -615,99 +981,178 @@ export function Zone() {
                     <md-icon slot="icon">search</md-icon> Chercher une adresse
                   </md-filled-button>
                 </div>
-              ) : rapportLoading ? (
-                <div className="report-empty">
-                  <md-icon>psychology</md-icon>
-                  <h2>Génération du rapport IA…</h2>
-                  <p>Mistral analyse les données Géorisques de {report.adresse_normalisee}.</p>
-                  <md-linear-progress indeterminate></md-linear-progress>
-                </div>
-              ) : rapportError ? (
-                <div className="report-empty">
-                  <md-icon>error</md-icon>
-                  <h2>Rapport indisponible</h2>
-                  <p>{rapportError}</p>
-                  <md-filled-button onClick={() => void loadRapport()}>
-                    <md-icon slot="icon">refresh</md-icon> Réessayer
-                  </md-filled-button>
-                </div>
-              ) : rapport ? (
-                <>
-                  <header className="report-header">
-                    <div className="report-title">
-                      <h2>Rapport d'analyse IA</h2>
-                      <p className="report-meta">
-                        {report.adresse_normalisee} · Code INSEE {report.code_insee} ·{' '}
-                        {report.date_generation}
-                      </p>
-                    </div>
-                    <md-elevated-button
-                      className="pdf-btn report-export"
-                      href={pdfUrl}
-                      target="_blank"
-                      rel="noopener"
-                    >
-                      <md-icon slot="icon">picture_as_pdf</md-icon>
-                      Exporter en PDF
-                    </md-elevated-button>
-                  </header>
-
-                  <p className="report-intro">{rapport.introduction}</p>
-
-                  <div className="report-sections">
-                    {rapport.sections.map((s, i) => (
-                      <article className="report-section" key={i}>
-                        <h3>{s.titre}</h3>
-                        <p>{s.contenu}</p>
-                      </article>
-                    ))}
-                  </div>
-
-                  <aside className="report-synthese">
-                    <md-icon>summarize</md-icon>
-                    <div>
-                      <h3>Synthèse finale</h3>
-                      <p>{rapport.synthese_finale}</p>
-                    </div>
-                  </aside>
-
-                  {rapport.obligations_reglementaires &&
-                    rapport.obligations_reglementaires.length > 0 && (
-                      <section className="report-obligations">
-                        <h3>Obligations réglementaires</h3>
-                        <ul>
-                          {rapport.obligations_reglementaires.map((o, i) => (
-                            <li key={i}>{o}</li>
-                          ))}
-                        </ul>
-                      </section>
-                    )}
-
-                  <p className="report-avertissement">
-                    <md-icon>info</md-icon>
-                    <span>
-                      {rapport.avertissement_ia ||
-                        "Ce rapport est généré automatiquement par IA à partir des données publiques Géorisques normalisées. Il ne remplace pas l'ERRIAL ni l'avis d'un expert."}
-                    </span>
-                  </p>
-                </>
               ) : (
-                <div className="report-empty">
-                  <md-icon>description</md-icon>
-                  <h2>Prêt à générer</h2>
-                  <p>
-                    Générez le rapport narratif IA à partir du diagnostic{' '}
-                    {report.adresse_normalisee}.
-                  </p>
-                  <md-filled-button onClick={() => void loadRapport()}>
-                    <md-icon slot="icon">auto_awesome</md-icon> Générer le rapport
-                  </md-filled-button>
-                </div>
+                <>
+                  {/* ── Rapport IA : état selon Mistral ── */}
+                  {rapportLoading ? (
+                    <div className="report-empty">
+                      <md-icon>psychology</md-icon>
+                      <h2>Génération du rapport IA…</h2>
+                      <p>Mistral analyse les données Géorisques de {report.adresse_normalisee}.</p>
+                      <md-linear-progress indeterminate></md-linear-progress>
+                    </div>
+                  ) : rapportError ? (
+                    <div className="report-empty">
+                      <md-icon>error</md-icon>
+                      <h2>Rapport IA indisponible</h2>
+                      <p>{rapportError}</p>
+                      <md-filled-button onClick={() => void loadRapport()}>
+                        <md-icon slot="icon">refresh</md-icon> Réessayer
+                      </md-filled-button>
+                    </div>
+                  ) : rapport ? (
+                    <>
+                      <header className="report-header">
+                        <div className="report-title">
+                          <h2>Rapport d'analyse IA</h2>
+                          <p className="report-meta">
+                            {report.adresse_normalisee} · Code INSEE {report.code_insee} ·{' '}
+                            {report.date_generation}
+                          </p>
+                        </div>
+                        <md-elevated-button
+                          className="pdf-btn report-export"
+                          href={pdfUrl}
+                          target="_blank"
+                          rel="noopener"
+                        >
+                          <md-icon slot="icon">picture_as_pdf</md-icon>
+                          Exporter en PDF
+                        </md-elevated-button>
+                      </header>
+
+                      <p className="report-intro">{rapport.introduction}</p>
+
+                      <div className="report-sections">
+                        {rapport.sections.map((s, i) => (
+                          <article className="report-section" key={i}>
+                            <h3>{s.titre}</h3>
+                            <p>{s.contenu}</p>
+                          </article>
+                        ))}
+                      </div>
+
+                      <aside className="report-synthese">
+                        <md-icon>summarize</md-icon>
+                        <div>
+                          <h3>Synthèse finale</h3>
+                          <p>{rapport.synthese_finale}</p>
+                        </div>
+                      </aside>
+
+                      {rapport.obligations_reglementaires &&
+                        rapport.obligations_reglementaires.length > 0 && (
+                          <section className="report-obligations">
+                            <h3>Obligations réglementaires</h3>
+                            <ul>
+                              {rapport.obligations_reglementaires.map((o, i) => (
+                                <li key={i}>{o}</li>
+                              ))}
+                            </ul>
+                          </section>
+                        )}
+
+                      <p className="report-avertissement">
+                        <md-icon>info</md-icon>
+                        <span>
+                          {rapport.avertissement_ia ||
+                            "Ce rapport est généré automatiquement par IA à partir des données publiques Géorisques normalisées. Il ne remplace pas l'ERRIAL ni l'avis d'un expert."}
+                        </span>
+                      </p>
+                    </>
+                  ) : (
+                    <div className="report-empty">
+                      <md-icon>description</md-icon>
+                      <h2>Prêt à générer</h2>
+                      <p>
+                        Générez le rapport narratif IA à partir du diagnostic{' '}
+                        {report.adresse_normalisee}.
+                      </p>
+                      <md-filled-button onClick={() => void loadRapport()}>
+                        <md-icon slot="icon">auto_awesome</md-icon> Générer le rapport
+                      </md-filled-button>
+                    </div>
+                  )}
+
+                  {/* ── Module économie (TOUJOURS affiché, même si rapport IA échoue) ── */}
+                  <section className="report-economie">
+                    <header className="report-economie-header">
+                      <h3>💶 Analyse économique des travaux</h3>
+                      <p className="report-economie-meta">
+                        Calculé pour {economie?.adresse || report.adresse_normalisee}
+                      </p>
+                    </header>
+
+                    {economieLoading ? (
+                      <div className="report-economie-loading">
+                        <md-linear-progress indeterminate></md-linear-progress>
+                        <span>Calcul du retour sur investissement…</span>
+                      </div>
+                    ) : economieError ? (
+                      <div className="report-economie-error">
+                        <md-icon>error</md-icon>
+                        <span>{economieError}</span>
+                      </div>
+                    ) : economie?.contract ? (
+                      (() => {
+                        const c = economie.contract;
+                        const fmtEur = (b: any) =>
+                          !b || b.statut === 'null'
+                            ? 'Non calculé'
+                            : new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(
+                                b.valeur ?? (b.min + b.max) / 2
+                              );
+                        const fmtAn = (b: any) =>
+                          !b || b.statut === 'null'
+                            ? 'Non calculé'
+                            : `${new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 1 }).format(
+                                b.valeur ?? (b.min + b.max) / 2
+                              )} ans`;
+                        return (
+                          <div className="report-economie-grid">
+                            <div className="report-economie-kpi">
+                              <span className="report-economie-kpi-label">Coût net</span>
+                              <span className="report-economie-kpi-value">
+                                {fmtEur(c.niveau_b?.cout_travaux?.cout_net)}
+                              </span>
+                              <span className="report-economie-kpi-sub">après subventions</span>
+                            </div>
+                            <div className="report-economie-kpi">
+                              <span className="report-economie-kpi-label">Bénéfice annuel</span>
+                              <span className="report-economie-kpi-value">
+                                {fmtEur(c.niveau_b?.benefice_assurance?.total)}
+                              </span>
+                              <span className="report-economie-kpi-sub">sinistres évités</span>
+                            </div>
+                            <div className="report-economie-kpi">
+                              <span className="report-economie-kpi-label">Retour sur investissement</span>
+                              <span className="report-economie-kpi-value">
+                                {fmtAn(c.roi?.temps_de_retour)}
+                              </span>
+                              <span className="report-economie-kpi-sub">pour rentabiliser</span>
+                            </div>
+                            <div className="report-economie-kpi report-economie-kpi-accent">
+                              <span className="report-economie-kpi-label">Confiance</span>
+                              <span className="report-economie-kpi-value">
+                                {c.confidence?.score ?? '—'}/100
+                              </span>
+                              <span className="report-economie-kpi-sub">
+                                niveau {c.confidence?.niveau ?? '—'}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })()
+                    ) : (
+                      <button type="button" className="report-economie-cta" onClick={() => void loadEconomie()}>
+                        <md-icon slot="icon">calcul</md-icon>
+                        Calculer le retour sur investissement
+                      </button>
+                    )}
+                  </section>
+                </>
               )}
             </section>
-          </div>
-        </>
-      )}
       </div>
 
       {/* Scrim du drawer mobile */}

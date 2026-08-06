@@ -35,6 +35,13 @@ async def _get(client: httpx.AsyncClient, path: str, params: dict) -> dict | lis
     return response.json()
 
 
+async def _get_with_timeout(client: httpx.AsyncClient, path: str, params: dict, timeout: float = 5.0) -> dict | list | None:
+    """Appel avec timeout explicite plus court pour les sources non critiques."""
+    response = await client.get(f"{_BASE}/{path}", params=params, timeout=timeout)
+    response.raise_for_status()
+    return response.json()
+
+
 # ---------------------------------------------------------------------------
 # Collecte brute des données Géorisques
 # ---------------------------------------------------------------------------
@@ -56,25 +63,25 @@ async def fetch_georisques_raw(
     latlon = f"{lon},{lat}"
 
     sources = {
-        "risques_commune":    ("gaspar/risques",          {"code_insee": citycode}),
-        "catnat":             ("gaspar/catnat",            {"code_insee": citycode}),
-        "zones_inondables":   ("azi",                     {"code_insee": citycode}),
-        "cavites":            ("cavites",                  {"latlon": latlon, "rayon": rayon_m}),
-        "zonage_sismique":    ("zonage_sismique",          {"code_insee": citycode}),
-        "radon":              ("radon",                    {"code_insee": citycode}),
-        "mouvements_terrain": ("mvt",                     {"latlon": latlon, "rayon": rayon_m}),
-        "ppr":                ("gaspar/pprn",              {"code_insee": citycode}),
-        "pprt":               ("gaspar/pprt",              {"code_insee": citycode}),
-        "ssp":                ("ssp",                      {"code_insee": citycode}),
-        "icpe":               ("installations_classees",   {"code_insee": citycode}),
+        "risques_commune":    ("gaspar/risques",          {"code_insee": citycode}, 8.0),
+        "catnat":             ("gaspar/catnat",            {"code_insee": citycode}, 8.0),
+        "zones_inondables":   ("azi",                     {"code_insee": citycode}, 5.0),
+        "cavites":            ("cavites",                  {"latlon": latlon, "rayon": rayon_m}, 5.0),
+        "zonage_sismique":    ("zonage_sismique",          {"code_insee": citycode}, 5.0),
+        "radon":              ("radon",                    {"code_insee": citycode}, 5.0),
+        "mouvements_terrain": ("mvt",                     {"latlon": latlon, "rayon": rayon_m}, 5.0),
+        "ppr":                ("gaspar/pprn",              {"code_insee": citycode}, 5.0),
+        "pprt":               ("gaspar/pprt",              {"code_insee": citycode}, 5.0),
+        "ssp":                ("ssp",                      {"code_insee": citycode}, 5.0),
+        "icpe":               ("installations_classees",   {"code_insee": citycode}, 5.0),
     }
 
     # Endpoints that legitimately return 404 when no data exists for the commune
     _404_ok = {"zones_inondables", "ppr", "pprt", "ssp", "icpe"}
 
-    for cle, (path, params) in sources.items():
+    for cle, (path, params, timeout) in sources.items():
         try:
-            resultat[cle] = await _get(client, path, params)
+            resultat[cle] = await _get_with_timeout(client, path, params, timeout)
         except httpx.HTTPStatusError as exc:
             resultat[cle] = None
             if exc.response.status_code == 404 and cle in _404_ok:

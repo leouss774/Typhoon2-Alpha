@@ -968,11 +968,12 @@
   height: 100%;
   overflow: hidden;
 }
-.zone-workspace[hidden],
-.zone-empty-step[hidden],
-.zone-report[hidden] {
-  display: none;
-}
+  .zone-workspace[hidden],
+  .zone-empty-step[hidden],
+  .zone-analysis[hidden],
+  .zone-report[hidden] {
+    display: none;
+  }
 
 /* ── Étape 3 — vide (réservé) ── */
 .zone-empty-step {
@@ -2020,4 +2021,792 @@
   .report-export {
     width: 100%;
   }
+}
+
+/* ── Module économie dans le Rapport IA ── */
+.report-economie {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px 20px;
+  background: var(--md-sys-color-surface-container-low);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: 14px;
+}
+.report-economie-header {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.report-economie-header h3 {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 16px;
+  color: var(--md-sys-color-primary);
+}
+.report-economie-meta {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--md-sys-color-on-surface-variant);
+}
+.report-economie-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 24px 0;
+  font-size: 12px;
+  color: var(--md-sys-color-on-surface-variant);
+}
+.report-economie-loading md-linear-progress {
+  width: 100%;
+  max-width: 320px;
+}
+.report-economie-error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: var(--d03-eleve-bg);
+  border: 1px solid rgba(208, 112, 48, 0.35);
+  border-radius: 10px;
+  font-size: 11px;
+  color: var(--md-sys-color-on-surface);
+}
+.report-economie-error md-icon {
+  font-size: 16px;
+  color: var(--d03-eleve);
+  flex-shrink: 0;
+}
+.report-economie-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+}
+.report-economie-kpi {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 16px;
+  background: var(--md-sys-color-surface-container);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: 12px;
+  transition: border-color 0.18s, transform 0.18s;
+}
+.report-economie-kpi:hover {
+  border-color: var(--md-sys-color-primary);
+  transform: translateY(-2px);
+}
+.report-economie-kpi-label {
+  font-size: 9.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--md-sys-color-on-surface-variant);
+}
+.report-economie-kpi-value {
+  font-family: var(--serif);
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--md-sys-color-on-surface);
+  line-height: 1.2;
+}
+.report-economie-kpi-sub {
+  font-size: 10px;
+  color: var(--md-sys-color-on-surface-variant);
+}
+.report-economie-kpi-accent {
+  background: color-mix(in srgb, var(--md-sys-color-primary-container) 40%, var(--md-sys-color-surface-container));
+  border-color: var(--md-sys-color-primary);
+}
+.report-economie-kpi-accent .report-economie-kpi-value {
+  color: var(--md-sys-color-primary);
+}
+.report-economie-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: var(--md-sys-color-primary-container);
+  color: var(--md-sys-color-on-primary-container);
+  border: 1px solid var(--md-sys-color-primary);
+  border-radius: 999px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.18s;
+  align-self: flex-start;
+}
+.report-economie-cta:hover {
+  background: var(--md-sys-color-primary);
+  color: var(--md-sys-color-on-primary);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+.report-economie-cta md-icon {
+  font-size: 18px;
+}
+
+/* ============================================================================
+   ÉTAPE 3 — ANALYSE (risques industriels & technologiques)
+   ============================================================================ */
+
+.zone-analysis {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 24px 28px 48px;
+  max-width: 920px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.analysis-header {
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--md-sys-color-outline-variant);
+}
+.analysis-title h2 {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 24px;
+  color: color-mix(in srgb, var(--md-sys-color-primary) 30%, var(--md-sys-color-on-surface));
+}
+.report-meta {
+  margin: 6px 0 0;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+/* Score global (analyse) */
+.analysis-score-block {
+  padding: 18px 20px;
+  background: var(--md-sys-color-surface-container-low);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: 14px;
+}
+
+/* Sections d'analyse */
+.analysis-section {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px 20px;
+  background: var(--md-sys-color-surface-container-low);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: 14px;
+}
+.analysis-section h3 {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 16px;
+  color: var(--md-sys-color-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Grille des cartes d'aléas */
+.analysis-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
+}
+.analysis-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--md-sys-color-surface-container);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  transition: border-color 0.18s, background 0.18s, transform 0.18s, box-shadow 0.18s;
+}
+.analysis-card:hover {
+  border-color: var(--md-sys-color-primary);
+  background: var(--md-sys-color-surface-container-high);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28);
+}
+.analysis-card.present {
+  border-left: 3px solid var(--d03-eleve);
+}
+.analysis-card.error-partial {
+  border-left: 3px solid var(--md-sys-color-error);
+}
+.analysis-card .alea-icon {
+  width: 34px;
+  height: 34px;
+  font-size: 18px;
+}
+.analysis-card-body {
+  flex: 1;
+  min-width: 0;
+}
+.analysis-card-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--md-sys-color-on-surface);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.analysis-card-zone {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  color: var(--md-sys-color-on-surface-variant);
+  margin-top: 2px;
+}
+
+/* Bannière risques industriels */
+.analysis-industry-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  background: color-mix(in srgb, var(--md-sys-color-primary-container) 30%, transparent);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: 10px;
+  font-size: 11.5px;
+  line-height: 1.6;
+  color: var(--md-sys-color-on-surface-variant);
+}
+.analysis-industry-banner md-icon {
+  font-size: 20px;
+  color: var(--md-sys-color-primary);
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.analysis-industry-banner strong {
+  color: var(--md-sys-color-on-surface);
+}
+
+/* Liste des risques industriels */
+.analysis-industry-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.analysis-industry-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: var(--md-sys-color-surface-container);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: 10px;
+  transition: all 0.18s;
+}
+.analysis-industry-row:hover {
+  border-color: var(--md-sys-color-primary);
+  transform: translateX(4px);
+}
+.analysis-industry-row .alea-icon {
+  width: 30px;
+  height: 30px;
+  font-size: 16px;
+}
+.analysis-industry-info {
+  flex: 1;
+  min-width: 0;
+}
+.analysis-industry-name {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--md-sys-color-on-surface);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.analysis-industry-zone {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  color: var(--md-sys-color-on-surface-variant);
+  margin-top: 2px;
+}
+
+/* Note usines */
+.analysis-section-usine {
+  border-left: 3px solid var(--md-sys-color-tertiary);
+}
+.analysis-usine-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  background: color-mix(in srgb, var(--md-sys-color-tertiary) 12%, transparent);
+  border-radius: 10px;
+  font-size: 11.5px;
+  line-height: 1.6;
+  color: var(--md-sys-color-on-surface-variant);
+}
+.analysis-usine-note md-icon {
+  font-size: 20px;
+  color: var(--md-sys-color-tertiary);
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.analysis-usine-note strong {
+  color: var(--md-sys-color-on-surface);
+}
+
+/* ── Niveau 2 — Plan d'usine ── */
+.plan-usine-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px 16px;
+  background: color-mix(in srgb, var(--md-sys-color-secondary-container) 25%, transparent);
+  border: 1px dashed var(--md-sys-color-primary);
+  border-radius: 12px;
+}
+.plan-usine-banner-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--md-sys-color-on-surface-variant);
+}
+.plan-usine-banner-info strong {
+  color: var(--md-sys-color-on-surface);
+  font-size: 13px;
+}
+
+/* Panneau détaillé du plan */
+.plan-usine-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px 18px;
+  background: var(--md-sys-color-surface-container);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: 14px;
+}
+.plan-usine-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.plan-usine-header h3 {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 16px;
+  color: var(--md-sys-color-primary);
+}
+.plan-usine-subtitle {
+  margin: 4px 0 0;
+  font-size: 11px;
+  color: var(--md-sys-color-on-surface-variant);
+}
+.plan-usine-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.plan-usine-field label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--md-sys-color-on-surface);
+}
+
+/* Dropzone */
+.plan-usine-import {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.plan-usine-dropzone {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  border: 2px dashed var(--md-sys-color-outline-variant);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: border-color 0.18s, background 0.18s;
+}
+.plan-usine-dropzone:hover {
+  border-color: var(--md-sys-color-primary);
+  background: color-mix(in srgb, var(--md-sys-color-primary-container) 15%, transparent);
+}
+.plan-usine-dropzone md-icon {
+  font-size: 28px;
+  color: var(--md-sys-color-primary);
+}
+.plan-usine-dropzone span {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 12px;
+}
+.plan-usine-dropzone strong {
+  color: var(--md-sys-color-on-surface);
+}
+.plan-usine-dropzone-hint {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--md-sys-color-on-surface-variant);
+}
+.plan-usine-dropzone input[type='file'] {
+  display: none;
+}
+.plan-usine-file-ok {
+  font-size: 11px;
+  color: var(--d03-faible);
+}
+.plan-usine-file-error {
+  font-size: 11px;
+  color: var(--d03-eleve);
+}
+
+/* Sections zones & équipements */
+.plan-usine-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.plan-usine-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.plan-usine-section-header h4 {
+  margin: 0;
+  font-size: 13px;
+  color: var(--md-sys-color-on-surface);
+}
+.plan-usine-zones,
+.plan-usine-equipements {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.plan-usine-zone-row,
+.plan-usine-equip-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: var(--md-sys-color-surface-container-high);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: 10px;
+  flex-wrap: wrap;
+}
+.plan-usine-zone-row md-outlined-text-field,
+.plan-usine-zone-row md-outlined-select,
+.plan-usine-equip-row md-outlined-text-field,
+.plan-usine-equip-row md-outlined-select {
+  flex: 1;
+  min-width: 120px;
+}
+.plan-usine-zone-row md-outlined-select,
+.plan-usine-equip-row md-outlined-select {
+  min-width: 130px;
+}
+.plan-usine-zone-row md-outlined-text-field[type='number'],
+.plan-usine-equip-row md-outlined-text-field[type='number'] {
+  max-width: 140px;
+}
+.plan-usine-checks {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  font-size: 11px;
+}
+.plan-usine-checks label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+}
+.plan-usine-total {
+  padding: 10px 12px;
+  background: var(--md-sys-color-surface-container-low);
+  border-radius: 8px;
+  font-size: 12px;
+  color: var(--md-sys-color-on-surface-variant);
+}
+.plan-usine-total strong {
+  color: var(--md-sys-color-on-surface);
+}
+
+/* Actions */
+.plan-usine-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding-top: 4px;
+}
+
+/* États chargement / erreur résultat */
+.plan-usine-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 0;
+  font-size: 12px;
+  color: var(--md-sys-color-on-surface-variant);
+}
+.plan-usine-loading md-linear-progress {
+  width: 100%;
+  max-width: 360px;
+}
+.plan-usine-error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: var(--d03-eleve-bg);
+  border: 1px solid rgba(208, 112, 48, 0.35);
+  border-radius: 10px;
+  font-size: 11px;
+  color: var(--md-sys-color-on-surface);
+}
+.plan-usine-error md-icon {
+  font-size: 16px;
+  color: var(--d03-eleve);
+  flex-shrink: 0;
+}
+
+/* Résultat enrichi */
+.plan-usine-result {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px 16px;
+  background: color-mix(in srgb, var(--md-sys-color-primary-container) 25%, transparent);
+  border: 1px solid var(--md-sys-color-primary);
+  border-radius: 12px;
+}
+.plan-usine-result h4 {
+  margin: 0;
+  font-size: 14px;
+  color: var(--md-sys-color-on-surface);
+}
+.plan-usine-result-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 10px;
+}
+.plan-usine-result-kpi {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 10px 12px;
+  background: var(--md-sys-color-surface-container);
+  border-radius: 10px;
+}
+.plan-usine-result-label {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--md-sys-color-on-surface-variant);
+}
+.plan-usine-result-value {
+  font-family: var(--serif);
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--md-sys-color-on-surface);
+}
+.plan-usine-result-sub {
+  font-size: 9px;
+  color: var(--md-sys-color-on-surface-variant);
+  line-height: 1.4;
+}
+.plan-usine-result-kpi-accent {
+  background: var(--md-sys-color-primary-container);
+}
+.plan-usine-result-kpi-accent .plan-usine-result-value {
+  color: var(--md-sys-color-primary);
+}
+.plan-usine-result-zones {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.plan-usine-result-zones h5 {
+  margin: 0;
+  font-size: 12px;
+  color: var(--md-sys-color-on-surface);
+}
+.plan-usine-result-zone {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px;
+  background: var(--md-sys-color-surface-container);
+  border-radius: 8px;
+  font-size: 11px;
+}
+.plan-usine-result-zone-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.plan-usine-result-zone-name {
+  flex: 1;
+  font-weight: 600;
+  color: var(--md-sys-color-on-surface);
+}
+.plan-usine-result-zone-type {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--md-sys-color-on-surface-variant);
+}
+.plan-usine-result-zone-values {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.plan-usine-result-zone-value {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--md-sys-color-primary);
+  font-weight: 600;
+}
+.plan-usine-result-zone-sub {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--md-sys-color-on-surface-variant);
+}
+.plan-usine-result-zone-desc {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--md-sys-color-on-surface-variant);
+}
+.plan-usine-result-zone-eqs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+}
+.plan-usine-result-zone-eqs-label {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--md-sys-color-on-surface-variant);
+}
+.plan-usine-result-zone-eq {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 10px;
+  padding: 2px 8px;
+  background: var(--md-sys-color-surface-container-high);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: 999px;
+  color: var(--md-sys-color-on-surface);
+}
+.plan-usine-result-zone-eq md-icon {
+  font-size: 12px;
+  color: var(--md-sys-color-on-surface-variant);
+}
+.plan-usine-result-zone-eq.critical {
+  border-color: var(--md-sys-color-error);
+  background: color-mix(in srgb, var(--md-sys-color-error) 10%, transparent);
+}
+.plan-usine-result-zone-eq.critical md-icon {
+  color: var(--md-sys-color-error);
+}
+
+/* Image preview and detection */
+.plan-usine-image-preview {
+  margin: 16px 0;
+  padding: 16px;
+  background: var(--md-sys-color-surface-container-low);
+  border-radius: 12px;
+  border: 1px solid var(--md-sys-color-outline-variant);
+}
+
+.plan-usine-image-preview h4 {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  color: var(--md-sys-color-on-surface);
+  font-weight: 600;
+}
+
+.plan-usine-image-container {
+  position: relative;
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--md-sys-color-surface);
+  border: 2px solid var(--md-sys-color-outline-variant);
+}
+
+.plan-usine-image {
+  width: 100%;
+  height: auto;
+  display: block;
+  max-height: 400px;
+  object-fit: contain;
+}
+
+.plan-usine-analyzing-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(4px);
+  color: white;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.plan-usine-spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid rgba(255, 255, 255, 0.2);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: plan-usine-spin 0.8s linear infinite;
+}
+
+@keyframes plan-usine-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.plan-usine-detection-summary {
+  margin-top: 12px;
+  padding: 12px 16px;
+  background: color-mix(in srgb, var(--md-sys-color-primary) 15%, transparent);
+  border: 1px solid var(--md-sys-color-primary);
+  border-radius: 8px;
+  font-size: 13px;
+  color: var(--md-sys-color-on-surface);
+}
+
+.plan-usine-detection-summary h4 {
+  margin: 0 0 6px 0;
+  font-size: 13px;
+  color: var(--md-sys-color-primary);
+  font-weight: 600;
+}
+
+.plan-usine-detection-summary p {
+  margin: 0;
+  line-height: 1.5;
+}
+
+.plan-usine-detection-summary strong {
+  color: var(--md-sys-color-primary);
+  font-weight: 600;
 }

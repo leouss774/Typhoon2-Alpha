@@ -28,7 +28,8 @@ ROOT_DIR = BASE_DIR.parent
 class Settings(BaseSettings):
     # Chemin absolu : la configuration reste identique que Uvicorn soit lancé
     # depuis la racine du dépôt ou depuis le dossier backend.
-    model_config = SettingsConfigDict(env_file=ROOT_DIR / ".env", extra="ignore")
+    # Le .env est dans backend/.env (pas à la racine du dépôt).
+    model_config = SettingsConfigDict(env_file=BASE_DIR / ".env", extra="ignore")
 
     # BDNB (aucune cle necessaire, confirme par un test reel - voir le guide)
     bdnb_api_key: str | None = None
@@ -80,7 +81,7 @@ class Settings(BaseSettings):
     # code entierement plutot que juste desactive.
 
     # Divers
-    http_timeout_seconds: float = 15.0
+    http_timeout_seconds: float = 30.0  # Augmenté pour éviter les timeouts sur les services lents
 
 
 settings = Settings()

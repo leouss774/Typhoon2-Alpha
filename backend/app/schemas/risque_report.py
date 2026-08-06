@@ -82,6 +82,15 @@ class RecommandationsIA(BaseModel):
 # Rapport complet
 # ---------------------------------------------------------------------------
 
+class TypeBatiment(BaseModel):
+    """Résultat de la détection du type de bâtiment via Overpass (OSM)."""
+    type: str = "inconnu"             # "industriel" | "residentiel" | "inconnu"
+    confiance: float = 0.0            # 0-1
+    tags: dict[str, Any] = {}         # tags OSM trouvés
+    nom: str | None = None            # nom du bâtiment si disponible
+    erreur: str | None = None
+
+
 class RisqueReport(BaseModel):
     adresse_saisie: str
     adresse_normalisee: str
@@ -93,6 +102,7 @@ class RisqueReport(BaseModel):
     aleas: list[AleaDetail]
     erreurs_partielles: list[str] = []  # ex: ["sismicite: timeout Géorisques"]
     recommandations: RecommandationsIA | None = None  # None si Mistral absent/en erreur
+    type_batiment: TypeBatiment | None = None  # détection Overpass (usine vs maison)
     avertissement: str = (
         "Ce rapport agrège les données publiques Géorisques (BRGM / MTE). "
         "Il ne remplace pas l'État des Risques (ERRIAL) obligatoire à la vente/location."

@@ -271,11 +271,16 @@ async function fetchWfsLayer(typeName: string, codeInsee: string): Promise<{ fea
   url.searchParams.set('REQUEST', 'GetFeature');
   url.searchParams.set('TYPENAMES', typeName);
   url.searchParams.set('OUTPUTFORMAT', 'application/json');
-  url.searchParams.set('CQL_FILTER', `code_insee='${codeInsee}'`);
+  // Géorisques WFS attend INSEE_COM (sans quotes) et non code_insee
+  url.searchParams.set('CQL_FILTER', `INSEE_COM=${codeInsee}`);
   url.searchParams.set('COUNT', '50');
 
   const resp = await fetch(url.toString());
-  if (!resp.ok) throw new Error(`WFS ${typeName} HTTP ${resp.status}`);
+  if (!resp.ok) {
+    const text = await resp.text();
+    console.error(`WFS ${typeName} HTTP ${resp.status}:`, text);
+    throw new Error(`WFS ${typeName} HTTP ${resp.status}`);
+  }
   return (await resp.json()) as { features?: unknown[] };
 }
 

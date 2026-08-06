@@ -44,6 +44,7 @@ async def reverse_geocode(client: httpx.AsyncClient, lat: float, lon: float) -> 
         # URL reverse dérivée de l'URL de geocodage direct
         settings.geocoding_url.replace("/search", "/reverse"),
         params={"lon": lon, "lat": lat},
+        timeout=10.0,
     )
     response.raise_for_status()
     data = response.json()
@@ -76,6 +77,7 @@ async def geocode_address(client: httpx.AsyncClient, address: str) -> GeocodeRes
     response = await client.get(
         settings.geocoding_url,
         params={"q": address, "limit": 1},
+        timeout=10.0,  # Timeout explicite pour le géocodage
     )
     response.raise_for_status()
     data = response.json()
@@ -114,6 +116,7 @@ async def search_municipalities(
     response = await client.get(
         settings.geocoding_url,
         params={"q": q, "type": "municipality", "limit": limit},
+        timeout=10.0,
     )
     response.raise_for_status()
     data = response.json()

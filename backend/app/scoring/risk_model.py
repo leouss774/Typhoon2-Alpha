@@ -37,6 +37,12 @@ from app.core.logging import get_logger
 
 logger = get_logger(__name__)
 
+# Import tardif pour éviter les cycles d'import (industry_extensions importe risk_model)
+def _get_industry_scores(building_data):
+    """Charge les extensions industrielles à la demande."""
+    from app.scoring.industry_extensions import compute_industry_scores
+    return compute_industry_scores(building_data)
+
 ZONE_NAMES = ["fondations", "murs_nord", "murs_sud", "murs_est", "murs_ouest", "toiture", "sous_sol"]
 
 # ---------------------------------------------------------------------------
@@ -677,6 +683,9 @@ def _score_global(zones: dict[str, dict[str, Any]]) -> int:
     return _clamp(total)
 
 
+_INDUSTRIAL_ALEA_KEYS = ["icpe", "ssp", "pprt", "risque_technologique"]
+
+
 def compute_risk_scores(building_data: dict[str, Any]) -> dict[str, Any]:
     """Point d'entrée du scoring_agent.
 
@@ -712,15 +721,54 @@ def compute_risk_scores(building_data: dict[str, Any]) -> dict[str, Any]:
     confidence = _compute_confidence(sources_2025)
     logger.info("  -> confiance = %d (%s)", confidence["score"], confidence["niveau"])
 
+    # --- Extensions industrielles/technologiques (ICPE, SSP, PPRT, TMD) ---
+    # Toujours calculées, même pour un usage résidentiel : une usine SEVESO
+    # voisine impacte le risque du quartier. Pour les usines détectées,
+    # ajoute aussi des zones spécifiques (charpente, équipements, stockage,
+    # cuves) et une détection du type de bâtiment.
+    try:
+        industry = _get_industry_scores(building_data)
+        logger.info(
+            "scoring industriel -- est_industriel=%s, score_techno=%d",
+            industry["est_industriel"], industry["score_technologique_global"],
+        )
+    except Exception as exc:
+        logger.warning("scoring industriel -- échec (extensions ignorées): %s", exc)
+        industry = {
+            "est_industriel": False,
+            "type_batiment": {"type": None, "est_industriel": False, "source": None, "raison": f"erreur: {exc}"},
+            "risques_technologiques": {},
+            "zones_industrielles": {},
+            "score_technologique_global": 0,
+            "sources_tracking": [],
+        }
+
+    # Ajouter les aléas technologiques à risques_par_alea (pour le frontend)
+    risques_par_alea_2025_avec_tech = dict(risques_par_alea_2025)
+    risques_par_alea_2025_avec_tech.update(industry["risques_technologiques"])
+
+    # Intégrer les zones industrielles dans les zones si détectées
+    zones_2025_avec_industrie = dict(zones_2025)
+    zones_2025_avec_industrie.update(industry["zones_industrielles"])
+
+    # Ajouter les sources technologiques au tracking de confiance
+    sources_2025_avec_tech = list(sources_2025) + industry["sources_tracking"]
+
     return {
         "score_global": score_2025,
-        "zones": zones_2025,
-        "risques_par_alea": risques_par_alea_2025,
+        "zones": zones_2025_avec_industrie,
+        "risques_par_alea": risques_par_alea_2025_avec_tech,
         "projection_2050": {
             "score_global": score_2050,
             "zones": zones_2050,
             "risques_par_alea": risques_par_alea_2050,
         },
         "confidence": confidence,
-        "sources": sources_2025,
+        "sources": sources_2025_avec_tech,
+        # --- Extensions industrielles ---
+        "est_industriel": industry["est_industriel"],
+        "type_batiment": industry["type_batiment"],
+        "zones_industrielles": industry["zones_industrielles"],
+        "risques_technologiques": industry["risques_technologiques"],
+        "score_technologique_global": industry["score_technologique_global"],
     }

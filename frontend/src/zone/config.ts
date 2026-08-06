@@ -123,6 +123,14 @@ export interface AleaDetail {
   erreur?: string | null;
 }
 
+export interface TypeBatiment {
+  type: string;             // "industriel" | "residentiel" | "inconnu"
+  confiance: number;        // 0-1
+  tags?: Record<string, unknown>;
+  nom?: string | null;
+  erreur?: string | null;
+}
+
 export interface RisqueReport {
   adresse_saisie: string;
   adresse_normalisee: string;
@@ -133,6 +141,7 @@ export interface RisqueReport {
   alea_count: number;
   aleas: AleaDetail[];
   erreurs_partielles: string[];
+  type_batiment?: TypeBatiment | null;  // détection Overpass (usine vs maison)
   avertissement?: string;
 }
 
