@@ -29,6 +29,14 @@ function zoneScore(zone: RecommendationZone): number | null {
   return null;
 }
 
+/* Les 4 façades (murs_nord/sud/est/ouest) partagent le même modèle de risque
+   côté backend (risk_model.py::_score_global) — on les fusionne en une seule
+   entrée « Murs » plutôt que d'afficher 4 lignes quasi identiques. */
+const MURS_GROUP_KEY = 'murs';
+function groupKey(key: string): string {
+  return key.startsWith('murs_') ? MURS_GROUP_KEY : key;
+}
+
 type ZoneEntry = { key: string; label: string; score: number; band: D03Band; aleaPrincipal?: string };
 
 function polarPoint(cx: number, cy: number, r: number, angle: number): [number, number] {
@@ -36,10 +44,12 @@ function polarPoint(cx: number, cy: number, r: number, angle: number): [number, 
 }
 
 function RadarChart({ entries }: { entries: ZoneEntry[] }) {
-  const size = 280;
-  const cx = size / 2;
-  const cy = size / 2;
-  const maxR = 92;
+  const w = 300;
+  const h = 240;
+  const cx = w / 2;
+  const cy = h / 2;
+  const maxR = 58;
+  const labelR = maxR + 34;
   const n = entries.length;
 
   const ringPolygon = (r: number) =>
@@ -53,7 +63,7 @@ function RadarChart({ entries }: { entries: ZoneEntry[] }) {
   const dataPolygon = dataPoints.map((p) => p.join(',')).join(' ');
 
   return (
-    <svg viewBox={`0 0 ${size} ${size + 24}`} className="risk-radar-svg" role="img" aria-label="Radar des scores de risque par zone">
+    <svg viewBox={`0 0 ${w} ${h}`} className="risk-radar-svg" role="img" aria-label="Radar des scores de risque par zone">
       {[0.25, 0.5, 0.75, 1].map((f) => (
         <polygon key={f} points={ringPolygon(maxR * f)} className="risk-radar-ring" />
       ))}
@@ -63,10 +73,10 @@ function RadarChart({ entries }: { entries: ZoneEntry[] }) {
       })}
       <polygon points={dataPolygon} className="risk-radar-area" />
       {dataPoints.map((p, i) => (
-        <circle key={i} cx={p[0]} cy={p[1]} r={3.5} className="risk-radar-dot" />
+        <circle key={i} cx={p[0]} cy={p[1]} r={2.5} className="risk-radar-dot" />
       ))}
       {entries.map((e, i) => {
-        const [x, y] = polarPoint(cx, cy, maxR + 22, (2 * Math.PI * i) / n - Math.PI / 2);
+        const [x, y] = polarPoint(cx, cy, labelR, (2 * Math.PI * i) / n - Math.PI / 2);
         const anchor = Math.abs(x - cx) < 4 ? 'middle' : x > cx ? 'start' : 'end';
         return (
           <text key={i} x={x} y={y} textAnchor={anchor} dominantBaseline="middle" className="risk-radar-label">
@@ -120,14 +130,29 @@ export function ComprendreRisques({
   }, [open]);
 
   const entries = useMemo<ZoneEntry[]>(() => {
-    return Object.entries(zones || {})
-      .map(([key, zone]) => {
-        const score = zoneScore(zone);
-        if (score == null) return null;
-        const band = zone.niveau ? bandForKey(zone.niveau) || bandForScore(score) : bandForScore(score);
-        return { key, label: formatZoneLabel(key), score, band, aleaPrincipal: zone.alea_principal } as ZoneEntry;
+    const groups = new Map<string, { scores: number[]; niveaux: string[]; aleaPrincipal?: string }>();
+    Object.entries(zones || {}).forEach(([key, zone]) => {
+      const score = zoneScore(zone);
+      if (score == null) return;
+      const gKey = groupKey(key);
+      const group = groups.get(gKey) || { scores: [], niveaux: [] };
+      group.scores.push(score);
+      if (zone.niveau) group.niveaux.push(zone.niveau);
+      if (!group.aleaPrincipal && zone.alea_principal) group.aleaPrincipal = zone.alea_principal;
+      groups.set(gKey, group);
+    });
+
+    return [...groups.entries()]
+      .map(([key, group]) => {
+        const score = Math.round(group.scores.reduce((sum, s) => sum + s, 0) / group.scores.length);
+        const worstNiveau = group.niveaux.reduce<string | undefined>(
+          (worst, n) => (worst == null || (NIVEAU_SCORE[n] ?? 0) > (NIVEAU_SCORE[worst] ?? 0) ? n : worst),
+          undefined,
+        );
+        const band = worstNiveau ? bandForKey(worstNiveau) || bandForScore(score) : bandForScore(score);
+        const label = key === MURS_GROUP_KEY ? 'Murs' : formatZoneLabel(key);
+        return { key, label, score, band, aleaPrincipal: group.aleaPrincipal } as ZoneEntry;
       })
-      .filter((e): e is ZoneEntry => e !== null)
       .sort((a, b) => b.score - a.score);
   }, [zones]);
 
