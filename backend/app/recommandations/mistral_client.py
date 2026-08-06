@@ -26,8 +26,12 @@ from app.core.config import settings
 
 CHAT_MODEL = "mistral-small-latest"
 EMBED_MODEL = "mistral-embed"
-REQUEST_TIMEOUT_MS = 300_000  # 5 minutes, cf. repo source (chunks volumineux)
-THROTTLE_SECONDS = 0.3  # reduit : le retry backoff gere les rares 429
+# 15s : assez long pour une reponse Mistral normale, assez court pour
+# basculer rapidement sur le fallback déterministe (recommandations/fallback.py)
+# quand l'API est lente ou down. 5 min (ancienne valeur) faisait attendre
+# l'utilisateur >10 min quand Mistral est indisponible.
+REQUEST_TIMEOUT_MS = 15_000
+THROTTLE_SECONDS = 0.1  # reduit : le fallback prend le relais en cas de 429
 
 # Limite a 1000 tokens pour forcer la concision des recommandations
 # (cf. amelioration_recommandation.md, section 2)
@@ -61,11 +65,11 @@ def _is_rate_limit_error(e: Exception) -> bool:
 
 def _backoff_seconds(e: Exception, attempt: int) -> float:
     if _is_rate_limit_error(e):
-        return min(60, 20 * (attempt + 1))
-    return 5 * (attempt + 1)
+        return min(2, 1.5 * (attempt + 1))
+    return 0.5 * (attempt + 1)
 
 
-def chat_json(system_prompt: str, user_prompt: str, max_retries: int = 5) -> dict:
+def chat_json(system_prompt: str, user_prompt: str, max_retries: int = 1) -> dict:
     """Appelle le modele de chat Mistral et force une reponse JSON."""
     client = get_client()
     last_err: Exception | None = None
@@ -93,7 +97,7 @@ def chat_json(system_prompt: str, user_prompt: str, max_retries: int = 5) -> dic
     raise RuntimeError(f"Echec appel Mistral (chat) apres {max_retries} tentatives: {last_err}")
 
 
-def chat_text(system_prompt: str, messages: list[dict], max_retries: int = 5) -> str:
+def chat_text(system_prompt: str, messages: list[dict], max_retries: int = 2) -> str:
     """Appelle le modele de chat Mistral en texte libre, multi-tours.
 
     `messages` : liste de {"role": "user"|"assistant", "content": str}
@@ -127,7 +131,7 @@ def chat_text(system_prompt: str, messages: list[dict], max_retries: int = 5) ->
     raise RuntimeError(f"Echec appel Mistral (chat_text) apres {max_retries} tentatives: {last_err}")
 
 
-def embed_texts(texts: list[str], max_retries: int = 5) -> list[list[float]]:
+def embed_texts(texts: list[str], max_retries: int = 1) -> list[list[float]]:
     client = get_client()
     last_err: Exception | None = None
     for attempt in range(max_retries):

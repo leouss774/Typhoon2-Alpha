@@ -61,8 +61,11 @@ export default function HomePage() {
             et professionnels qualifiés pour vos travaux.
           </p>
           <div className={styles.heroCtas}>
-            <Link href="/artisans" className="btn btn-primary" style={{ fontSize: 15, padding: "15px 26px" }}>
+            <Link href="/artisans" className="btn btn-primary btn-lg">
               🔍 Rechercher des artisans
+            </Link>
+            <Link href="/economie" className="btn btn-ghost btn-lg" style={{ background: "rgba(255,255,255,0.9)" }}>
+              💶 Calculer mon retour sur investissement
             </Link>
           </div>
         </div>
@@ -98,9 +101,9 @@ export default function HomePage() {
             desc="Aucune donnée inventée. Toutes les informations proviennent des API open data de l'ADEME et de la Direction Générale des Entreprises."
           />
           <FeatureCard
-            icon="📱"
-            title="6. Rapport professionnel"
-            desc="Rapport consolidé avec vue filtrée RGE / Non-RGE, détails des scores, coordonnées et sites web des entreprises."
+            icon="💶"
+            title="6. Retour sur investissement"
+            desc="Coût sourcé des travaux, subventions FPRNM, bénéfices assurantiels et perte annuelle moyenne : le temps de retour de vos travaux de résilience, sans aucun montant inventé."
           />
         </div>
       </section>

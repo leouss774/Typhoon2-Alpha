@@ -158,7 +158,14 @@ def _load_department_file(department_code: str) -> pd.DataFrame:
 
 
 def lookup_dvf(citycode: str, max_rows: int = 20) -> list[dict]:
-    """Retourne les dernieres transactions DVF connues pour la commune."""
+    """Retourne les dernieres transactions DVF connues pour la commune.
+
+    Filtre les ventes Maison/Appartement uniquement (les dependances et
+    locaux industriels n'ont pas de surface_reelle_bati exploitable pour
+    un prix au m2) et les ventes valides (nature_mutation == "Vente",
+    prix > 0, surface >= 9 m2) — c'est ce que le valuateur economique
+    (app/economie/valuateur.py) attend pour calculer un prix au m2 median.
+    """
     department_code = department_code_from_citycode(citycode)
     df = _load_department_file(department_code)
 
@@ -169,8 +176,13 @@ def lookup_dvf(citycode: str, max_rows: int = 20) -> list[dict]:
             f"Colonnes disponibles : {list(df.columns)[:15]}..."
         )
 
-    subset = df[df[commune_col].astype(str) == str(citycode)]
-    return subset.head(max_rows).to_dict(orient="records")
+    # Le code_commune dans le CSV geo-dvf est parfois sans zéro padding
+    # (ex. "6088" pour Nice au lieu de "06088") : on normalise les deux
+    # côtés à 5 caractères pour un matching fiable avec le citycode BAN.
+    citycode_norm = str(citycode).zfill(5)
+    subset = df[df[commune_col].astype(str).str.zfill(5) == citycode_norm]
+    valides = _filtrer_ventes_valides(subset, _TYPES_PRIX_M2)
+    return valides.head(max_rows).to_dict(orient="records")
 
 
 # Types de biens retenus pour un prix au m2 comparable (on exclut

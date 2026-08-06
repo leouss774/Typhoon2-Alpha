@@ -532,6 +532,16 @@ export default function ArtisanMatcher() {
             </div>
           </div>
 
+          {/* Navigation rapide */}
+          <div className={styles.quickNav}>
+            <span className={styles.quickNavLabel}>📋 Aller à :</span>
+            {recosFiltrees.map((item, idx) => (
+              <a key={item.cle || idx} href={`#reco-${idx}`} className={styles.quickNavLink}>
+                {idx + 1}. {item.libelle || item.domaine_recherche || item.cle || "Recommandation"}
+              </a>
+            ))}
+          </div>
+
           {/* Cards */}
           {recosFiltrees.length > 0 ? (
             recosFiltrees.map((item, idx) => (

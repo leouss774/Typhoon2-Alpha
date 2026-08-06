@@ -7,10 +7,16 @@ import styles from "./Header.module.css";
 const NAV_ITEMS = [
   { href: "/", label: "Accueil" },
   { href: "/artisans", label: "Artisans" },
+  { href: "/economie", label: "Économie" },
 ] as const;
 
 export default function Header() {
   const pathname = usePathname();
+  const baseline = pathname.startsWith("/artisans")
+    ? "Matching Artisans"
+    : pathname.startsWith("/economie")
+      ? "Retour sur investissement"
+      : "Diagnostic climatique";
 
   return (
     <header className={styles.header}>
@@ -32,7 +38,7 @@ export default function Header() {
         </div>
         <div>
           <div className={styles.name}>TYPHOON</div>
-          <div className={styles.baseline}>Matching Artisans</div>
+          <div className={styles.baseline}>{baseline}</div>
         </div>
       </Link>
       <nav className={styles.nav}>

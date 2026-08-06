@@ -160,7 +160,22 @@ async def run_diagnostic_recommandations(payload: DiagnosticRecommandationsReque
 
     try:
         state.update(await recommandations_agent.run(state))
-        state.update(await asyncio.to_thread(interpretation_agent.run, state))
+        # L'interpretation_agent (LLM, ~2-3s par zone) est sautee quand les
+        # recommandations viennent du fallback déterministe (Mistral down) :
+        # elle ajoute ~20s au pipeline et le proxy Next.js (timeout 30s)
+        # coupe la connexion avant la fin → le front passe au calcul
+        # économique sans recommandations → coût des travaux = 0.
+        # Le fallback produit déjà des recommandations chiffrées et sourcées.
+        _a_fallback = any(
+            (z.get("recommandations") or []) and
+            (z.get("recommandations")[0].get("sources") or []) and
+            str((z.get("recommandations")[0].get("sources") or [{}])[0].get("fiche_id", "")).startswith("REF-")
+            for z in state.get("risk_scores", {}).get("zones", {}).values()
+        )
+        if not _a_fallback:
+            state.update(await asyncio.to_thread(interpretation_agent.run, state))
+        else:
+            logger.info("diagnostic/recommandations -- fallback actif, interpretation_agent sautée (gain ~20s)")
         state.update(digital_twin_agent.run(state))
     except Exception as exc:
         logger.exception("diagnostic/recommandations -- echec")
