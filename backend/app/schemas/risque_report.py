@@ -92,6 +92,8 @@ class RisqueReport(BaseModel):
     alea_count: int                   # nombre d'aléas présents (present=True)
     aleas: list[AleaDetail]
     erreurs_partielles: list[str] = []  # ex: ["sismicite: timeout Géorisques"]
+    bdnb: dict | None = None          # fiche BDNB (batiment_groupe_complet) — None si indisponible
+                                      # (alimente l'étape 3 « Analyse » du frontend)
     recommandations: RecommandationsIA | None = None  # None si Mistral absent/en erreur
     avertissement: str = (
         "Ce rapport agrège les données publiques Géorisques (BRGM / MTE). "
