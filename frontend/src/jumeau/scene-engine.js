@@ -1585,6 +1585,23 @@ let currentYear = 2025;
 // (demo, JSON importe) qui n'ont pas de second appel a attendre.
 let recommandationsReady = true;
 
+// ---- Pont lecture-seule vers les vues React (ex. Vue d'ensemble des
+// recommandations) : aucune donnee reseau supplementaire — on re-emet une
+// copie de ce qui est deja en memoire (rawData) sous forme d'evenement DOM
+// + snapshot sur window. La vue React s'abonne a l'evenement (ou lit le
+// snapshot au montage si l'evenement est deja passe).
+function notifyRecommandationsUpdated() {
+  if (!rawData) return;
+  const snapshot = {
+    adresse: rawData.adresse || '',
+    score_global: rawData.score_global ?? null,
+    zones: rawData.zones || {},
+    projection_2050: rawData.projection_2050 || null,
+  };
+  window.__typhoonDiagnostic = snapshot;
+  window.dispatchEvent(new CustomEvent('typhoon:recommandationsUpdated', { detail: snapshot }));
+}
+
 function loadDataset(data) {
   rawData = data;
   recommandationsReady = !data._resume;
@@ -1625,6 +1642,7 @@ function loadDataset(data) {
   }
   document.getElementById('info-panel').style.display = 'none';
   setYear(2025, true);
+  notifyRecommandationsUpdated();
 }
 
 // ---- Chargement en 2 temps (maison immediate, recommandations en fond) ----
@@ -1667,6 +1685,7 @@ function mergeRecommandations(fullContract) {
       showZonePanel(infoPanel.dataset.zone);
     }
   }
+  notifyRecommandationsUpdated();
 }
 
 function fetchRecommandations(apiBase, fastContract) {
