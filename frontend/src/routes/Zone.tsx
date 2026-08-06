@@ -728,7 +728,12 @@ export function Zone() {
 
             {/* ÉTAPE 4 — JUMEAU BIM (viewer 3D thingraph/bim-viewer en iframe) */}
             <section className="zone-bim" hidden={step !== 3}>
-              <ZoneBIM report={report} />
+              <ZoneBIM
+                report={report}
+                recommendationZones={detailedRecommendationZones}
+                recommendationZonesLoading={detailedRecommendationsLoading}
+                recommendationZonesError={detailedRecommendationsError}
+              />
             </section>
 
             {/* ÉTAPE 5 — RAPPORT IA (Mistral) */}

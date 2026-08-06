@@ -11,14 +11,24 @@
 // =============================================================================
 
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import type { RisqueReport } from '../zone/config';
 import { API } from '../zone/config';
+import { ComprendreRisques } from './ComprendreRisques';
+import type { RecommendationZone } from '../jumeau/recommendations';
 
-export function ZoneBIM({ report }: { report: RisqueReport | null }) {
+export function ZoneBIM({
+  report,
+  recommendationZones = {},
+  recommendationZonesLoading = false,
+  recommendationZonesError = null,
+}: {
+  report: RisqueReport | null;
+  recommendationZones?: Record<string, RecommendationZone>;
+  recommendationZonesLoading?: boolean;
+  recommendationZonesError?: string | null;
+}) {
   const [loaded, setLoaded] = useState(false);
   const [attempt, setAttempt] = useState(0);
-  const navigate = useNavigate();
 
   /* Nouveau diagnostic ou rechargement manuel → on réaffiche le voile de
      chargement le temps que l'iframe remonte. */
@@ -56,16 +66,11 @@ export function ZoneBIM({ report }: { report: RisqueReport | null }) {
           </p>
         </div>
         <div className="bim-actions">
-          <md-elevated-button
-            className="bim-action"
-            aria-label="Ouvrir le jumeau risques 3D pour cette adresse"
-            onClick={() =>
-              navigate(`/jumeau?adresse=${encodeURIComponent(report.adresse_saisie)}`)
-            }
-          >
-            <md-icon slot="icon">warning</md-icon>
-            Jumeau risques
-          </md-elevated-button>
+          <ComprendreRisques
+            zones={recommendationZones}
+            loading={recommendationZonesLoading}
+            error={recommendationZonesError}
+          />
           <md-filled-button
             className="bim-action"
             aria-label="Recharger le modèle 3D"
