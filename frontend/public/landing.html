@@ -168,6 +168,15 @@
           width: 10rem;
         }
       }
+      .preloader {
+        transition: opacity .85s ease, transform .85s ease;
+        will-change: opacity, transform;
+      }
+      .preloader.is-hidden {
+        opacity: 0;
+        transform: translateY(-10px) scale(.99);
+        pointer-events: none;
+      }
     </style>
     <style>
       @font-face { font-family: 'Neue Montreal'; src: url('vetter-consulting/assets/fonts/66a20363e5bbc5dbaa1b595a_PPNeueMontreal-Light.otf') format('opentype'); font-weight: 200; font-style: normal; font-display: swap; }
@@ -1163,6 +1172,32 @@ requestAnimationFrame(raf)
             if (saved.toLowerCase() !== '#4386b1') recolorIcons(saved);
           }
         } catch (e) {}
+      }
+    })();
+    </script>
+    <script>
+    (function () {
+      var PRELOADER_TIMEOUT_MS = 4000;
+      var PRELOADER_FADE_MS = 900;
+
+      function hidePreloader() {
+        var preloader = document.querySelector('.preloader');
+        if (!preloader) return;
+        preloader.classList.add('is-hidden');
+        preloader.setAttribute('aria-hidden', 'true');
+        window.setTimeout(function () {
+          preloader.style.display = 'none';
+        }, PRELOADER_FADE_MS);
+      }
+
+      function scheduleHide() {
+        setTimeout(hidePreloader, PRELOADER_TIMEOUT_MS);
+      }
+
+      if (document.readyState === 'complete') {
+        scheduleHide();
+      } else {
+        window.addEventListener('load', scheduleHide, { once: true });
       }
     })();
     </script>
