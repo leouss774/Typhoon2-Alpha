@@ -6,6 +6,41 @@
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
     <title>Typhoon - Evaluation des Risques Climatiques</title>
     <script>
+    /* Filet de securite local : l'animation de prechargement provient d'un
+       export Webflow et peut ne jamais se terminer si son runtime echoue.
+       La page doit rester accessible meme dans ce cas. */
+    (function () {
+      var closed = false;
+      var closePreloader = function () {
+        if (closed) return;
+        var preloader = document.querySelector('.preloader');
+        if (!preloader) return;
+        closed = true;
+        preloader.style.pointerEvents = 'none';
+        preloader.style.transition = 'opacity 300ms ease';
+        preloader.style.opacity = '0';
+        window.setTimeout(function () {
+          preloader.style.display = 'none';
+          document.documentElement.style.overflow = '';
+          document.body.style.overflow = '';
+        }, 320);
+      };
+
+      /* Webflow dispose d'abord d'un bref delai pour jouer son animation. */
+      window.setTimeout(closePreloader, 2200);
+      window.addEventListener('load', function () {
+        window.setTimeout(closePreloader, 1200);
+      });
+
+      /* Echappatoire immediate, utile notamment avec les animations reduites. */
+      document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape') closePreloader();
+      });
+      document.addEventListener('click', function (event) {
+        if (event.target.closest && event.target.closest('.preloader')) closePreloader();
+      });
+    })();
+
     (function () {
       var t, a;
       try { t = localStorage.getItem('typhoon-theme'); a = localStorage.getItem('typhoon-accent'); } catch (e) {}
@@ -177,7 +212,35 @@
       @font-face { font-family: 'Neue Montreal'; src: url('vetter-consulting/assets/fonts/66a20363e5bbc5dbaa1b5959_PPNeueMontreal-SemiBold.otf') format('opentype'); font-weight: 600; font-style: normal; font-display: swap; }
       @font-face { font-family: 'Neue Montreal'; src: url('vetter-consulting/assets/fonts/66a20363e5bbc5dbaa1b595e_PPNeueMontreal-Bold.otf') format('opentype'); font-weight: 700; font-style: normal; font-display: swap; }
       .w-webflow-badge { display: none !important; }
-      html, body { margin: 0; padding: 0; } .hero-wrapper.v2 { isolation: isolate; } .hero-layer-video { position: absolute; inset: 0; z-index: 2; overflow: hidden; pointer-events: none; opacity: 0.6; background: #000; } .hero-layer-video iframe, .hero-layer-video video { width: 100%; height: 100%; border: 0; transform: scale(1.18); transform-origin: center; object-fit: cover; display: block; }       .hero-layer-1 { z-index: 0; }
+      html, body { margin: 0; padding: 0; }
+      .hero-wrapper.v2 { isolation: isolate; }
+      .hero-layer-video {
+        position: absolute;
+        inset: 0;
+        z-index: 2;
+        overflow: hidden;
+        pointer-events: none;
+        opacity: 0.6;
+        background: #000;
+      }
+      .hero-layer-video iframe,
+      .hero-layer-video video {
+        width: 100%;
+        height: 100%;
+        border: 0;
+        transform: scale(1.18);
+        transform-origin: center;
+        object-fit: cover;
+        display: block;
+      }
+      .hero-layer-1 {
+        z-index: 0;
+        background: #080808 url('vetter-consulting/assets/img/66a20363e5bbc5dbaa1b59ac_VC%2520GmbH%2520-%2520Shooting%2520-%2520022024-272.webp') center / cover no-repeat;
+      }
+      /* L'export a conserve les caracteres "%20" dans le nom physique du
+         fichier. On masque l'ancienne balise qui demandait une URL decodee
+         inexistante et on utilise ci-dessus le chemin correctement encode. */
+      .hero-layer-1 > .hero-img.v2 { display: none; }
     </style>
     <style>
       /* ---- Boutons bascule clair / sombre + couleur d'accent (à côté du timer) ---- */
