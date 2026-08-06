@@ -48,7 +48,8 @@ export default function App() {
     location.pathname === '/faq' ||
     location.pathname === '/contact' ||
     location.pathname === '/zone' ||
-    location.pathname === '/jumeau';
+    location.pathname === '/jumeau' ||
+    location.pathname === '/artisans';
   return (
     <div>
       {!fullscreen && <TopNav />}
