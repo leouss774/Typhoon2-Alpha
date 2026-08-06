@@ -1,0 +1,243 @@
+/* Container principal */
+.container {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 20px;
+  box-shadow: var(--shadow);
+}
+
+/* Sélecteur de profil */
+.profileSelector {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.profileLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.profileIcon {
+  font-size: 20px;
+}
+
+.profileText {
+  font-size: 14px;
+}
+
+.profileButtons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.profileButton {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.profileButton:hover {
+  border-color: var(--brand);
+  transform: translateY(-1px);
+}
+
+.profileButtonActive {
+  background: linear-gradient(135deg, var(--brand-light), #fff);
+  border-color: var(--brand);
+  color: var(--brand-dark);
+  font-weight: 700;
+}
+
+.profileButtonIcon {
+  font-size: 16px;
+}
+
+.profileButtonLabel {
+  font-size: 12.5px;
+}
+
+/* Panneau d'explication */
+.explanationPanel {
+  background: linear-gradient(135deg, #E8F5F0, #F0F8FF);
+  border: 1px solid rgba(31, 157, 108, 0.2);
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 20px;
+}
+
+.explanationHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.explanationIcon {
+  font-size: 24px;
+}
+
+.explanationTitle {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--ink);
+}
+
+.explanationText {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.6;
+}
+
+/* Grille des indicateurs */
+.indicatorsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 14px;
+}
+
+/* Carte indicateur */
+.indicatorCard {
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.indicatorCard:hover {
+  border-color: var(--brand);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(30, 42, 51, 0.08);
+}
+
+.indicatorCardActive {
+  background: #fff;
+  border-color: var(--brand);
+  box-shadow: 0 8px 24px rgba(255, 107, 74, 0.12);
+}
+
+.indicatorHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 8px;
+}
+
+.indicatorTitle {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+  flex: 1;
+}
+
+.indicatorBadge {
+  font-size: 16px;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+
+.indicatorCard:hover .indicatorBadge {
+  opacity: 1;
+}
+
+.indicatorSimple {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+/* Détails de l'indicateur */
+.indicatorDetail {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px dashed var(--border);
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.indicatorExplanation {
+  margin: 0 0 12px;
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.6;
+}
+
+.indicatorTechnical {
+  background: #FFFDF5;
+  border: 1px solid #F0DDB0;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 11.5px;
+  color: var(--text);
+  line-height: 1.5;
+}
+
+.indicatorTechnical strong {
+  color: var(--warning);
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.indicatorTechnical p {
+  margin: 6px 0 0;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .container {
+    padding: 18px;
+  }
+
+  .profileSelector {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .profileButtons {
+    width: 100%;
+  }
+
+  .profileButton {
+    flex: 1;
+    justify-content: center;
+  }
+
+  .indicatorsGrid {
+    grid-template-columns: 1fr;
+  }
+}

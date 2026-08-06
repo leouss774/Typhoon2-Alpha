@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { runEconomiePipeline } from "./api";
 import styles from "./EconomieDashboard.module.css";
 import type { EconomieContract, ResultatEconomie } from "./types";
+// Interface universelle - tous les utilisateurs voient la même interface
 
 /* ─────────────────────────── Formatage ─────────────────────────── */
 
@@ -45,7 +46,6 @@ export default function EconomieDashboard() {
   const [step, setStep] = useState(0);
   const [resultat, setResultat] = useState<ResultatEconomie | null>(null);
   const [errorDetail, setErrorDetail] = useState<string | null>(null);
-
   const contract = resultat?.contract ?? null;
 
   /* Animation des étapes pendant le pipeline réel. */
@@ -172,10 +172,9 @@ export default function EconomieDashboard() {
         <div className={styles.heroGlow} />
         <div className={styles.heroInner}>
           <div className={styles.heroText}>
-            <div className={styles.eyebrow}>💶 Résilience climatique</div>
+            <div className={styles.eyebrow}>Résilience climatique</div>
             <h1 className={styles.heroTitle}>Résultats du diagnostic</h1>
             <div className={styles.heroBadge}>
-              <span className={styles.badgeIcon}>✓</span>
               <span>Données sourcées et fiables</span>
             </div>
           </div>
@@ -183,7 +182,6 @@ export default function EconomieDashboard() {
           {/* KPIs principaux */}
           <div className={styles.kpiGrid}>
             <div className={styles.kpiCard}>
-              <div className={styles.kpiIcon}>💰</div>
               <div className={styles.kpiContent}>
                 <div className={styles.kpiLabel}>Coût net</div>
                 <div className={styles.kpiValue}>{fmtEur(niveau_b.cout_travaux.cout_net)}</div>
@@ -191,7 +189,6 @@ export default function EconomieDashboard() {
               </div>
             </div>
             <div className={styles.kpiCard}>
-              <div className={styles.kpiIcon}>📈</div>
               <div className={styles.kpiContent}>
                 <div className={styles.kpiLabel}>Bénéfice annuel</div>
                 <div className={styles.kpiValue}>{fmtEur(niveau_b.benefice_assurance.total)}</div>
@@ -199,7 +196,6 @@ export default function EconomieDashboard() {
               </div>
             </div>
             <div className={styles.kpiCard}>
-              <div className={styles.kpiIcon}>⏱️</div>
               <div className={styles.kpiContent}>
                 <div className={styles.kpiLabel}>Retour sur investissement</div>
                 <div className={styles.kpiValue}>{fmtAn(roi.temps_de_retour)}</div>
@@ -207,7 +203,6 @@ export default function EconomieDashboard() {
               </div>
             </div>
             <div className={`${styles.kpiCard} ${styles.kpiCardAccent}`}>
-              <div className={styles.kpiIcon}>🎯</div>
               <div className={styles.kpiContent}>
                 <div className={styles.kpiLabel}>Confiance</div>
                 <div className={styles.kpiValue}>{confidence.score}/100</div>
@@ -217,6 +212,41 @@ export default function EconomieDashboard() {
           </div>
         </div>
       </section>
+
+      {/* Guide de lecture universel */}
+      <div className={styles.universalGuide}>
+        <h3 className={styles.universalGuideTitle}>Comment lire ces résultats</h3>
+        <div className={styles.universalGuideGrid}>
+          <div className={styles.guideItem}>
+            <div className={styles.guideLabel}>Coût net</div>
+            <p className={styles.guideText}>
+              Montant à votre charge après déduction des aides (subventions FPRNM).
+              C'est l'investissement initial à prévoir.
+            </p>
+          </div>
+          <div className={styles.guideItem}>
+            <div className={styles.guideLabel}>Bénéfice annuel</div>
+            <p className={styles.guideText}>
+              Économies réalisées chaque année grâce à la réduction du risque.
+              Inclut les sinistres évités et les dommages moyens annuels évités.
+            </p>
+          </div>
+          <div className={styles.guideItem}>
+            <div className={styles.guideLabel}>Retour sur investissement</div>
+            <p className={styles.guideText}>
+              Durée nécessaire pour que les économies cumulées égalent le coût net.
+              Plus ce délai est court, plus l'investissement est rentable.
+            </p>
+          </div>
+          <div className={styles.guideItem}>
+            <div className={styles.guideLabel}>Confiance</div>
+            <p className={styles.guideText}>
+              Niveau de fiabilité des calculs (0-100). Un score élevé signifie des données
+              complètes et des résultats fiables. Un score faible indique des données manquantes.
+            </p>
+          </div>
+        </div>
+      </div>
 
       {/* Contenu principal */}
       <div className={styles.content}>
