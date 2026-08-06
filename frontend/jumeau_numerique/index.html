@@ -13,16 +13,12 @@
 <link rel="icon" type="image/svg+xml" href="assets/landing/SVG/logo-typhoon-blue.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600;700&family=Google+Sans+Code:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
 <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet" />
 <!-- turf.js : génération des isobandes (aplats de risque lissés, cf. #zone-map isoband-fill) -->
 <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
-<!-- Design system + comportements de la vitrine (clair, premium/tech) — partagé avec solutions.html.
-     100% vanilla JS (IntersectionObserver) : pas de GSAP, la page ne fait que des reveals et un
-     parallax léger, ce qui ne justifie pas une librairie d'animation. -->
-<link rel="stylesheet" href="assets/landing/site.css?v=8">
-<script src="assets/landing/site.js?v=8" defer></script>
+<script src="../api-config.js"></script>
 <style>
   :root {
     --brand: #316f96;
@@ -37,8 +33,8 @@
     --success: #1F9D6C;
     --warning: #D98A2B;
     --danger: #DC4B39;
-    --font-head: 'Source Serif 4', Georgia, 'Times New Roman', serif;
-    --font-body: 'Inter', 'Segoe UI', system-ui, sans-serif;
+    --font-head: 'Google Sans', 'Segoe UI', system-ui, sans-serif;
+    --font-body: 'Google Sans', 'Segoe UI', system-ui, sans-serif;
   }
   html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; background: #FFFFFF; font-family: var(--font-body); color: var(--ink); }
   h1, h2, h3, .typhoon-logo .name, #loading-title, #cert-heading, #devis-modal h2 { font-family: var(--font-head); }
@@ -363,301 +359,94 @@
      l'overlay, modale carte de prospection ci-dessous). ==================== */
   #home-screen {
     position: fixed; inset: 0; z-index: 150;
-    overflow-y: auto; -webkit-overflow-scrolling: touch; scroll-behavior: smooth;
+    background: #FFFFFF; overflow-y: auto; -webkit-overflow-scrolling: touch;
   }
-
-  #zone-explorer { max-width: 1180px; margin: 0 auto; padding: 76px 5vw 20px; text-align: center; }
-  #zone-explorer .section-eyebrow { color: #316f96; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px; }
-  #zone-explorer h2 { font-size: 30px; color: #1E2A33; margin: 0 0 12px 0; font-weight: 700; }
-  #zone-explorer .section-lead { color: #4B5760; font-size: 15px; max-width: 640px; margin: 0 auto 40px; line-height: 1.6; }
-
-  /* ===== Modale exploration de zone interactive ===== */
-  #zone-overlay {
-    position: fixed; inset: 0; z-index: 185;
-    display: none; align-items: center; justify-content: center;
-    padding: 24px; background: rgba(2, 6, 12, 0.72); backdrop-filter: blur(6px);
-    overflow-y: auto;
-  }
-  #zone-overlay.open { display: flex; }
-  #zone-modal {
-    width: 100%; max-width: 1280px; min-height: 0; height: 90vh; position: relative;
-    background: rgba(255, 255, 255, 0.97); border: 1px solid #DCE6EC; border-radius: 18px;
-    box-shadow: 0 24px 70px rgba(10, 18, 32, 0.30);
-    display: flex; flex-direction: column;
-  }
-  #zone-close-btn {
-    position: absolute; top: 14px; right: 14px; z-index: 20;
-    width: 34px; height: 34px; border-radius: 50%; border: 1px solid #DCE6EC;
-    background: rgba(255,255,255,0.9); color: #7C8791; cursor: pointer; font-size: 15px;
-  }
-  #zone-close-btn:hover { color: #1E2A33; border-color: #316f96; }
-  #zone-modal-header {
-    padding: 14px 50px 10px 24px; border-bottom: 1px solid #DCE6EC; flex-shrink: 0;
-    display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
-  }
-  #zone-modal-header .modal-title {
-    font-family: var(--font-head); font-size: 16px; font-weight: 700; color: var(--ink);
-  }
-  #zone-modal-header .modal-sub {
-    color: var(--muted); font-size: 12px;
-  }
-  #zone-modal-body {
-    flex: 1; display: flex; overflow: hidden; min-height: 0;
-  }
-  #zone-sidebar {
-    width: 380px; min-width: 380px; border-right: 1px solid var(--border);
-    display: flex; flex-direction: column; overflow: hidden; flex-shrink: 0;
-  }
-  #zone-sidebar-content {
-    flex: 1; overflow-y: auto; padding: 16px 18px;
-  }
-  #zone-map-container {
-    flex: 1; position: relative; background: #eaf0f4;
-  }
-  #zone-map { width: 100%; height: 100%; }
-  .user-location-marker { position: relative; width: 16px; height: 16px; }
-  .user-location-marker .ulm-dot {
-    position: absolute; inset: 4px; border-radius: 50%; background: #316f96; border: 2px solid #fff;
-    box-shadow: 0 0 6px rgba(0,0,0,0.35);
-  }
-  .user-location-marker .ulm-pulse {
-    position: absolute; inset: 0; border-radius: 50%; background: rgba(67,134,177,0.35);
-    animation: ulm-pulse-anim 1.8s ease-out infinite;
-  }
-  @keyframes ulm-pulse-anim {
-    0% { transform: scale(0.4); opacity: 0.8; }
-    100% { transform: scale(2.2); opacity: 0; }
-  }
-  .zone-section-label {
-    font-size: 11px; font-weight: 700; color: var(--muted);
-    text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px;
-  }
-  #zone-search-wrapper { position: relative; margin-bottom: 8px; }
-  #zone-city-input {
-    width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px;
-    font-size: 13px; color: var(--ink); background: var(--surface);
-    font-family: var(--font-body); outline: none; box-sizing: border-box;
-  }
-  #zone-city-input:focus { border-color: var(--brand); box-shadow: 0 0 0 3px rgba(67,134,177,0.12); }
-  #zone-city-input::placeholder { color: var(--muted); }
-  #zone-suggestions {
-    position: absolute; top: 100%; left: 0; right: 0; z-index: 50;
-    background: #fff; border: 1px solid var(--border); border-radius: 0 0 8px 8px;
-    max-height: 200px; overflow-y: auto; box-shadow: 0 6px 20px rgba(0,0,0,0.08);
-    display: none;
-  }
-  #zone-suggestions:empty { display: none; }
-  #zone-suggestions:not(:empty) { display: block; }
-  .ban-suggestion {
-    padding: 9px 12px; font-size: 12.5px; color: var(--text); cursor: pointer;
-    border-bottom: 1px solid #eaf0f4; transition: background .1s;
-  }
-  .ban-suggestion:last-child { border-bottom: none; }
-  .ban-suggestion:hover { background: var(--brand-light); color: var(--brand-dark); }
-  #zone-assess-btn {
-    width: 100%; padding: 12px 16px; border-radius: 10px;
-    background: var(--brand); color: #fff; border: none;
-    font-weight: 700; font-size: 13px; cursor: pointer;
-    transition: background .15s; font-family: var(--font-body); margin-bottom: 14px;
-  }
-  #zone-assess-btn:hover { background: var(--brand-dark); }
-  #zone-assess-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-
-  /* ---- Loading ---- */
-  #zone-loading { display: none; margin-bottom: 14px; }
-  #zone-loading.visible { display: block; }
-  .zone-loading-bar { height: 4px; border-radius: 999px; background: rgba(231,222,214,0.4); overflow: hidden; margin-bottom: 6px; }
-  .zone-loading-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #bfe0ee, var(--brand)); border-radius: 999px; transition: width .3s ease; }
-  .zone-loading-text { color: var(--muted); font-size: 11px; text-align: center; }
-
-  /* ---- Results ---- */
-  #zone-results { display: none; }
-  #zone-results.visible { display: block; }
-  .zone-rating-card {
-    background: linear-gradient(135deg, rgba(67,134,177,0.08), rgba(31,157,108,0.05));
-    border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; margin-bottom: 14px;
-  }
-  .zone-rating-row { display: flex; justify-content: space-between; align-items: center; }
-  .zone-rating-label { color: var(--muted); font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
-  .zone-rating-value { font-size: 22px; font-weight: 800; }
-  .zone-rating-badge { font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 999px; }
-  .badge-faible { background: #E4F5EC; color: #1F9D6C; }
-  .badge-modere { background: #FBEED9; color: #D98A2B; }
-  .badge-eleve { background: #FDE7E2; color: #DC4B39; }
-  .badge-critique { background: #FDD8D4; color: #C0392B; }
-  .zone-rating-meta { color: var(--text); font-size: 11px; margin-top: 6px; }
-
-  /* ---- Annonces à proximité (remplace l'ancien détail par péril de la
-     sidebar, jugé peu utile : mêmes données réelles que les marqueurs de
-     la carte — prix, prix/m², score climat — cf. displayZoneAnnonces /
-     renderAnnoncesSidebar) ---- */
-  .zm-annonces-empty { font-size: 11px; color: var(--muted); padding: 4px 0; }
-  .zm-annonce-item {
-    display: flex; align-items: center; gap: 10px; padding: 9px 10px;
-    border: 1px solid var(--border); border-radius: 8px; margin-bottom: 8px;
-    cursor: pointer; transition: border-color .15s, background .15s;
-  }
-  .zm-annonce-item:hover { border-color: var(--brand); background: var(--brand-light); }
-  .zm-annonce-photo {
-    width: 40px; height: 40px; border-radius: 6px; object-fit: cover; flex-shrink: 0;
-    background: var(--surface-alt);
-  }
-  .zm-annonce-photo-placeholder {
-    width: 40px; height: 40px; border-radius: 6px; flex-shrink: 0;
-    background: var(--brand-light); display: flex; align-items: center; justify-content: center;
-  }
-  .zm-annonce-photo-placeholder svg { width: 18px; height: 18px; color: var(--brand); opacity: 0.75; }
-  .zm-annonce-info { flex: 1; min-width: 0; }
-  .zm-annonce-addr {
-    font-size: 11.5px; font-weight: 600; color: var(--ink); white-space: nowrap;
-    overflow: hidden; text-overflow: ellipsis;
-  }
-  .zm-annonce-meta { font-size: 10.5px; color: var(--muted); margin-top: 2px; }
-  .zm-annonce-price { font-size: 12px; font-weight: 800; color: #1F9D6C; }
-  .zm-annonce-score {
-    font-size: 10.5px; font-weight: 700; padding: 2px 7px; border-radius: 999px;
-    color: #fff; flex-shrink: 0; margin-left: 4px;
-  }
-  .zone-worst-banner {
-    background: rgba(220,75,57,0.08); border: 1px solid rgba(220,75,57,0.2);
-    border-radius: 8px; padding: 10px 12px; margin-bottom: 14px;
-    font-size: 11px; color: var(--text); line-height: 1.4;
-  }
-  .zone-worst-banner strong { color: var(--danger); }
-
-  /* ---- Prix au m2 (DVF) ---- */
-  .zone-prix-card {
-    background: rgba(31,157,108,0.06); border: 1px solid var(--border);
-    border-radius: 10px; padding: 12px 14px; margin-bottom: 14px;
-  }
-  .zone-prix-row { display: flex; justify-content: space-between; align-items: center; }
-  .zone-prix-value { font-size: 20px; font-weight: 800; color: #1F9D6C; }
-  .zone-prix-meta { color: var(--muted); font-size: 10.5px; margin-top: 4px; line-height: 1.4; }
-
-  #zone-coords-info { color: var(--muted); font-size: 11px; margin: 6px 0 12px; }
-  #zone-sample-info { font-size: 10px; color: var(--muted); text-align: center; padding: 6px; border-top: 1px solid var(--border); flex-shrink: 0; }
-
-  /* ---- Auto-raffinement au zoom/pan ---- */
-  #zone-autorefine-row {
+  #home-header {
+    position: sticky; top: 0; z-index: 5; background: rgba(255,255,255,0.92); backdrop-filter: blur(10px);
+    border-bottom: 1px solid #DCE6EC; padding: 16px 5vw;
     display: flex; align-items: center; justify-content: space-between;
-    margin: 10px 0 4px; padding: 8px 10px; background: var(--surface-alt);
-    border: 1px solid var(--border); border-radius: 8px;
   }
-  #zone-autorefine-row label { font-size: 11.5px; color: var(--text); font-weight: 600; cursor: pointer; }
-  #zone-autorefine-row .hint { font-size: 10px; color: var(--muted); margin-top: 2px; }
-  .toggle-switch { position: relative; width: 34px; height: 19px; flex-shrink: 0; margin-left: 10px; }
-  .toggle-switch input { opacity: 0; width: 0; height: 0; }
-  .toggle-switch .track {
-    position: absolute; inset: 0; background: #D8CFC6; border-radius: 999px;
-    cursor: pointer; transition: background .15s;
+  #home-nav { display: flex; align-items: center; gap: 30px; }
+  #home-nav a {
+    color: #4B5760; text-decoration: none; font-size: 14px; font-weight: 600;
   }
-  .toggle-switch .track::before {
-    content: ''; position: absolute; width: 15px; height: 15px; left: 2px; top: 2px;
-    background: #fff; border-radius: 50%; transition: transform .15s;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.25);
-  }
-  .toggle-switch input:checked + .track { background: var(--brand); }
-  .toggle-switch input:checked + .track::before { transform: translateX(15px); }
+  #home-nav a:hover { color: #316f96; }
 
-  #zone-refine-status {
-    display: none; align-items: center; gap: 6px; font-size: 10.5px; color: var(--brand-dark);
-    margin: 4px 0 0; font-weight: 600;
+  /* ---- Animation d'apparition au scroll ---- */
+  .reveal { opacity: 0; transform: translateY(28px); transition: opacity .7s ease, transform .7s ease; will-change: opacity, transform; }
+  .reveal.visible { opacity: 1; transform: translateY(0); }
+  .reveal-stagger > * { opacity: 0; transform: translateY(20px); transition: opacity .6s ease, transform .6s ease; }
+  .reveal-stagger.visible > * { opacity: 1; transform: translateY(0); }
+  .reveal-stagger.visible > *:nth-child(1) { transition-delay: .05s; }
+  .reveal-stagger.visible > *:nth-child(2) { transition-delay: .15s; }
+  .reveal-stagger.visible > *:nth-child(3) { transition-delay: .25s; }
+  .reveal-stagger.visible > *:nth-child(4) { transition-delay: .35s; }
+  @media (prefers-reduced-motion: reduce) {
+    .reveal, .reveal-stagger > * { opacity: 1 !important; transform: none !important; transition: none !important; }
   }
-  #zone-refine-status.visible { display: flex; }
-  #zone-refine-status .dot {
-    width: 6px; height: 6px; border-radius: 50%; background: var(--brand);
-    animation: refine-pulse 1s ease-in-out infinite;
+  #home-header-actions { display: flex; align-items: center; gap: 14px; }
+  .btn-ghost {
+    background: none; border: 1px solid #DCE6EC; color: #1E2A33; font-family: var(--font-body);
+    font-weight: 700; font-size: 13.5px; padding: 10px 18px; border-radius: 8px; cursor: pointer; transition: border-color .15s, color .15s;
   }
-  @keyframes refine-pulse { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
+  .btn-ghost:hover { border-color: #316f96; color: #316f96; }
+  .btn-primary {
+    background: #316f96; border: none; color: #FFFFFF; font-family: var(--font-body);
+    font-weight: 700; font-size: 13.5px; padding: 10px 20px; border-radius: 8px; cursor: pointer;
+    transition: background .15s, transform .1s; box-shadow: 0 6px 18px rgba(67,134,177,0.3);
+  }
+  .btn-primary:hover { background: #204e6d; }
+  .btn-primary:active { transform: scale(0.98); }
 
-  /* ---- Légende choroplèthe (calquée sur les cartes d'étages bioclimatiques) ---- */
-  #zone-legend {
-    position: absolute; left: 14px; bottom: 14px; z-index: 3;
-    background: rgba(255,255,255,0.94); border: 1px solid var(--border);
-    border-radius: 8px; padding: 8px 10px; font-family: var(--font-body);
-    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+  #home-hero {
+    display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 40px; align-items: center;
+    padding: 70px 5vw 60px; max-width: 1280px; margin: 0 auto;
   }
-  #zone-legend .zone-legend-title { font-size: 9.5px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 5px; }
-  #zone-legend .zone-legend-row { display: flex; align-items: center; gap: 6px; font-size: 10.5px; color: var(--text); margin-bottom: 2px; }
-  #zone-legend .zone-legend-swatch { width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0; }
+  #home-hero .eyebrow {
+    display: inline-flex; align-items: center; gap: 6px; color: #316f96; background: #dceef4;
+    font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em;
+    padding: 6px 14px; border-radius: 999px; margin-bottom: 18px;
+  }
+  #home-hero h1 { font-size: 44px; line-height: 1.14; color: #1E2A33; margin: 0 0 18px 0; font-weight: 700; letter-spacing: -0.01em; }
+  #home-hero h1 em { color: #316f96; font-style: normal; }
+  #home-hero .lead { color: #4B5760; font-size: 16px; line-height: 1.6; max-width: 480px; margin: 0 0 30px 0; }
+  #home-hero .hero-ctas { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  #home-hero .hero-ctas .btn-primary { font-size: 15px; padding: 15px 26px; }
+  #home-hero .hero-link { color: #1E2A33; font-weight: 700; font-size: 14px; text-decoration: none; border-bottom: 2px solid #DCE6EC; padding-bottom: 2px; }
+  #home-hero .hero-link:hover { border-color: #316f96; color: #316f96; }
 
-  /* ---- Légende des aléas dominants (bloc jumeau de #zone-legend, coin opposé) ---- */
-  #zone-legend-perils {
-    position: absolute; left: 14px; top: 14px; z-index: 3;
-    background: rgba(255,255,255,0.94); border: 1px solid var(--border);
-    border-radius: 8px; padding: 8px 10px; font-family: var(--font-body);
-    box-shadow: 0 2px 10px rgba(0,0,0,0.08); min-width: 168px;
+  #home-hero-visual {
+    position: relative; border: 1px solid #DCE6EC; border-radius: 8px; padding: 28px;
+    min-height: 400px; display: flex; flex-direction: column; justify-content: flex-end;
+    overflow: hidden; background: #1E2A33 url('photo-maison.jpg') center/cover no-repeat;
   }
-  #zone-legend-perils .zone-legend-title { font-size: 9.5px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 5px; }
-  .zone-legend-peril-row {
-    display: flex; align-items: center; justify-content: space-between; gap: 8px;
-    font-size: 10.5px; color: var(--text); margin-bottom: 3px;
+  #home-hero-visual::before {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(180deg, rgba(30,42,51,0.05) 0%, rgba(30,42,51,0.45) 55%, rgba(30,42,51,0.78) 100%);
   }
-  .zone-legend-peril-row .plabel { display: flex; align-items: center; gap: 5px; }
-  .zone-legend-peril-row .pdot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
-  .zone-legend-peril-row .pscore { font-weight: 700; }
+  #home-hero-visual .hv-stack { position: relative; z-index: 1; }
+  #home-hero-visual .hv-card {
+    background: rgba(255,255,255,0.97); border: 1px solid #DCE6EC; border-radius: 6px; padding: 14px 18px;
+    box-shadow: 0 10px 26px rgba(20,15,10,0.18); margin-bottom: 10px;
+  }
+  #home-hero-visual .hv-card:last-child { margin-bottom: 0; }
+  #home-hero-visual .hv-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  #home-hero-visual .hv-label { color: #8B959D; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; }
+  #home-hero-visual .hv-value { color: #1E2A33; font-size: 15px; font-weight: 800; }
+  #home-hero-visual .hv-badge { font-size: 10.5px; font-weight: 800; padding: 3px 10px; border-radius: 999px; }
+  #home-hero-visual .hv-badge.risk-high { background: #FDE7E2; color: #DC4B39; }
+  #home-hero-visual .hv-badge.risk-mod { background: #FBEED9; color: #D98A2B; }
+  #home-hero-visual .hv-badge.risk-low { background: #E4F5EC; color: #1F9D6C; }
+  #home-hero-visual .hv-bar-track { height: 6px; border-radius: 999px; background: #E9EEF2; overflow: hidden; margin-top: 8px; }
+  #home-hero-visual .hv-bar-fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, #6fa8cc, #316f96); }
 
-  /* ---- Filtre par aléa (barre de boutons en haut de la carte) : bascule
-     l'aplat isobandes entre la vue globale (tous aléas combinés, F/V par
-     zone) et un aléa unique (mêmes 8 aléas que le radar "par bien"), pour
-     isoler visuellement où un péril donné est réellement présent plutôt
-     que de tout mélanger dans une seule coloration. ---- */
-  #zone-alea-filter {
-    position: absolute; left: 50%; top: 14px; transform: translateX(-50%); z-index: 4;
-    display: flex; flex-wrap: wrap; gap: 6px; max-width: calc(100% - 220px);
-    justify-content: center;
+  #home-trustbar {
+    border-top: 1px solid #DCE6EC; border-bottom: 1px solid #DCE6EC; background: #F1F6F9;
+    padding: 22px 5vw; display: flex; flex-wrap: wrap; justify-content: center; gap: 42px;
   }
-  .zone-alea-btn {
-    background: rgba(255,255,255,0.94); border: 1px solid var(--border);
-    color: var(--text); font-family: var(--font-body); font-size: 11px; font-weight: 600;
-    padding: 6px 12px; border-radius: 999px; cursor: pointer; white-space: nowrap;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08); transition: background .15s, color .15s, border-color .15s;
-  }
-  .zone-alea-btn:hover { border-color: var(--brand); color: var(--brand-dark); }
-  .zone-alea-btn.active { background: var(--brand); border-color: var(--brand); color: #fff; }
-
-  #zone-precision-badge {
-    position: absolute; right: 14px; top: 14px; z-index: 3;
-    background: rgba(30,42,51,0.85); color: #fff; font-size: 10.5px; font-weight: 600;
-    padding: 5px 10px; border-radius: 999px; font-family: var(--font-body);
-  }
-  #zone-annonces-badge {
-    display: none; position: absolute; right: 14px; top: 44px; z-index: 3;
-    background: rgba(67,134,177,0.9); color: #fff; font-size: 10px; font-weight: 700;
-    padding: 4px 10px; border-radius: 999px; font-family: var(--font-body);
-  }
-  #zone-annonces-badge.visible { display: block; }
-
-  /* ---- Popup annonce (calqué sur les fiches DVF Explorer) ---- */
-  .annonce-popup .maplibregl-popup-content {
-    padding: 14px 16px; border-radius: 10px; font-family: var(--font-body);
-    box-shadow: 0 8px 28px rgba(0,0,0,0.18);
-  }
-  .annonce-popup-photo {
-    display: block; width: 100%; height: 120px; object-fit: cover;
-    border-radius: 8px; margin-bottom: 8px; background: var(--surface-alt);
-  }
-  .annonce-popup-title { font-size: 13px; font-weight: 800; color: var(--ink); margin-bottom: 8px; }
-  .annonce-popup-row { display: flex; justify-content: space-between; gap: 14px; font-size: 12px; color: var(--text); margin-bottom: 5px; }
-  .annonce-popup-row .apr-label { color: var(--muted); }
-  .annonce-popup-row .apr-value { font-weight: 700; }
-  .annonce-popup-dpe {
-    display: inline-block; color: #fff; font-weight: 800; font-size: 11px;
-    width: 20px; height: 18px; line-height: 18px; text-align: center; border-radius: 3px; margin-left: 4px;
-  }
-  .annonce-popup-actions { display: flex; gap: 8px; margin-top: 10px; }
-  .annonce-popup-actions a {
-    flex: 1; text-align: center; font-size: 11px; font-weight: 700; text-decoration: none;
-    padding: 7px 0; border-radius: 6px; background: var(--surface-alt); color: var(--brand-dark);
-    border: 1px solid var(--border);
-  }
-  .annonce-popup-actions a:hover { background: var(--brand-light); }
-  .annonce-popup-tag { font-size: 9.5px; color: var(--muted); margin-top: 8px; font-style: italic; }
-
-  @media (max-width: 860px) {
-    #zone-modal-body { flex-direction: column; }
-    #zone-sidebar { width: 100%; min-width: unset; max-height: 50vh; border-right: none; border-bottom: 1px solid var(--border); }
-  }
+  #home-trustbar .trust-stat { text-align: center; }
+  #home-trustbar .trust-stat .num { color: #1E2A33; font-size: 22px; font-weight: 700; font-family: var(--font-head); }
+  #home-trustbar .trust-stat .lbl { color: #8B959D; font-size: 12px; margin-top: 2px; }
 
   /* Styles de #home-hero, #home-missions, #home-ai, #home-sources et de
      tous les composants de cartes/boutons : voir assets/landing/site.css.
@@ -1359,7 +1148,7 @@
 #property-id-screen .pid-twin .twin-json-btn:hover { background: var(--surface-alt); color: var(--ink); }
 #property-id-screen .pid-twin .twin-json-block { display: none; }
 #property-id-screen .pid-twin .twin-json-block.open { display: block; }
-#property-id-screen .pid-twin .twin-json-block pre { padding: 18px 22px; font-size: 11px; line-height: 1.6; overflow-x: auto; background: #F1F5F8; color: var(--text); max-height: 300px; overflow-y: auto; font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace; }
+#property-id-screen .pid-twin .twin-json-block pre { padding: 18px 22px; font-size: 11px; line-height: 1.6; overflow-x: auto; background: #F1F5F8; color: var(--text); max-height: 300px; overflow-y: auto; font-family: 'Google Sans Code', 'SF Mono', 'Fira Code', 'Consolas', monospace; }
 
 /* Non-certifie state */
 #property-id-screen .pid-nc {
@@ -1730,100 +1519,6 @@
     </div>
     <div class="footer-ai-note">Cette application a été générée avec l'intelligence artificielle</div>
   </footer>
-</div>
-
-<!-- ==================== MODALE EXPLORATION DE ZONE (carte interactive connectée au backend) ==================== -->
-<div id="zone-overlay" aria-hidden="true">
-  <div id="zone-modal" role="dialog" aria-modal="true" aria-labelledby="zone-modal-title">
-    <button id="zone-close-btn" type="button" aria-label="Fermer la fenêtre">✕</button>
-    <div id="zone-modal-header">
-      <span class="modal-title" id="zone-modal-title">Carte interactive des risques</span>
-      <span class="modal-sub">Sélectionnez une commune ou dessinez une zone sur la carte</span>
-    </div>
-    <div id="zone-modal-body">
-      <!-- Sidebar -->
-      <div id="zone-sidebar">
-        <div id="zone-sidebar-content">
-          <div class="zone-section-label">1. Choisir une ville</div>
-          <div id="zone-search-wrapper">
-            <input id="zone-city-input" type="text" placeholder="ex. Paris, Marseille, Lyon, Nice…" autocomplete="off" />
-            <div id="zone-suggestions"></div>
-          </div>
-          <div id="zone-coords-info">Tapez le nom d'une ville française</div>
-          <button id="zone-assess-btn" disabled>Analyser cette ville</button>
-
-          <div id="zone-autorefine-row">
-            <div>
-              <label for="zone-autorefine-toggle">Affiner en zoomant</label>
-              <div class="hint">Grille plus fine à chaque zoom/déplacement</div>
-            </div>
-            <div class="toggle-switch">
-              <input type="checkbox" id="zone-autorefine-toggle" checked>
-              <label class="track" for="zone-autorefine-toggle"></label>
-            </div>
-          </div>
-          <div id="zone-refine-status"><span class="dot"></span><span id="zone-refine-status-text">Raffinement de la zone visible…</span></div>
-
-          <div id="zone-loading">
-            <div class="zone-loading-bar"><div class="zone-loading-fill"></div></div>
-            <div class="zone-loading-text">Calcul en cours…</div>
-          </div>
-
-          <div id="zone-results">
-            <div class="zone-section-label">3. Résultats</div>
-            <div class="zone-rating-card" id="zm-rating-card">
-              <div class="zone-rating-row">
-                <span class="zone-rating-label">Score global</span>
-                <span class="zone-rating-badge" id="zm-badge">—</span>
-              </div>
-              <div class="zone-rating-row">
-                <span class="zone-rating-value" id="zm-score">—</span>
-                <span style="font-size:11px;color:var(--muted);">/ 100</span>
-              </div>
-              <div class="zone-rating-meta" id="zm-meta"></div>
-            </div>
-
-            <div class="zone-worst-banner" id="zm-worst" style="display:none;">
-              Point chaud : <strong id="zm-worst-peril">—</strong> (<strong id="zm-worst-score">—</strong>/100)
-            </div>
-
-            <div class="zone-section-label">Marché immobilier (DVF)</div>
-            <div class="zone-prix-card" id="zm-prix-card">
-              <div class="zone-prix-row">
-                <span class="zone-rating-label">Prix médian / m²</span>
-                <span class="zone-prix-value" id="zm-prix-median">—</span>
-              </div>
-              <div class="zone-prix-meta" id="zm-prix-meta">Sélectionnez une ville pour voir les ventes DVF</div>
-            </div>
-
-            <div class="zone-section-label">Annonces à proximité</div>
-            <div id="zm-annonces-list"><div class="zm-annonces-empty">Sélectionnez une ville pour voir les biens en vente</div></div>
-          </div>
-        </div>
-        <div id="zone-sample-info"></div>
-      </div>
-
-      <!-- Map -->
-      <div id="zone-map-container">
-        <div id="zone-map"></div>
-        <div id="zone-alea-filter"></div>
-        <div id="zone-legend">
-          <div class="zone-legend-title">Niveau de risque</div>
-          <div class="zone-legend-row"><span class="zone-legend-swatch" style="background:#1F9D6C;"></span>Faible (0–19)</div>
-          <div class="zone-legend-row"><span class="zone-legend-swatch" style="background:#5ADB8A;"></span>Modéré bas (20–39)</div>
-          <div class="zone-legend-row"><span class="zone-legend-swatch" style="background:#F5C542;"></span>Modéré (40–59)</div>
-          <div class="zone-legend-row"><span class="zone-legend-swatch" style="background:#E27B2E;"></span>Élevé (60–79)</div>
-          <div class="zone-legend-row"><span class="zone-legend-swatch" style="background:#C0392B;"></span>Critique (80–100)</div>
-        </div>
-        <div id="zone-legend-perils" style="display:none;">
-          <div class="zone-legend-title">Aléas de la zone</div>
-          <div id="zone-legend-perils-rows"></div>
-        </div>
-        <div id="zone-precision-badge">zoom 13 · grille 500 m</div>
-        <div id="zone-annonces-badge"></div>
-      </div>
-    </div>
-  </div>
 </div>
 
 <!-- ==================== ECRAN 1 : FORMULAIRE (diagnostic du bien) ==================== -->
@@ -4639,7 +4334,7 @@ function recoGain(r) { return typeof r.gain_resilience === 'number' ? r.gain_res
 
 async function rechercherArtisans(zoneName, data, container, button) {
   const apiBaseInput = document.getElementById('api-base-input');
-  const apiBase = (apiBaseInput && apiBaseInput.value || 'http://127.0.0.1:8765').trim();
+  const apiBase = (apiBaseInput && apiBaseInput.value || window.TYPHOON_API).trim();
   button.disabled = true;
   button.textContent = 'Recherche dans les annuaires officiels…';
   container.innerHTML = '';
@@ -5061,8 +4756,8 @@ loadDataset(DEFAULT_DATA);
 /* =========================================================================
    ORCHESTRATION — accueil -> formulaire -> traitement (appel réel au
    backend /diagnostic) -> jumeau 3D. Le mode "prospection par zone/ville"
-   reste ici un aperçu front (voir commentaire sur #zone-overlay) : son
-   backend sera branché plus tard par un autre développeur.
+   vit dans sa propre page (zone.html, bouton "Explorer une zone" ci-dessous) :
+   elle ouvre la carte interactive connectée au backend (/diagnostic/zone).
    ========================================================================= */
 (function () {
   const homeScreen = document.getElementById('home-screen');
@@ -5087,742 +4782,11 @@ loadDataset(DEFAULT_DATA);
     formScreen.scrollTop = 0;
   }
 
-  // ==================== CARTE INTERACTIVE ZONE (simplifiée + heatmap) ====================
-  const ZONE_BACKEND = 'http://127.0.0.1:8765';
-  const zoneOverlay = document.getElementById('zone-overlay');
-  const zoneCloseBtn = document.getElementById('zone-close-btn');
-  const zoneResults = document.getElementById('zone-results');
-  const zoneAssessBtn = document.getElementById('zone-assess-btn');
-  const zoneCoordsInfo = document.getElementById('zone-coords-info');
-  const zoneLoading = document.getElementById('zone-loading');
-  const zoneLoadingFill = zoneLoading.querySelector('.zone-loading-fill');
-  const zoneLoadingText = zoneLoading.querySelector('.zone-loading-text');
-  const zoneCityInput = document.getElementById('zone-city-input');
-  const zoneSuggestions = document.getElementById('zone-suggestions');
-  const zoneAutorefineToggle = document.getElementById('zone-autorefine-toggle');
-  const zoneRefineStatus = document.getElementById('zone-refine-status');
-  const zonePrecisionBadge = document.getElementById('zone-precision-badge');
+  const verifyAddrBtn = document.getElementById('home-cta-mode-a');
+  if (verifyAddrBtn) verifyAddrBtn.addEventListener('click', openDiagnosticForm);
 
-  let zoneMap = null;
-  let zoneBounds = null;
-  let selectedCity = null;
-  let banTimeout = null;
-
-  // ---- Raffinement au zoom/pan ----
-  let hasFirstResult = false;   // n'active l'auto-raffinement qu'après la 1ère analyse explicite
-  let moveDebounce = null;      // timer de debounce sur moveend
-  let requestSeq = 0;           // compteur pour ignorer les réponses obsolètes (zoom rapide)
-  let activeController = null;  // AbortController de la requête en cours
-
-  // Palier de finesse de grille en fonction du niveau de zoom : plus on zoome,
-  // plus spacing_km diminue -> plus de points -> plus de précision locale.
-  function spacingForZoom(zoom) {
-    if (zoom < 11) return 1.2;
-    if (zoom < 13) return 0.6;
-    if (zoom < 15) return 0.3;
-    return 0.15;
-  }
-
-  // Calcule spacing_km + max_points en s'assurant que la grille rectangulaire
-  // (mêmes formules que _generer_grille_rectangulaire côté backend) tient
-  // entière dans la limite de l'API (max_points <= 200) : sinon le backend
-  // tronque la grille à mi-ligne et les isobandes de turf cassent.
-  function computeGridParams(bounds, targetSpacingKm) {
-    const [latMin, lonMin, latMax, lonMax] = bounds;
-    const latMoy = (latMin + latMax) / 2;
-    const degPerKmLat = 1.0 / 111.0;
-    const degPerKmLon = 1.0 / (111.0 * Math.cos(latMoy * Math.PI / 180));
-    let spacing = targetSpacingKm;
-    let rows, cols, total;
-    for (let i = 0; i < 20; i++) {
-      const stepLat = spacing * degPerKmLat;
-      const stepLon = spacing * degPerKmLon;
-      rows = Math.floor((latMax - latMin) / stepLat) + 1;
-      cols = Math.floor((lonMax - lonMin) / stepLon) + 1;
-      total = rows * cols;
-      if (total <= 195) break;
-      spacing *= 1.15; // trop de points -> grille plus lâche
-    }
-    return { spacingKm: spacing, maxPoints: Math.min(200, total + 2), rows, cols };
-  }
-
-  // Les aléas exposés par le backend (compute_risk_scores -> risques_par_alea),
-  // identiques à ceux du radar "par aléa" au niveau du bien (cf. index.html
-  // renderScoresPage) : même nomenclature partout, du bâtiment jusqu'à la
-  // zone/carte. "canicule" est volontairement exclu ici (boutons de filtre +
-  // légende "Aléas de la zone") : peu pertinent à l'échelle d'une carte de
-  // zone, cf. demande utilisateur — il reste disponible au niveau du bien.
-  const PERIL_NAMES = {
-    argile: { fr: 'Retrait-gonflement argiles' },
-    inondation: { fr: 'Inondation' },
-    mouvement_terrain: { fr: 'Mouvement de terrain' },
-    sismique: { fr: 'Sismique' },
-    radon: { fr: 'Radon' },
-    precipitation: { fr: 'Précipitations intenses' },
-    feu_foret: { fr: 'Incendie' }
-  };
-  const ALEA_ORDER = ['argile', 'inondation', 'feu_foret', 'sismique', 'mouvement_terrain', 'radon', 'precipitation'];
-  // Clé backend à masquer partout où la carte affiche des données par aléa
-  // (légende, agrégats), même si le backend continue de la calculer.
-  const ZONE_MAP_HIDDEN_ALEAS = ['canicule'];
-
-  // Aléa actuellement sélectionné pour la coloration de la carte : 'global'
-  // (F/V combiné par zone structurelle, comme avant) ou l'une des 8 clés
-  // ci-dessus (score de cet aléa uniquement, cf. buildAleaFilterUI/
-  // renderZoneMapForAlea plus bas).
-  let selectedAlea = 'global';
-  let lastZoneData = null;
-
-  function buildAleaFilterUI() {
-    const box = document.getElementById('zone-alea-filter');
-    if (!box || box.dataset.built) return;
-    box.dataset.built = '1';
-    const makeBtn = (key, label) => {
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'zone-alea-btn' + (key === 'global' ? ' active' : '');
-      btn.dataset.alea = key;
-      btn.textContent = label;
-      btn.addEventListener('click', () => {
-        selectedAlea = key;
-        box.querySelectorAll('.zone-alea-btn').forEach(b => b.classList.toggle('active', b.dataset.alea === key));
-        renderZoneMapForAlea();
-      });
-      return btn;
-    };
-    box.appendChild(makeBtn('global', 'Vue globale'));
-    ALEA_ORDER.forEach(key => box.appendChild(makeBtn(key, PERIL_NAMES[key].fr)));
-  }
-
-  // === BAN Geocoding — toutes les villes de France ===
-  async function searchCity(query) {
-    if (query.length < 3) { zoneSuggestions.innerHTML = ''; return; }
-    try {
-      const resp = await fetch(`https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(query)}&type=municipality&limit=6`);
-      const data = await resp.json();
-      zoneSuggestions.innerHTML = '';
-      data.features.forEach(f => {
-        const city = f.properties.city || f.properties.name;
-        const ctx = f.properties.context || '';
-        const div = document.createElement('div');
-        div.className = 'ban-suggestion';
-        div.textContent = `${city} — ${ctx}`;
-       div.onmousedown = (e) => {
-          e.preventDefault(); // empêche le blur de l'input de virer la liste avant le clic
-        };
-        div.onclick = () => selectCity({
-          label: `${city} (${ctx.split(',')[0] || ''})`,
-          lat: f.geometry.coordinates[1],
-          lon: f.geometry.coordinates[0],
-          city: city,
-          citycode: f.properties.citycode || ''
-        });
-        zoneSuggestions.appendChild(div);
-      });
-    } catch (e) { /* silencieux */ }
-  }
-
-  function selectCity(city) {
-    selectedCity = city;
-    zoneCityInput.value = city.label || city.city;
-    zoneSuggestions.innerHTML = '';
-    const lat = city.lat, lon = city.lon;
-    const d = 0.025;
-    zoneBounds = { lat_min: lat - d, lon_min: lon - d, lat_max: lat + d, lon_max: lon + d };
-    zoneAssessBtn.disabled = false;
-    zoneCoordsInfo.textContent = `${city.city} — ${lat.toFixed(4)}°N, ${lon.toFixed(4)}°E`;
-    zoneMap.flyTo({ center: [lon, lat], zoom: 13, duration: 1200 });
-  }
-
-  function initZoneMap() {
-    if (zoneMap) return;
-    zoneMap = new maplibregl.Map({
-      container: 'zone-map',
-      style: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
-      center: [2.35, 48.85], // Paris — toute la France
-      zoom: 5
-    });
-    zoneMap.addControl(new maplibregl.NavigationControl(), 'bottom-right');
-    zoneMap.addControl(new maplibregl.ScaleControl({ unit: 'metric' }));
-    buildAleaFilterUI();
-
-    zoneMap.on('load', () => {
-      // Seule visualisation du risque sur la carte : une coloration
-      // translucide globale (isobandes turf.isobands, zoom-adaptative),
-      // sans les points individuels affichés auparavant (retirés : la
-      // lecture par point surchargeait la carte sans apporter d'info que
-      // l'aplat ne donne déjà). Voir buildIsobands()/renderZoneMapForAlea().
-      zoneMap.addSource('risk-isobands', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
-      zoneMap.addLayer({
-        id: 'risk-isobands-fill',
-        type: 'fill',
-        source: 'risk-isobands',
-        paint: {
-          'fill-color': ['get', 'fillColor'],
-          'fill-opacity': 0.55
-        }
-      });
-      // Fine frontière entre bandes pour une lecture nette (façon carte imprimée)
-      zoneMap.addLayer({
-        id: 'risk-isobands-line',
-        type: 'line',
-        source: 'risk-isobands',
-        paint: { 'line-color': 'rgba(255,255,255,0.25)', 'line-width': 0.5 }
-      });
-
-      // ---- Annonces "en vente" (données réelles uniquement : DVF ou base
-      // CSV locale, cf. backend /diagnostic/zone/annonces) : marqueurs
-      // clusterisés colorés par score climatique, façon dvfexplorer.fr. ----
-      zoneMap.addSource('annonces', {
-        type: 'geojson',
-        data: { type: 'FeatureCollection', features: [] },
-        cluster: true,
-        clusterMaxZoom: 15,
-        clusterRadius: 50
-      });
-      zoneMap.addLayer({
-        id: 'annonces-clusters',
-        type: 'circle',
-        source: 'annonces',
-        filter: ['has', 'point_count'],
-        paint: {
-          'circle-radius': ['step', ['get', 'point_count'], 14, 10, 18, 30, 24],
-          'circle-color': '#1E2A33',
-          'circle-stroke-color': '#fff',
-          'circle-stroke-width': 2
-        }
-      });
-      zoneMap.addLayer({
-        id: 'annonces-cluster-count',
-        type: 'symbol',
-        source: 'annonces',
-        filter: ['has', 'point_count'],
-        layout: {
-          'text-field': ['get', 'point_count_abbreviated'],
-          'text-font': ['Open Sans Bold'],
-          'text-size': 12
-        },
-        paint: { 'text-color': '#fff' }
-      });
-      zoneMap.addLayer({
-        id: 'annonces-unclustered',
-        type: 'circle',
-        source: 'annonces',
-        filter: ['!', ['has', 'point_count']],
-        paint: {
-          'circle-radius': 7,
-          'circle-color': [
-            'step', ['get', 'climat_score'],
-            '#1F9D6C',
-            20, '#5ADB8A',
-            40, '#F5C542',
-            60, '#E27B2E',
-            80, '#C0392B'
-          ],
-          'circle-stroke-color': '#fff',
-          'circle-stroke-width': 1.5
-        }
-      });
-
-      zoneMap.on('mouseenter', 'annonces-unclustered', () => { zoneMap.getCanvas().style.cursor = 'pointer'; });
-      zoneMap.on('mouseleave', 'annonces-unclustered', () => { zoneMap.getCanvas().style.cursor = ''; });
-      zoneMap.on('mouseenter', 'annonces-clusters', () => { zoneMap.getCanvas().style.cursor = 'pointer'; });
-      zoneMap.on('mouseleave', 'annonces-clusters', () => { zoneMap.getCanvas().style.cursor = ''; });
-
-      // Clic sur un cluster -> zoom pour l'éclater (comportement standard MapLibre)
-      zoneMap.on('click', 'annonces-clusters', (e) => {
-        const features = zoneMap.queryRenderedFeatures(e.point, { layers: ['annonces-clusters'] });
-        const clusterId = features[0].properties.cluster_id;
-        zoneMap.getSource('annonces').getClusterExpansionZoom(clusterId, (err, zoom) => {
-          if (err) return;
-          zoneMap.easeTo({ center: features[0].geometry.coordinates, zoom });
-        });
-      });
-
-      // Clic sur une annonce individuelle -> popup façon fiche DVF Explorer
-      zoneMap.on('click', 'annonces-unclustered', (e) => {
-        const f = e.features[0];
-        showAnnoncePopup(f.geometry.coordinates.slice(), f.properties);
-      });
-
-      // ---- Marqueur "Vous êtes ici" (si la géolocalisation navigateur est autorisée) ----
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition((pos) => {
-          const { latitude, longitude } = pos.coords;
-          const el = document.createElement('div');
-          el.className = 'user-location-marker';
-          el.innerHTML = '<span class="ulm-pulse"></span><span class="ulm-dot"></span>';
-          new maplibregl.Marker({ element: el, anchor: 'center' })
-            .setLngLat([longitude, latitude])
-            .setPopup(new maplibregl.Popup({ offset: 14, closeButton: false }).setText('Vous êtes ici'))
-            .addTo(zoneMap);
-        }, () => { /* géolocalisation refusée ou indisponible : on ignore silencieusement */ }, { timeout: 8000 });
-      }
-    });
-
-    // ---- Auto-raffinement : à chaque zoom/pan terminé, on relance une
-    // évaluation sur la zone visible avec une grille adaptée au niveau de zoom.
-    zoneMap.on('moveend', () => {
-      if (!hasFirstResult || !zoneAutorefineToggle.checked) return;
-      clearTimeout(moveDebounce);
-      moveDebounce = setTimeout(runAutoRefine, 550);
-    });
-  }
-
-  // Construit les isobandes (aplats lissés) à partir de la grille de points
-  // scorés. RISK_BREAKS/RISK_COLORS reprennent exactement les seuils déjà
-  // utilisés pour les scores individuels (faible/modéré/élevé/critique).
-  const RISK_BREAKS = [0, 20, 40, 60, 80, 100.01];
-  const RISK_COLORS = ['#1F9D6C', '#5ADB8A', '#F5C542', '#E27B2E', '#C0392B'];
-
-  // Extrait le score (0-100) pertinent d'un point selon l'aléa sélectionné :
-  // 'global' = score combiné F/V par zone (comme avant), sinon l'un des 8
-  // aléas réels renvoyés par le backend (risques_par_alea, cf. zone_scoring.py
-  // _result_to_point_dict). Un point sans donnée pour cet aléa retombe à 0
-  // (zone non concernée par ce péril précis).
-  function scoreForAlea(pointScore, alea) {
-    if (!pointScore) return 0;
-    if (alea === 'global') return pointScore.score_global || 0;
-    const entry = pointScore[alea];
-    return entry ? (entry.score || 0) : 0;
-  }
-
-  function buildIsobands(points) {
-    // points: [{lat, lon, score}], doit former une grille rectangulaire complète
-    // (voir computeGridParams) sinon turf.isobands peut produire un résultat vide.
-    if (!window.turf || points.length < 4) return { type: 'FeatureCollection', features: [] };
-    try {
-      const fc = turf.featureCollection(
-        points.map(p => turf.point([p.lon, p.lat], { score: p.score }))
-      );
-      const bands = turf.isobands(fc, RISK_BREAKS, { zProperty: 'score' });
-      bands.features.forEach((f, i) => {
-        f.properties.fillColor = RISK_COLORS[Math.min(i, RISK_COLORS.length - 1)];
-      });
-      return bands;
-    } catch (e) {
-      console.warn('isobands: grille insuffisante pour lisser (', e.message, ')');
-      return { type: 'FeatureCollection', features: [] };
-    }
-  }
-
-  function openZoneExplorer() {
-    zoneOverlay.classList.add('open');
-    zoneOverlay.setAttribute('aria-hidden', 'false');
-    zoneResults.classList.remove('visible');
-    setTimeout(() => {
-      initZoneMap();
-      zoneMap.resize();
-    }, 250);
-  }
-
-  function closeZoneExplorer() {
-    zoneOverlay.classList.remove('open');
-    zoneOverlay.setAttribute('aria-hidden', 'true');
-  }
-
-  // === Autocomplete BAN pour la recherche de ville ===
-  zoneCityInput.oninput = () => {
-    clearTimeout(banTimeout);
-    const q = zoneCityInput.value.trim();
-    if (q.length < 2) { zoneSuggestions.innerHTML = ''; return; }
-    banTimeout = setTimeout(() => searchCity(q), 250);
-  };
-  zoneCityInput.onblur = () => {
-    setTimeout(() => { zoneSuggestions.innerHTML = ''; }, 200);
-  };
-  zoneCityInput.onkeydown = (e) => {
-    if (e.key === 'Enter' && zoneSuggestions.children.length > 0) {
-      zoneSuggestions.children[0].click();
-    }
-  };
-
-  // === Cœur unique d'appel au backend, partagé par le bouton "Analyser" et
-  // par l'auto-raffinement au zoom/pan. `opts.silent` évite de rejouer toute
-  // l'animation de chargement à chaque pan (juste un petit badge discret).
-  async function runAssessment(boundsArr, spacingKm, maxPoints, opts = {}) {
-    const seq = ++requestSeq;
-    if (activeController) activeController.abort();
-    activeController = new AbortController();
-
-    if (opts.silent) {
-      zoneRefineStatus.classList.add('visible');
-    } else {
-      zoneAssessBtn.disabled = true;
-      zoneLoading.classList.add('visible');
-      zoneLoadingFill.style.width = '30%';
-      zoneLoadingText.textContent = 'Appel au backend Typhoon…';
-      zoneResults.classList.remove('visible');
-    }
-
-    try {
-      const response = await fetch(`${ZONE_BACKEND}/diagnostic/zone`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          bounds: boundsArr,
-          spacing_km: spacingKm,
-          max_points: maxPoints,
-          land_only: false
-        }),
-        signal: activeController.signal
-      });
-
-      if (!response.ok) {
-        const errText = await response.text();
-        throw new Error(`Erreur ${response.status}: ${errText}`);
-      }
-      const data = await response.json();
-
-      // Une réponse plus lente arrivée après une plus récente (zoom rapide) : on jette.
-      if (seq !== requestSeq) return;
-
-      if (!opts.silent) {
-        zoneLoadingFill.style.width = '100%';
-        zoneLoadingText.textContent = 'Terminé ✓';
-      }
-      displayZoneResults(data, opts);
-      hasFirstResult = true;
-    } catch (err) {
-      if (err.name === 'AbortError') return; // requête remplacée, rien à signaler
-      if (opts.silent) {
-        console.warn('auto-raffinement: échec silencieux —', err.message);
-      } else {
-        zoneLoadingText.textContent = 'Erreur: ' + err.message;
-        zoneAssessBtn.disabled = false;
-        setTimeout(() => zoneLoading.classList.remove('visible'), 3000);
-      }
-    } finally {
-      if (seq === requestSeq) {
-        zoneRefineStatus.classList.remove('visible');
-        if (!opts.silent) {
-          setTimeout(() => {
-            zoneLoading.classList.remove('visible');
-            zoneAssessBtn.disabled = false;
-          }, 400);
-        }
-      }
-    }
-  }
-
-  // === Bouton "Analyser cette ville" : première évaluation explicite ===
-  zoneAssessBtn.onclick = () => {
-    if (!zoneBounds) return;
-    const boundsArr = [zoneBounds.lat_min, zoneBounds.lon_min, zoneBounds.lat_max, zoneBounds.lon_max];
-    const { spacingKm, maxPoints } = computeGridParams(boundsArr, 0.3);
-    runAssessment(boundsArr, spacingKm, maxPoints, { silent: false });
-    fetchZonePrix(boundsArr);
-    fetchZoneAnnonces(boundsArr);
-  };
-
-  // === Auto-raffinement : rejoue l'évaluation sur la zone VISIBLE du zoom
-  // courant, avec une grille adaptée (plus fine en zoomant, cf. spacingForZoom) ===
-  function runAutoRefine() {
-    if (!zoneMap) return;
-    const b = zoneMap.getBounds();
-    const zoom = zoneMap.getZoom();
-    const boundsArr = [b.getSouth(), b.getWest(), b.getNorth(), b.getEast()];
-    const target = spacingForZoom(zoom);
-    const { spacingKm, maxPoints } = computeGridParams(boundsArr, target);
-    zonePrecisionBadge.textContent = `zoom ${zoom.toFixed(1)} · grille ${Math.round(spacingKm * 1000)} m`;
-    runAssessment(boundsArr, spacingKm, maxPoints, { silent: true });
-    fetchZonePrix(boundsArr);
-    fetchZoneAnnonces(boundsArr);
-  }
-
-  // === DVF : prix au m2 de la zone visible (ventes réelles, cf. panneau
-  // "Marché immobilier" de la sidebar). Endpoint séparé de /diagnostic/zone
-  // (climat) car source de données différente (CSV DVF local par
-  // département, pas toujours présent sur le poste — voir settings.dvf_enabled
-  // côté backend et data/lookup/dvf/README.md). ===
-  let prixRequestSeq = 0;
-
-  async function fetchZonePrix(boundsArr) {
-    const seq = ++prixRequestSeq;
-    if (!selectedCity || !selectedCity.citycode) {
-      displayZonePrix({ disponible: false, message: 'Ville sans code INSEE connu — impossible de déterminer le département DVF.' });
-      return;
-    }
-    try {
-      const resp = await fetch(`${ZONE_BACKEND}/diagnostic/zone/prix`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ bounds: boundsArr, citycode: selectedCity.citycode })
-      });
-      if (!resp.ok) throw new Error(`Erreur ${resp.status}`);
-      const data = await resp.json();
-      if (seq !== prixRequestSeq) return; // réponse obsolète (pan rapide)
-      displayZonePrix(data);
-    } catch (e) {
-      if (seq !== prixRequestSeq) return;
-      displayZonePrix({ disponible: false, message: 'Backend DVF injoignable.' });
-    }
-  }
-
-  function displayZonePrix(data) {
-    const medianEl = document.getElementById('zm-prix-median');
-    const metaEl = document.getElementById('zm-prix-meta');
-    if (!data || !data.disponible) {
-      medianEl.textContent = '—';
-      metaEl.textContent = (data && data.message) || 'Données DVF indisponibles sur ce poste.';
-      return;
-    }
-    if (!data.nb_ventes) {
-      medianEl.textContent = '—';
-      metaEl.textContent = 'Aucune vente DVF trouvée dans cette zone (département ' + data.departement + ').';
-      return;
-    }
-    medianEl.textContent = Math.round(data.prix_m2_median).toLocaleString('fr-FR') + ' €/m²';
-    const parType = Object.entries(data.par_type || {})
-      .map(([type, s]) => `${type} : ${Math.round(s.prix_m2_median).toLocaleString('fr-FR')} €/m² (${s.nb_ventes})`)
-      .join(' · ');
-    metaEl.textContent = `${data.nb_ventes} vente(s) DVF dans la zone` + (parType ? ' — ' + parType : '');
-  }
-
-  // === Annonces "en vente" (marqueurs clusterisés, cf. sources/layers
-  // 'annonces' définies dans initZoneMap). Endpoint séparé de DVF (ventes
-  // passées) : /diagnostic/zone/annonces ne renvoie que des données réelles
-  // (DVF ou base CSV locale d'annonces) — liste vide si aucune des deux
-  // n'est disponible, jamais de données fabriquées. ===
-  let annoncesRequestSeq = 0;
-  const DPE_COLORS = { A: '#0FA860', B: '#4CB944', C: '#A6C93B', D: '#F2C94C', E: '#E8912D', F: '#DE5B33', G: '#C0392B' };
-
-  async function fetchZoneAnnonces(boundsArr) {
-    const seq = ++annoncesRequestSeq;
-    try {
-      const resp = await fetch(`${ZONE_BACKEND}/diagnostic/zone/annonces`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          bounds: boundsArr,
-          citycode: (selectedCity && selectedCity.citycode) || null,
-          // 200 = plafond backend (voir ZoneAnnoncesRequest) : la base
-          // d'annonces (CSV local, cf. annonces_lookup.py) couvre toute la
-          // France, donc plus on en récupère, plus il y a de chances d'en
-          // voir dans la zone affichée.
-          max_results: 200
-        })
-      });
-      if (!resp.ok) throw new Error(`Erreur ${resp.status}`);
-      const data = await resp.json();
-      if (seq !== annoncesRequestSeq) return; // réponse obsolète (pan rapide)
-      displayZoneAnnonces(data);
-    } catch (e) {
-      if (seq !== annoncesRequestSeq) return;
-      console.warn('annonces: échec silencieux —', e.message);
-    }
-  }
-
-  function displayZoneAnnonces(data) {
-    const badge = document.getElementById('zone-annonces-badge');
-    const source = zoneMap && zoneMap.getSource('annonces');
-    if (!data || !data.disponible || !source) {
-      if (badge) badge.classList.remove('visible');
-      renderAnnoncesSidebar([]);
-      return;
-    }
-
-    // Filet de sécurité : n'affiche jamais un bien de démonstration, même si
-    // une réponse mise en cache ou un ancien appel en contiendrait encore.
-    const listings = (data.listings || []).filter(l => l.lat != null && l.lon != null && l.source !== 'demo');
-    const features = listings.map(l => ({
-      type: 'Feature',
-      geometry: { type: 'Point', coordinates: [l.lon, l.lat] },
-      properties: l
-    }));
-    source.setData({ type: 'FeatureCollection', features });
-
-    const count = features.length;
-    if (count === 0) {
-      badge.textContent = `Aucune offre réelle disponible pour cette zone`;
-    } else {
-      badge.textContent = `${count} bien(s)`;
-    }
-    badge.classList.add('visible');
-    renderAnnoncesSidebar(listings);
-  }
-
-  // Sidebar "Annonces à proximité" (remplace l'ancien "Détail par péril") :
-  // mêmes annonces réelles que les marqueurs de la carte (prix, prix/m²,
-  // score climat), triées par prix/m² croissant, limitées à un nombre
-  // raisonnable pour rester lisible. Clic -> recentre la carte et ouvre le
-  // popup complet (showAnnoncePopup), comme un clic direct sur le marqueur.
-  const ZM_ANNONCES_LIMIT = 12;
-  // Icône de repli (petite maison) affichée à la place d'une vraie photo
-  // quand l'annonce n'en fournit pas — plus soigné qu'un carré vide.
-  const ZM_ANNONCE_PLACEHOLDER_HTML = '<div class="zm-annonce-photo-placeholder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M9.5 21v-6h5v6"/></svg></div>';
-  // Exposée en global : appelée depuis l'attribut inline onerror="" de
-  // l'<img> ci-dessous (le photoHtml est injecté via innerHTML, donc ne
-  // peut pas fermer sur une fonction locale du script).
-  window.annoncePhotoFallback = function (imgEl) { imgEl.outerHTML = ZM_ANNONCE_PLACEHOLDER_HTML; };
-  function renderAnnoncesSidebar(listings) {
-    const box = document.getElementById('zm-annonces-list');
-    if (!box) return;
-    if (!listings || !listings.length) {
-      box.innerHTML = '<div class="zm-annonces-empty">Aucune offre réelle disponible pour cette zone</div>';
-      return;
-    }
-    const sorted = listings.slice().sort((a, b) => (a.prix_m2 || Infinity) - (b.prix_m2 || Infinity));
-    box.innerHTML = '';
-    sorted.slice(0, ZM_ANNONCES_LIMIT).forEach(l => {
-      const prixTxt = l.prix != null ? Math.round(l.prix).toLocaleString('fr-FR') + ' €' : '—';
-      const prixM2Txt = l.prix_m2 != null ? Math.round(l.prix_m2).toLocaleString('fr-FR') + ' €/m²' : '';
-      const score = l.climat_score;
-      const scoreColor = '#8B959D';
-      const photoHtml = l.photo
-        ? `<img src="${escapeHtml(l.photo)}" alt="" class="zm-annonce-photo" loading="lazy" onerror="annoncePhotoFallback(this)">`
-        : ZM_ANNONCE_PLACEHOLDER_HTML;
-      const item = document.createElement('div');
-      item.className = 'zm-annonce-item';
-      item.innerHTML = `
-        ${photoHtml}
-        <div class="zm-annonce-info">
-          <div class="zm-annonce-addr">${escapeHtml(l.adresse || 'Bien immobilier')}</div>
-          <div class="zm-annonce-meta"><span class="zm-annonce-price">${prixTxt}</span>${prixM2Txt ? ' · ' + prixM2Txt : ''}</div>
-        </div>
-        <span class="zm-annonce-score" style="background:${scoreColor}">${score != null ? Math.round(score) : '—'}</span>
-      `;
-      item.addEventListener('click', () => {
-        if (l.lat != null && l.lon != null && zoneMap) {
-          zoneMap.flyTo({ center: [l.lon, l.lat], zoom: Math.max(zoneMap.getZoom(), 14), duration: 800 });
-          showAnnoncePopup([l.lon, l.lat], l);
-        }
-      });
-      box.appendChild(item);
-    });
-  }
-
-  function showAnnoncePopup(coords, p) {
-    const dpeColor = DPE_COLORS[p.dpe] || '#8B959D';
-    const prixTxt = p.prix != null ? Math.round(p.prix).toLocaleString('fr-FR') + ' €' : '—';
-    const surfaceTxt = p.surface_m2 != null ? Math.round(p.surface_m2) + ' m²' : '—';
-    const prixM2Txt = p.prix_m2 != null ? Math.round(p.prix_m2).toLocaleString('fr-FR') + ' €' : '—';
-    const [lon, lat] = coords;
-
-    const photoHtml = p.photo ? `<img src="${escapeHtml(p.photo)}" alt="" class="annonce-popup-photo" loading="lazy" onerror="this.remove()">` : '';
-
-    const html = `
-      ${photoHtml}
-      <div class="annonce-popup-title">${escapeHtml(p.adresse || 'Bien immobilier')}</div>
-      <div class="annonce-popup-row"><span class="apr-label">Prix</span><span class="apr-value">${prixTxt}</span></div>
-      <div class="annonce-popup-row"><span class="apr-label">Surface</span><span class="apr-value">${surfaceTxt}</span></div>
-      <div class="annonce-popup-row"><span class="apr-label">Prix/m²</span><span class="apr-value" style="color:#DC4B39;">${prixM2Txt}</span></div>
-      <div class="annonce-popup-row"><span class="apr-label">Type</span><span class="apr-value">${escapeHtml(p.type_bien || '—')}</span></div>
-      <div class="annonce-popup-row"><span class="apr-label">Date</span><span class="apr-value">${escapeHtml(p.date_publication || '—')}</span></div>
-      <div class="annonce-popup-row"><span class="apr-label">Pièces</span><span class="apr-value">${p.pieces ?? '—'}</span></div>
-      <div class="annonce-popup-row"><span class="apr-label">DPE</span><span class="apr-value"><span class="annonce-popup-dpe" style="background:${dpeColor}">${escapeHtml(p.dpe || '?')}</span></span></div>
-      <div class="annonce-popup-row"><span class="apr-label">Score climat</span><span class="apr-value">${p.climat_score ?? '—'}/100</span></div>
-      <div class="annonce-popup-actions">
-        ${p.url ? `<a href="${escapeHtml(p.url)}" target="_blank" rel="noopener">Voir l'annonce</a>` : ''}
-        <a href="https://www.google.com/maps?layer=c&cbll=${lat},${lon}" target="_blank" rel="noopener">Street View</a>
-        <a href="https://www.google.com/maps?q=${lat},${lon}" target="_blank" rel="noopener">Carte</a>
-      </div>
-    `;
-
-    new maplibregl.Popup({ className: 'annonce-popup', closeButton: true, maxWidth: '260px' })
-      .setLngLat(coords)
-      .setHTML(html)
-      .addTo(zoneMap);
-  }
-
-  zoneAutorefineToggle.onchange = () => {
-    if (zoneAutorefineToggle.checked && hasFirstResult) runAutoRefine();
-  };
-
-  // Légende "Aléas de la zone" (coin haut-gauche de la carte, cf. zone-legend-perils
-  // dans le HTML) : lecture rapide des aléas directement sur la carte,
-  // triés du plus au moins sévère (seul panneau de détail par péril restant,
-  // la sidebar affiche désormais les annonces à la place). "canicule" est
-  // filtré (cf. ZONE_MAP_HIDDEN_ALEAS) : non pertinent à l'échelle zone.
-  function updatePerilsLegend(perils) {
-    const box = document.getElementById('zone-legend-perils');
-    const rows = document.getElementById('zone-legend-perils-rows');
-    if (!perils || !Object.keys(perils).length) {
-      box.style.display = 'none';
-      return;
-    }
-    const entries = Object.entries(perils)
-      .filter(([key]) => ZONE_MAP_HIDDEN_ALEAS.indexOf(key) === -1)
-      .map(([key, p]) => ({ key, moyenne: p.moyenne || 0 }))
-      .sort((a, b) => b.moyenne - a.moyenne);
-    if (!entries.length) {
-      box.style.display = 'none';
-      return;
-    }
-
-    rows.innerHTML = '';
-    entries.forEach(({ key, moyenne }) => {
-      const info = PERIL_NAMES[key] || { fr: key };
-      const color = moyenne < 20 ? '#1F9D6C' : moyenne < 45 ? '#D98A2B' : moyenne < 70 ? '#204e6d' : '#C0392B';
-      const row = document.createElement('div');
-      row.className = 'zone-legend-peril-row';
-      row.innerHTML = `
-        <span class="plabel"><span class="pdot" style="background:${color}"></span>${info.fr}</span>
-        <span class="pscore" style="color:${color}">${Math.round(moyenne)}</span>
-      `;
-      rows.appendChild(row);
-    });
-    box.style.display = 'block';
-  }
-
-  function displayZoneResults(data, opts = {}) {
-    zoneResults.classList.add('visible');
-
-    const zmScore = document.getElementById('zm-score');
-    const zmBadge = document.getElementById('zm-badge');
-    const zmMeta = document.getElementById('zm-meta');
-    const zmWorst = document.getElementById('zm-worst');
-    const zmWorstPeril = document.getElementById('zm-worst-peril');
-    const zmWorstScore = document.getElementById('zm-worst-score');
-    const zmSampleInfo = document.getElementById('zone-sample-info');
-
-    zmScore.textContent = data.score_moyen != null ? Math.round(data.score_moyen) : '—';
-    zmBadge.textContent = data.rating_global || '—';
-    zmBadge.className = 'zone-rating-badge badge-' + (data.rating_global || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    zmMeta.textContent = `${data.nb_points_valides || 0}/${data.nb_points} points valides`;
-    zmSampleInfo.textContent = `${data.nb_points} points · ${data.nb_points_valides || 0} valides · ${data.nb_points_erreur || 0} erreurs`;
-
-    if (data.worst_case_score && data.worst_case_score >= 50) {
-      zmWorst.style.display = 'block';
-      zmWorstPeril.textContent = data.worst_case_peril || '—';
-      zmWorstScore.textContent = Math.round(data.worst_case_score);
-    } else {
-      zmWorst.style.display = 'none';
-    }
-
-    updatePerilsLegend(data.perils);
-
-    // Conserve la dernière réponse backend pour permettre de rebasculer
-    // entre "vue globale" et un aléa précis sans refaire d'appel réseau
-    // (cf. renderZoneMapForAlea, déclenché par les boutons #zone-alea-filter).
-    lastZoneData = data;
-    renderZoneMapForAlea();
-  }
-
-  // Recalcule et applique l'aplat isobandes pour l'aléa actuellement
-  // sélectionné (globale ou l'un des 8 aléas réels). Appelé après chaque
-  // nouvelle évaluation backend (displayZoneResults) et à chaque clic sur
-  // un bouton de #zone-alea-filter, en réutilisant les points déjà reçus.
-  function renderZoneMapForAlea() {
-    if (!lastZoneData) return;
-    const validPoints = (lastZoneData.points_echantillon || [])
-      .filter(p => p.lat != null && p.lon != null)
-      .map(p => ({ lat: p.lat, lon: p.lon, score: scoreForAlea(p.score, selectedAlea) }));
-
-    const isoSource = zoneMap && zoneMap.getSource('risk-isobands');
-    if (isoSource) {
-      isoSource.setData(buildIsobands(validPoints));
-    }
-  }
-
-  zoneCloseBtn.addEventListener('click', closeZoneExplorer);
-  zoneOverlay.addEventListener('click', function (e) {
-    if (e.target === zoneOverlay) closeZoneExplorer();
-  });
-  window.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape' && zoneOverlay.classList.contains('open')) closeZoneExplorer();
-  });
-
+  const exploreZoneBtn = document.getElementById('home-cta-mode-b');
+  if (exploreZoneBtn) exploreZoneBtn.addEventListener('click', () => { window.location.href = 'zone.html'; });
   if (brandWatermark) {
     brandWatermark.addEventListener('click', function () { location.reload(); });
   }
@@ -5903,7 +4867,7 @@ loadDataset(DEFAULT_DATA);
     e.preventDefault();
     const adresse = document.getElementById('f-adresse').value.trim();
     if (!adresse) return;
-    const apiBase = (document.getElementById('api-base-input').value || 'http://127.0.0.1:8765').trim();
+    const apiBase = (document.getElementById('api-base-input').value || window.TYPHOON_API).trim();
 
     formScreen.style.display = 'none';
     loadingScreen.style.display = 'flex';
@@ -6547,10 +5511,10 @@ function pid_renderBadge(container, level, score, pid) {
   svg += `<path d="${insetPath}" fill="rgba(255,255,255,0.12)" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>`;
   svg += `<path d="${shieldPath}" fill="url(#${shineId})"/>`;
   svg += '<path d="M51 40 L69 45 L69 62 C69 76 60 84 60 88 C60 84 51 76 51 62 Z" fill="' + cfg.secondary + '" stroke="' + cfg.primary + '" stroke-width="1"/>';
-  svg += '<text x="60" y="72" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-weight="700" font-size="17" fill="' + (level === 'Platinum' ? '#4A5A7A' : '#fff') + '">' + cfg.label + '</text>';
-  svg += '<text x="60" y="92" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-weight="700" font-size="13" fill="rgba(255,255,255,0.85)">' + (score != null ? score : '—') + '/100</text>';
-  if (pid) svg += '<text x="60" y="115" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-weight="600" font-size="8" fill="rgba(255,255,255,0.5)">' + pid + '</text>';
-  svg += '<text x="60" y="131" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-weight="700" font-size="8" fill="#1F9D6C">● VERIFIÉ</text>';
+  svg += '<text x="60" y="72" text-anchor="middle" font-family="Google Sans,system-ui,sans-serif" font-weight="700" font-size="17" fill="' + (level === 'Platinum' ? '#4A5A7A' : '#fff') + '">' + cfg.label + '</text>';
+  svg += '<text x="60" y="92" text-anchor="middle" font-family="Google Sans,system-ui,sans-serif" font-weight="700" font-size="13" fill="rgba(255,255,255,0.85)">' + (score != null ? score : '—') + '/100</text>';
+  if (pid) svg += '<text x="60" y="115" text-anchor="middle" font-family="Google Sans,system-ui,sans-serif" font-weight="600" font-size="8" fill="rgba(255,255,255,0.5)">' + pid + '</text>';
+  svg += '<text x="60" y="131" text-anchor="middle" font-family="Google Sans,system-ui,sans-serif" font-weight="700" font-size="8" fill="#1F9D6C">● VERIFIÉ</text>';
   container.innerHTML = svg;
 }
 

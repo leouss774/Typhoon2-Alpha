@@ -15,7 +15,9 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-load_dotenv()
+# Charge le .env racine du projet, pas un .env local au backend.
+ROOT_DIR = Path(__file__).resolve().parents[3]
+load_dotenv(ROOT_DIR / ".env")
 
 MISTRAL_API_KEY = os.getenv("MISTRAL_API_KEY")
 

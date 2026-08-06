@@ -191,7 +191,14 @@ def _has_hazard(georisques: dict[str, Any] | None, keyword: str) -> bool:
 
 def _source_en_erreur(georisques: dict[str, Any] | None, nom_source: str) -> bool:
     erreurs = (georisques or {}).get("erreurs") or []
-    return any(nom_source in (e.get("source") or "") for e in erreurs)
+    # Erreurs peuvent être des dicts (forme normale) OU des chaînes brutes
+    # (ex. "georisques totalement indisponible" quand la source a totalement
+    # échoué) : on ignore les entrées non structurées au lieu de planter.
+    return any(
+        nom_source in (e.get("source") or "")
+        for e in erreurs
+        if isinstance(e, dict)
+    )
 
 
 def _vulnerabilite_batiment(bdnb: dict[str, Any] | None) -> tuple[float, str, dict[str, Any]]:
