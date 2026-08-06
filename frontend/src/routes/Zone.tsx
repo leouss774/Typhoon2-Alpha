@@ -3,8 +3,9 @@
 //   Étapes :
 //     1. Adresse      — hero centré façon Gemini (champ de recherche au centre)
 //     2. Cartographie — carte OpenLayers + panneau aléas (data viz Géorisques)
-//     3. Analyse      — réservé (vide pour l'instant)
-//     4. Rapport IA   — rapport narratif Mistral + export PDF
+//     3. Analyse      — fiche bâtiment BDNB (Synthèse / Construction / Énergie…)
+//     4. Jumeau BIM   — viewer 3D thingraph en iframe (glTF généré depuis l'emprise BDNB)
+//     5. Rapport IA   — rapport narratif Mistral + export PDF
 //
 //   Stepper linéaire : les étapes 2-4 sont bloquées tant qu'aucune adresse
 //   n'a été diagnostiquée — l'étape Adresse passe en état d'erreur (icône
@@ -16,6 +17,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import type { Menu } from '@material/web/menu/menu.js';
 import type { MdSwitch } from '@material/web/switch/switch.js';
 import { ZoneMap } from '../components/ZoneMap';
+import { ZoneAnalyse } from '../components/ZoneAnalyse';
+import { ZoneBIM } from '../components/ZoneBIM';
 import { ACCENTS, useTyphoonTheme } from '../typhoon/useTyphoonTheme';
 import {
   API,
@@ -31,14 +34,32 @@ import {
   type RapportNarratif,
   type GeocodeSuggestion,
 } from '../zone/config';
+import {
+  addConversation,
+  loadConversations,
+  removeConversation,
+  saveConversations,
+  type Conversation,
+} from '../zone/conversations';
 import '../styles/zone.css';
 
 const LEGEND_RANGES = ['<20', '20–39', '40–59', '60–79', '≥80'];
+
+/* Erreur structurée du rapport IA — contrat backend /diagnostic/adresse/rapport :
+   { error: <code>, detail: <message utilisateur>, cause: <cause technique> } */
+interface RapportError {
+  code: string; // mistral_api_key_manquante | mistral_indisponible | reseau | http_*
+  status?: number;
+  message: string; // message lisible
+  hint?: string; // conseil actionnable (facultatif)
+  cause?: string; // détail technique (affiché dans <details>)
+}
 
 const STEPS = [
   { id: 'adresse', label: 'Adresse' },
   { id: 'carto', label: 'Cartographie' },
   { id: 'analyse', label: 'Analyse' },
+  { id: 'bim', label: 'Jumeau BIM' },
   { id: 'rapport', label: 'Rapport IA' },
 ] as const;
 
@@ -88,9 +109,10 @@ export function Zone() {
   const [loading, setLoading] = useState(false);
   const [diagError, setDiagError] = useState<string | null>(null);
   const [report, setReport] = useState<RisqueReport | null>(null);
+  const [conversations, setConversations] = useState<Conversation[]>(() => loadConversations());
   const [rapport, setRapport] = useState<RapportNarratif | null>(null);
   const [rapportLoading, setRapportLoading] = useState(false);
-  const [rapportError, setRapportError] = useState<string | null>(null);
+  const [rapportError, setRapportError] = useState<RapportError | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [visibleLayerKeys, setVisibleLayerKeys] = useState<ReadonlySet<string>>(new Set());
 
@@ -167,6 +189,12 @@ export function Zone() {
 
       const r = (await resp.json()) as RisqueReport;
       setReport(r);
+      /* Historique « Récent » (localStorage) : adresse normalisée ou requête brute. */
+      setConversations((prev) => {
+        const next = addConversation(prev, r.adresse_normalisee || value);
+        saveConversations(next);
+        return next;
+      });
       setStepError(false); // l'adresse est validée → étapes suivantes débloquées
       setStep(1); // → étape Cartographie
       if (!userClosedSidebar.current) setSidebarOpen(true);
@@ -192,21 +220,58 @@ export function Zone() {
         body: JSON.stringify(report),
       });
       if (!resp.ok) {
-        let detail = `Erreur ${resp.status}`;
-        try {
-          const err = await resp.json();
-          detail = err.detail?.detail || err.detail?.error || JSON.stringify(err.detail) || detail;
-        } catch {
-          /* corps non-JSON */
-        }
-        throw new Error(detail);
+        // Contrat backend : detail = { error, detail, cause }. On gère aussi
+        // le cas FastAPI où detail est une simple chaîne ({"detail": "..."}).
+        const err = await resp.json().catch(() => null);
+        const rawDetail = err?.detail;
+        const d =
+          rawDetail && typeof rawDetail === 'object'
+            ? rawDetail
+            : rawDetail && typeof rawDetail === 'string'
+              ? { detail: rawDetail }
+              : err ?? {};
+        setRapportError({
+          code: d.error || `http_${resp.status}`,
+          status: resp.status,
+          message:
+            d.detail ||
+            (resp.status === 503
+              ? 'Le rapport IA nécessite une clé Mistral côté serveur.'
+              : `Le service n'a pas pu générer le rapport (HTTP ${resp.status}).`),
+          hint: hintForRapportError(d.error, resp.status),
+          cause: d.cause || undefined,
+        });
+        return;
       }
       setRapport((await resp.json()) as RapportNarratif);
     } catch (err) {
-      setRapportError(err instanceof Error ? err.message : String(err));
+      // fetch() a échoué : backend injoignable, CORS, DNS…
+      setRapportError({
+        code: 'reseau',
+        message: 'Impossible de joindre le serveur pour générer le rapport IA.',
+        hint: 'Vérifiez que le backend Typhoon est démarré (port 8765) puis réessayez.',
+        cause: err instanceof Error ? err.message : String(err),
+      });
     } finally {
       setRapportLoading(false);
     }
+  }
+
+  /* Conseil actionnable selon le code d'erreur renvoyé par le backend. */
+  function hintForRapportError(code: string | undefined, status: number): string | undefined {
+    if (code === 'mistral_api_key_manquante') {
+      return "Ajoutez MISTRAL_API_KEY au fichier .env du backend puis redémarrez l'API.";
+    }
+    if (code === 'mistral_indisponible' || status === 502) {
+      return 'Le service Mistral est momentanément indisponible ou a expiré — réessayez dans quelques instants.';
+    }
+    if (status === 503) {
+      return 'Le service de génération IA n\'est pas configuré côté serveur.';
+    }
+    if (status >= 500) {
+      return 'Le serveur a rencontré une erreur interne — réessayez, ou relancez le backend si cela persiste.';
+    }
+    return undefined;
   }
 
   /* ── Navigation du stepper (linéaire : impossible de sauter l'adresse) ── */
@@ -220,7 +285,7 @@ export function Zone() {
     setStepError(false);
     setStep(i);
     if (i === 0) window.setTimeout(() => heroInputRef.current?.focus(), 80);
-    if (i === 3 && report) void loadRapport();
+    if (i === 4 && report) void loadRapport();
   }
 
   /* ── Visibilité des couches ── */
@@ -237,6 +302,20 @@ export function Zone() {
     setSidebarOpen((o) => {
       userClosedSidebar.current = o; // fermeture manuelle → true · réouverture → false
       return !o;
+    });
+  }
+
+  /* ── Historique « Récent » (sidenav) ── */
+  function handleOpenConversation(address: string) {
+    setDrawerOpen(false);
+    void runDiagnosis(address);
+  }
+
+  function handleDeleteConversation(id: string) {
+    setConversations((prev) => {
+      const next = removeConversation(prev, id);
+      saveConversations(next);
+      return next;
     });
   }
 
@@ -301,6 +380,10 @@ export function Zone() {
           setDrawerOpen(false);
           goToStep(0);
         }}
+        conversations={conversations}
+        activeAddress={report?.adresse_normalisee ?? null}
+        onOpenConversation={handleOpenConversation}
+        onDeleteConversation={handleDeleteConversation}
       />
 
       {/* ===== COLONNE PRINCIPALE ===== */}
@@ -403,7 +486,7 @@ export function Zone() {
         </section>
       )}
 
-      {/* ===== ÉTAPES 2–4 : topbar + scène ===== */}
+      {/* ===== ÉTAPES 2–5 : topbar + scène ===== */}
       {step >= 1 && (
         <>
           <header className="zone-topbar">
@@ -594,18 +677,18 @@ export function Zone() {
               </section>
             </div>
 
-            {/* ÉTAPE 3 — ANALYSE (réservé) */}
-            <section className="zone-empty-step" hidden={step !== 2}>
-              <md-icon>auto_awesome</md-icon>
-              <h2>Analyse approfondie</h2>
-              <p>
-                Cette étape est en préparation — croisements de données, comparaison de scénarios
-                et sources complémentaires (Copernicus, BDNB) y seront intégrés.
-              </p>
+            {/* ÉTAPE 3 — ANALYSE BDNB (fiche bâtiment) */}
+            <section className="zone-analyse" hidden={step !== 2}>
+              <ZoneAnalyse report={report} />
             </section>
 
-            {/* ÉTAPE 4 — RAPPORT IA (Mistral) */}
-            <section className="zone-report" hidden={step !== 3}>
+            {/* ÉTAPE 4 — JUMEAU BIM (viewer 3D thingraph/bim-viewer en iframe) */}
+            <section className="zone-bim" hidden={step !== 3}>
+              <ZoneBIM report={report} />
+            </section>
+
+            {/* ÉTAPE 5 — RAPPORT IA (Mistral) */}
+            <section className="zone-report" hidden={step !== 4}>
               {!report ? (
                 <div className="report-empty">
                   <md-icon>description</md-icon>
@@ -623,13 +706,43 @@ export function Zone() {
                   <md-linear-progress indeterminate></md-linear-progress>
                 </div>
               ) : rapportError ? (
-                <div className="report-empty">
-                  <md-icon>error</md-icon>
+                <div className="report-error" role="alert">
+                  <div className="report-error-icon">
+                    <md-icon>
+                      {rapportError.code === 'mistral_api_key_manquante'
+                        ? 'vpn_key'
+                        : rapportError.code === 'reseau'
+                          ? 'wifi_off'
+                          : 'cloud_off'}
+                    </md-icon>
+                  </div>
                   <h2>Rapport indisponible</h2>
-                  <p>{rapportError}</p>
-                  <md-filled-button onClick={() => void loadRapport()}>
-                    <md-icon slot="icon">refresh</md-icon> Réessayer
-                  </md-filled-button>
+                  <p className="report-error-msg">{rapportError.message}</p>
+                  {rapportError.hint ? (
+                    <p className="report-error-hint">
+                      <md-icon>lightbulb</md-icon>
+                      <span>{rapportError.hint}</span>
+                    </p>
+                  ) : null}
+                  {rapportError.cause ? (
+                    <details className="report-error-details">
+                      <summary>
+                        <md-icon>bug_report</md-icon> Détail technique
+                      </summary>
+                      <code>
+                        [{rapportError.code}
+                        {rapportError.status ? ` · HTTP ${rapportError.status}` : ''}] {rapportError.cause}
+                      </code>
+                    </details>
+                  ) : null}
+                  <div className="report-error-actions">
+                    <md-filled-button onClick={() => void loadRapport()}>
+                      <md-icon slot="icon">refresh</md-icon> Réessayer
+                    </md-filled-button>
+                    <md-text-button onClick={() => goToStep(0)}>
+                      <md-icon slot="icon">search</md-icon> Nouvelle adresse
+                    </md-text-button>
+                  </div>
                 </div>
               ) : rapport ? (
                 <>
@@ -1034,6 +1147,10 @@ function ZoneSidenav({
   onOpenSettings,
   onCloseDrawer,
   onNewDiagnostic,
+  conversations,
+  activeAddress,
+  onOpenConversation,
+  onDeleteConversation,
 }: {
   sidenavRef: RefObject<HTMLElement | null>;
   collapsed: boolean;
@@ -1050,6 +1167,10 @@ function ZoneSidenav({
   onOpenSettings: () => void;
   onCloseDrawer: () => void;
   onNewDiagnostic: () => void;
+  conversations: Conversation[];
+  activeAddress: string | null;
+  onOpenConversation: (address: string) => void;
+  onDeleteConversation: (id: string) => void;
 }) {
   const navigate = useNavigate();
 
@@ -1119,29 +1240,38 @@ function ZoneSidenav({
           </md-icon-button>
         </nav>
       ) : (
-        /* ── Mode déplié : liste M3 ── */
-        <md-list className="sidenav-nav">
-          <md-list-item
-            className="sidenav-new"
-            type="button"
-            onClick={onNewDiagnostic}
-          >
-            <md-icon slot="start">add_circle</md-icon>
-            <span slot="headline">Nouveau diagnostic</span>
-          </md-list-item>
-          <md-list-item type="button" onClick={() => navGo('/')}>
-            <md-icon slot="start">home</md-icon>
-            <span slot="headline">Accueil</span>
-          </md-list-item>
-          <md-list-item type="button" onClick={() => navGo('/faq')}>
-            <md-icon slot="start">help</md-icon>
-            <span slot="headline">FAQ</span>
-          </md-list-item>
-          <md-list-item type="button" onClick={() => navGo('/contact')}>
-            <md-icon slot="start">mail</md-icon>
-            <span slot="headline">Contact</span>
-          </md-list-item>
-        </md-list>
+        /* ── Mode déplié : liste M3 + historique « Récent » ── */
+        <div className="sidenav-body">
+          <md-list className="sidenav-nav">
+            <md-list-item
+              className="sidenav-new"
+              type="button"
+              onClick={onNewDiagnostic}
+            >
+              <md-icon slot="start">add_circle</md-icon>
+              <span slot="headline">Nouveau diagnostic</span>
+            </md-list-item>
+            <md-list-item type="button" onClick={() => navGo('/')}>
+              <md-icon slot="start">home</md-icon>
+              <span slot="headline">Accueil</span>
+            </md-list-item>
+            <md-list-item type="button" onClick={() => navGo('/faq')}>
+              <md-icon slot="start">help</md-icon>
+              <span slot="headline">FAQ</span>
+            </md-list-item>
+            <md-list-item type="button" onClick={() => navGo('/contact')}>
+              <md-icon slot="start">mail</md-icon>
+              <span slot="headline">Contact</span>
+            </md-list-item>
+          </md-list>
+
+          <ConversationHistory
+            conversations={conversations}
+            activeAddress={activeAddress}
+            onOpen={onOpenConversation}
+            onDelete={onDeleteConversation}
+          />
+        </div>
       )}
 
       <footer className="sidenav-footer">
@@ -1202,5 +1332,73 @@ function ZoneSidenav({
         </md-menu>
       </footer>
     </aside>
+  );
+}
+
+/* ── Historique « Récent » de la sidenav (façon Gemini) ──
+   Section repliable : liste des adresses diagnostiquées (localStorage),
+   clic → relance le diagnostic, survol → bouton de suppression. */
+function ConversationHistory({
+  conversations,
+  activeAddress,
+  onOpen,
+  onDelete,
+}: {
+  conversations: Conversation[];
+  activeAddress: string | null;
+  onOpen: (address: string) => void;
+  onDelete: (id: string) => void;
+}) {
+  const [open, setOpen] = useState(true);
+
+  if (conversations.length === 0) {
+    return (
+      <div className="sidenav-recent-empty">
+        <md-icon>history</md-icon>
+        <span>Pas encore de diagnostic</span>
+      </div>
+    );
+  }
+
+  return (
+    <details
+      className="sidenav-recent"
+      open={open}
+      onToggle={(e) => setOpen((e.currentTarget as HTMLDetailsElement).open)}
+    >
+      <summary className="sidenav-recent-header" aria-label="Historique des adresses diagnostiquées">
+        <span className="sidenav-recent-title">Récent</span>
+        <md-icon>expand_more</md-icon>
+      </summary>
+      <div className="sidenav-recent-list">
+        {conversations.map((c) => {
+          const active = activeAddress !== null && c.address === activeAddress;
+          return (
+            <div
+              className={`sidenav-recent-item${active ? ' active' : ''}`}
+              key={c.id}
+            >
+              <button
+                type="button"
+                className="sidenav-recent-btn"
+                title={c.address}
+                onClick={() => onOpen(c.address)}
+              >
+                <md-icon>history</md-icon>
+                <span className="sidenav-recent-label">{c.address}</span>
+              </button>
+              <md-icon-button
+                className="sidenav-recent-del"
+                aria-label={`Supprimer ${c.address} de l'historique`}
+                title="Supprimer de l'historique"
+                onClick={() => onDelete(c.id)}
+              >
+                <md-icon>close</md-icon>
+              </md-icon-button>
+            </div>
+          );
+        })}
+      </div>
+    </details>
   );
 }

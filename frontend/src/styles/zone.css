@@ -209,11 +209,24 @@
   --md-icon-button-unselected-icon-color: var(--md-sys-color-primary);
 }
 
-/* ── Navigation (liste M3 dépliée) ── */
-.sidenav-nav {
+/* ── Corps de la sidenav dépliée : liste M3 + historique « Récent » ── */
+.sidenav-body {
   flex: 1;
   overflow-y: auto;
   padding: 14px 12px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--md-sys-color-outline-variant) transparent;
+}
+.sidenav-body::-webkit-scrollbar {
+  width: 4px;
+}
+.sidenav-body::-webkit-scrollbar-thumb {
+  background: var(--md-sys-color-outline-variant);
+  border-radius: 2px;
+}
+
+/* ── Navigation (liste M3 dépliée) ── */
+.sidenav-nav {
   --md-list-container-color: transparent;
   --md-list-item-label-text-size: 13px;
   --md-list-item-container-shape: 999px;
@@ -232,6 +245,128 @@
   --md-list-item-icon-color: var(--md-sys-color-on-primary-container);
   --md-list-item-hover-state-layer-color: var(--md-sys-color-primary);
   margin-bottom: 14px;
+}
+
+/* ── Historique « Récent » (façon Gemini : expandable + items au survol) ── */
+.sidenav-recent {
+  margin-top: 12px;
+  border-top: 1px solid var(--md-sys-color-outline-variant);
+  padding-top: 8px;
+}
+.sidenav-recent-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 10px;
+  cursor: pointer;
+  user-select: none;
+  list-style: none;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--md-sys-color-on-surface-variant);
+  border-radius: 10px;
+  transition: background 0.15s, color 0.15s;
+}
+.sidenav-recent-header::-webkit-details-marker {
+  display: none;
+}
+.sidenav-recent-header:hover {
+  background: var(--md-sys-color-surface-container);
+  color: var(--md-sys-color-on-surface);
+}
+.sidenav-recent-header md-icon {
+  --md-icon-size: 16px;
+  transition: transform 0.2s;
+}
+.sidenav-recent[open] .sidenav-recent-header md-icon {
+  transform: rotate(180deg);
+}
+.sidenav-recent-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 4px;
+}
+.sidenav-recent-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  border-radius: 10px;
+  transition: background 0.15s;
+}
+.sidenav-recent-item:hover {
+  background: color-mix(in srgb, var(--md-sys-color-primary-container) 55%, transparent);
+}
+.sidenav-recent-item.active {
+  background: var(--md-sys-color-primary-container);
+}
+.sidenav-recent-btn {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  color: var(--md-sys-color-on-surface);
+}
+.sidenav-recent-btn md-icon {
+  --md-icon-size: 17px;
+  color: var(--md-sys-color-on-surface-variant);
+  flex-shrink: 0;
+}
+.sidenav-recent-item:hover .sidenav-recent-btn md-icon,
+.sidenav-recent-item.active .sidenav-recent-btn md-icon {
+  color: var(--md-sys-color-primary);
+}
+.sidenav-recent-label {
+  min-width: 0;
+  font-size: 12px;
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--md-sys-color-on-surface-variant);
+}
+.sidenav-recent-item:hover .sidenav-recent-label,
+.sidenav-recent-item.active .sidenav-recent-label {
+  color: var(--md-sys-color-on-surface);
+}
+.sidenav-recent-del {
+  --md-icon-button-icon-size: 16px;
+  --md-icon-button-icon-color: var(--md-sys-color-on-surface-variant);
+  --md-icon-button-unselected-icon-color: var(--md-sys-color-on-surface-variant);
+  width: 30px;
+  height: 30px;
+  margin-right: 4px;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.sidenav-recent-item:hover .sidenav-recent-del,
+.sidenav-recent-item.active .sidenav-recent-del {
+  opacity: 1;
+}
+@media (max-width: 900px) {
+  .sidenav-recent-del {
+    opacity: 1;
+  }
+}
+.sidenav-recent-empty {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  font-size: 11px;
+  color: var(--md-sys-color-on-surface-variant);
+}
+.sidenav-recent-empty md-icon {
+  --md-icon-size: 16px;
+  opacity: 0.8;
 }
 
 /* ── Colonne d'icônes repliée ── */
@@ -327,7 +462,7 @@
   background: var(--md-sys-color-primary-container);
 }
 .sidenav-accent-reset md-icon {
-  font-size: 14px;
+  --md-icon-size: 14px;
 }
 
 /* ── Scrim (drawer mobile) ── */
@@ -473,7 +608,7 @@
   transition: all 0.2s;
 }
 .step-dot md-icon {
-  font-size: 16px;
+  --md-icon-size: 16px;
 }
 .step-label {
   font-size: 12px;
@@ -861,7 +996,7 @@
   animation: zone-error-in 0.25s ease;
 }
 .hero-error md-icon {
-  font-size: 15px;
+  --md-icon-size: 15px;
   flex-shrink: 0;
 }
 
@@ -969,38 +1104,661 @@
   overflow: hidden;
 }
 .zone-workspace[hidden],
-.zone-empty-step[hidden],
+.zone-analyse[hidden],
+.zone-bim[hidden],
 .zone-report[hidden] {
   display: none;
 }
 
-/* ── Étape 3 — vide (réservé) ── */
-.zone-empty-step {
+/* ── Étape 4 — Jumeau BIM (viewer 3D thingraph en iframe) ── */
+.zone-bim {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.bim-wrap {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px 24px 20px;
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+}
+.bim-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--md-sys-color-outline-variant);
+}
+.bim-title h2 {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 24px;
+  color: color-mix(in srgb, var(--md-sys-color-primary) 30%, var(--md-sys-color-on-surface));
+}
+.bim-meta {
+  margin: 6px 0 0;
+  font-size: 11px;
+  color: var(--md-sys-color-on-surface-variant);
+}
+.bim-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.bim-action {
+  --md-filled-button-label-text-size: 12px;
+  --md-elevated-button-label-text-size: 12px;
+}
+
+/* ── Chips de métadonnées du bâtiment ── */
+.bim-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.bim-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: 999px;
+  background: var(--md-sys-color-surface-container-low);
+  font-size: 11.5px;
+  color: var(--md-sys-color-on-surface);
+  transition: border-color 0.18s, transform 0.18s;
+}
+.bim-chip:hover {
+  border-color: var(--md-sys-color-primary);
+  transform: translateY(-1px);
+}
+.bim-chip md-icon {
+  --md-icon-size: 15px;
+  color: var(--md-sys-color-primary);
+  flex-shrink: 0;
+}
+.bim-chip-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--md-sys-color-on-surface-variant);
+}
+.bim-chip-value {
+  font-family: var(--mono);
+  font-weight: 600;
+}
+.bim-chip.na .bim-chip-value {
+  font-weight: 400;
+  font-style: italic;
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+/* ── Cadre iframe du viewer ── */
+.bim-frame-wrap {
+  position: relative;
+  flex: 1;
+  min-height: 340px;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid var(--md-sys-color-outline-variant);
+  background: var(--md-sys-color-surface-container-low);
+}
+.bim-frame {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+  display: block;
+}
+.bim-loading {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: var(--md-sys-color-surface-container-low);
+  color: var(--md-sys-color-primary);
+  font-size: 13px;
+}
+.bim-loading md-icon {
+  --md-icon-size: 34px;
+}
+.bim-loading md-linear-progress {
+  width: 220px;
+}
+
+/* ── Bandeau info (BDNB indisponible → géométrie générique) ── */
+.bim-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border: 1px solid color-mix(in srgb, var(--md-sys-color-tertiary) 40%, var(--md-sys-color-outline-variant));
+  border-radius: 12px;
+  background: var(--md-sys-color-tertiary-container);
+  color: var(--md-sys-color-on-tertiary-container);
+  font-size: 12px;
+}
+.bim-banner md-icon {
+  --md-icon-size: 16px;
+  flex-shrink: 0;
+}
+
+.bim-footnote {
+  margin: 0;
+  font-size: 10.5px;
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+@media (max-width: 900px) {
+  .bim-header {
+    flex-direction: column;
+  }
+  .bim-actions {
+    width: 100%;
+  }
+  .bim-action {
+    flex: 1;
+  }
+  .bim-frame-wrap {
+    min-height: 320px;
+  }
+}
+
+/* ── Étape 3 — Analyse BDNB (fiche bâtiment) ── */
+.zone-analyse {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+.analyse-wrap {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 24px 28px 48px;
+  max-width: 1040px;
+  width: 100%;
+  margin: 0 auto;
+}
+.analyse-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--md-sys-color-outline-variant);
+}
+.analyse-title h2 {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 24px;
+  color: color-mix(in srgb, var(--md-sys-color-primary) 30%, var(--md-sys-color-on-surface));
+}
+.analyse-meta {
+  margin: 6px 0 0;
+  font-size: 11px;
+  color: var(--md-sys-color-on-surface-variant);
+}
+.analyse-meta.mono {
+  font-family: var(--mono);
+  font-size: 10px;
+}
+.src-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: 999px;
+  font-size: 11px;
+  color: var(--md-sys-color-on-surface-variant);
+  background: var(--md-sys-color-surface-container-low);
+  flex-shrink: 0;
+}
+.src-chip md-icon {
+  --md-icon-size: 14px;
+}
+
+.analyse-tabs {
+  width: 100%;
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  background: var(--md-sys-color-surface);
+  padding-top: 6px;
+}
+.analyse-body {
+  display: flex;
+  flex-direction: column;
+}
+.analyse-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.analyse-section {
+  padding: 18px 20px;
+  background: var(--md-sys-color-surface-container-low);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: 14px;
+  transition: border-color 0.18s, transform 0.18s, box-shadow 0.18s;
+}
+.analyse-section:hover {
+  border-color: var(--md-sys-color-primary);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+}
+.analyse-section h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 14px;
+  font-family: var(--serif);
+  font-size: 15px;
+  color: var(--md-sys-color-primary);
+}
+.analyse-section h3 md-icon {
+  --md-icon-size: 18px;
+}
+
+/* ── Synthèse : usage + stats ── */
+.usage-hero {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 22px;
+  background: var(--md-sys-color-primary-container);
+  border-radius: 14px;
+}
+.usage-icon {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--md-sys-color-primary) 18%, transparent);
+  color: var(--md-sys-color-on-primary-container);
+  flex-shrink: 0;
+}
+.usage-icon md-icon {
+  --md-icon-size: 28px;
+}
+.usage-label {
+  display: block;
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--md-sys-color-on-primary-container);
+  opacity: 0.8;
+}
+.usage-value {
+  display: block;
+  margin-top: 2px;
+  font-family: var(--serif);
+  font-size: 22px;
+  color: var(--md-sys-color-on-primary-container);
+}
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 12px;
+}
+.stat-grid.compact {
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+}
+.stat-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 14px 16px;
+  background: var(--md-sys-color-surface-container-low);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: 14px;
+  transition: border-color 0.18s, transform 0.18s;
+}
+.stat-card:hover {
+  border-color: var(--md-sys-color-primary);
+  transform: translateY(-2px);
+}
+.stat-card md-icon {
+  --md-icon-size: 20px;
+  color: var(--md-sys-color-primary);
+  margin-top: 1px;
+}
+.stat-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.stat-label {
+  font-size: 10.5px;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--md-sys-color-on-surface-variant);
+}
+.stat-value {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--md-sys-color-on-surface);
+}
+.stat-value.na {
+  font-size: 12px;
+  font-weight: 400;
+  font-style: italic;
+  color: var(--md-sys-color-on-surface-variant);
+}
+.stat-sub {
+  font-size: 11px;
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+.analyse-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+@media (max-width: 900px) {
+  .analyse-cols {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── Carte BDNB (onglet Synthèse) ── */
+.bdnb-map {
+  position: relative;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--md-sys-color-outline-variant);
+}
+.bdnb-map-canvas {
+  width: 100%;
+  height: 360px;
+  /* Fond CARTO light_all ≈ #f2efe9 : on aligne le canvas pour éviter
+     l'écran noir avant l'arrivée des tuiles (et on reste lisible quel
+     que soit le thème de l'app). */
+  background: #f2efe9;
+}
+.bdnb-map .map-pin {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--accent);
+  /* Sur fond clair, un liseré sombre fait ressortir le pin (le liseré
+     clair du thème sombre se fondait dans les tuiles claires). */
+  border: 2px solid #2b2f36;
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 35%, transparent),
+    0 2px 6px rgba(0, 0, 0, 0.35);
+  transform: translate(-50%, -50%);
+  cursor: default;
+}
+.bdnb-map-tools {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: flex;
+  gap: 6px;
+  z-index: 2;
+}
+.bdnb-map-tools md-icon-button {
+  --md-icon-button-icon-size: 18px;
+  width: 34px;
+  height: 34px;
+  background: var(--md-sys-color-surface-container-high);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: 8px;
+  color: var(--md-sys-color-on-surface-variant);
+}
+.bdnb-map-tools md-icon-button[selected] {
+  color: var(--md-sys-color-on-primary-container);
+  background: var(--md-sys-color-primary-container);
+  border-color: var(--md-sys-color-primary);
+}
+.bdnb-map .ol-zoom {
+  bottom: 12px;
+  right: 12px;
+  top: auto;
+  left: auto;
+}
+.bdnb-map .ol-zoom button {
+  background: var(--md-sys-color-surface-container-high) !important;
+  color: var(--md-sys-color-on-surface) !important;
+  border: 1px solid var(--md-sys-color-outline-variant) !important;
+  border-radius: 8px !important;
+  width: 30px !important;
+  height: 30px !important;
+  margin: 2px !important;
+}
+.bdnb-map .ol-zoom button:hover {
+  background: var(--md-sys-color-primary) !important;
+  color: var(--md-sys-color-on-primary) !important;
+}
+.bdnb-map .ol-attribution {
+  display: none !important;
+}
+.footprint-note {
+  margin: 8px 0 0;
+  font-size: 11px;
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+.badge-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.info-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--md-sys-color-outline-variant);
+  font-size: 11.5px;
+  color: var(--md-sys-color-on-surface-variant);
+  background: var(--md-sys-color-surface-container-high);
+}
+.info-badge md-icon {
+  --md-icon-size: 14px;
+}
+.info-badge.yes {
+  border-color: color-mix(in srgb, #3aa76d 45%, var(--md-sys-color-outline-variant));
+  color: #3aa76d;
+  background: color-mix(in srgb, #3aa76d 12%, transparent);
+}
+.info-badge.warn {
+  border-color: color-mix(in srgb, #d4ac3e 50%, var(--md-sys-color-outline-variant));
+  color: #d4ac3e;
+  background: color-mix(in srgb, #d4ac3e 12%, transparent);
+}
+.info-badge.na {
+  opacity: 0.7;
+}
+
+.kv-list {
+  display: flex;
+  flex-direction: column;
+}
+.kv {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 9px 0;
+  border-bottom: 1px dashed var(--md-sys-color-outline-variant);
+}
+.kv:last-child {
+  border-bottom: none;
+}
+.kv-k {
+  font-size: 12px;
+  color: var(--md-sys-color-on-surface-variant);
+  flex-shrink: 0;
+}
+.kv-v {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--md-sys-color-on-surface);
+  text-align: right;
+}
+.kv-v.na {
+  font-style: italic;
+  font-weight: 400;
+  color: var(--md-sys-color-on-surface-variant);
+}
+.mono .kv-v {
+  font-family: var(--mono);
+}
+
+/* ── Construction : matériaux ── */
+.mat-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+@media (max-width: 900px) {
+  .mat-grid {
+    grid-template-columns: 1fr;
+  }
+}
+.mat-card {
+  padding: 20px 22px;
+  background: var(--md-sys-color-surface-container-low);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: 14px;
+  transition: border-color 0.18s, transform 0.18s;
+}
+.mat-card:hover {
+  border-color: var(--md-sys-color-primary);
+  transform: translateY(-2px);
+}
+.mat-card .usage-icon {
+  width: 44px;
+  height: 44px;
+  margin-bottom: 14px;
+}
+.mat-label {
+  display: block;
+  font-size: 10.5px;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--md-sys-color-on-surface-variant);
+}
+.mat-value {
+  display: block;
+  margin-top: 3px;
+  font-family: var(--serif);
+  font-size: 19px;
+  color: var(--md-sys-color-on-surface);
+}
+
+/* ── Énergie : DPE ── */
+.dpe-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.dpe-badge {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 14px;
+  font-family: var(--serif);
+  font-size: 30px;
+  font-weight: 700;
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  flex-shrink: 0;
+}
+.dpe-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--md-sys-color-on-surface);
+}
+.dpe-sub {
+  display: block;
+  margin-top: 2px;
+  font-size: 11px;
+  color: var(--md-sys-color-on-surface-variant);
+}
+.na-notice {
+  margin: 0 0 14px;
+  padding: 12px 14px;
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--md-sys-color-on-surface-variant);
+  background: var(--md-sys-color-surface-container);
+  border: 1px dashed var(--md-sys-color-outline-variant);
+  border-radius: 10px;
+}
+
+/* ── Cadre : parcelles ── */
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.parcelle-chip {
+  padding: 5px 10px;
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: 8px;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  color: var(--md-sys-color-on-surface-variant);
+  background: var(--md-sys-color-surface-container-high);
+}
+
+/* ── États vides ── */
+.analyse-empty {
   flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 14px;
-  padding: 40px;
+  padding: 48px;
   text-align: center;
   color: var(--md-sys-color-on-surface-variant);
 }
-.zone-empty-step md-icon {
-  font-size: 48px;
+.analyse-empty md-icon {
+  --md-icon-size: 48px;
   color: var(--md-sys-color-primary);
 }
-.zone-empty-step h2 {
+.analyse-empty h2 {
   margin: 0;
   font-family: var(--serif);
   font-size: 24px;
   color: color-mix(in srgb, var(--md-sys-color-primary) 30%, var(--md-sys-color-on-surface));
 }
-.zone-empty-step p {
+.analyse-empty p {
   margin: 0;
-  max-width: 420px;
+  max-width: 460px;
   font-size: 13px;
-  line-height: 1.6;
+  line-height: 1.65;
+}
+.analyse-empty .empty-detail {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  opacity: 0.75;
 }
 
 /* ── Étape 4 — Rapport IA ── */
@@ -1022,7 +1780,7 @@
   align-items: flex-end;
   justify-content: space-between;
   gap: 16px;
-  padding: 4px 0 16px;
+  padding: 20px 0 16px;
   border-bottom: 1px solid var(--md-sys-color-outline-variant);
   background: var(--md-sys-color-surface);
 }
@@ -1089,7 +1847,7 @@
   border-radius: 14px;
 }
 .report-synthese md-icon {
-  font-size: 22px;
+  --md-icon-size: 22px;
   color: var(--md-sys-color-on-primary-container);
   margin-top: 2px;
   flex-shrink: 0;
@@ -1152,7 +1910,7 @@
   border-left: 3px solid var(--md-sys-color-primary);
 }
 .report-avertissement md-icon {
-  font-size: 16px;
+  --md-icon-size: 16px;
   color: var(--md-sys-color-primary);
   margin-top: 1px;
   flex-shrink: 0;
@@ -1169,7 +1927,7 @@
   color: var(--md-sys-color-on-surface-variant);
 }
 .report-empty md-icon {
-  font-size: 44px;
+  --md-icon-size: 44px;
   color: var(--md-sys-color-primary);
 }
 .report-empty h2 {
@@ -1188,6 +1946,103 @@
   width: min(360px, 80%);
 }
 
+/* ── Étape 5 — erreur du rapport IA (carte dédiée, plus riche que report-empty) ── */
+.report-error {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  text-align: center;
+  padding: 48px 24px;
+  color: var(--md-sys-color-on-surface-variant);
+  max-width: 560px;
+  margin: 0 auto;
+}
+.report-error-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--md-sys-color-error) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--md-sys-color-error) 35%, transparent);
+}
+.report-error-icon md-icon {
+  --md-icon-size: 32px;
+  color: var(--md-sys-color-error);
+}
+.report-error h2 {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 22px;
+  color: color-mix(in srgb, var(--md-sys-color-error) 45%, var(--md-sys-color-on-surface));
+}
+.report-error-msg {
+  margin: 0;
+  max-width: 460px;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.report-error-hint {
+  margin: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  max-width: 460px;
+  text-align: left;
+  font-size: 12px;
+  line-height: 1.55;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--md-sys-color-primary) 8%, transparent);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  color: var(--md-sys-color-on-surface);
+}
+.report-error-hint md-icon {
+  --md-icon-size: 16px;
+  color: var(--md-sys-color-primary);
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.report-error-details {
+  width: 100%;
+  max-width: 460px;
+  text-align: left;
+}
+.report-error-details summary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  font-size: 11.5px;
+  color: var(--md-sys-color-on-surface-variant);
+  user-select: none;
+}
+.report-error-details summary md-icon {
+  --md-icon-size: 14px;
+}
+.report-error-details code {
+  display: block;
+  margin-top: 8px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--md-sys-color-surface-container-high);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 1.5;
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+.report-error-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+}
+
 /* ── État vide du panneau (avant diagnostic) ── */
 .sidebar-empty {
   display: flex;
@@ -1201,7 +2056,7 @@
   color: var(--md-sys-color-on-surface-variant);
 }
 .sidebar-empty md-icon {
-  font-size: 34px;
+  --md-icon-size: 34px;
   color: var(--md-sys-color-primary);
 }
 .sidebar-empty p {
@@ -1455,7 +2310,7 @@
   color: var(--md-sys-color-on-surface-variant);
 }
 .alea-icon md-icon {
-  font-size: 20px;
+  --md-icon-size: 20px;
 }
 .alea-icon.d03-tres-faible {
   color: var(--d03-tres-faible);
@@ -1510,7 +2365,7 @@
   border: 1px solid transparent;
 }
 .status-chip md-icon {
-  font-size: 12px;
+  --md-icon-size: 12px;
 }
 .status-chip.chip-on {
   color: var(--d03-eleve);
@@ -1556,7 +2411,7 @@
   transition: 0.15s;
 }
 .alea-link md-icon {
-  font-size: 15px;
+  --md-icon-size: 15px;
 }
 .alea-link:hover {
   color: var(--md-sys-color-on-primary-container);
@@ -1579,7 +2434,7 @@
   display: none;
 }
 .catnat-summary md-icon {
-  font-size: 16px;
+  --md-icon-size: 16px;
   transition: transform 0.2s;
 }
 .catnat-section[open] .catnat-summary md-icon {
@@ -1616,7 +2471,7 @@
   color: var(--md-sys-color-on-surface);
 }
 .partial-banner md-icon {
-  font-size: 16px;
+  --md-icon-size: 16px;
   color: var(--d03-eleve);
   flex-shrink: 0;
   margin-top: 1px;
@@ -1639,7 +2494,7 @@
   color: var(--md-sys-color-on-surface-variant);
 }
 .avertissement md-icon {
-  font-size: 16px;
+  --md-icon-size: 16px;
   color: var(--md-sys-color-primary);
   flex-shrink: 0;
   margin-top: 1px;
@@ -1805,7 +2660,7 @@
   display: none;
 }
 .legend-summary md-icon {
-  font-size: 16px;
+  --md-icon-size: 16px;
   transition: transform 0.2s;
 }
 .legend-section[open] .legend-summary md-icon {
