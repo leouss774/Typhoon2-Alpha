@@ -14,12 +14,15 @@
 //   seuls les styles sont redéfinis en M3 sombre (jumeau.css).
 // =============================================================================
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { API } from '../zone/config';
+import { RecommandationsOverview } from '../components/RecommandationsOverview';
 import '../styles/jumeau.css';
 
 export function JumeauNumerique() {
+  const [overviewOpen, setOverviewOpen] = useState(false);
+
   useEffect(() => {
     // Import dynamique : three.js (≈600 ko) n'est chargé que sur cette
     // route, pas dans le bundle principal (le build garde ainsi le chunk
@@ -70,7 +73,17 @@ export function JumeauNumerique() {
             <div className="jumeau-brand-tag">Diagnostic climatique immobilier</div>
           </div>
         </div>
-        <span className="jumeau-sovereign-badge">Souverain FR / UE</span>
+        <div className="jumeau-topbar-actions">
+          <md-icon-button
+            className="jumeau-overview-btn"
+            aria-label="Vue d'ensemble des recommandations"
+            title="Vue d'ensemble des recommandations"
+            onClick={() => setOverviewOpen(true)}
+          >
+            <md-icon aria-hidden="true">format_list_bulleted</md-icon>
+          </md-icon-button>
+          <span className="jumeau-sovereign-badge">Souverain FR / UE</span>
+        </div>
       </header>
 
       {/* ── Scène (zone plein écran) ── */}
@@ -202,6 +215,10 @@ export function JumeauNumerique() {
         {/* Le moteur lit cet input en repli pour l'API (recherche artisans). */}
         <input id="api-base-input" type="hidden" defaultValue={API} aria-hidden="true" />
       </div>
+
+      {/* Vue d'ensemble des recommandations (données déjà en mémoire via le
+          moteur — aucune requête réseau supplémentaire). */}
+      <RecommandationsOverview open={overviewOpen} onClose={() => setOverviewOpen(false)} />
     </div>
   );
 }
