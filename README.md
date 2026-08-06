@@ -369,20 +369,27 @@ Ordre d'ingestion recommandé : MRN, puis BRGM et CEPRI, puis le reste des sourc
 
 ## Installation
 
-Prérequis : Python 3.11+, Node 18+, une base vectorielle locale ou hébergée (ex. Chroma, Qdrant), un LLM accessible via API (ex. Anthropic, OpenAI).
+Prérequis : Python 3.11+, une base vectorielle locale ou hébergée (ex. Chroma, Qdrant), un LLM accessible via API (ex. Mistral — voir `backend/app/recommandations/mistral_client.py`).
 
 ```bash
-# Backend
+# Backend (port 8765 obligatoire : les fronts statiques l'appellent en dur)
 cd backend
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-cp ../.env.example .env
-uvicorn app.main:app --reload
+# Si backend/.env.example existe, le copier vers .env puis le remplir
+# (toutes les URLs/cles ont sinon des valeurs par defaut dans
+# backend/app/core/config.py)
+uvicorn app.main:app --reload --port 8765
 
-# Frontend (par cas d'usage, exemple assurance)
-cd frontend/assurance
-npm install
-npm run dev
+# Frontend — fronts statiques (aucune installation nécessaire)
+# Ouvrir directement dans le navigateur, ou servir le dossier :
+#   python -m http.server 8080
+# frontend/jumeau_numerique/index.html   (jumeau 3D + carte de zone)
+# frontend/promoteurs/index.html         (prospection promoteurs)
+# frontend/artisans/index.html           (matching d'artisans)
+#
+# Le backend doit tourner sur http://localhost:8765 (CORS ouvert pour
+# l'usage en file:// — voir backend/app/main.py).
 ```
 
 `backend/requirements.txt` (dépendances principales) :

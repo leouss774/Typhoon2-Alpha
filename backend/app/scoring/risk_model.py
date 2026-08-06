@@ -191,7 +191,13 @@ def _has_hazard(georisques: dict[str, Any] | None, keyword: str) -> bool:
 
 def _source_en_erreur(georisques: dict[str, Any] | None, nom_source: str) -> bool:
     erreurs = (georisques or {}).get("erreurs") or []
-    return any(nom_source in (e.get("source") or "") for e in erreurs)
+    # Le collecteur historique stockait des chaînes, tandis que le format
+    # récent utilise des objets {source, erreur}. Accepter les deux évite de
+    # faire échouer tout le diagnostic lorsqu'une source externe est absente.
+    return any(
+        nom_source in ((e.get("source") or "") if isinstance(e, dict) else str(e))
+        for e in erreurs
+    )
 
 
 def _vulnerabilite_batiment(bdnb: dict[str, Any] | None) -> tuple[float, str, dict[str, Any]]:

@@ -16,6 +16,9 @@ from __future__ import annotations
 import json
 import time
 
+# Le SDK expose le client public à la racine en v1 comme en v2. L'ancien
+# chemin ``mistralai.client`` ne fournit pas ``Mistral`` avec certaines
+# installations 1.x et empêchait même le démarrage de FastAPI.
 from mistralai import Mistral
 
 from app.core.config import settings
@@ -43,8 +46,8 @@ def get_client() -> Mistral:
     if _client is None:
         if not settings.mistral_api_key:
             raise RuntimeError(
-                "MISTRAL_API_KEY manquant. Renseigne-la dans backend/.env "
-                "(voir backend/.env.example)."
+                "MISTRAL_API_KEY manquant. Renseigne-la dans le .env racine "
+                "du projet (voir .env.example à la racine)."
             )
         _client = Mistral(api_key=settings.mistral_api_key, timeout_ms=REQUEST_TIMEOUT_MS)
     return _client
@@ -79,6 +82,15 @@ def chat_json(system_prompt: str, user_prompt: str, max_retries: int = 5) -> dic
             )
             content = response.choices[0].message.content
             time.sleep(THROTTLE_SECONDS)
+            if isinstance(content, list):
+                text_parts = []
+                for chunk in content:
+                    text = getattr(chunk, "text", None)
+                    if isinstance(text, str):
+                        text_parts.append(text)
+                    elif hasattr(text, "text"):
+                        text_parts.append(str(text.text))
+                content = "".join(text_parts)
             return json.loads(content)
         except Exception as e:
             last_err = e
