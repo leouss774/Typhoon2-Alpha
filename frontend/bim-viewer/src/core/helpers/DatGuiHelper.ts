@@ -36,7 +36,9 @@ export default class DatGuiHelper {
   readonly controls = {
     // Common settings
     showGroundGrid: false,
-    showGrassGround: false,
+    // Typhoon : herbe + ciel nuageux actifs par défaut, pour que le bâtiment
+    // soit posé sur un sol étendu plutôt que flottant sur fond dégradé.
+    showGrassGround: true,
     skyMode: ["None", "Gradient ramp", "Cloudy"],
     homeView: () => console.log("[DGH] Go to home view"),
     views: ["Top", "Bottom", "Front", "Back", "Left", "Right"],
@@ -154,7 +156,7 @@ export default class DatGuiHelper {
       }
       viewer.enableRender();
     });
-    skyModeController.setValue("Gradient ramp");
+    skyModeController.setValue("Cloudy");
     sf.add(controls, "homeView").name("Go to home view").onChange(() => {
       viewer.goToHomeView();
     });

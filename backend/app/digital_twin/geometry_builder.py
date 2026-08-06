@@ -103,6 +103,8 @@ def bounding_rect_from_geom_groupe(
 _MATERIAU_SLUG_OVERRIDES = {
     "meuliere": "meuliere",
     "parpaing": "parpaing_enduit",
+    "agglomere": "parpaing_enduit",  # FFO "AGGLOMERE" = parpaing
+    "agglomeré": "parpaing_enduit",
     "pierre": "pierre_de_taille",
     "brique": "brique",
     "beton": "beton",

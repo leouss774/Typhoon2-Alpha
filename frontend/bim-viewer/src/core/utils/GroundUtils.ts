@@ -43,7 +43,8 @@ export default class GroundUtils {
     return new Promise((resolve) => {
       // see code from: https://threejs.org/examples/#webgl_animation_cloth
       const loader = new THREE.TextureLoader();
-      loader.load(texture || "images/terrain/grass.jpg", (groundTexture) => {
+      // BASE_URL : même correctif que SkyboxUtils — le viewer vit sous /bim-viewer/.
+      loader.load(texture || `${process.env.BASE_URL || "/"}images/terrain/grass.jpg`, (groundTexture) => {
         groundTexture.wrapS = groundTexture.wrapT = THREE.RepeatWrapping;
         groundTexture.repeat.set(repeatX || this.DEFAULT_WIDTH_SEGS / 5, repeatY || this.DEFAULT_HEIGHT_SETS / 5);
         groundTexture.anisotropy = 16;

@@ -370,15 +370,25 @@ def test_gltf_builder_bim_multimateriaux_et_toiture_pentue():
     assert toit_max[1] > mur_max[1] + 1.0, "toit non pentu"
     assert toit_max[1] <= 8.0 + 1e-6
 
-    # Planchers : un par niveau, bornés sous l'avant-toit (y = 0, 8/3, …)
+    # Planchers : un par niveau, bornés sous l'avant-toit. La dalle du RDC
+    # est posée à +3 cm (anti z-fighting avec le sol du .glb et l'herbe du
+    # viewer), les suivantes à k × hauteur_niveau.
     slab_min, slab_max = positions_of(2)
-    assert abs(slab_min[1] - 0.0) < 1e-6
+    assert abs(slab_min[1] - 0.03) < 1e-6
     assert slab_max[1] < mur_max[1] + 1e-6  # aucun plancher au-dessus des murs
     assert slab_max[1] > 2.5  # plusieurs niveaux présents
 
-    # Couleur mur dépend du matériau BDNB (béton gris, pas la pierre défaut)
-    beton = doc["materials"][0]["pbrMetallicRoughness"]["baseColorFactor"]
-    assert abs(beton[0] - 0.66) < 0.01
+    # Matériau BDNB "BETON" → texture murale embarquée : baseColorTexture
+    # présent, facteur au blanc (le facteur MULTIPLIE la texture en glTF),
+    # image + TEXCOORD_0 dans le document.
+    murs_pbr = doc["materials"][0]["pbrMetallicRoughness"]
+    assert "baseColorTexture" in murs_pbr, "texture murale absente pour BETON"
+    assert murs_pbr["baseColorFactor"] == [1.0, 1.0, 1.0, 1.0]
+    assert doc.get("images"), "image de texture non embarquée"
+    assert doc.get("textures"), "table textures absente"
+    assert "TEXCOORD_0" in prims[0]["attributes"], "UV absents sur les murs"
+    # La toiture ARDOISES est texturée elle aussi (toit_ardoises.jpg).
+    assert "baseColorTexture" in doc["materials"][1]["pbrMetallicRoughness"]
 
 
 def test_gltf_builder_bim_fenetres_et_porte():

@@ -1025,7 +1025,12 @@ export default class Viewer3D {
     const isFirstModel = (!modelUuids || modelUuids.length <= 1);
     if (isFirstModel) {
       const ctrl = this.datGui && this.datGui.controls;
-      this.regenSkyOfGradientRamp();
+      // Ne régénère le dôme dégradé que si ce mode de ciel est actif : sinon
+      // il recouvrirait le skybox "Cloudy" (défaut Typhoon) après chargement.
+      // (skyMode est déclaré string[] mais dat.gui y range la valeur choisie.)
+      if (!ctrl || String(ctrl.skyMode) === "Gradient ramp") {
+        this.regenSkyOfGradientRamp();
+      }
       if (ctrl && ctrl.showGroundGrid) {
         this.regenGroundGrid();
       }
