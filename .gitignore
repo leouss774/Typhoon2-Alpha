@@ -2,7 +2,8 @@
 *.zip
 backend/data/lookup/copernicus/
 backend/out/
-backend/recommendation_travaux-main/data
+backend/typhon_risk_engine/out/
+backend/data/property_ids/
 .tmp/
 .pip-cache
 # Python
@@ -31,3 +32,40 @@ frontend/.next/
 Thumbs.db
 
 .freebuff/
+
+# R\u00e9f\u00e9rence design / artefacts hors d\u00e9p\u00f4t (Nolla, builds)
+nollahealth-clone/
+frontend/dist/
+frontend/_next/
+frontend/public/nolla-mirror/
+frontend/public/nollahealth/
+frontend/trees/
+frontend/animations/
+frontend/blog/
+frontend/allergies/
+frontend/learning/
+frontend/about.html
+frontend/allergies.html
+frontend/allergies.1.html
+frontend/blog.html
+frontend/blog.1.html
+frontend/careers.html
+frontend/chat.html
+frontend/faq.html
+frontend/knowledge.html
+frontend/learning.html
+frontend/privacy.html
+frontend/profile.html
+frontend/skincare.html
+frontend/terms.html
+frontend/robots.txt
+frontend/site.webmanifest
+frontend/apple-icon.png@apple-icon.276b0535.png
+frontend/favicon.ico@favicon.06fbaff5.ico
+frontend/icon.png@icon.6bee2995.png
+
+nollahealth-mirror/
+
+.tools/
+
+wget.pid

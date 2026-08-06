@@ -16,7 +16,7 @@ from __future__ import annotations
 import json
 import time
 
-from mistralai import Mistral
+from mistralai.client import Mistral
 
 from app.core.config import settings
 
@@ -37,8 +37,8 @@ def get_client() -> Mistral:
     if _client is None:
         if not settings.mistral_api_key:
             raise RuntimeError(
-                "MISTRAL_API_KEY manquant. Renseigne-la dans backend/.env "
-                "(voir backend/.env.example)."
+                "MISTRAL_API_KEY manquant. Renseigne-la dans le .env racine "
+                "du projet (voir .env.example à la racine)."
             )
         _client = Mistral(api_key=settings.mistral_api_key, timeout_ms=REQUEST_TIMEOUT_MS)
     return _client
@@ -55,8 +55,20 @@ def _backoff_seconds(e: Exception, attempt: int) -> float:
     return 5 * (attempt + 1)
 
 
-def chat_json(system_prompt: str, user_prompt: str, max_retries: int = 5) -> dict:
-    """Appelle le modele de chat Mistral et force une reponse JSON."""
+def chat_json(
+    system_prompt: str,
+    user_prompt: str,
+    max_retries: int = 5,
+    max_tokens: int | None = None,
+) -> dict:
+    """Appelle le modele de chat Mistral et force une reponse JSON.
+
+    `max_tokens` par defaut = CHAT_MAX_TOKENS (1000, concision des
+    recommandations travaux). Le rapport narratif (introduction + sections +
+    synthese + obligations) depasse facilement ce plafond et se retrouvait
+    tronque en plein JSON ("Unterminated string") : il passe explicitement
+    max_tokens=4000 (cf. rapport_narratif.py).
+    """
     client = get_client()
     last_err: Exception | None = None
     for attempt in range(max_retries):
@@ -69,10 +81,19 @@ def chat_json(system_prompt: str, user_prompt: str, max_retries: int = 5) -> dic
                 ],
                 response_format={"type": "json_object"},
                 temperature=0.1,
-                max_tokens=CHAT_MAX_TOKENS,
+                max_tokens=max_tokens or CHAT_MAX_TOKENS,
             )
             content = response.choices[0].message.content
             time.sleep(THROTTLE_SECONDS)
+            if isinstance(content, list):
+                text_parts = []
+                for chunk in content:
+                    text = getattr(chunk, "text", None)
+                    if isinstance(text, str):
+                        text_parts.append(text)
+                    elif hasattr(text, "text"):
+                        text_parts.append(str(text.text))
+                content = "".join(text_parts)
             return json.loads(content)
         except Exception as e:
             last_err = e

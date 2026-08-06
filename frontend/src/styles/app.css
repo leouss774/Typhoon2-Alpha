@@ -1,0 +1,542 @@
+:root {
+  /* M3 default typeface (m3.material.io/styles/typography/fonts) */
+  font-family: 'Google Sans', system-ui, sans-serif;
+  color: #1c1714;
+  background: #f6f1eb;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  background:
+    radial-gradient(circle at top left, rgba(109, 75, 53, 0.26), transparent 30%),
+    radial-gradient(circle at top right, rgba(29, 42, 38, 0.18), transparent 32%),
+    linear-gradient(180deg, #faf6f1 0%, #f2e8de 100%);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+/* ============================================================================
+   M3 base typography — pages shell (HTML natif hors composants @material/web)
+   Tokens : material-theme.css (m3.material.io/styles/typography)
+   Les écrans /zone et /jumeau sont scopés (.zone-app, .jumeau-app) et
+   définissent leurs propres polices : ils ne sont pas affectés ici.
+============================================================================ */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--md-sys-typescale-headline-medium-font, 'Google Sans', system-ui, sans-serif);
+  font-weight: var(--md-sys-typescale-headline-medium-weight, 400);
+  color: inherit;
+}
+
+h1 {
+  font-family: var(--md-sys-typescale-headline-large-font, 'Google Sans', system-ui, sans-serif);
+  font-size: var(--md-sys-typescale-headline-large-size, 2rem);
+  line-height: var(--md-sys-typescale-headline-large-line-height, 2.5rem);
+  font-weight: var(--md-sys-typescale-headline-large-weight, 400);
+}
+
+h2 {
+  font-family: var(--md-sys-typescale-headline-medium-font, 'Google Sans', system-ui, sans-serif);
+  font-size: var(--md-sys-typescale-headline-medium-size, 1.75rem);
+  line-height: var(--md-sys-typescale-headline-medium-line-height, 2.25rem);
+  font-weight: var(--md-sys-typescale-headline-medium-weight, 400);
+}
+
+h3 {
+  font-family: var(--md-sys-typescale-headline-small-font, 'Google Sans', system-ui, sans-serif);
+  font-size: var(--md-sys-typescale-headline-small-size, 1.5rem);
+  line-height: var(--md-sys-typescale-headline-small-line-height, 2rem);
+  font-weight: var(--md-sys-typescale-headline-small-weight, 400);
+}
+
+h4 {
+  font-family: var(--md-sys-typescale-title-large-font, 'Google Sans', system-ui, sans-serif);
+  font-size: var(--md-sys-typescale-title-large-size, 1.375rem);
+  line-height: var(--md-sys-typescale-title-large-line-height, 1.75rem);
+  font-weight: var(--md-sys-typescale-title-large-weight, 400);
+}
+
+h5,
+h6 {
+  font-family: var(--md-sys-typescale-title-medium-font, 'Google Sans', system-ui, sans-serif);
+  font-size: var(--md-sys-typescale-title-medium-size, 1rem);
+  line-height: var(--md-sys-typescale-title-medium-line-height, 1.5rem);
+  font-weight: var(--md-sys-typescale-title-medium-weight, 500);
+}
+
+p {
+  font-family: var(--md-sys-typescale-body-large-font, 'Google Sans', system-ui, sans-serif);
+  font-size: var(--md-sys-typescale-body-large-size, 1rem);
+  line-height: var(--md-sys-typescale-body-large-line-height, 1.5rem);
+  font-weight: var(--md-sys-typescale-body-large-weight, 400);
+  letter-spacing: var(--md-sys-typescale-body-large-tracking, 0.03125rem);
+}
+
+small {
+  font-family: var(--md-sys-typescale-body-small-font, 'Google Sans', system-ui, sans-serif);
+  font-size: var(--md-sys-typescale-body-small-size, 0.75rem);
+  line-height: var(--md-sys-typescale-body-small-line-height, 1rem);
+  font-weight: var(--md-sys-typescale-body-small-weight, 400);
+}
+
+label {
+  font-family: var(--md-sys-typescale-label-large-font, 'Google Sans', system-ui, sans-serif);
+  font-size: var(--md-sys-typescale-label-large-size, 0.875rem);
+  line-height: var(--md-sys-typescale-label-large-line-height, 1.25rem);
+  font-weight: var(--md-sys-typescale-label-large-weight, 500);
+  letter-spacing: var(--md-sys-typescale-label-large-tracking, 0.00625rem);
+}
+
+.app-shell {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: rgba(249, 244, 239, 0.8);
+  border-bottom: 1px solid rgba(59, 42, 32, 0.08);
+  backdrop-filter: blur(16px);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.mark {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.9rem;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  background: linear-gradient(135deg, #36241d, #7d5a45);
+  font-weight: 800;
+}
+
+.brand-name {
+  font-family: 'Google Sans', system-ui, sans-serif;
+  font-weight: 700;
+}
+
+.brand-tag {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: #7d5a45;
+}
+
+.nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.nav a {
+  padding: 0.5rem 0.8rem;
+  border-radius: 999px;
+  color: #5b4b41;
+}
+
+.nav a.active {
+  background: rgba(125, 90, 69, 0.12);
+  color: #2c2019;
+}
+
+.nolla-home {
+  color: #241c18;
+}
+
+.nolla-hero,
+.nolla-section,
+.nolla-banner,
+.nolla-doctor,
+.nolla-founders,
+.nolla-faq {
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 1.25rem;
+}
+
+.nolla-hero {
+  position: relative;
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  overflow: hidden;
+  color: #f7f1ea;
+}
+
+.nolla-hero__backdrop {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(31, 21, 17, 0.28), rgba(31, 21, 17, 0.7)),
+    radial-gradient(circle at 20% 18%, rgba(255, 255, 255, 0.12), transparent 30%),
+    #1a130f;
+  border-radius: 2rem;
+}
+
+.nolla-topbar,
+.nolla-hero__content {
+  position: relative;
+  z-index: 1;
+}
+
+.nolla-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 2rem;
+}
+
+.nolla-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.8rem;
+  font-weight: 700;
+}
+
+.nolla-logo__mark {
+  display: grid;
+  place-items: center;
+  width: 2.4rem;
+  height: 2.4rem;
+  border-radius: 0.8rem;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+}
+
+.nolla-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.nolla-nav a {
+  color: rgba(247, 241, 234, 0.82);
+  padding: 0.5rem 0.8rem;
+  border-radius: 999px;
+}
+
+.nolla-hero__content {
+  max-width: 760px;
+  padding: 4rem 0 3rem;
+  animation: fade-up 700ms ease both;
+}
+
+.nolla-kicker,
+.nolla-section__intro p,
+.nolla-banner__copy p,
+.nolla-doctor__copy p:first-child {
+  margin: 0 0 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: 0.75rem;
+}
+
+.nolla-kicker {
+  color: rgba(247, 241, 234, 0.7);
+}
+
+.nolla-hero h1,
+.nolla-section__intro h2,
+.nolla-banner__copy h2,
+.nolla-doctor__copy h2 {
+  margin: 0;
+  font-family: 'Google Sans', system-ui, sans-serif;
+  font-size: clamp(2.8rem, 6vw, 6rem);
+  line-height: 0.95;
+  letter-spacing: -0.05em;
+}
+
+.nolla-lead {
+  max-width: 44rem;
+  margin: 1.2rem 0 0;
+  font-size: 1.1rem;
+  line-height: 1.7;
+  color: rgba(247, 241, 234, 0.84);
+}
+
+.nolla-actions {
+  display: flex;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+  margin-top: 1.6rem;
+}
+
+.nolla-hero__panel {
+  display: grid;
+  grid-template-columns: 1fr 220px;
+  gap: 1rem;
+  align-items: end;
+  margin-top: 2.2rem;
+  padding: 1rem;
+  border-radius: 1.6rem;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(20px);
+}
+
+.nolla-hero__panel img {
+  width: 100%;
+  height: 320px;
+  object-fit: cover;
+  object-position: center top;
+  border-radius: 1.2rem;
+}
+
+.nolla-hero__panel-copy {
+  align-self: center;
+}
+
+.nolla-hero__panel-copy span,
+.nolla-card__label {
+  display: inline-block;
+  margin-bottom: 0.6rem;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.nolla-hero__panel-copy span {
+  color: rgba(247, 241, 234, 0.68);
+}
+
+.nolla-section__intro {
+  max-width: 920px;
+  margin-bottom: 1.6rem;
+}
+
+.nolla-section__intro p,
+.nolla-banner__copy p,
+.nolla-doctor__copy p:first-child {
+  color: #7b5a47;
+}
+
+.nolla-section__intro h2,
+.nolla-banner__copy h2,
+.nolla-doctor__copy h2 {
+  color: #241c18;
+  font-size: clamp(2rem, 4vw, 3.7rem);
+}
+
+.nolla-grid,
+.nolla-founders__grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.nolla-card,
+.nolla-founder,
+.nolla-faq__item,
+.nolla-banner,
+.nolla-doctor {
+  border-radius: 1.6rem;
+  border: 1px solid rgba(59, 42, 32, 0.08);
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: 0 24px 60px rgba(43, 30, 22, 0.08);
+}
+
+.nolla-card {
+  padding: 1.2rem;
+  min-height: 300px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  animation: fade-up 700ms ease both;
+  animation-delay: var(--card-delay, 0ms);
+}
+
+.nolla-card--dark {
+  background: linear-gradient(180deg, #1c1410, #2d211a);
+  color: #f7f1ea;
+}
+
+.nolla-card--light {
+  background: linear-gradient(180deg, #fffaf5, #f3e9dd);
+}
+
+.nolla-card--image {
+  overflow: hidden;
+  background:
+    linear-gradient(180deg, rgba(16, 15, 14, 0.1), rgba(16, 15, 14, 0.42)),
+    url('/nollahealth/eebb4e9dc4dd56197a412388bc08ab447979bf10-2000x2500.webp') center/cover;
+  color: #fff;
+}
+
+.nolla-card h3,
+.nolla-founder h3 {
+  margin: 0;
+  font-family: 'Google Sans', system-ui, sans-serif;
+  font-size: 1.65rem;
+}
+
+.nolla-card p {
+  margin: 0;
+  line-height: 1.6;
+  color: inherit;
+}
+
+.nolla-card__button {
+  align-self: flex-start;
+  margin-top: auto;
+}
+
+.nolla-banner {
+  margin-top: 1rem;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  overflow: hidden;
+  align-items: center;
+}
+
+.nolla-banner__copy,
+.nolla-doctor__copy {
+  padding: 2rem;
+}
+
+.nolla-banner img,
+.nolla-doctor__media img,
+.nolla-founder img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.nolla-banner img {
+  min-height: 420px;
+}
+
+.nolla-doctor {
+  margin-top: 1rem;
+  display: grid;
+  grid-template-columns: 0.95fr 1.05fr;
+  overflow: hidden;
+}
+
+.nolla-doctor__media img {
+  min-height: 520px;
+  object-position: center top;
+}
+
+.nolla-founders__grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.nolla-founder {
+  overflow: hidden;
+}
+
+.nolla-founder img {
+  height: 420px;
+}
+
+.nolla-founder div {
+  padding: 1rem 1.1rem 1.2rem;
+}
+
+.nolla-founder span {
+  color: #755846;
+}
+
+.nolla-faq__list {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.nolla-faq__item {
+  padding: 1rem 1.2rem;
+}
+
+.nolla-faq__item summary {
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.nolla-faq__item p {
+  margin: 0.9rem 0 0;
+  color: #5d4f46;
+  line-height: 1.6;
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 980px) {
+  .nolla-grid,
+  .nolla-founders__grid,
+  .nolla-banner,
+  .nolla-doctor,
+  .nolla-hero__panel {
+    grid-template-columns: 1fr;
+  }
+
+  .nolla-topbar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .nolla-nav {
+    order: 3;
+  }
+
+  .nolla-hero__panel img {
+    height: 260px;
+  }
+}
+
+/* Landing page embed (dashboard landing, served at /landing.html) */
+.landing-embed {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  background: #0b0c10;
+}
+
+.landing-frame {
+  width: 100%;
+  height: 100%;
+  border: none;
+  display: block;
+}

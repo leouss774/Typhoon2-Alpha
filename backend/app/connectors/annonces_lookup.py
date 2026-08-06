@@ -24,7 +24,7 @@ from pathlib import Path
 
 from app.core.config import settings
 from app.core.logging import get_logger
-from app.scoring.zone_scoring import score_point_climat
+# zone_scoring removed — climate scores no longer computed here
 
 logger = get_logger(__name__)
 
@@ -89,7 +89,7 @@ def _load_csv() -> list[dict]:
                 "pieces": _to_int(row.get("pieces")),
                 "dpe": None,  # pas de DPE dans cette base
                 "date_publication": None,  # pas de date de publication dans cette base
-                "climat_score": score_point_climat(lat, lon),
+                "climat_score": None,  # zone scoring pipeline removed; use /diagnostic/adresse per address
                 "source": "csv",
                 "url": (row.get("url") or "").strip() or None,
                 "photo": None,
