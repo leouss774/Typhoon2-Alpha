@@ -49,6 +49,21 @@ def _is_rate_limit_error(e: Exception) -> bool:
     return "429" in msg or "rate_limited" in msg or "rate limit" in msg
 
 
+def _is_capacity_error(e: Exception) -> bool:
+    """Une saturation du service/model tier n'est pas un quota temporaire.
+
+    Mistral renvoie le code 3505 dans ce cas. Attendre 20 puis 40 secondes
+    dans une requete HTTP ne libere pas cette capacite et rend le diagnostic
+    inutilisable. Le niveau appelant gere deja cet echec en mode fail-soft.
+    """
+    msg = str(e).lower()
+    return (
+        "request_tier_capacity_exceeded" in msg
+        or "service tier capacity exceeded" in msg
+        or '"code":"3505"' in msg.replace(" ", "")
+    )
+
+
 def _backoff_seconds(e: Exception, attempt: int) -> float:
     if _is_rate_limit_error(e):
         return min(60, 20 * (attempt + 1))
@@ -97,8 +112,10 @@ def chat_json(
             return json.loads(content)
         except Exception as e:
             last_err = e
-            wait = _backoff_seconds(e, attempt)
             print(f"    [retry {attempt + 1}/{max_retries}] erreur Mistral chat: {e}")
+            if _is_capacity_error(e) or attempt == max_retries - 1:
+                break
+            wait = _backoff_seconds(e, attempt)
             print(f"    -> attente {wait:.0f}s avant nouvelle tentative")
             time.sleep(wait)
     raise RuntimeError(f"Echec appel Mistral (chat) apres {max_retries} tentatives: {last_err}")
@@ -114,8 +131,10 @@ def embed_texts(texts: list[str], max_retries: int = 5) -> list[list[float]]:
             return [item.embedding for item in response.data]
         except Exception as e:
             last_err = e
-            wait = _backoff_seconds(e, attempt)
             print(f"    [retry embeddings {attempt + 1}/{max_retries}] erreur Mistral: {e}")
+            if _is_capacity_error(e) or attempt == max_retries - 1:
+                break
+            wait = _backoff_seconds(e, attempt)
             print(f"    -> attente {wait:.0f}s avant nouvelle tentative")
             time.sleep(wait)
     raise RuntimeError(f"Echec appel Mistral (embeddings) apres {max_retries} tentatives: {last_err}")
