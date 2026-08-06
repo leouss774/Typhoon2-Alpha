@@ -50,7 +50,7 @@ class Settings(BaseSettings):
     # car le premier lancement declenche un telechargement multi-gigaoctets.
     # --- CHANGEZ ICI --- passez a True pour activer Copernicus dans le workflow.
     # Vous pouvez aussi le definir via COPERNICUS_ENABLED=true dans .env.
-    copernicus_enabled: bool = False
+    copernicus_enabled: bool = True
     copernicus_cache_dir: str = str(BASE_DIR / "data" / "lookup" / "copernicus")
 
     # Lookup local DVF - meme logique de chemin absolu. Les CSV par
@@ -62,8 +62,8 @@ class Settings(BaseSettings):
     # --- CHANGEZ ICI --- passez a False si les CSV ne sont pas presents
     # sur ce poste. Vous pouvez aussi le definir via DVF_ENABLED=false
     # dans .env (pratique pour ne pas modifier ce fichier vous-meme et
-    # eviter les allers-retours si plusieurs personnes partagent le repo).
-    dvf_enabled: bool = False
+    # eviter les allers-retours si plusieurs personnes partagent le repo) .
+    dvf_enabled: bool = True
     dvf_lookup_dir: str = str(BASE_DIR / "data" / "lookup" / "dvf")
 
     # Mistral (agent recommandations — RAG travaux, cf.
