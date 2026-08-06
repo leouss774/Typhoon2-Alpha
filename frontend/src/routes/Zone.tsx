@@ -19,6 +19,7 @@ import type { MdSwitch } from '@material/web/switch/switch.js';
 import { ZoneMap } from '../components/ZoneMap';
 import { ZoneAnalyse } from '../components/ZoneAnalyse';
 import { ZoneBIM } from '../components/ZoneBIM';
+import { ZoneRecommendations } from '../components/ZoneRecommendations';
 import { ACCENTS, useTyphoonTheme } from '../typhoon/useTyphoonTheme';
 import {
   API,
@@ -34,6 +35,7 @@ import {
   type RapportNarratif,
   type GeocodeSuggestion,
 } from '../zone/config';
+import type { RecommendationZone } from '../jumeau/recommendations';
 import {
   addConversation,
   loadConversations,
@@ -60,6 +62,7 @@ const STEPS = [
   { id: 'carto', label: 'Cartographie' },
   { id: 'analyse', label: 'Analyse' },
   { id: 'bim', label: 'Jumeau BIM' },
+  { id: 'recommandations', label: 'Recommandations' },
   { id: 'rapport', label: 'Rapport IA' },
 ] as const;
 
@@ -109,6 +112,9 @@ export function Zone() {
   const [loading, setLoading] = useState(false);
   const [diagError, setDiagError] = useState<string | null>(null);
   const [report, setReport] = useState<RisqueReport | null>(null);
+  const [detailedRecommendationZones, setDetailedRecommendationZones] = useState<Record<string, RecommendationZone>>({});
+  const [detailedRecommendationsLoading, setDetailedRecommendationsLoading] = useState(false);
+  const [detailedRecommendationsError, setDetailedRecommendationsError] = useState<string | null>(null);
   const [conversations, setConversations] = useState<Conversation[]>(() => loadConversations());
   const [rapport, setRapport] = useState<RapportNarratif | null>(null);
   const [rapportLoading, setRapportLoading] = useState(false);
@@ -123,6 +129,39 @@ export function Zone() {
   const lastQuery = useRef('');
   const banTimeout = useRef<number | null>(null);
   const userClosedSidebar = useRef(false);
+  const recommendationsRequestId = useRef(0);
+
+  async function loadDetailedRecommendations(address: string) {
+    const requestId = ++recommendationsRequestId.current;
+    setDetailedRecommendationsLoading(true);
+    setDetailedRecommendationsError(null);
+    setDetailedRecommendationZones({});
+    try {
+      const fastResponse = await fetch(`${API}/diagnostic/fast`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ adresse: address, copernicus: false }),
+      });
+      if (!fastResponse.ok) throw new Error(`Diagnostic détaillé HTTP ${fastResponse.status}`);
+      const fastContract = await fastResponse.json();
+      if (!fastContract?._resume) throw new Error('Contexte de recommandations absent');
+
+      const recommendationsResponse = await fetch(`${API}/diagnostic/recommandations`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(fastContract._resume),
+      });
+      if (!recommendationsResponse.ok) throw new Error(`Recommandations HTTP ${recommendationsResponse.status}`);
+      const detailedContract = await recommendationsResponse.json();
+      if (requestId !== recommendationsRequestId.current) return;
+      setDetailedRecommendationZones(detailedContract?.zones || {});
+    } catch (error) {
+      if (requestId !== recommendationsRequestId.current) return;
+      setDetailedRecommendationsError(error instanceof Error ? error.message : 'Recommandations détaillées indisponibles');
+    } finally {
+      if (requestId === recommendationsRequestId.current) setDetailedRecommendationsLoading(false);
+    }
+  }
 
   /* ── BAN autocomplétion ── */
   function fetchSuggestions(q: string) {
@@ -168,6 +207,10 @@ export function Zone() {
     setDiagError(null);
     setLoading(true);
     setReport(null);
+    recommendationsRequestId.current += 1;
+    setDetailedRecommendationZones({});
+    setDetailedRecommendationsLoading(false);
+    setDetailedRecommendationsError(null);
     setRapport(null);
     setRapportError(null);
     setSidebarOpen(false);
@@ -189,6 +232,7 @@ export function Zone() {
 
       const r = (await resp.json()) as RisqueReport;
       setReport(r);
+      void loadDetailedRecommendations(r.adresse_normalisee || value);
       /* Historique « Récent » (localStorage) : adresse normalisée ou requête brute. */
       setConversations((prev) => {
         const next = addConversation(prev, r.adresse_normalisee || value);
@@ -285,7 +329,7 @@ export function Zone() {
     setStepError(false);
     setStep(i);
     if (i === 0) window.setTimeout(() => heroInputRef.current?.focus(), 80);
-    if (i === 4 && report) void loadRapport();
+    if (i === 5 && report) void loadRapport();
   }
 
   /* ── Visibilité des couches ── */
@@ -688,7 +732,16 @@ export function Zone() {
             </section>
 
             {/* ÉTAPE 5 — RAPPORT IA (Mistral) */}
-            <section className="zone-report" hidden={step !== 4}>
+            <section className="zone-recommendations" hidden={step !== 4}>
+              <ZoneRecommendations
+                report={report}
+                zones={detailedRecommendationZones}
+                loading={detailedRecommendationsLoading}
+                error={detailedRecommendationsError}
+              />
+            </section>
+
+            <section className="zone-report" hidden={step !== 5}>
               {!report ? (
                 <div className="report-empty">
                   <md-icon>description</md-icon>

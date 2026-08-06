@@ -68,23 +68,10 @@ _KEYWORD_TO_RISQUE = [
     ("intemperie", "tempete"),
     ("vent", "tempete"),
     ("feu de vegetation", "feu_vegetation"),
+    ("feu de foret", "feu_vegetation"),
     ("feu_vegetation", "feu_vegetation"),
     ("incendie", "feu_vegetation"),
 ]
-
-# Repli par zone si aucun mot-cle du texte (alea_principal + justification)
-# ne matche : garde au moins 1 risque pertinent plutot que de laisser la
-# zone sans recommandation.
-_ZONE_FALLBACK_RISQUE = {
-    "fondations": "retrait_gonflement_argiles",
-    "toiture": "tempete",
-    "sous_sol": "inondation",
-    "murs_nord": "tempete",
-    "murs_sud": "tempete",
-    "murs_est": "tempete",
-    "murs_ouest": "tempete",
-}
-
 
 def _strip_accents(s: str) -> str:
     import unicodedata
@@ -95,10 +82,10 @@ def _strip_accents(s: str) -> str:
 def _infer_risques(zone_name: str, zone_data: dict[str, Any]) -> list[str]:
     """Deduit les tags de risque normalises pour une zone du risk_model.
 
-    Zone de niveau "faible" -> pas de recommandation (evite d'interroger
-    l'agent RAG pour un risque juge negligeable par le scoring).
+    Un score inférieur à 20 ne déclenche aucune recommandation. À partir
+    de 20, le risque calculé peut justifier une mesure documentée.
     """
-    if zone_data.get("niveau") == "faible":
+    if (zone_data.get("risque") or 0) < 20:
         return []
 
     texte = _strip_accents(
@@ -109,11 +96,6 @@ def _infer_risques(zone_name: str, zone_data: dict[str, Any]) -> list[str]:
         keyword_norm = _strip_accents(keyword)
         if keyword_norm in texte and risque not in found:
             found.append(risque)
-
-    if not found:
-        fallback = _ZONE_FALLBACK_RISQUE.get(zone_name)
-        if fallback:
-            found.append(fallback)
 
     return found
 

@@ -141,8 +141,14 @@ def _search(index: list[dict[str, Any]], query_vector, top_k: int, alea: str | N
     scored = []
     for entry in index:
         fiche = entry["fiche"]
-        if alea and fiche.get("alea") and alea.lower() not in str(fiche["alea"]).lower():
-            continue
+        if alea:
+            fiche_aleas = {
+                value.strip().lower()
+                for value in str(fiche.get("alea") or "").split("|")
+                if value.strip()
+            }
+            if alea.strip().lower() not in fiche_aleas:
+                continue
         if zone and fiche.get("zone_maison") and zone.lower() not in str(fiche["zone_maison"]).lower():
             continue
         score = cosine_sim(query_vector, entry["vector"])
@@ -199,12 +205,25 @@ def search_zone_candidates(
     query = f"Risques {risques_str} sur la zone {zone_name} d'une maison individuelle en France."
     query_vector = embed_texts([query])[0]
 
-    # Filtre avec le premier risque et la zone
-    candidates = _search(index, query_vector, TOP_K, alea=risques[0], zone=zone_name)
-    if not candidates:
-        candidates = _search(index, query_vector, TOP_K, alea=risques[0])
-    if not candidates:
-        candidates = _search(index, query_vector, TOP_K)
+    # Cherche chaque risque calculé, pas seulement le premier. Les fiches
+    # restent strictement limitées à l'aléa demandé et sont dédupliquées.
+    candidates: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for risque in risques:
+        matches = _search(index, query_vector, TOP_K, alea=risque, zone=zone_name)
+        if not matches:
+            matches = _search(index, query_vector, TOP_K, alea=risque)
+        for candidate in matches:
+            identity = str(candidate.get("id") or candidate.get("source_id") or candidate.get("mesure"))
+            if identity not in seen:
+                seen.add(identity)
+                candidates.append(candidate)
+            if len(candidates) >= TOP_K:
+                break
+        if len(candidates) >= TOP_K:
+            break
+    # Aucun repli global : une fiche d'un autre aléa créerait une
+    # recommandation hors sujet pour l'adresse analysée.
     return candidates
 
 

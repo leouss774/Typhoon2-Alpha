@@ -1168,6 +1168,26 @@
 
 /* ---- Responsive ---- */
 @media (max-width: 880px) {
+  .reco-overview-trigger {
+    --md-elevated-button-label-text-size: 0;
+    min-width: 48px;
+  }
+  .reco-overview-backdrop { padding: 0; }
+  .reco-overview-sheet {
+    width: 100%;
+    height: 100%;
+    max-height: none;
+    border: 0;
+    border-radius: 0;
+  }
+  .reco-overview-header,
+  .reco-overview-toolbar,
+  .reco-overview-content { padding-left: 18px; padding-right: 18px; }
+  .reco-overview-toolbar { align-items: stretch; flex-direction: column; }
+  .reco-overview-toolbar label { justify-content: space-between; }
+  .reco-overview-grid { grid-template-columns: 1fr; }
+  .reco-overview-card-head { flex-direction: column; }
+  .reco-overview-cost { text-align: left; }
   .jumeau-sovereign-badge {
     display: none;
   }

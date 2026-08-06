@@ -134,7 +134,16 @@ export interface RisqueReport {
   aleas: AleaDetail[];
   erreurs_partielles: string[];
   bdnb?: BdnbAsset | null;
+  recommandations?: RecommandationsIA | null;
   avertissement?: string;
+}
+
+export interface RecommandationsIA {
+  resume: string;
+  actions_prioritaires: string[];
+  points_vigilance?: string[];
+  modele?: string;
+  metadata?: Record<string, unknown>;
 }
 
 // ---------------------------------------------------------------------------

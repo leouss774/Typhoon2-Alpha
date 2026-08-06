@@ -1587,6 +1587,17 @@ let currentYear = 2025;
 // (demo, JSON importe) qui n'ont pas de second appel a attendre.
 let recommandationsReady = true;
 
+// Pont local vers la vue React globale. Aucun appel reseau n'est effectue :
+// le composant lit uniquement le snapshot 2025 deja charge et fusionne ici.
+function publishRecommendations() {
+  window.dispatchEvent(new CustomEvent('typhoon:recommendationsUpdated', {
+    detail: {
+      zones: (rawData && rawData.zones) || {},
+      ready: recommandationsReady,
+    },
+  }));
+}
+
 function loadDataset(data) {
   rawData = data;
   recommandationsReady = !data._resume;
@@ -1627,6 +1638,7 @@ function loadDataset(data) {
   }
   document.getElementById('info-panel').style.display = 'none';
   setYear(2025, true);
+  publishRecommendations();
 }
 
 // ---- Chargement en 2 temps (maison immediate, recommandations en fond) ----
@@ -1667,6 +1679,7 @@ function mergeRecommandations(fullContract) {
       showZonePanel(infoPanel.dataset.zone);
     }
   }
+  publishRecommendations();
 }
 
 function fetchRecommandations(apiBase, fastContract) {
@@ -1697,6 +1710,7 @@ function fetchRecommandations(apiBase, fastContract) {
       console.error('Échec de la récupération des recommandations :', err);
       recommandationsReady = true;
       setRecoStatus(false);
+      publishRecommendations();
     });
 }
 
