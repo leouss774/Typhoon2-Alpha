@@ -20,8 +20,10 @@ from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
 
 from app.agents import digital_twin_agent, interpretation_agent, recommandations_agent, scoring_agent
+from app.digital_twin.gltf_builder import build_glb_from_bdnb
 from app.agents.collector_agent import collect
 from app.agents.graph import diagnostic_graph
+from app.connectors.bdnb import BdnbAdresseIntrouvable, fetch_bdnb
 from app.connectors.geocoding import GeocodingError, geocode_address
 from app.connectors.georisques import get_risque_report
 from app.core.config import settings
@@ -154,6 +156,26 @@ async def run_diagnostic_recommandations(payload: DiagnosticRecommandationsReque
 # MVP Géo-risque : adresse → Géorisques → RisqueReport
 # ---------------------------------------------------------------------------
 
+async def _fetch_bdnb_avec_repli(
+    client: httpx.AsyncClient, address: str, label_ban: str
+) -> dict | None:
+    """Interroge BDNB avec repli de géocodage (même stratégie que
+    collector_agent) : le géocodeur BDNB préfère le libellé BAN normalisé
+    (`geocode.label`), mais on retente avec l'adresse brute si la première
+    tentative échoue (ex. code postal approximatif saisi par l'utilisateur).
+    """
+    try:
+        return await fetch_bdnb(client, label_ban)
+    except BdnbAdresseIntrouvable:
+        if label_ban == address:
+            raise
+        logger.info(
+            "  [bdnb] libellé BAN non trouvé (%r), nouvel essai avec l'adresse brute (%r)",
+            label_ban, address,
+        )
+        return await fetch_bdnb(client, address)
+
+
 @router.get("/diagnostic/adresse")
 async def diagnostic_adresse(
     q: str = Query(..., min_length=3, description="Adresse française (texte libre)")
@@ -204,6 +226,19 @@ async def diagnostic_adresse(
                 lon=geo.lon,
                 code_insee=geo.citycode,
             )
+
+            # BDNB — fiche bâtiment (alimente l'étape 3 « Analyse » du frontend).
+            # Non bloquant : en cas d'échec, report.bdnb reste None et l'erreur
+            # est consignée dans erreurs_partielles (jamais un 502).
+            try:
+                report.bdnb = await _fetch_bdnb_avec_repli(client, q, geo.label)
+            except BdnbAdresseIntrouvable:
+                report.erreurs_partielles.append(
+                    "bdnb: adresse non reconnue par le géocodeur BDNB"
+                )
+            except Exception as exc:
+                logger.warning("  [bdnb] ECHEC pour %r -> %s: %s", q, type(exc).__name__, exc)
+                report.erreurs_partielles.append(f"bdnb: {type(exc).__name__}: {exc}")
     except HTTPException:
         raise
     except Exception as exc:
@@ -218,9 +253,10 @@ async def diagnostic_adresse(
 
     elapsed = time.perf_counter() - t0
     logger.info(
-        "diagnostic/adresse OK en %.2fs — %d aléas, %d erreurs partielles, recommandations=%s",
+        "diagnostic/adresse OK en %.2fs — %d aléas, %d erreurs partielles, recommandations=%s, bdnb=%s",
         elapsed, report.alea_count, len(report.erreurs_partielles),
         "ok" if report.recommandations else "none",
+        "ok" if report.bdnb else "none",
     )
 
     return report.model_dump()
@@ -232,26 +268,36 @@ async def generer_rapport_narratif_adresse(report: RisqueReport) -> dict:
     Génère un rapport narratif complet structuré par IA (Mistral) à partir d'un RisqueReport.
 
     Découplé de GET /diagnostic/adresse pour éviter tout impact sur la latence du rapport factuel.
-    Fail-soft : retourne 502 si Mistral est indisponible.
+    Fail-soft : retourne 502 si Mistral est indisponible, 503 si la clé API manque.
+
+    Contrat d'erreur (detail JSON) :
+      { "error": <code>, "detail": <message utilisateur>, "cause": <cause technique courte> }
     """
-    narratif = await generer_rapport_narratif(report)
-    if narratif is None:
-        if not settings.mistral_api_key:
-            raise HTTPException(
-                status_code=503,
-                detail={
-                    "error": "mistral_api_key_manquante",
-                    "detail": (
-                        "Impossible de générer le rapport narratif IA tant que MISTRAL_API_KEY "
-                        "n'est pas configurée côté backend."
-                    ),
-                },
-            )
+    narratif, cause = await generer_rapport_narratif(report)
+    if narratif is not None:
+        return narratif.model_dump()
+
+    if cause == "api_key_manquante" or not settings.mistral_api_key:
         raise HTTPException(
-            status_code=502,
-            detail={"error": "mistral_indisponible", "detail": "Impossible de générer le rapport narratif IA."},
+            status_code=503,
+            detail={
+                "error": "mistral_api_key_manquante",
+                "detail": (
+                    "Le rapport IA nécessite une clé Mistral. Configurez MISTRAL_API_KEY "
+                    "dans le .env du backend puis redémarrez l'API."
+                ),
+                "cause": "MISTRAL_API_KEY absente de la configuration backend",
+            },
         )
-    return narratif.model_dump()
+
+    raise HTTPException(
+        status_code=502,
+        detail={
+            "error": "mistral_indisponible",
+            "detail": "Le service Mistral n'a pas pu générer le rapport. Réessayez dans quelques instants.",
+            "cause": cause or "inconnue",
+        },
+    )
 
 
 @router.get("/diagnostic/adresse/rapport-pdf")
@@ -302,8 +348,89 @@ async def rapport_pdf_officiel(
             detail={"error": "rapport_pdf_erreur", "detail": f"Géorisques a retourné HTTP {resp.status_code}"},
         )
 
+
     return FastAPIResponse(
         content=resp.content,
         media_type="application/pdf",
         headers={"Content-Disposition": f"attachment; filename=\"georisques_rapport_{lat:.4f}_{lon:.4f}.pdf\""},
+    )
+
+
+@router.get("/diagnostic/adresse/gltf")
+async def diagnostic_adresse_gltf(
+    q: str = Query(..., min_length=3, description="Adresse française (texte libre)"),
+) -> "FastAPIResponse":
+    """
+    Renvoie un modèle 3D .glb du bâtiment correspondant à l'adresse donnée.
+
+    Flux : géocodage IGN → BDNB (emprise sol + hauteur) → glTF 2.0 Binary.
+    Repli automatique : si BDNB indisponible, renvoie un parallélépipède
+    générique de 10×10×6 m.
+
+    Content-Type : model/gltf-binary
+    Content-Disposition : attachment; filename="batiment_<lat>_<lon>.glb"
+    """
+    from fastapi import Response as FastAPIResponse  # noqa: F811
+
+    logger.info("GET /diagnostic/adresse/gltf  q=%r", q)
+
+    # Step 1 — geocode
+    try:
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            try:
+                geo = await geocode_address(client, q)
+            except GeocodingError as exc:
+                raise HTTPException(
+                    status_code=422,
+                    detail={"error": "adresse_non_trouvee", "detail": str(exc)},
+                ) from exc
+
+            if geo.score < 0.4:
+                raise HTTPException(
+                    status_code=422,
+                    detail={
+                        "error": "adresse_ambigue",
+                        "detail": f"Score de géocodage trop faible ({geo.score:.2f}) — précisez la ville.",
+                    },
+                )
+
+            # Step 2 — BDNB fetch (non-blocking failure)
+            batiment: dict = {}
+            try:
+                bdnb = await _fetch_bdnb_avec_repli(client, q, geo.label)
+                batiment = ((bdnb or {}).get("batiment") or {}) if isinstance(bdnb, dict) else {}
+            except Exception as exc:
+                logger.warning("  [gltf] BDNB indisponible pour %r -> %s: %s", q, type(exc).__name__, exc)
+
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(
+            status_code=502,
+            detail={"error": "gltf_geocodage_erreur", "detail": str(exc)},
+        ) from exc
+
+    # Step 3 — Build .glb (fallback to box if needed). Le point d'adresse
+    # geocode (lat/lon) sert a poser la porte d'entree sur la facade rue.
+    glb_bytes = build_glb_from_bdnb(
+        batiment, adresse_label=geo.label, adresse_lat=geo.lat, adresse_lon=geo.lon
+    )
+
+    if glb_bytes is None:
+        # Ultimate fallback: flat 10×10×6 m box
+        from app.digital_twin.gltf_builder import build_glb
+        ring = [(-5.0, -5.0), (5.0, -5.0), (5.0, 5.0), (-5.0, 5.0)]
+        glb_bytes = build_glb(ring, height_m=6.0, label=geo.label)
+
+    lat_s = f"{geo.lat:.4f}".replace(".", "_")
+    lon_s = f"{geo.lon:.4f}".replace(".", "_")
+
+    return FastAPIResponse(
+        content=glb_bytes,
+        media_type="model/gltf-binary",
+        headers={
+            "Content-Disposition": f'attachment; filename="batiment_{lat_s}_{lon_s}.glb"',
+            "Access-Control-Allow-Origin": "*",
+            "Cache-Control": "public, max-age=3600",
+        },
     )

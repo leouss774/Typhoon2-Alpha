@@ -6,7 +6,8 @@ Règles strictes (addendum §4) :
      données Géorisques brutes.
   2. N'invente AUCUNE date, AUCUN chiffre, AUCUN fait absent du JSON fourni.
   3. Génération en un seul appel Mistral (RapportNarratif structuré).
-  4. Toute erreur ou timeout Mistral → retourne None (fail-soft).
+  4. Toute erreur ou timeout Mistral → retourne (None, cause) (fail-soft, la
+     cause permet à l'API de renvoyer une erreur 502/503 explicite).
   5. Ce module est synchrone (SDK mistralai) et doit être appelé via
      asyncio.to_thread() depuis le handler FastAPI async.
 """
@@ -112,16 +113,26 @@ def _build_rapport_prompt(report: RisqueReport) -> str:
     return json.dumps(prompt_data, ensure_ascii=False, indent=2)
 
 
-def _appeler_mistral_narratif_sync(report: RisqueReport) -> RapportNarratif | None:
+def _cause_mistral(exc: Exception) -> str:
+    """Cause courte et sûre d'un échec Mistral (jamais de secret)."""
+    msg = str(exc).strip()[:200]
+    return f"{type(exc).__name__}: {msg}" if msg else type(exc).__name__
+
+
+def _appeler_mistral_narratif_sync(report: RisqueReport) -> tuple[RapportNarratif | None, str | None]:
+    """Retourne (rapport, cause) — cause est un code de raison machine court
+    quand le rapport n'a pas pu être généré (None si succès). Codes possibles :
+    `api_key_manquante`, `import_echec`, `mistral_erreur`, `reponse_malformee`,
+    ou la description courte d'une erreur Mistral."""
     if not settings.mistral_api_key:
         logger.debug("MISTRAL_API_KEY absent — rapport narratif indisponible")
-        return None
+        return None, "api_key_manquante"
 
     try:
         from app.recommandations.mistral_client import chat_json
     except ImportError as exc:
         logger.warning("mistralai non disponible — rapport narratif ignoré : %s", exc)
-        return None
+        return None, "import_echec"
 
     user_prompt = _build_rapport_prompt(report)
     t0 = time.perf_counter()
@@ -131,10 +142,14 @@ def _appeler_mistral_narratif_sync(report: RisqueReport) -> RapportNarratif | No
             system_prompt=_SYSTEM_PROMPT_RAPPORT,
             user_prompt=user_prompt,
             max_retries=2,
+            # Le rapport (intro + sections + synthèse + obligations) dépasse
+            # facilement les 1000 tokens par défaut : la réponse était tronquée
+            # en plein JSON ("Unterminated string", erreur 502).
+            max_tokens=4000,
         )
     except Exception as exc:
         logger.warning("Mistral échec rapport narratif pour %r : %s", report.adresse_normalisee, exc)
-        return None
+        return None, f"mistral_erreur: {_cause_mistral(exc)}"
 
     latence_ms = round((time.perf_counter() - t0) * 1000)
 
@@ -147,23 +162,26 @@ def _appeler_mistral_narratif_sync(report: RisqueReport) -> RapportNarratif | No
             )
             for s in reponse.get("sections", [])
         ]
-        return RapportNarratif(
-            introduction=reponse.get("introduction", ""),
-            sections=sections,
-            synthese_finale=reponse.get("synthese_finale", ""),
-            obligations_reglementaires=reponse.get("obligations_reglementaires"),
-            genere_par="mistral-large-latest",
-            metadata={"latence_ms": latence_ms},
+        return (
+            RapportNarratif(
+                introduction=reponse.get("introduction", ""),
+                sections=sections,
+                synthese_finale=reponse.get("synthese_finale", ""),
+                obligations_reglementaires=reponse.get("obligations_reglementaires"),
+                genere_par="mistral-large-latest",
+                metadata={"latence_ms": latence_ms},
+            ),
+            None,
         )
     except Exception as exc:
         logger.warning("Réponse Mistral rapport narratif malformée : %s", exc)
-        return None
+        return None, "reponse_malformee"
 
 
-async def generer_rapport_narratif(report: RisqueReport) -> RapportNarratif | None:
-    """Point d'entrée async pour le rapport narratif."""
+async def generer_rapport_narratif(report: RisqueReport) -> tuple[RapportNarratif | None, str | None]:
+    """Point d'entrée async pour le rapport narratif : (rapport, cause)."""
     try:
         return await asyncio.to_thread(_appeler_mistral_narratif_sync, report)
     except Exception as exc:
         logger.warning("Erreur inattendue rapport narratif : %s", exc)
-        return None
+        return None, f"erreur_inattendue: {_cause_mistral(exc)}"

@@ -11,6 +11,18 @@ let _mouseMoveHandler = null;
 let _canvas = null;
 let _renderer = null;
 const _elementHandlers = [];
+// Pont vers le diagnostic reel : assigne par initScene() (loadDataset et
+// fetchRecommandations vivent dans sa fermeture), consomme par la route React
+// via loadFromAddress(). Reprend le flux du front natif (index.html §submit) :
+// /diagnostic/fast -> maison + scores immediats, puis recommandations en fond.
+let _loadFromAddress = null;
+
+export function loadFromAddress(adresse) {
+  if (!_loadFromAddress) {
+    return Promise.reject(new Error('Scène 3D non initialisée'));
+  }
+  return _loadFromAddress(adresse);
+}
 
 // Échappement HTML partagé : utilisé par le rendu DOM du moteur ET par
 // matchArtisans() (exporté pour la page /artisans). Défini au niveau module
@@ -1585,6 +1597,17 @@ let currentYear = 2025;
 // (demo, JSON importe) qui n'ont pas de second appel a attendre.
 let recommandationsReady = true;
 
+// Pont local vers la vue React globale. Aucun appel reseau n'est effectue :
+// le composant lit uniquement le snapshot 2025 deja charge et fusionne ici.
+function publishRecommendations() {
+  window.dispatchEvent(new CustomEvent('typhoon:recommendationsUpdated', {
+    detail: {
+      zones: (rawData && rawData.zones) || {},
+      ready: recommandationsReady,
+    },
+  }));
+}
+
 function loadDataset(data) {
   rawData = data;
   recommandationsReady = !data._resume;
@@ -1625,6 +1648,7 @@ function loadDataset(data) {
   }
   document.getElementById('info-panel').style.display = 'none';
   setYear(2025, true);
+  publishRecommendations();
 }
 
 // ---- Chargement en 2 temps (maison immediate, recommandations en fond) ----
@@ -1667,6 +1691,7 @@ function mergeRecommandations(fullContract) {
       showZonePanel(infoPanel.dataset.zone);
     }
   }
+  publishRecommendations();
 }
 
 function fetchRecommandations(apiBase, fastContract) {
@@ -1697,6 +1722,7 @@ function fetchRecommandations(apiBase, fastContract) {
       console.error('Échec de la récupération des recommandations :', err);
       recommandationsReady = true;
       setRecoStatus(false);
+      publishRecommendations();
     });
 }
 
@@ -2085,6 +2111,31 @@ window.addEventListener('resize', _resizeHandler);
 // de données d'exemple tant que le front ne fournit pas de diagnostic réel.
 loadDataset(DEFAULT_DATA);
 
+// Diagnostic reel par adresse (meme flux que le formulaire du front natif) :
+// /diagnostic/fast renvoie maison + scores tout de suite, les recommandations
+// RAG arrivent ensuite en tache de fond via fetchRecommandations.
+_loadFromAddress = function (adresse) {
+  const apiBaseInput = document.getElementById('api-base-input');
+  const apiBase = ((apiBaseInput && apiBaseInput.value) || window.TYPHOON_API || '').trim();
+  return fetch(apiBase + '/diagnostic/fast', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ adresse }),
+  })
+    .then(async response => {
+      if (!response.ok) {
+        const bodyText = await response.text();
+        throw new Error(`${response.status} ${response.statusText} — ${bodyText.slice(0, 300)}`);
+      }
+      return response.json();
+    })
+    .then(contract => {
+      loadDataset(contract);
+      fetchRecommandations(apiBase, contract);
+      return contract;
+    });
+};
+
 _canvas = renderer.domElement;
 _renderer = renderer;
 }
@@ -2105,6 +2156,7 @@ export function disposeScene() {
     _renderer = null;
   }
   _canvas = null; _resizeHandler = null; _mouseUpHandler = null; _mouseMoveHandler = null;
+  _loadFromAddress = null;
 }
 
 // ===========================================================================
