@@ -163,7 +163,7 @@ async def collect(address: str, enable_copernicus: bool = True, enable_dvf: bool
             "bdnb": _safe_call("bdnb", _fetch_bdnb_avec_repli(client, address, geocode.label), erreurs),
             "georisques": _safe_call(
                 "georisques",
-                georisques_connector.fetch_georisques(client, geocode.citycode, geocode.lat, geocode.lon),
+                georisques_connector.fetch_georisques_raw(client, geocode.citycode, geocode.lat, geocode.lon),
                 erreurs,
             ),
             "altitude": _safe_call(

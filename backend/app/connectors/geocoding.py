@@ -97,3 +97,39 @@ async def geocode_address(client: httpx.AsyncClient, address: str) -> GeocodeRes
         lat=lat,
         lon=lon,
     )
+
+
+async def search_municipalities(
+    client: httpx.AsyncClient, q: str, limit: int = 6
+) -> list[dict]:
+    """Recherche de communes (autocompletion) via la Geoplateforme IGN.
+
+    Complement de `geocode_address` : retourne une liste de suggestions
+    municipales pour l'autocomplete du frontend (le geocodage simple ne
+    renvoie qu'un seul meilleur resultat, sans liste).
+
+    Retour : [{label, city, context, citycode, postcode, score, lat, lon}, ...]
+    (meme forme que l'ancienne API Adresse, decommissionnee fin 01/2026).
+    """
+    response = await client.get(
+        settings.geocoding_url,
+        params={"q": q, "type": "municipality", "limit": limit},
+    )
+    response.raise_for_status()
+    data = response.json()
+
+    suggestions = []
+    for feature in data.get("features") or []:
+        props = feature.get("properties", {})
+        coords = feature.get("geometry", {}).get("coordinates") or [None, None]
+        suggestions.append({
+            "label": props.get("label", ""),
+            "city": props.get("city") or props.get("name", ""),
+            "context": props.get("context", ""),
+            "citycode": props.get("citycode", ""),
+            "postcode": props.get("postcode", ""),
+            "score": props.get("score"),
+            "lat": coords[1],
+            "lon": coords[0],
+        })
+    return suggestions

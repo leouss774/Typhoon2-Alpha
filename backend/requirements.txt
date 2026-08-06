@@ -26,11 +26,7 @@ netCDF4
 chromadb
 
 # --- Agent recommandations (RAG travaux, cf. app/recommandations/) ---
-# Le code (app/recommandations/mistral_client.py) utilise l'API 2.x
-# (Mistral(api_key=..., timeout_ms=...), client.chat.complete,
-# client.embeddings.create) : il faut donc mistralai>=2.0.0. L'import se
-# fait via `from mistralai.client import Mistral` (l'init de paquet
-# top-level n'est pas present dans toutes les builds 2.x).
+# SDK 2.x : client sync importé depuis mistralai.client (voir mistral_client.py).
 mistralai>=2.0.0,<3.0.0
 numpy>=1.26.0
 
@@ -41,4 +37,3 @@ sqlalchemy
 # --- Tests ---
 pytest
 pytest-asyncio
-mistralai
