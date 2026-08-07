@@ -1,6 +1,6 @@
 # Simulation de catastrophes naturelles dans le Jumeau BIM — Spécification
 
-**Statut :** proposition (aucun code écrit)
+**Statut :** implémenté (6 août 2026) — voir §10 « État d'avancement »
 **Date :** 6 août 2026
 **Portée :** simuler en temps réel, dans le viewer thingraph/bim-viewer (étape 4 « Jumeau BIM » du flux /zone), les aléas **inondation**, **feu de forêt / feu de bâtiment** et **séisme**, pilotés par les données réelles du rapport (`/diagnostic/adresse` → `aleas[*].niveau`).
 
@@ -182,10 +182,84 @@ Le rapport (`aleas`, `bdnb`) vit côté React (`/zone`). Deux options :
 
 ---
 
-## 9. Questions ouvertes avant implémentation
+## 9. Questions ouvertes — décisions actées
 
-1. Quel aléa en **premier** ? (suggestion : P1 séisme léger — rapide, spectaculaire, sans dépendance)
-2. Effondrement sismique : **cannon-es** (pur JS, simple) ou **Rapier** (WASM, performant) ?
-3. Faut-il **étendre `gltf_builder.py`** pour produire des primitives par étage (permet l'effondrement crédible) ?
-4. Le parent doit envoyer le rapport à l'iframe (postMessage) — OK pour ajouter ce canal ?
-5. Portée : simulations disponibles aussi sur les **projets d'exemple** (sans données typhon) avec des intensités réglables manuellement ?
+1. **Quel aléa en premier ?** → Les trois (P1–P4 fusionnés en un livrable) :
+   séisme (cisaillement + effondrement), feu (particules GPU), inondation
+   (plan d'eau animé) sont livrés ensemble, pilotés par le rapport.
+2. **cannon-es ou Rapier ?** → **Rapier** (`@dimforge/rapier3d-compat`
+   v0.19, WASM inline, Apache-2.0) — très utilisé sur GitHub, et le build
+   « compat » embarque le WASM en base64 (aucune requête réseau, compatible
+   CSP/file://). Chunk séparé (~2 Mo) chargé à la demande, uniquement pour
+   un effondrement `critique`. Repli automatique sur le cisaillement par
+   matrices si Rapier est indisponible (fail-soft).
+3. **Étendre `gltf_builder.py` ?** → Oui. `build_glb_bim(..., etages_separes=True,
+   parts_as_nodes=True)` : bandes de murs par niveau (clefs `etage_1..N`)
+   et **une node glTF par partie** (`Etage 1`, `Toiture`, `Planchers`...),
+   matériau associé par NOM de partie (les étages partagent « Murs »).
+   `/diagnostic/adresse/gltf` active les deux drapeaux — le viewer peut
+   cisailer/effondrer chaque étage sans découper le maillage côté client.
+4. **Canal parent → iframe ?** → Oui, postMessage brut `typhoon:sim`
+   (ZoneBIM.tsx → viewer), payload `{ aleas, batiment }` — aucun handshake
+   postmate à synchroniser. Repli query param `?sim=feu:eleve,...`.
+5. **Projets d'exemple ?** → Oui : les simulations sont disponibles partout
+   (projets d'exemple, mode autonome) avec les intensités réglables dans
+   dat.gui ; le query param `sim` permet un déclenchement programmatique.
+
+## 10. État d'avancement (livrable initial, 6 août 2026)
+
+- **P0 socle** : `src/simulations/` (SimulationManager, drive, types),
+  dossier dat.gui « Simulations », payload rapport + query param. ✅
+- **P1 séisme** : `ShakeDriver` (enveloppe amortie) + cisaillement par
+  étage (matrices, zéro dépendance) — tous niveaux. ✅
+- **P4 effondrement** : corps rigides **Rapier** par étage (impulsion
+  croissante avec la hauteur, rotation, rattachement toiture/cadres/
+  vitrage/porte à l'étage supérieur, planchers laissés en place) pour
+  `critique`, restauration à la désactivation. ✅
+- **P2 feu** : particules GPU maison (THREE.Points + shader turbulence/
+  ramp) ancrées sur façades + toiture, nombre de foyers et hauteur de
+  flamme par niveau. ✅
+- **P3 inondation** : plan d'eau animé (shader de vagues) montant jusqu'à
+  `FLOOD_HEIGHTS[niveau]` — le repli « eau animée sans solveur » prévu par
+  la spec. Le solveur SWE GPGPU (WebFlood/fluid-gl) reste une évolution.
+- **P5 polissage** : curseurs temps réel (vitesse), reset, avertissement
+  pédagogique dans l'UI (`bim-sim-note`), fail-soft WebGL/Rapier. ✅
+
+### Mise à jour — interactions avec le bâtiment (6 août 2026, soir)
+
+Les simulations ne sont plus de simples « décors » : elles interagissent
+avec le modèle 3D du bâtiment (les étages séparés `Etage N` du GLB).
+
+- **Inondation — submersion réelle** : les matériaux du bâtiment sont clonés
+  et enrichis d'un shader (`onBeforeCompile`, chunk `output_fragment` r152,
+  un programme par clone) : toute partie dont l'altitude est sous le niveau
+  d'eau passe en teinte « sous l'eau » et devient translucide — on voit le
+  RDC s'immerger puis les étages. Le plan d'eau est corrigé (échelle 1 : la
+  hauteur est désormais en mètres monde, le bug ×60 qui faisait flotter
+  l'eau à ~36 m est corrigé) avec vagues multi-octaves + liseré d'écume
+  (foam) calculé en shader à la distance des murs.
+- **Feu — propagation par étage et dégâts** : les foyers sont indexés par
+  étage et s'allument du RDC vers le haut (vitesse selon le niveau,
+  plafonné par `MAX_BURN_FRACTION` : très faible = RDC seul, critique =
+  embrasement complet + toiture). Les murs de chaque étage carbonisent
+  (couleur → charbon, rugosité), le vitrage s'embrase (émission orange)
+  puis « casse » (opacité → 0), la toiture s'enflamme aux niveaux élevés,
+  et un panache de fumée monte au-dessus du toit. Tout est restauré à la
+  désactivation.
+- **Fiabilité** : `position` ajoutée aux géométries `THREE.Points` (sans
+  lui, three dessine 0 sommets), `smoothstep` aux arêtes bien ordonnées
+  (edge0 < edge1, sinon comportement indéfini), uniformes déclarés par
+  étape de shader. Vérifié : 64–72 FPS sur GPU intégré, aucun crash.
+
+Toujours pas de solveur SWE GPGPU (évolution) ; le cisaillement sismique et
+l'effondrement Rapier étaient déjà interactifs (P1/P4).
+
+Points d'intégration : `Viewer3D.animate()` (update + rendu continu tant
+qu'une simulation est active), `addLoadedModelToScene` (bindModel),
+`DatGuiHelper` (folder Simulations + synchronisation sans boucle infinie),
+`ZoneBIM.tsx` (postMessage `typhoon:sim`).
+
+Critères d'acceptation vérifiés : activation/désactivation dat.gui,
+intensité suivant `aleas[*].niveau`, effondrement Rapier fonctionnel sur
+un modèle à étages (testé en conditions réelles), restauration complète à
+la désactivation, aucun crash (RangeError de boucle dat.gui corrigé).

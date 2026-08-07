@@ -33,6 +33,8 @@ import { matrixAutoUpdate } from "@/core/Constants";
 import { WebCam } from "./webcam/WebCam";
 import CommonUtils from "./utils/CommonUtils";
 import DatGuiHelper from "./helpers/DatGuiHelper";
+import { SimulationManager } from "../simulations/SimulationManager";
+import { SimPayload } from "../simulations/types";
 import DeviceUtils from "./utils/DeviceUtils";
 import GroundUtils from "./utils/GroundUtils";
 import InstantiateHelper from "./helpers/InstantiateHelper";
@@ -106,6 +108,12 @@ export default class Viewer3D {
   private events: { node: any, type: string, func: any }[] = [];
   private settings: SettingsType;
   private readonly postmate = PostmateManager.instance();
+  // Simulations de catastrophes (inondation / feu / séisme) — pilotées par
+  // le rapport envoyé par le parent React (postMessage `typhoon:sim`).
+  simulations?: SimulationManager;
+  private simElapsed = 0;
+  private simLastTime = 0;
+  private simMessageHandler?: (e: MessageEvent) => void;
 
   constructor(width: number, height: number, settings: SettingsType = defaultSettings) {
     this.width = width;
@@ -124,6 +132,7 @@ export default class Viewer3D {
     this.initControls();
     this.initLights();
     this.initPointerEvents();
+    this.initSimulations();
     this.initDatGui(); // should be initialized later than sky, ground grid, etc.
     this.initPostmate();
     this.initOthers();
@@ -400,6 +409,63 @@ export default class Viewer3D {
     this.datGui.close(); // collapse it by default
   }
 
+  /** Ouvre le panneau dat.gui sur le dossier « Simulations » (bouton flottant
+   *  du viewer + auto-ouverture quand le rapport active une simulation). */
+  openSimulationsPanel() {
+    this.datGui && this.datGui.openSimulations();
+  }
+
+  /**
+   * Simulations : le manager écoute le payload `typhoon:sim` (postMessage du
+   * parent React — aleas réels du rapport + données BDNB) et le query param
+   * `?sim=feu:eleve,inondation:modere` pour les projets d'exemple (mode
+   * manuel, intensités réglables depuis dat.gui).
+   */
+  private initSimulations() {
+    if (!this.scene) {
+      return;
+    }
+    this.simulations = new SimulationManager(this.scene);
+    this.simMessageHandler = (e: MessageEvent) => {
+      // Ne traiter que les messages du document parent (le React /zone).
+      // En mode autonome (window.parent === window), les messages venant
+      // d'autres fenêtres/iframes sont ignorés.
+      if (e.source !== window.parent) {
+        return;
+      }
+      const data = e.data as { type?: string; payload?: SimPayload } | undefined;
+      if (data && data.type === "typhoon:sim" && this.simulations) {
+        this.simulations.setPayload(data.payload || null);
+      }
+    };
+    window.addEventListener("message", this.simMessageHandler);
+
+    try {
+      const sim = new URLSearchParams(window.location.search).get("sim");
+      if (sim && this.simulations) {
+        const payload: SimPayload = { aleas: [], source: "manuel" };
+        sim.split(",").forEach(part => {
+          const [codeRaw, levelRaw] = part.split(":");
+          const code = codeRaw && codeRaw.trim().toLowerCase();
+          const level = levelRaw && levelRaw.trim();
+          if (!code || !level) {
+            return;
+          }
+          (payload.aleas as Array<Record<string, unknown>>).push({
+            code,
+            niveau: level,
+            present: true
+          });
+        });
+        if (payload.aleas && payload.aleas.length > 0) {
+          this.simulations.setPayload(payload);
+        }
+      }
+    } catch (err) {
+      // URLSearchParams indisponible : on ignore, dat.gui reste utilisable
+    }
+  }
+
   private initPostmate() {
     if (this.postmate.isEmbedded) {
       this.postmate.addEventListener(MessageId.setObjectsBoxClipper, (messageData: object) => {
@@ -525,8 +591,20 @@ export default class Viewer3D {
 
   animate() {
     requestAnimationFrame(this.animate.bind(this));
+    const now = performance.now();
+    const dt = Math.min((now - this.simLastTime) / 1000, 0.1);
+    this.simLastTime = now;
     this.tween && TWEEN.update();
     this.webcam && this.webcam.animate();
+    // Simulations : tant qu'une simulation est active, on force le rendu
+    // continu (le rendu à la demande de RafHelper gèlerait l'animation).
+    if (this.simulations) {
+      this.simElapsed += dt;
+      this.simulations.update(dt, this.simElapsed);
+      if (this.simulations.isActive()) {
+        this.renderEnabled = true;
+      }
+    }
     // do not update controls when tween is working, otherwise there is error
     this.controls && !this.tween && this.controls.update();
 
@@ -616,6 +694,15 @@ export default class Viewer3D {
     // remove events
     this.events.forEach(e => e.node.removeEventListener(e.type, e.func));
     this.events = [];
+    // Simulations : libération du manager et de l'écouteur postMessage.
+    if (this.simMessageHandler) {
+      window.removeEventListener("message", this.simMessageHandler);
+      this.simMessageHandler = undefined;
+    }
+    if (this.simulations) {
+      this.simulations.dispose();
+      this.simulations = undefined;
+    }
     if (this.datGui && this.datGui.gui) {
       this.datGui.beforeDestroy();
       this.datGui = undefined;
@@ -1008,6 +1095,9 @@ export default class Viewer3D {
       }
     });
     this.scene.add(object);
+    // Simulations : la structure du modèle (étages séparés, toiture...) est
+    // enregistrée dès le chargement pour dimensionner les effets.
+    this.simulations && this.simulations.bindModel(object);
     const bbox = new THREE.BoxHelper(object);
     bbox.visible = false;
     bbox.matrixAutoUpdate = matrixAutoUpdate;

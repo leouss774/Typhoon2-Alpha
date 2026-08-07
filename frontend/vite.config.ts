@@ -1,5 +1,6 @@
 import { defineConfig, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
+import cesium from 'vite-plugin-cesium';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -94,7 +95,7 @@ function bimViewerPlugin(): Plugin {
 }
 
 export default defineConfig({
-  plugins: [react(), bimViewerPlugin()],
+  plugins: [react(), cesium(), bimViewerPlugin()],
   server: {
     port: 5173,
   },

@@ -13,14 +13,15 @@
 // =============================================================================
 
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode, type RefObject } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import type { Menu } from '@material/web/menu/menu.js';
 import type { MdSwitch } from '@material/web/switch/switch.js';
 import { ZoneMap } from '../components/ZoneMap';
 import { ZoneAnalyse } from '../components/ZoneAnalyse';
 import { ZoneBIM } from '../components/ZoneBIM';
 import { ZoneRecommendations } from '../components/ZoneRecommendations';
-import { ACCENTS, useTyphoonTheme } from '../typhoon/useTyphoonTheme';
+import { ZoneSidenav, useIsMobile } from '../components/ZoneSidenav';
+import { useTyphoonTheme } from '../typhoon/useTyphoonTheme';
 import {
   API,
   D03,
@@ -43,6 +44,12 @@ import {
   saveConversations,
   type Conversation,
 } from '../zone/conversations';
+import {
+  getCachedDiagnostic,
+  putCachedDiagnostic,
+  putCachedRapport,
+  removeCachedDiagnostic,
+} from '../zone/diagnosticCache';
 import '../styles/zone.css';
 
 const LEGEND_RANGES = ['<20', '20–39', '40–59', '60–79', '≥80'];
@@ -68,6 +75,7 @@ const STEPS = [
 
 export function Zone() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { theme, accent, toggleTheme, pickAccent, resetAccent } = useTyphoonTheme();
   const isMobile = useIsMobile();
   const [navCollapsed, setNavCollapsed] = useState(false);
@@ -105,6 +113,17 @@ export function Zone() {
     return () => sw.removeEventListener('change', onChange);
   }, [toggleTheme]);
 
+  /* Arrivée depuis /settings (historique « Récent ») : ?q=<adresse> lance
+     directement le diagnostic au montage. On consomme le ref pour ne pas
+     relancer sous React StrictMode (double effet en dev). */
+  const bootQuery = useRef(searchParams.get('q'));
+  useEffect(() => {
+    const q = bootQuery.current;
+    bootQuery.current = null;
+    if (q) void runDiagnosis(q);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const [step, setStep] = useState(0);
   const [stepError, setStepError] = useState(false);
   const [suggestions, setSuggestions] = useState<GeocodeSuggestion[]>([]);
@@ -115,6 +134,7 @@ export function Zone() {
   const [detailedRecommendationZones, setDetailedRecommendationZones] = useState<Record<string, RecommendationZone>>({});
   const [detailedRecommendationsLoading, setDetailedRecommendationsLoading] = useState(false);
   const [detailedRecommendationsError, setDetailedRecommendationsError] = useState<string | null>(null);
+  const [fromCache, setFromCache] = useState(false);
   const [conversations, setConversations] = useState<Conversation[]>(() => loadConversations());
   const [rapport, setRapport] = useState<RapportNarratif | null>(null);
   const [rapportLoading, setRapportLoading] = useState(false);
@@ -196,8 +216,10 @@ export function Zone() {
     void runDiagnosis(s.label);
   }
 
-  /* ── Diagnostic ── */
-  async function runDiagnosis(q: string) {
+  /* ── Diagnostic ──  Le cache local (façon « historique ChatGPT ») sert la
+     même adresse instantanément sans refetch ; un bouton « rafraîchir »
+     force un appel réseau (voir handleRefresh). */
+  async function runDiagnosis(q: string, opts: { force?: boolean } = {}) {
     const value = q.trim();
     if (!value) {
       setDiagError('Saisissez une adresse.');
@@ -205,15 +227,52 @@ export function Zone() {
     }
     hideSuggestions();
     setDiagError(null);
+
+    /* Cache local : si l'adresse a déjà été diagnostiquée (et est encore
+       fraîche), on restitue le rapport complet + le rapport Mistral sans
+       aucun appel réseau. */
+    if (!opts.force) {
+      const cached = getCachedDiagnostic(value);
+      if (cached) {
+        setReport(cached.report);
+        setRapport(cached.rapport ?? null);
+        setRapportError(null);
+        setFromCache(true);
+        setConversations((prev) => {
+          const next = addConversation(prev, cached.report.adresse_normalisee || value);
+          saveConversations(next);
+          return next;
+        });
+        setStepError(false);
+        setStep(1);
+        if (!userClosedSidebar.current) setSidebarOpen(true);
+        setVisibleLayerKeys(
+          new Set(
+            (cached.report.aleas || [])
+              .filter((a) => a.present === true)
+              .map((a) => a.code)
+          )
+        );
+        return;
+      }
+    }
+
     setLoading(true);
-    setReport(null);
+    if (!opts.force) {
+      /* Nouveau diagnostic : on nettoie l'ancien état pendant le chargement. */
+      setReport(null);
+      setRapport(null);
+      setRapportError(null);
+      setFromCache(false);
+      setSidebarOpen(false);
+    }
+    /* Rafraîchissement forcé : on laisse le rapport actuel (et son badge
+       éventuel) en place pendant le chargement — il n'est remplacé qu'en
+       cas de succès, jamais effacé si le réseau échoue. */
     recommendationsRequestId.current += 1;
     setDetailedRecommendationZones({});
     setDetailedRecommendationsLoading(false);
     setDetailedRecommendationsError(null);
-    setRapport(null);
-    setRapportError(null);
-    setSidebarOpen(false);
 
     try {
       const resp = await fetch(`${API}/diagnostic/adresse?q=${encodeURIComponent(value)}`);
@@ -233,6 +292,8 @@ export function Zone() {
       const r = (await resp.json()) as RisqueReport;
       setReport(r);
       void loadDetailedRecommendations(r.adresse_normalisee || value);
+      setFromCache(false); // données fraîches du réseau → badge « en cache » retiré
+      putCachedDiagnostic(r); // sauvegarde le résultat pour les prochains passages
       /* Historique « Récent » (localStorage) : adresse normalisée ou requête brute. */
       setConversations((prev) => {
         const next = addConversation(prev, r.adresse_normalisee || value);
@@ -252,9 +313,25 @@ export function Zone() {
     }
   }
 
+  /* Rafraîchissement forcé : ignore le cache et relance le diagnostic réseau,
+     puis met à jour l'entrée cachée (le rapport Mistral est conservé). */
+  function handleRefresh() {
+    if (!report) return;
+    void runDiagnosis(report.adresse_normalisee || report.adresse_saisie, { force: true });
+  }
+
   /* ── Rapport narratif IA (Mistral) — POST RisqueReport → RapportNarratif ── */
   async function loadRapport() {
     if (!report || rapport || rapportLoading) return;
+    /* Rapport Mistral déjà généré pour cette adresse (cache) → restitution
+       immédiate, aucun appel IA. */
+    if (!fromCache) {
+      const cached = getCachedDiagnostic(report.adresse_normalisee || report.adresse_saisie);
+      if (cached?.rapport) {
+        setRapport(cached.rapport);
+        return;
+      }
+    }
     setRapportLoading(true);
     setRapportError(null);
     try {
@@ -287,7 +364,9 @@ export function Zone() {
         });
         return;
       }
-      setRapport((await resp.json()) as RapportNarratif);
+      const r = (await resp.json()) as RapportNarratif;
+      setRapport(r);
+      putCachedRapport(report, r); // on garde le rapport IA généré (coûteux)
     } catch (err) {
       // fetch() a échoué : backend injoignable, CORS, DNS…
       setRapportError({
@@ -357,8 +436,11 @@ export function Zone() {
 
   function handleDeleteConversation(id: string) {
     setConversations((prev) => {
+      const victim = prev.find((c) => c.id === id);
       const next = removeConversation(prev, id);
       saveConversations(next);
+      /* L'entrée du cache suit l'historique : suppression associée. */
+      if (victim) removeCachedDiagnostic(victim.address);
       return next;
     });
   }
@@ -419,6 +501,11 @@ export function Zone() {
         onPickAccent={pickAccent}
         onResetAccent={resetAccent}
         onOpenSettings={() => setSettingsOpen((o) => !o)}
+        onOpenAccount={() => {
+          setDrawerOpen(false);
+          setSettingsOpen(false);
+          navigate('/settings/account');
+        }}
         onCloseDrawer={() => setDrawerOpen(false)}
         onNewDiagnostic={() => {
           setDrawerOpen(false);
@@ -579,7 +666,26 @@ export function Zone() {
                 {report ? (
                   <section className="zone-results">
                     <div className="addr-heading">
-                      <div className="norm">{report.adresse_normalisee}</div>
+                      <div className="addr-title-row">
+                        <div className="norm">{report.adresse_normalisee}</div>
+                        <div className="addr-actions">
+                          {fromCache && (
+                            <span className="cache-badge" title="Résultat servi depuis le cache local — données Géorisques enregistrées lors du dernier diagnostic.">
+                              <md-icon>database</md-icon> en cache
+                            </span>
+                          )}
+                          <md-icon-button
+                            className="refresh-btn"
+                            aria-label="Rafraîchir le diagnostic"
+                            title="Rafraîchir les données (nouvel appel Géorisques)"
+                            aria-busy={loading || undefined}
+                            disabled={loading}
+                            onClick={handleRefresh}
+                          >
+                            <md-icon>refresh</md-icon>
+                          </md-icon-button>
+                        </div>
+                      </div>
                       <div className="meta">
                         GPS {report.lat.toFixed(5)}°N, {report.lon.toFixed(5)}°E · Code INSEE{' '}
                         {report.code_insee} · Généré le {report.date_generation}
@@ -726,13 +832,15 @@ export function Zone() {
               <ZoneAnalyse report={report} />
             </section>
 
-            {/* ÉTAPE 4 — JUMEAU BIM (viewer 3D thingraph/bim-viewer en iframe) */}
+            {/* ÉTAPE 4 — JUMEAU BIM (viewer 3D + onglet « Vue terrain 3D » Cesium) */}
             <section className="zone-bim" hidden={step !== 3}>
               <ZoneBIM
                 report={report}
                 recommendationZones={detailedRecommendationZones}
                 recommendationZonesLoading={detailedRecommendationsLoading}
                 recommendationZonesError={detailedRecommendationsError}
+                visibleLayerKeys={visibleLayerKeys}
+                onToggleLayer={toggleLayer}
               />
             </section>
 
@@ -887,6 +995,7 @@ export function Zone() {
         aria-hidden="true"
         onClick={() => setDrawerOpen(false)}
       />
+
     </main>
   );
 }
@@ -1171,292 +1280,5 @@ function AleaCard({
   );
 }
 
-/* ── Détection mobile — 900px, même breakpoint que @media (max-width:900px)
-   dans zone.css (garder les deux synchronisés) ── */
-function useIsMobile() {
-  const [isMobile, setIsMobile] = useState(() =>
-    typeof window !== 'undefined' && window.matchMedia('(max-width: 900px)').matches
-  );
-  useEffect(() => {
-    const mq = window.matchMedia('(max-width: 900px)');
-    const onChange = () => setIsMobile(mq.matches);
-    mq.addEventListener('change', onChange);
-    return () => mq.removeEventListener('change', onChange);
-  }, []);
-  return isMobile;
-}
-
-/* ── Sidenav rétractable (navigation façon Gemini) ──
-   Desktop : rail pleine largeur ↔ colonne d'icônes (collapsed).
-   Mobile  : drawer hors-écran ouvert via le hamburger du stepper + scrim. */
-function ZoneSidenav({
-  sidenavRef,
-  collapsed,
-  mobile,
-  hidden,
-  theme,
-  accent,
-  settingsOpen,
-  settingsMenuRef,
-  themeSwitchRef,
-  onToggleCollapse,
-  onPickAccent,
-  onResetAccent,
-  onOpenSettings,
-  onCloseDrawer,
-  onNewDiagnostic,
-  conversations,
-  activeAddress,
-  onOpenConversation,
-  onDeleteConversation,
-}: {
-  sidenavRef: RefObject<HTMLElement | null>;
-  collapsed: boolean;
-  mobile: boolean;
-  hidden: boolean;
-  theme: 'dark' | 'light';
-  accent: string;
-  settingsOpen: boolean;
-  settingsMenuRef: RefObject<Menu | null>;
-  themeSwitchRef: RefObject<MdSwitch | null>;
-  onToggleCollapse: () => void;
-  onPickAccent: (hex: string) => void;
-  onResetAccent: () => void;
-  onOpenSettings: () => void;
-  onCloseDrawer: () => void;
-  onNewDiagnostic: () => void;
-  conversations: Conversation[];
-  activeAddress: string | null;
-  onOpenConversation: (address: string) => void;
-  onDeleteConversation: (id: string) => void;
-}) {
-  const navigate = useNavigate();
-
-  const navGo = (path: string) => {
-    onCloseDrawer();
-    navigate(path);
-  };
-
-  return (
-    <aside
-      ref={sidenavRef}
-      className="zone-sidenav"
-      aria-label="Navigation principale"
-      inert={hidden}
-      aria-hidden={hidden}
-    >
-      <header className="sidenav-header">
-        {collapsed ? (
-          /* Replié : l'icône d'expansion remplace le logo (clic → déplier) */
-          <md-icon-button
-            className="sidenav-expand"
-            aria-label="Déplier le menu"
-            title="Déplier le menu"
-            onClick={onToggleCollapse}
-          >
-            <md-icon>chevron_right</md-icon>
-          </md-icon-button>
-        ) : (
-          <>
-            <Link
-              to="/"
-              className="sidenav-brand"
-              aria-label="Typhoon — accueil"
-              onClick={onCloseDrawer}
-            >
-              {/* Wordmark teinté par l'accent : le SVG blanc sert de masque
-                  alpha, la couleur est --accent (voir zone.css). Le lien a déjà
-                  aria-label — le span est décoratif. */}
-              <span className="sidenav-wordmark-img" aria-hidden="true" />
-            </Link>
-            <md-icon-button
-              className="sidenav-collapse"
-              aria-label={mobile ? 'Fermer le menu' : 'Replier le menu'}
-              title={mobile ? 'Fermer le menu' : 'Replier le menu'}
-              onClick={onToggleCollapse}
-            >
-              <md-icon>{mobile ? 'close' : 'menu_open'}</md-icon>
-            </md-icon-button>
-          </>
-        )}
-      </header>
-
-      {collapsed ? (
-        /* ── Mode replié : colonne d'icônes ── */
-        <nav className="sidenav-rail" aria-label="Raccourcis">
-          <md-icon-button title="Nouveau diagnostic" aria-label="Nouveau diagnostic" onClick={onNewDiagnostic}>
-            <md-icon>add_circle</md-icon>
-          </md-icon-button>
-          <md-icon-button title="Accueil" aria-label="Accueil" onClick={() => navGo('/')}>
-            <md-icon>home</md-icon>
-          </md-icon-button>
-          <md-icon-button title="FAQ" aria-label="FAQ" onClick={() => navGo('/faq')}>
-            <md-icon>help</md-icon>
-          </md-icon-button>
-          <md-icon-button title="Contact" aria-label="Contact" onClick={() => navGo('/contact')}>
-            <md-icon>mail</md-icon>
-          </md-icon-button>
-        </nav>
-      ) : (
-        /* ── Mode déplié : liste M3 + historique « Récent » ── */
-        <div className="sidenav-body">
-          <md-list className="sidenav-nav">
-            <md-list-item
-              className="sidenav-new"
-              type="button"
-              onClick={onNewDiagnostic}
-            >
-              <md-icon slot="start">add_circle</md-icon>
-              <span slot="headline">Nouveau diagnostic</span>
-            </md-list-item>
-            <md-list-item type="button" onClick={() => navGo('/')}>
-              <md-icon slot="start">home</md-icon>
-              <span slot="headline">Accueil</span>
-            </md-list-item>
-            <md-list-item type="button" onClick={() => navGo('/faq')}>
-              <md-icon slot="start">help</md-icon>
-              <span slot="headline">FAQ</span>
-            </md-list-item>
-            <md-list-item type="button" onClick={() => navGo('/contact')}>
-              <md-icon slot="start">mail</md-icon>
-              <span slot="headline">Contact</span>
-            </md-list-item>
-          </md-list>
-
-          <ConversationHistory
-            conversations={conversations}
-            activeAddress={activeAddress}
-            onOpen={onOpenConversation}
-            onDelete={onDeleteConversation}
-          />
-        </div>
-      )}
-
-      <footer className="sidenav-footer">
-        <md-icon-button
-          id="settings-anchor"
-          className="sidenav-settings"
-          aria-label="Réglages"
-          title="Réglages"
-          aria-expanded={settingsOpen}
-          aria-haspopup="menu"
-          onClick={onOpenSettings}
-        >
-          <md-icon>settings</md-icon>
-        </md-icon-button>
-
-        <md-menu
-          ref={settingsMenuRef}
-          anchor="settings-anchor"
-          positioning="popover"
-          open={settingsOpen}
-          className="sidenav-menu"
-        >
-          <md-menu-item keepOpen>
-            <span slot="headline">Mode sombre</span>
-            <md-switch slot="end" ref={themeSwitchRef} selected={theme === 'dark'} icons>
-              <md-icon slot="on-icon">dark_mode</md-icon>
-              <md-icon slot="off-icon">light_mode</md-icon>
-            </md-switch>
-          </md-menu-item>
-
-          <div className="sidenav-accent-block">
-            <span className="sidenav-accent-title">Couleur d'accent</span>
-            <div className="sidenav-accent-swatches">
-              {ACCENTS.map((hex) => (
-                <button
-                  key={hex}
-                  type="button"
-                  className={`sidenav-accent-swatch${
-                    accent.toLowerCase() === hex.toLowerCase() ? ' active' : ''
-                  }`}
-                  style={{ '--swatch': hex } as CSSProperties}
-                  aria-label={`Accent ${hex}`}
-                  title={hex}
-                  onClick={() => onPickAccent(hex)}
-                />
-              ))}
-            </div>
-            <button type="button" className="sidenav-accent-reset" onClick={onResetAccent}>
-              <md-icon>restart_alt</md-icon>
-              <span>Rétablir le bleu d'origine</span>
-            </button>
-          </div>
-
-          <md-menu-item type="button" onClick={() => navGo('/')}>
-            <md-icon slot="start">home</md-icon>
-            <span slot="headline">Retour à l'accueil</span>
-          </md-menu-item>
-        </md-menu>
-      </footer>
-    </aside>
-  );
-}
-
-/* ── Historique « Récent » de la sidenav (façon Gemini) ──
-   Section repliable : liste des adresses diagnostiquées (localStorage),
-   clic → relance le diagnostic, survol → bouton de suppression. */
-function ConversationHistory({
-  conversations,
-  activeAddress,
-  onOpen,
-  onDelete,
-}: {
-  conversations: Conversation[];
-  activeAddress: string | null;
-  onOpen: (address: string) => void;
-  onDelete: (id: string) => void;
-}) {
-  const [open, setOpen] = useState(true);
-
-  if (conversations.length === 0) {
-    return (
-      <div className="sidenav-recent-empty">
-        <md-icon>history</md-icon>
-        <span>Pas encore de diagnostic</span>
-      </div>
-    );
-  }
-
-  return (
-    <details
-      className="sidenav-recent"
-      open={open}
-      onToggle={(e) => setOpen((e.currentTarget as HTMLDetailsElement).open)}
-    >
-      <summary className="sidenav-recent-header" aria-label="Historique des adresses diagnostiquées">
-        <span className="sidenav-recent-title">Récent</span>
-        <md-icon>expand_more</md-icon>
-      </summary>
-      <div className="sidenav-recent-list">
-        {conversations.map((c) => {
-          const active = activeAddress !== null && c.address === activeAddress;
-          return (
-            <div
-              className={`sidenav-recent-item${active ? ' active' : ''}`}
-              key={c.id}
-            >
-              <button
-                type="button"
-                className="sidenav-recent-btn"
-                title={c.address}
-                onClick={() => onOpen(c.address)}
-              >
-                <md-icon>history</md-icon>
-                <span className="sidenav-recent-label">{c.address}</span>
-              </button>
-              <md-icon-button
-                className="sidenav-recent-del"
-                aria-label={`Supprimer ${c.address} de l'historique`}
-                title="Supprimer de l'historique"
-                onClick={() => onDelete(c.id)}
-              >
-                <md-icon>close</md-icon>
-              </md-icon-button>
-            </div>
-          );
-        })}
-      </div>
-    </details>
-  );
-}
+/* La sidenav (ZoneSidenav + ConversationHistory + useIsMobile) vit dans
+   ../components/ZoneSidenav — partagée entre /zone et /settings. */
