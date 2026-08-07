@@ -205,13 +205,13 @@ export function ZoneArtisans({ adresse, zone, aleaPrincipal, recommendation }: P
                   )}
 
                   {(groupe.entreprises || []).map((entreprise, ei) => {
-                    const fullAdresse = [
-                      entreprise.adresse,
-                      entreprise.code_postal,
-                      entreprise.commune,
-                    ]
-                      .filter(Boolean)
-                      .join(' ');
+                    const fullAdresse = Array.from(
+                      new Set(
+                        [entreprise.adresse, entreprise.code_postal, entreprise.commune].filter(
+                          (v): v is string => Boolean(v),
+                        ),
+                      ),
+                    ).join(' ');
                     const site =
                       entreprise.site_officiel ||
                       entreprise.site_internet ||
@@ -277,7 +277,7 @@ export function ZoneArtisans({ adresse, zone, aleaPrincipal, recommendation }: P
                           )}
                         </div>
 
-                        {entreprise.details_score && entreprise.details_score.length > 0 && (
+                        {Array.isArray(entreprise.details_score) && entreprise.details_score.length > 0 && (
                           <details className="zone-artisans-details">
                             <summary>
                               <md-icon aria-hidden="true">info</md-icon> Pourquoi ce score
