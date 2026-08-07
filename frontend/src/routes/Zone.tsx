@@ -5,7 +5,9 @@
 //     2. Cartographie — carte OpenLayers + panneau aléas (data viz Géorisques)
 //     3. Analyse      — fiche bâtiment BDNB (Synthèse / Construction / Énergie…)
 //     4. Jumeau BIM   — viewer 3D thingraph en iframe (glTF généré depuis l'emprise BDNB)
-//     5. Rapport IA   — rapport narratif Mistral + export PDF
+//     5. Recommandations — plan d'adaptation du bien
+//     6. Artisans       — professionnels associés aux travaux
+//     7. Rapport IA     — rapport narratif Mistral + export PDF
 //
 //   Stepper linéaire : les étapes 2-4 sont bloquées tant qu'aucune adresse
 //   n'a été diagnostiquée — l'étape Adresse passe en état d'erreur (icône
@@ -20,6 +22,7 @@ import { ZoneMap } from '../components/ZoneMap';
 import { ZoneAnalyse } from '../components/ZoneAnalyse';
 import { ZoneBIM } from '../components/ZoneBIM';
 import { ZoneRecommendations } from '../components/ZoneRecommendations';
+import { ZoneArtisans } from '../components/ZoneArtisans';
 import { ACCENTS, useTyphoonTheme } from '../typhoon/useTyphoonTheme';
 import {
   API,
@@ -63,6 +66,7 @@ const STEPS = [
   { id: 'analyse', label: 'Analyse' },
   { id: 'bim', label: 'Jumeau BIM' },
   { id: 'recommandations', label: 'Recommandations' },
+  { id: 'artisans', label: 'Artisans' },
   { id: 'rapport', label: 'Rapport IA' },
 ] as const;
 
@@ -329,7 +333,7 @@ export function Zone() {
     setStepError(false);
     setStep(i);
     if (i === 0) window.setTimeout(() => heroInputRef.current?.focus(), 80);
-    if (i === 5 && report) void loadRapport();
+    if (i === 6 && report) void loadRapport();
   }
 
   /* ── Visibilité des couches ── */
@@ -736,7 +740,7 @@ export function Zone() {
               />
             </section>
 
-            {/* ÉTAPE 5 — RAPPORT IA (Mistral) */}
+            {/* ÉTAPE 5 — RECOMMANDATIONS */}
             <section className="zone-recommendations" hidden={step !== 4}>
               <ZoneRecommendations
                 report={report}
@@ -746,7 +750,18 @@ export function Zone() {
               />
             </section>
 
-            <section className="zone-report" hidden={step !== 5}>
+            {/* ÉTAPE 6 — ARTISANS */}
+            <section className="zone-artisans-step" hidden={step !== 5}>
+              <ZoneArtisans
+                report={report}
+                zones={detailedRecommendationZones}
+                loading={detailedRecommendationsLoading}
+                error={detailedRecommendationsError}
+              />
+            </section>
+
+            {/* ÉTAPE 7 — RAPPORT IA */}
+            <section className="zone-report" hidden={step !== 6}>
               {!report ? (
                 <div className="report-empty">
                   <md-icon>description</md-icon>

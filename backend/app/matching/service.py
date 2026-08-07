@@ -8,11 +8,14 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import re
 from typing import Any
+from urllib.parse import urlparse
 
 import requests
 
 from app.core.config import settings
+from app.artisans.site_finder import enrichir_coordonnees
 from app.matching.cache import entreprise_cache, rge_cache
 from app.matching.generate_rapport_artisans import (
     CATEGORIES_NON_RGE,
@@ -27,6 +30,12 @@ from app.matching.match_artisans_rge import calculer_score_objectif, haversine_k
 logger = logging.getLogger(__name__)
 
 API_RECHERCHE_ENTREPRISES = "https://recherche-entreprises.api.gouv.fr/search"
+ANNUAIRE_HOSTS = {
+    "annuaire-entreprises.data.gouv.fr", "data.ademe.fr", "france-renov.gouv.fr",
+    "pagesjaunes.fr", "societe.com", "verif.com",
+}
+MAX_WEB_LOOKUPS_PER_REQUEST = 8
+WEB_LOOKUP_TIMEOUT_SECONDS = 8
 
 # ── Fallback NAF pour les catégories non-RGE ────────────────
 NAF_FALLBACKS: dict[str, list[str]] = {
@@ -121,7 +130,7 @@ def traiter_une_recommandation(
     priorite = _extraire_priorite(reco)
 
     metadonnees = {
-        k: reco[k] for k in ("zone_origine", "risques_origine", "mesure_originale", "cout_estime")
+        k: reco[k] for k in ("recommendation_id", "zone_origine", "risques_origine", "mesure_originale", "cout_estime")
         if k in reco
     }
 
@@ -183,16 +192,110 @@ async def matching_parallele(
     return list(results)
 
 
+def _site_entreprise(value: Any) -> str | None:
+    """Accepte exclusivement un domaine propre a l'entreprise, jamais un annuaire."""
+    raw = str(value or "").strip()
+    if not raw:
+        return None
+    url = raw if re.match(r"^https?://", raw, re.IGNORECASE) else f"https://{raw}"
+    host = (urlparse(url).hostname or "").lower().removeprefix("www.")
+    if not host or "." not in host or any(host == item or host.endswith(f".{item}") for item in ANNUAIRE_HOSTS):
+        return None
+    return url
+
+
+async def _verifier_profils(resultats: list[dict[str, Any]], limite: int) -> None:
+    """Expose, pour chaque recommandation, le top des profils contact + site verifies.
+
+    Le score reste interne au classement et n'est jamais retourne au client.
+    """
+    budget_recherches = MAX_WEB_LOOKUPS_PER_REQUEST
+    budget_lock = asyncio.Lock()
+    semaphore = asyncio.Semaphore(4)
+
+    async def enrichir_sans_blocage(entreprise: dict[str, Any]) -> dict[str, Any]:
+        """Une recherche lente ou indisponible ne doit jamais bloquer le matching."""
+        nonlocal budget_recherches
+        async with budget_lock:
+            if budget_recherches <= 0:
+                return {}
+            budget_recherches -= 1
+        try:
+            async with semaphore:
+                return await asyncio.wait_for(
+                    enrichir_coordonnees(entreprise),
+                    timeout=WEB_LOOKUP_TIMEOUT_SECONDS,
+                )
+        except Exception:
+            return {}
+
+    async def verifier_recommandation(resultat: dict[str, Any]) -> None:
+        # On conserve cinq entreprises issues des registres publics comme repli.
+        # Une seule est enrichie par recommandation pour maintenir une réponse rapide.
+        candidats = list(resultat.get("entreprises") or [])[:limite]
+
+        async def verifier(entreprise: dict[str, Any]) -> dict[str, Any] | None:
+            site = _site_entreprise(entreprise.get("site_officiel") or entreprise.get("site_internet"))
+            telephone, email = entreprise.get("telephone"), entreprise.get("email")
+            if not site or not (telephone or email):
+                enrichi = await enrichir_sans_blocage(entreprise)
+                site = site or _site_entreprise(enrichi.get("site_officiel"))
+                telephone = telephone or enrichi.get("telephone")
+                email = email or enrichi.get("email")
+            if not site or not (telephone or email):
+                return None
+            public = dict(entreprise)
+            public.update({
+                "site_officiel": site,
+                "telephone": telephone,
+                "email": email,
+                "site_verifie": True,
+                "contact_verifie": True,
+            })
+            for key in ("site_internet", "lien_fiche_officielle", "score_objectif_sur_100", "details_score"):
+                public.pop(key, None)
+            return public
+
+        verifies = await asyncio.gather(*(verifier(entreprise) for entreprise in candidats[:1]))
+        profils_verifies = [entreprise for entreprise in verifies if entreprise]
+        if profils_verifies:
+            resultat["entreprises"] = profils_verifies[:limite]
+            return
+
+        # Les registres publics permettent au moins d'identifier l'entreprise active.
+        # Aucun faux contact ou faux lien n'est ajouté à ces profils de repli.
+        profils_repli = []
+        for entreprise in candidats:
+            public = dict(entreprise)
+            site = _site_entreprise(public.get("site_officiel") or public.get("site_internet"))
+            public["site_officiel"] = site
+            public["profil_verifie"] = False
+            public["contact_verifie"] = False
+            public["site_verifie"] = bool(site)
+            for key in ("site_internet", "lien_fiche_officielle", "score_objectif_sur_100", "details_score"):
+                public.pop(key, None)
+            profils_repli.append(public)
+        resultat["entreprises"] = profils_repli
+        if profils_repli and not resultat.get("erreur"):
+            resultat["notice"] = "Entreprises actives identifiees dans les registres publics ; leurs coordonnees et leur site restent a confirmer."
+        elif not resultat.get("erreur"):
+            resultat["notice"] = "Aucune entreprise active n'a ete trouvee pour cette recommandation."
+
+    await asyncio.gather(*(verifier_recommandation(resultat) for resultat in resultats))
+
+
 # ── Interface publique ──────────────────────────────────────
 async def run_matching(
     recommandations_input: list[dict[str, Any]],
     code_postal: str,
     lat: float | None = None,
     lon: float | None = None,
+    limite_entreprises: int = 5,
 ) -> dict[str, Any]:
     """Point d'entrée principal : traite toutes les recommandations en parallèle
     et retourne un rapport structuré avec résumé."""
     resultats = await matching_parallele(recommandations_input, code_postal, lat, lon)
+    await _verifier_profils(resultats, limite_entreprises)
 
     total_entreprises = sum(len(r.get("entreprises", [])) for r in resultats)
     compteur = {"rge": 0, "non_rge": 0, "inconnue": 0}
