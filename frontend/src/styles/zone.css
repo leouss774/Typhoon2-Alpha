@@ -3221,3 +3221,80 @@
     width: 100%;
   }
 }
+
+/* ===========================================================================
+   ZONE — Étape Recommandations · accordéon « Trouver des artisans »
+   Composant ZoneArtisans (frontend/src/components/ZoneArtisans.tsx).
+   Même langage M3 que les zone-reco-* : tokens --accent / --md-sys-color-*,
+   thème sombre par défaut + variante .theme-light.
+   =========================================================================== */
+.zone-artisans { margin-top: 14px; border-top: 1px dashed var(--md-sys-color-outline-variant); padding-top: 12px; }
+.zone-artisans-toggle { display: flex; align-items: center; gap: 9px; width: 100%; padding: 10px 12px; border: 1px solid var(--md-sys-color-outline-variant); border-radius: 12px; background: var(--md-sys-color-surface-container); color: var(--md-sys-color-on-surface-variant); font: 500 12px/1.4 inherit; letter-spacing: .01em; cursor: pointer; transition: border-color .18s ease, background .18s ease, color .18s ease; }
+.zone-artisans-toggle:hover { border-color: var(--accent); color: var(--md-sys-color-on-surface); background: var(--md-sys-color-surface-container-high); }
+.zone-artisans-toggle md-icon { font-size: 18px; color: var(--accent); }
+.zone-artisans-toggle .zone-artisans-chevron { margin-left: auto; font-size: 18px; color: var(--md-sys-color-on-surface-variant); transition: transform .2s ease; }
+.zone-artisans-toggle.open .zone-artisans-chevron { transform: rotate(180deg); }
+.zone-artisans-body { margin-top: 12px; padding-left: 2px; }
+
+/* Loading / erreur / vide */
+.zone-artisans-loading { display: flex; align-items: center; gap: 12px; padding: 14px; border-radius: 12px; background: var(--md-sys-color-surface-container); color: var(--md-sys-color-on-surface-variant); font-size: 11px; line-height: 1.45; }
+.zone-artisans-loading md-circular-progress { --md-circular-progress-size: 20px; }
+.zone-artisans-error { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-radius: 12px; background: var(--md-sys-color-error-container); color: var(--md-sys-color-on-error-container); font-size: 11px; line-height: 1.45; }
+.zone-artisans-error > md-icon { font-size: 20px; flex-shrink: 0; }
+.zone-artisans-error div { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+.zone-artisans-error strong { font-weight: 600; }
+.zone-artisans-error md-text-button { margin-left: auto; flex-shrink: 0; }
+.zone-artisans-empty { display: flex; align-items: flex-start; gap: 9px; padding: 12px 14px; border-radius: 12px; background: var(--md-sys-color-surface-container); color: var(--md-sys-color-on-surface-variant); font-size: 11px; line-height: 1.5; }
+.zone-artisans-empty md-icon { font-size: 20px; flex-shrink: 0; color: var(--md-sys-color-on-surface-variant); }
+
+/* Résumé + groupes par métier */
+.zone-artisans-summary { margin: 2px 2px 10px; color: var(--md-sys-color-on-surface-variant); font-size: 10.5px; letter-spacing: .02em; }
+.zone-artisans-group { margin-bottom: 14px; }
+.zone-artisans-group:last-child { margin-bottom: 0; }
+.zone-artisans-group-head { display: flex; align-items: center; gap: 10px; margin: 0 2px 8px; }
+.zone-artisans-group-head h5 { margin: 0; flex: 1; min-width: 0; color: var(--md-sys-color-on-surface); font-size: 12.5px; font-weight: 600; line-height: 1.4; }
+.zone-artisans-badge { flex-shrink: 0; padding: 3px 9px; border-radius: 999px; font-size: 9.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.zone-artisans-badge.rge { color: var(--md-sys-color-on-primary-container); background: var(--md-sys-color-primary-container); }
+.zone-artisans-badge.local { color: var(--md-sys-color-on-secondary-container); background: var(--md-sys-color-secondary-container); }
+.zone-artisans-group-erreur { margin: 0 2px 8px; padding: 8px 10px; border-radius: 10px; background: var(--md-sys-color-error-container); color: var(--md-sys-color-on-error-container); font-size: 10.5px; line-height: 1.45; }
+.zone-artisans-group-empty { margin: 0 2px; padding: 10px 12px; border-radius: 10px; background: var(--md-sys-color-surface-container); color: var(--md-sys-color-on-surface-variant); font-size: 10.5px; line-height: 1.45; }
+
+/* Carte entreprise */
+.zone-artisans-card { margin-bottom: 10px; padding: 14px; border: 1px solid var(--md-sys-color-outline-variant); border-radius: 14px; background: var(--md-sys-color-surface-container-low); }
+.zone-artisans-card:last-child { margin-bottom: 0; }
+.zone-artisans-card-top { display: flex; align-items: flex-start; gap: 12px; }
+.zone-artisans-card-title { flex: 1; min-width: 0; }
+.zone-artisans-card-title strong { display: block; color: var(--md-sys-color-on-surface); font-size: 13px; font-weight: 600; line-height: 1.4; }
+.zone-artisans-rge { display: inline-flex; align-items: center; gap: 4px; margin-top: 6px; padding: 2px 8px; border-radius: 999px; font-size: 9.5px; font-weight: 600; }
+.zone-artisans-rge md-icon { font-size: 13px; }
+.zone-artisans-rge.valid { color: #1F9D6C; background: color-mix(in srgb, #1F9D6C 16%, transparent); }
+.zone-artisans-rge.expired { color: var(--md-sys-color-error); background: color-mix(in srgb, var(--md-sys-color-error) 14%, transparent); }
+.zone-artisans-rge.none { color: var(--md-sys-color-on-surface-variant); background: var(--md-sys-color-surface-container); }
+.zone-artisans-score { flex-shrink: 0; text-align: right; color: var(--md-sys-color-on-surface-variant); }
+.zone-artisans-score strong { font-size: 17px; font-weight: 700; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+.zone-artisans-score small { font-size: 9px; }
+.zone-artisans-score.high strong { color: #1F9D6C; }
+.zone-artisans-score.mid strong { color: #D4AC3E; }
+.zone-artisans-score.low strong { color: var(--md-sys-color-on-surface-variant); }
+.zone-artisans-card-meta { display: flex; flex-direction: column; gap: 5px; margin-top: 10px; color: var(--md-sys-color-on-surface-variant); font-size: 10.5px; line-height: 1.45; }
+.zone-artisans-card-meta span { display: flex; align-items: center; gap: 6px; min-width: 0; overflow-wrap: anywhere; }
+.zone-artisans-card-meta md-icon { flex-shrink: 0; font-size: 14px; color: var(--accent); opacity: .85; }
+.zone-artisans-details { margin-top: 10px; }
+.zone-artisans-details summary { display: flex; align-items: center; gap: 6px; color: var(--md-sys-color-on-surface-variant); font-size: 10.5px; cursor: pointer; user-select: none; }
+.zone-artisans-details summary md-icon { font-size: 14px; color: var(--accent); }
+.zone-artisans-details ul { margin: 8px 0 0; padding: 10px 12px 10px 26px; border-radius: 10px; background: var(--md-sys-color-surface-container); color: var(--md-sys-color-on-surface-variant); font-size: 10.5px; line-height: 1.5; }
+.zone-artisans-card-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.zone-artisans-action { display: inline-flex; align-items: center; gap: 5px; padding: 6px 11px; border: 1px solid var(--md-sys-color-outline-variant); border-radius: 999px; background: transparent; color: var(--md-sys-color-on-surface-variant); font: 500 10.5px/1.2 inherit; text-decoration: none; transition: border-color .18s ease, color .18s ease, background .18s ease; }
+.zone-artisans-action md-icon { font-size: 14px; }
+.zone-artisans-action:hover { border-color: var(--accent); color: var(--md-sys-color-on-surface); }
+.zone-artisans-action.primary { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--accent); }
+.zone-artisans-action.primary:hover { background: color-mix(in srgb, var(--accent) 24%, transparent); }
+.zone-artisans-annuaire { margin: 10px 0 0; color: var(--md-sys-color-on-surface-variant); font-size: 9.5px; line-height: 1.5; }
+.zone-artisans-annuaire a { color: var(--accent); text-decoration: none; }
+.zone-artisans-annuaire a:hover { text-decoration: underline; }
+
+/* Mobile : cartes pleine largeur */
+@media (max-width: 900px) {
+  .zone-artisans-card-top { flex-direction: column; }
+  .zone-artisans-score { text-align: left; }
+}
