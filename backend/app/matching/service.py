@@ -14,8 +14,8 @@ from urllib.parse import urlparse
 
 import requests
 
+from app.artisans.site_finder import EXCLUDED_HOSTS
 from app.core.config import settings
-from app.artisans.site_finder import enrichir_coordonnees
 from app.matching.cache import entreprise_cache, rge_cache
 from app.matching.generate_rapport_artisans import (
     CATEGORIES_NON_RGE,
@@ -30,11 +30,7 @@ from app.matching.match_artisans_rge import calculer_score_objectif, haversine_k
 logger = logging.getLogger(__name__)
 
 API_RECHERCHE_ENTREPRISES = "https://recherche-entreprises.api.gouv.fr/search"
-ANNUAIRE_HOSTS = {
-    "annuaire-entreprises.data.gouv.fr", "data.ademe.fr", "france-renov.gouv.fr",
-    "pagesjaunes.fr", "societe.com", "verif.com",
-}
-WEB_LOOKUP_TIMEOUT_SECONDS = 8
+ANNUAIRE_HOSTS = EXCLUDED_HOSTS
 
 # ── Fallback NAF pour les catégories non-RGE ────────────────
 NAF_FALLBACKS: dict[str, list[str]] = {
@@ -203,59 +199,46 @@ def _site_entreprise(value: Any) -> str | None:
     return url
 
 
-async def _enrichir_simples(resultats: list[dict[str, Any]], limite: int) -> None:
-    """Expose chaque entreprise avec tout ce qui est disponible — sans gating.
+def _enrichir_simples(resultats: list[dict[str, Any]], limite: int) -> None:
+    """Expose chaque entreprise avec les données natives disponibles.
 
-    Aucune vérification : chaque entreprise manquant d'un site ou d'un contact
-    est enrichie par recherche web (sans budget ni early stop). Tout ce qui est
-    trouvé est conservé — un site seul, un contact seul, les deux, ou rien
-    (les registres Sirene ne contiennent souvent aucune coordonnée). Les
-    boutons du frontend (Appeler, E-mail, Site officiel, Itinéraire, logo
-    favicon) apparaissent dès que la donnée existe.
-
-    Seul garde-fou conservé : `_site_entreprise` filtre les domaines
-    d'annuaires (jamais de faux lien). Les champs internes (score, lien de
-    fiche) ne sont pas exposés au client.
+    - `site_officiel` : conservé s'il existe dans les registres source (RGE / ADEME)
+      et passe le filtre `_site_entreprise` (excluant les domaines d'annuaires).
+    - `site_annuaire` : repli systématique vers la fiche officielle
+      `https://annuaire-entreprises.data.gouv.fr/entreprise/{identifiant}` si
+      aucun site officiel propre n'est disponible (bouton 'Fiche entreprise' dans le frontend).
+    - `telephone` et `email` : conservés s'ils existent dans la source native.
+    - Aucun appel web externalisé (Mistral web_search) n'est effectué, afin de
+      préserver le quota API Mistral pour les fonctionnalités d'analyse cœur.
+    - Les champs internes (score, lien de fiche, site_internet) sont nettoyés.
     """
-    semaphore = asyncio.Semaphore(4)
-
-    async def enrichir(entreprise: dict[str, Any]) -> None:
-        site = _site_entreprise(entreprise.get("site_officiel") or entreprise.get("site_internet"))
-        telephone, email = entreprise.get("telephone"), entreprise.get("email")
-        if not (site and (telephone or email)):
-            try:
-                async with semaphore:
-                    enrichi = await asyncio.wait_for(
-                        enrichir_coordonnees(entreprise),
-                        timeout=WEB_LOOKUP_TIMEOUT_SECONDS,
-                    )
-            except Exception:
-                enrichi = {}
-            site = site or _site_entreprise(enrichi.get("site_officiel"))
-            telephone = telephone or enrichi.get("telephone")
-            email = email or enrichi.get("email")
-        entreprise["site_officiel"] = site
-        entreprise["telephone"] = telephone
-        entreprise["email"] = email
-        # Repli : sans site propre, on pointe vers la fiche officielle de
-        # l'annuaire public (jamais un faux lien) — le bouton « site » reste
-        # disponible pour chaque artisan. Le logo favicon, lui, ne s'affiche
-        # que pour un vrai site d'entreprise (site_officiel).
-        if not site:
-            identifiant = entreprise.get("siren") or (entreprise.get("siret") or "")[:9]
-            if identifiant:
-                entreprise["site_annuaire"] = f"https://annuaire-entreprises.data.gouv.fr/entreprise/{identifiant}"
-        for key in (
-            "site_internet", "lien_fiche_officielle",
-            "profil_verifie", "site_verifie", "contact_verifie",
-            "score_objectif_sur_100", "details_score",
-        ):
-            entreprise.pop(key, None)
-
-    async def traiter(resultat: dict[str, Any]) -> None:
+    for resultat in resultats:
         entreprises = (resultat.get("entreprises") or [])[:limite]
         resultat["entreprises"] = entreprises  # cap réel de la réponse (Top N)
-        await asyncio.gather(*(enrichir(e) for e in entreprises))
+        for entreprise in entreprises:
+            site = _site_entreprise(entreprise.get("site_officiel") or entreprise.get("site_internet"))
+            telephone = entreprise.get("telephone")
+            email = entreprise.get("email")
+
+            entreprise["site_officiel"] = site
+            entreprise["telephone"] = telephone
+            entreprise["email"] = email
+
+            # Repli : sans site propre, on pointe vers la fiche officielle de
+            # l'annuaire public (jamais un faux lien) — le bouton « Fiche entreprise »
+            # reste disponible pour chaque artisan.
+            if not site:
+                identifiant = entreprise.get("siren") or (entreprise.get("siret") or "")[:9]
+                if identifiant:
+                    entreprise["site_annuaire"] = f"https://annuaire-entreprises.data.gouv.fr/entreprise/{identifiant}"
+
+            for key in (
+                "site_internet", "lien_fiche_officielle",
+                "profil_verifie", "site_verifie", "contact_verifie",
+                "score_objectif_sur_100", "details_score",
+            ):
+                entreprise.pop(key, None)
+
         if not resultat.get("erreur"):
             if not entreprises:
                 resultat["notice"] = "Aucune entreprise active n'a ete trouvee pour cette recommandation."
@@ -264,8 +247,6 @@ async def _enrichir_simples(resultats: list[dict[str, Any]], limite: int) -> Non
                     "Entreprises actives identifiees dans les registres publics ; "
                     "leurs coordonnees et leur site restent a confirmer."
                 )
-
-    await asyncio.gather(*(traiter(resultat) for resultat in resultats))
 
 
 # ── Interface publique ──────────────────────────────────────
@@ -279,7 +260,7 @@ async def run_matching(
     """Point d'entrée principal : traite toutes les recommandations en parallèle
     et retourne un rapport structuré avec résumé."""
     resultats = await matching_parallele(recommandations_input, code_postal, lat, lon)
-    await _enrichir_simples(resultats, limite_entreprises)
+    _enrichir_simples(resultats, limite_entreprises)
 
     total_entreprises = sum(len(r.get("entreprises", [])) for r in resultats)
     compteur = {"rge": 0, "non_rge": 0, "inconnue": 0}

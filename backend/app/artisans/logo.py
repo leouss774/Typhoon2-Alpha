@@ -1,18 +1,22 @@
 # -*- coding: utf-8 -*-
-"""Résolution du logo d'entreprise via favicon (endpoint /api/v1/artisans/logo).
+"""Résolution du logo d'entreprise (endpoint /api/v1/artisans/logo).
 
-Récupère le favicon d'un site d'entreprise (site_officiel) :
+Récupère le logo réel d'un site d'entreprise (site_officiel) :
   1. SSRF guard : l'hôte doit résoudre exclusivement vers des IP publiques
      (jamais loopback / privé / lien-local / réservé / multicast).
-  2. Résolution : /favicon.ico d'abord, puis <link rel="icon"> de la page
-     d'accueil si nécessaire.
-  3. Garde-fous : content-type image/* (ou signature binaire reconnue pour
-     /favicon.ico), taille plafonnée (512 Ko), timeout court (4 s).
-  4. Cache mémoire par hôte (TTLCache 24 h) — un favicon introuvable est
+  2. Résolution : les <link rel="icon"> de la page d'accueil d'abord, en
+     préférant l'apple-touch-icon (le vrai logo, >= 180 px) puis les icônes
+     déclarées les plus grandes ; /favicon.ico (souvent un 16 px générique)
+     n'est qu'un repli.
+  3. Garde-fous : content-type image/* (ou signature binaire reconnue),
+     taille plafonnée (512 Ko), timeout court (4 s).
+  4. Cache mémoire par hôte (TTLCache 24 h) — un logo introuvable est
      mémorisé pour ne pas marteler le site.
 
-Le frontend superpose le favicon sur l'avatar à initiales de la carte ; en
-cas d'échec (404), les initiales restent affichées (fallback onError).
+Le frontend superpose le logo sur l'avatar à initiales de la carte ; en cas
+d'échec (404), les initiales restent affichées (fallback onError). Les
+initiales ne servent que de dernier recours : aucune source de logo n'existe
+pour une entreprise sans site web (registres publics Sirene/ADEME).
 """
 
 from __future__ import annotations
@@ -94,10 +98,23 @@ def _media_type(resp: httpx.Response) -> str:
     return content_type if content_type.startswith("image/") else "image/x-icon"
 
 
+def _taille_declaree(sizes: str) -> int:
+    """Plus grande largeur déclarée (ex. "16x16 32x32" -> 32 ; "any" -> 0)."""
+    meilleure = 0
+    for partie in sizes.lower().split():
+        if "x" in partie:
+            largeur = partie.split("x")[0]
+            if largeur.isdigit():
+                meilleure = max(meilleure, int(largeur))
+    return meilleure
+
+
 class _IconParser(HTMLParser):
     def __init__(self) -> None:
         super().__init__()
-        self.hrefs: list[str] = []
+        # (href, priorité) — priorité comparable : apple-touch-icon (0, 0)
+        # d'abord, puis icon par taille déclarée décroissante.
+        self.icones: list[tuple[str, tuple[int, int]]] = []
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
         if tag.lower() != "link":
@@ -105,17 +122,25 @@ class _IconParser(HTMLParser):
         attributs = {k.lower(): (v or "") for k, v in attrs}
         rel = attributs.get("rel", "").lower()
         href = attributs.get("href")
-        if href and ("icon" in rel.split() or rel in ("shortcut icon", "apple-touch-icon")):
-            self.hrefs.append(href)
+        if not href:
+            return
+        rels = rel.split()
+        if "apple-touch-icon" in rels:
+            self.icones.append((href, (0, 0)))  # le vrai logo du site
+        elif "icon" in rels or rel == "shortcut icon":
+            self.icones.append((href, (1, -_taille_declaree(attributs.get("sizes", "")))))
 
 
-def _extraire_icones(html: str) -> list[str]:
+def _extraire_icones(html: str) -> list[tuple[str, tuple[int, int]]]:
+    """Icônes de la page d'accueil, triées : apple-touch-icon d'abord, puis
+    les icônes par taille déclarée décroissante (les plus grandes d'abord)."""
     parser = _IconParser()
     try:
         parser.feed(html[:FAVICON_MAX_BYTES])
     except Exception:
         return []
-    return parser.hrefs
+    parser.icones.sort(key=lambda item: item[1])
+    return parser.icones
 
 
 async def _telecharger(client: httpx.AsyncClient, url: str) -> httpx.Response | None:
@@ -149,18 +174,12 @@ async def trouver_favicon(url: str, client: httpx.AsyncClient | None = None) -> 
 
     try:
         base = f"https://{host}"
-        # 1. /favicon.ico — content-type tolérant (beaucoup de serveurs
-        #    servent l'icône en octet-stream).
-        resp = await _telecharger(client, f"{base}/favicon.ico")
-        if resp is not None and _est_image(resp, tolere_octet_stream=True):
-            media = _media_type(resp)
-            favicon_cache.set(cache_key, (resp.content, media))
-            return resp.content, media
-
-        # 2. <link rel="icon"> de la page d'accueil.
+        # 1. Vrai logo : <link rel="icon"> de la page d'accueil, en préférant
+        #    l'apple-touch-icon (logo réel >= 180 px) puis les icônes déclarées
+        #    les plus grandes — bien meilleur rendu que le favicon.ico 16 px.
         page = await _telecharger(client, f"{base}/")
         if page is not None:
-            for href in _extraire_icones(page.text):
+            for href, _priorite in _extraire_icones(page.text):
                 icon_url = urljoin(f"{base}/", href)
                 if not _hote_public(icon_url):
                     continue
@@ -169,6 +188,14 @@ async def trouver_favicon(url: str, client: httpx.AsyncClient | None = None) -> 
                     media = _media_type(icon)
                     favicon_cache.set(cache_key, (icon.content, media))
                     return icon.content, media
+
+        # 2. Repli : /favicon.ico — content-type tolérant (beaucoup de
+        #    serveurs servent l'icône en octet-stream).
+        resp = await _telecharger(client, f"{base}/favicon.ico")
+        if resp is not None and _est_image(resp, tolere_octet_stream=True):
+            media = _media_type(resp)
+            favicon_cache.set(cache_key, (resp.content, media))
+            return resp.content, media
 
         favicon_cache.set(cache_key, _ABSENT)
         return None

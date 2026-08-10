@@ -30,17 +30,20 @@ THROTTLE_SECONDS = 0.3  # reduit : le retry backoff gere les rares 429
 CHAT_MAX_TOKENS = 1000
 
 _client: Mistral | None = None
+_cached_api_key: str | None = None
 
 
 def get_client() -> Mistral:
-    global _client
-    if _client is None:
-        if not settings.mistral_api_key:
+    global _client, _cached_api_key
+    current_key = settings.mistral_api_key
+    if _client is None or _cached_api_key != current_key:
+        if not current_key:
             raise RuntimeError(
                 "MISTRAL_API_KEY manquant. Renseigne-la dans le .env racine "
                 "du projet (voir .env.example à la racine)."
             )
-        _client = Mistral(api_key=settings.mistral_api_key, timeout_ms=REQUEST_TIMEOUT_MS)
+        _client = Mistral(api_key=current_key, timeout_ms=REQUEST_TIMEOUT_MS)
+        _cached_api_key = current_key
     return _client
 
 

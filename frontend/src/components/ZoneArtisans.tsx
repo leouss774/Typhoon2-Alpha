@@ -51,7 +51,7 @@ function distanceOf(distance?: number | null) {
 
 function initialsOf(name?: string) {
   if (!name) return '?';
-  const words = name.trim().replace(/^(sarl|sas|sasu|ei|eurl|scop)\s+/i, '').split(/\s+/).filter(Boolean);
+  const words = name.trim().replace(/^(sarl|sas|sasu|ei|eurl|scop)\s+/i, '').split(/\s+/).filter((w) => Boolean(w) && !w.startsWith('('));
   const first = (words[0] || '')[0] || '';
   const second = words.length > 1 ? (words[1] || '')[0] : ((words[0] || '')[1] || '');
   return (first + second).toUpperCase() || '?';
