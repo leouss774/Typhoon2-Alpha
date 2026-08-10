@@ -1,0 +1,1212 @@
+/* ============================================================================
+   TYPHOON — /jumeau : jumeau numérique 3D — Material 3 (m3.material.io)
+   Thème sombre D03, identique au /zone. Tokens scopés sous .jumeau-app.
+   Le moteur Three.js (src/jumeau/scene-engine.js) adresse des #id et des
+   classes internes : TOUS sont conservés ; seuls les styles changent.
+   Classes injectées par le moteur : reco-*, artisan-*, info-zone-tab,
+   tab-count, cost-summary-*, risk-filter-btn, badge, …
+============================================================================ */
+
+.jumeau-app {
+  color-scheme: dark;
+
+  /* Material 3 — dark scheme dérivé de la palette D03 (même bloc que /zone) */
+  --md-sys-color-primary: #7fcbc9;
+  --md-sys-color-on-primary: #003735;
+  --md-sys-color-primary-container: #1e4e4c;
+  --md-sys-color-on-primary-container: #9ce7e4;
+  --md-sys-color-secondary: #b0ccc8;
+  --md-sys-color-on-secondary: #1b3531;
+  --md-sys-color-secondary-container: #2f4b47;
+  --md-sys-color-on-secondary-container: #cbe9e4;
+  --md-sys-color-tertiary: #e3ad84;
+  --md-sys-color-on-tertiary: #41250d;
+  --md-sys-color-tertiary-container: #5c3a20;
+  --md-sys-color-on-tertiary-container: #ffdbc0;
+  --md-sys-color-error: #ffb4ab;
+  --md-sys-color-on-error: #690005;
+  --md-sys-color-error-container: #93000a;
+  --md-sys-color-on-error-container: #ffdad6;
+
+  --md-sys-color-surface: #0b1410;
+  --md-sys-color-surface-dim: #0b1410;
+  --md-sys-color-surface-bright: #323a36;
+  --md-sys-color-surface-container-lowest: #060e0b;
+  --md-sys-color-surface-container-low: #131c18;
+  --md-sys-color-surface-container: #17201c;
+  --md-sys-color-surface-container-high: #222b26;
+  --md-sys-color-surface-container-highest: #2c3631;
+  --md-sys-color-on-surface: #e8e6dc;
+  --md-sys-color-on-surface-variant: #bfc9c4;
+  --md-sys-color-outline: #89948f;
+  --md-sys-color-outline-variant: #263630;
+  --md-sys-color-scrim: #000000;
+  --md-sys-color-shadow: #000000;
+
+  /* D03 — bandes de risque */
+  --d03-tres-faible: #3a7a6c;
+  --d03-faible: #6e9e52;
+  --d03-modere: #d4ac3e;
+  --d03-eleve: #d07030;
+  --d03-critique: #b03020;
+
+  /* Typographie Gemini : Google Sans pour l'UI, Google Sans Code pour les
+     données chiffrées (même rôle que Roboto Mono côté M3).
+     --serif garde son nom historique mais aliase la typeface brand (Google Sans). */
+  --serif: 'Google Sans', system-ui, sans-serif;
+  --mono: 'Google Sans Code', 'Roboto Mono', monospace;
+
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  background: var(--md-sys-color-surface);
+  color: var(--md-sys-color-on-surface);
+  font-family: 'Google Sans', system-ui, sans-serif;
+  overflow: hidden;
+}
+
+.jumeau-app *,
+.jumeau-app *::before,
+.jumeau-app *::after {
+  box-sizing: border-box;
+}
+
+/* ---- Topbar M3 ---- */
+.jumeau-topbar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  height: 64px;
+  padding: 0 20px;
+  background: var(--md-sys-color-surface-container);
+  border-bottom: 1px solid var(--md-sys-color-outline-variant);
+  z-index: 15;
+}
+.jumeau-topbar .jumeau-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.jumeau-brand-back {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  color: var(--md-sys-color-on-surface-variant);
+  text-decoration: none;
+  transition: background 0.15s, color 0.15s;
+}
+.jumeau-brand-back:hover {
+  background: var(--md-sys-color-surface-container-high);
+  color: var(--md-sys-color-primary);
+}
+.jumeau-brand-back md-icon {
+  --md-icon-size: 22px;
+}
+.jumeau-brand-text {
+  min-width: 0;
+}
+.jumeau-brand h1 {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--md-sys-color-on-surface);
+  line-height: 1.2;
+}
+.jumeau-brand .jumeau-brand-tag {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--md-sys-color-on-surface-variant);
+  margin-top: 2px;
+}
+.jumeau-sovereign-badge {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--md-sys-color-primary);
+  background: var(--md-sys-color-primary-container);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: 999px;
+  padding: 4px 10px;
+  white-space: nowrap;
+}
+
+/* ---- Diagnostic réel par adresse (topbar) ---- */
+.jumeau-addr-form {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  max-width: 560px;
+  min-width: 0;
+  margin: 0 12px;
+}
+.jumeau-addr-input {
+  flex: 1;
+  min-width: 0;
+  height: 40px;
+  padding: 0 16px;
+  font: inherit;
+  font-size: 13px;
+  color: var(--md-sys-color-on-surface);
+  background: var(--md-sys-color-surface-container-high);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: 999px;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+.jumeau-addr-input::placeholder {
+  color: var(--md-sys-color-on-surface-variant);
+  opacity: 0.7;
+}
+.jumeau-addr-input:focus {
+  border-color: var(--md-sys-color-primary);
+}
+.jumeau-addr-input:disabled {
+  opacity: 0.6;
+}
+
+/* ---- Bandeau d'état (démo / chargement / erreur) ---- */
+.jumeau-status {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 20px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--md-sys-color-on-surface-variant);
+  background: var(--md-sys-color-surface-container);
+  border-bottom: 1px solid var(--md-sys-color-outline-variant);
+  z-index: 14;
+}
+.jumeau-status md-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+.jumeau-status.is-demo md-icon {
+  color: var(--md-sys-color-primary);
+}
+.jumeau-status.is-loading md-icon {
+  color: var(--md-sys-color-primary);
+  animation: jumeau-spin 1.2s linear infinite;
+}
+.jumeau-status.is-loading md-linear-progress {
+  flex: 0 0 160px;
+  margin-left: auto;
+}
+.jumeau-status.is-error {
+  color: var(--md-sys-color-error);
+}
+.jumeau-status.is-error md-icon {
+  color: var(--md-sys-color-error);
+}
+.jumeau-status-retry {
+  margin-left: auto;
+  padding: 5px 14px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--md-sys-color-on-error-container);
+  background: var(--md-sys-color-error-container);
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+}
+@keyframes jumeau-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (max-width: 760px) {
+  .jumeau-addr-form {
+    max-width: none;
+  }
+  .jumeau-topbar {
+    flex-wrap: wrap;
+    height: auto;
+    padding: 10px 16px;
+  }
+  .jumeau-sovereign-badge {
+    display: none;
+  }
+}
+
+/* ---- Scène (zone plein écran) ---- */
+.jumeau-scene {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--md-sys-color-surface);
+}
+#scene-container {
+  position: absolute;
+  inset: 0;
+  display: block;
+  cursor: default;
+}
+#scene-container.scene-ready {
+  cursor: grab;
+}
+#scene-container.scene-ready:active {
+  cursor: grabbing;
+}
+
+/* ---- Tooltip flottant zones 3D ---- */
+#zone-tooltip {
+  position: fixed;
+  z-index: 30;
+  pointer-events: none;
+  background: var(--md-sys-color-surface-container-high);
+  color: var(--md-sys-color-on-surface);
+  font-size: 12px;
+  line-height: 1.4;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--md-sys-color-outline-variant);
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  white-space: nowrap;
+}
+#zone-tooltip strong {
+  color: var(--md-sys-color-primary);
+}
+
+/* ---- Légende couleurs de risque (pied de scène) ---- */
+#risk-legend {
+  position: absolute;
+  bottom: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  z-index: 10;
+  background: var(--md-sys-color-surface-container-low);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: 999px;
+  padding: 8px 18px;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+}
+#risk-legend .rl-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--md-sys-color-on-surface-variant);
+  font-weight: 500;
+}
+#risk-legend .rl-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* ---- Panneau gauche (bascule 2025/2050, score, climat) ---- */
+#toggle-panel {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  background: var(--md-sys-color-surface-container-low);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: 16px;
+  padding: 16px 18px;
+  color: var(--md-sys-color-on-surface);
+  z-index: 10;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
+  width: 292px;
+  max-width: calc(100vw - 40px);
+  max-height: calc(100% - 40px);
+  overflow-y: auto;
+}
+#toggle-panel .tp-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+#toggle-panel .tp-head md-icon {
+  --md-icon-size: 20px;
+  color: var(--md-sys-color-primary);
+  flex-shrink: 0;
+}
+#toggle-panel h3 {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--md-sys-color-on-surface);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+#toggle-panel .addr-line {
+  font-size: 13px;
+  color: var(--md-sys-color-on-surface-variant);
+  margin: 0 0 12px 0;
+  line-height: 1.4;
+}
+/* Segmented control M3 (2025 / 2050) */
+#toggle-buttons {
+  display: flex;
+  gap: 6px;
+  padding: 3px;
+  background: var(--md-sys-color-surface-container-high);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: 999px;
+}
+#toggle-buttons button {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--md-sys-color-on-surface-variant);
+  padding: 8px 16px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.18s;
+  font-family: inherit;
+}
+#toggle-buttons button:hover {
+  color: var(--md-sys-color-on-surface);
+}
+#toggle-buttons button.active {
+  background: var(--md-sys-color-primary);
+  color: var(--md-sys-color-on-primary);
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+}
+#global-score {
+  margin-top: 12px;
+  font-size: 13px;
+  color: var(--md-sys-color-on-surface-variant);
+}
+#global-score strong {
+  color: var(--md-sys-color-primary);
+  font-size: 24px;
+  text-shadow: 0 0 16px rgba(127, 203, 201, 0.45);
+}
+/* Statut de génération des recommandations (le moteur bascule display) */
+#reco-status.reco-status {
+  display: none;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  font-size: 11.5px;
+  color: var(--md-sys-color-on-surface-variant);
+  font-weight: 600;
+}
+.reco-status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--md-sys-color-primary);
+  flex-shrink: 0;
+  animation: jumeau-pulse 1.6s infinite;
+}
+@keyframes jumeau-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+/* Actions (bascule climat + lien Property ID) */
+.tp-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  margin-top: 10px;
+}
+#btn-climat-toggle {
+  /* Le moteur écrit background/borderColor en inline (thème clair) :
+     on force le thème sombre via !important pour gagner sur l'inline. */
+  background: var(--md-sys-color-secondary-container) !important;
+  border: 1px solid var(--md-sys-color-outline-variant) !important;
+  color: var(--md-sys-color-on-secondary-container) !important;
+  padding: 9px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.18s;
+}
+#btn-climat-toggle:hover {
+  background: var(--md-sys-color-surface-container-high) !important;
+}
+.jumeau-pid-link {
+  color: var(--md-sys-color-primary);
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.jumeau-pid-link md-icon {
+  --md-icon-size: 16px;
+}
+.jumeau-pid-link:hover {
+  color: var(--md-sys-color-on-primary-container);
+  text-decoration: underline;
+}
+/* ---- Panneau climatique 2050 ---- */
+#climat-panel {
+  display: none;
+  margin-top: 12px;
+  padding: 12px 14px;
+  background: var(--md-sys-color-surface-container-high);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: 12px;
+}
+.climat-title {
+  font-size: 11px;
+  color: var(--md-sys-color-primary);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 6px;
+}
+.climat-temp-row {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+.climat-temp-row strong {
+  color: var(--md-sys-color-tertiary);
+  font-size: 28px;
+  line-height: 1;
+}
+.climat-temp-row span {
+  color: var(--md-sys-color-on-surface-variant);
+  font-size: 14px;
+}
+.climat-sub {
+  color: var(--md-sys-color-on-surface-variant);
+  font-size: 10.5px;
+  margin-top: 2px;
+}
+.climat-source {
+  margin-top: 6px;
+  font-size: 10px;
+  color: var(--md-sys-color-on-surface-variant);
+}
+.data-badge {
+  display: none;
+  margin-top: 6px;
+  font-size: 10px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-weight: 700;
+  width: fit-content;
+}
+.badge-copernicus {
+  background: var(--md-sys-color-primary-container);
+  color: var(--md-sys-color-on-primary-container);
+}
+.badge-dvf {
+  background: rgba(110, 158, 82, 0.18);
+  color: var(--d03-faible);
+  border: 1px solid rgba(110, 158, 82, 0.4);
+}
+
+/* ---- Panneau droit (détail de zone) ---- */
+#info-panel {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  width: 400px;
+  max-width: calc(100vw - 40px);
+  max-height: calc(100% - 40px);
+  overflow-y: auto;
+  background: var(--md-sys-color-surface-container-low);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: 16px;
+  padding: 20px;
+  color: var(--md-sys-color-on-surface);
+  z-index: 10;
+  display: none;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
+}
+#info-panel::-webkit-scrollbar {
+  width: 5px;
+}
+#info-panel::-webkit-scrollbar-thumb {
+  background: var(--md-sys-color-outline-variant);
+  border-radius: 999px;
+}
+#info-panel h3 {
+  margin: 0 0 6px 0;
+  font-size: 20px;
+  text-transform: capitalize;
+  color: var(--md-sys-color-on-surface);
+  font-family: var(--serif);
+  font-weight: 600;
+}
+#info-panel .badge {
+  display: inline-block;
+  padding: 3px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #fff;
+  /* background : écrit en inline par le moteur (couleur de risque) */
+}
+.info-badge-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+#info-panel p {
+  font-size: 14.5px;
+  line-height: 1.6;
+  color: var(--md-sys-color-on-surface-variant);
+  margin: 6px 0;
+}
+#info-panel p#info-alea {
+  color: var(--md-sys-color-on-surface);
+  margin: 0;
+}
+#info-panel .reco {
+  background: var(--md-sys-color-surface-container-high);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-top: 8px;
+  font-size: 13.5px;
+}
+#info-panel .reco b {
+  color: var(--md-sys-color-on-surface);
+}
+
+/* ---- Filtre par niveau de risque (chips M3) ---- */
+#info-risk-filter {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+.risk-filter-btn {
+  flex: 1;
+  min-width: 0;
+  padding: 7px 8px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid var(--md-sys-color-outline-variant);
+  background: var(--md-sys-color-surface-container-high);
+  color: var(--md-sys-color-on-surface-variant);
+  transition: all 0.15s;
+  font-family: inherit;
+  white-space: nowrap;
+}
+.risk-filter-btn:hover {
+  border-color: var(--md-sys-color-primary);
+  color: var(--md-sys-color-on-surface);
+}
+.risk-filter-btn.active {
+  background: var(--md-sys-color-primary);
+  border-color: var(--md-sys-color-primary);
+  color: var(--md-sys-color-on-primary);
+}
+.risk-filter-btn.active[data-filter='critique'] {
+  background: var(--d03-critique);
+  border-color: var(--d03-critique);
+}
+.risk-filter-btn.active[data-filter='eleve'] {
+  background: var(--d03-eleve);
+  border-color: var(--d03-eleve);
+}
+.risk-filter-btn.active[data-filter='modere'] {
+  background: var(--d03-modere);
+  border-color: var(--d03-modere);
+  color: #1a1a12;
+}
+
+/* ---- Barre de progression du score de zone ---- */
+#info-score-bar-track {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--md-sys-color-surface-container-high);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  overflow: hidden;
+  margin: 8px 0;
+}
+#info-score-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--md-sys-color-primary);
+  transition: width 0.5s ease;
+}
+
+/* ---- Zone tabs (injectés par le moteur) ---- */
+#info-zone-tabs {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+  border-bottom: 1px solid var(--md-sys-color-outline-variant);
+  padding-bottom: 8px;
+}
+.info-zone-tab {
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  color: var(--md-sys-color-on-surface-variant);
+  background: var(--md-sys-color-surface-container-high);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  white-space: nowrap;
+}
+.info-zone-tab:hover {
+  border-color: var(--md-sys-color-primary);
+  color: var(--md-sys-color-on-surface);
+}
+.info-zone-tab.active {
+  background: var(--md-sys-color-primary-container);
+  color: var(--md-sys-color-on-primary-container);
+  border-color: var(--md-sys-color-primary);
+}
+.info-zone-tab .tab-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  font-size: 10px;
+  font-weight: 700;
+  background: rgba(127, 203, 201, 0.2);
+  color: var(--md-sys-color-on-primary-container);
+  margin-left: 5px;
+}
+.info-zone-tab.tab-empty {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* ---- Cost summary bar ---- */
+#info-cost-summary {
+  display: none;
+  margin-bottom: 12px;
+  padding: 12px 14px;
+  background: rgba(110, 158, 82, 0.1);
+  border: 1px solid rgba(110, 158, 82, 0.3);
+  border-radius: 12px;
+}
+#info-cost-summary.visible {
+  display: block;
+}
+.cost-summary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12.5px;
+  color: var(--md-sys-color-on-surface-variant);
+  margin-bottom: 3px;
+}
+.cost-summary-row:last-child {
+  margin-bottom: 0;
+}
+.cost-summary-row .cs-label {
+  color: var(--md-sys-color-on-surface-variant);
+  font-weight: 600;
+}
+.cost-summary-row .cs-value {
+  font-weight: 700;
+  color: var(--md-sys-color-on-surface);
+}
+.cost-summary-row .cs-value.accent {
+  color: var(--d03-faible);
+}
+.cost-summary-progress {
+  height: 4px;
+  border-radius: 999px;
+  background: var(--md-sys-color-surface-container-high);
+  overflow: hidden;
+  margin-top: 6px;
+}
+.cost-summary-progress .cp-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--d03-faible), var(--md-sys-color-primary));
+  transition: width 0.6s ease;
+}
+
+/* ---- Regroupement des recommandations ---- */
+.reco-group-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--md-sys-color-primary);
+  margin: 14px 0 6px;
+  padding-top: 8px;
+  border-top: 1px solid var(--md-sys-color-outline-variant);
+}
+.reco-group-label:first-child {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}
+
+/* ---- Accordion reco cards ---- */
+.reco-card {
+  margin-bottom: 8px;
+  border-radius: 12px;
+  border: 1px solid var(--md-sys-color-outline-variant);
+  overflow: hidden;
+  transition: box-shadow 0.15s, border-color 0.15s;
+}
+.reco-card:hover {
+  border-color: var(--md-sys-color-primary);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+.reco-card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  cursor: pointer;
+  background: var(--md-sys-color-surface-container-high);
+  transition: background 0.15s;
+  user-select: none;
+}
+.reco-card-header:hover {
+  background: var(--md-sys-color-primary-container);
+}
+.reco-card-header .reco-chevron {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+  color: var(--md-sys-color-primary);
+}
+.reco-card-header .reco-chevron.open {
+  transform: rotate(90deg);
+}
+.reco-card-header .reco-title-wrap {
+  flex: 1;
+  min-width: 0;
+}
+.reco-card-header .reco-title {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--md-sys-color-on-surface);
+  line-height: 1.35;
+  display: block;
+}
+.reco-card-header .reco-sub {
+  font-size: 11.5px;
+  color: var(--md-sys-color-on-surface-variant);
+  margin-top: 2px;
+}
+.reco-priority-badge {
+  display: inline-block;
+  font-size: 9.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 3px 8px;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+.reco-priority-badge.haute {
+  background: rgba(176, 48, 32, 0.2);
+  color: var(--md-sys-color-error);
+}
+.reco-priority-badge.moyenne {
+  background: rgba(212, 172, 62, 0.18);
+  color: var(--d03-modere);
+}
+.reco-priority-badge.faible {
+  background: rgba(110, 158, 82, 0.18);
+  color: var(--d03-faible);
+}
+.reco-card-body {
+  display: none;
+  padding: 12px 14px;
+  border-top: 1px solid var(--md-sys-color-outline-variant);
+  background: var(--md-sys-color-surface-container-low);
+}
+.reco-card-body.open {
+  display: block;
+}
+.reco-card-body .reco-explication {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--md-sys-color-on-surface);
+  margin-bottom: 8px;
+}
+.reco-card-body .reco-meta,
+.reco-card-body .reco-meta-sub {
+  font-size: 12.5px;
+  color: var(--md-sys-color-on-surface-variant);
+  margin-bottom: 6px;
+}
+.reco-card-body .reco-meta strong {
+  color: var(--md-sys-color-on-surface);
+  font-weight: 600;
+}
+.reco-card-body .reco-aide {
+  font-size: 12.5px;
+  color: #ffdbc0;
+  background: var(--md-sys-color-tertiary-container);
+  border-radius: 10px;
+  padding: 8px 10px;
+  margin-bottom: 6px;
+}
+.reco-card-body .reco-aide b {
+  color: #ffdbc0;
+}
+.reco-card-body .reco-sources {
+  font-size: 11px;
+  color: var(--md-sys-color-on-surface-variant);
+  line-height: 1.5;
+  border-top: 1px solid var(--md-sys-color-outline-variant);
+  padding-top: 6px;
+  margin-top: 6px;
+}
+.reco-card-body .reco-risque-tag {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(127, 203, 201, 0.15);
+  color: var(--md-sys-color-primary);
+  margin-bottom: 6px;
+}
+.reco-empty {
+  color: var(--md-sys-color-on-surface-variant);
+  font-size: 13.5px;
+  font-style: italic;
+  margin-top: 6px;
+}
+
+/* ---- Export PDF (bouton M3, id lisible par le moteur) ---- */
+.info-export-btn {
+  width: 100%;
+  margin-top: 14px;
+  --md-elevated-button-container-color: var(--md-sys-color-primary-container);
+  --md-elevated-button-label-text-color: var(--md-sys-color-on-primary-container);
+  --md-elevated-button-label-text-size: 13px;
+  --md-elevated-button-icon-color: var(--md-sys-color-on-primary-container);
+}
+
+/* ---- Résultats artisans (injectés par le moteur) ---- */
+.artisan-search-btn {
+  width: 100%;
+  margin-top: 14px;
+  padding: 11px 14px;
+  border: none;
+  border-radius: 999px;
+  background: var(--md-sys-color-primary);
+  color: var(--md-sys-color-on-primary);
+  font: 700 12px/1.3 'Google Sans', system-ui, sans-serif;
+  cursor: pointer;
+  box-shadow: 0 5px 14px rgba(0, 0, 0, 0.3);
+  transition: 0.18s ease;
+}
+.artisan-search-btn:hover {
+  background: var(--md-sys-color-primary-container);
+  color: var(--md-sys-color-on-primary-container);
+  transform: translateY(-1px);
+}
+.artisan-search-btn:disabled {
+  cursor: wait;
+  opacity: 0.65;
+  transform: none;
+}
+.artisan-results {
+  margin-top: 10px;
+}
+.artisan-group {
+  padding-top: 12px;
+  margin-top: 12px;
+  border-top: 1px solid var(--md-sys-color-outline-variant);
+}
+.artisan-group-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 9px;
+}
+.artisan-group-title {
+  color: var(--md-sys-color-on-surface);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+.artisan-group-badge {
+  flex: 0 0 auto;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: var(--md-sys-color-primary-container);
+  color: var(--md-sys-color-on-primary-container);
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.artisan-card {
+  position: relative;
+  margin-top: 9px;
+  padding: 12px;
+  overflow: hidden;
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: 12px;
+  background: var(--md-sys-color-surface-container-high);
+  box-shadow: 0 4px 13px rgba(0, 0, 0, 0.25);
+}
+.artisan-card::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: var(--d03-faible);
+}
+.artisan-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 9px;
+}
+.artisan-name {
+  color: var(--md-sys-color-on-surface);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+.artisan-score {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(110, 158, 82, 0.2);
+  color: var(--d03-faible);
+  font-size: 10px;
+  font-weight: 800;
+}
+.artisan-score small {
+  display: block;
+  margin-top: -10px;
+  font-size: 6px;
+  font-weight: 700;
+  opacity: 0.7;
+}
+.artisan-meta {
+  display: grid;
+  gap: 5px;
+  margin-top: 8px;
+  color: var(--md-sys-color-on-surface-variant);
+  font-size: 10.5px;
+  line-height: 1.4;
+}
+.artisan-meta-row {
+  display: grid;
+  grid-template-columns: 15px 1fr;
+  gap: 5px;
+  align-items: start;
+  overflow-wrap: anywhere;
+}
+.artisan-meta-icon {
+  color: var(--md-sys-color-on-surface-variant);
+  text-align: center;
+}
+.artisan-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 10px;
+  padding: 8px 10px;
+  border: 1px solid var(--md-sys-color-primary);
+  border-radius: 999px;
+  color: var(--md-sys-color-primary);
+  background: transparent;
+  text-decoration: none;
+  font-size: 10.5px;
+  font-weight: 700;
+  transition: 0.15s ease;
+}
+.artisan-link:hover {
+  background: var(--md-sys-color-primary);
+  color: var(--md-sys-color-on-primary);
+}
+.artisan-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  margin-top: 10px;
+}
+.artisan-action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  padding: 7px 8px;
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: 999px;
+  color: var(--md-sys-color-on-surface-variant);
+  background: var(--md-sys-color-surface-container-low);
+  text-decoration: none;
+  text-align: center;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+.artisan-action:hover {
+  border-color: var(--md-sys-color-primary);
+  color: var(--md-sys-color-primary);
+}
+.artisan-action.primary {
+  border-color: var(--md-sys-color-primary);
+  color: var(--md-sys-color-on-primary);
+  background: var(--md-sys-color-primary);
+}
+.artisan-action.primary:hover {
+  background: var(--md-sys-color-primary-container);
+  border-color: var(--md-sys-color-primary-container);
+  color: var(--md-sys-color-on-primary-container);
+}
+.artisan-site-missing {
+  margin-top: 9px;
+  color: var(--md-sys-color-on-surface-variant);
+  font-size: 9.5px;
+  font-style: italic;
+}
+.artisan-note {
+  display: block;
+  margin-top: 10px;
+  color: var(--md-sys-color-on-surface-variant);
+  font-size: 9px;
+  line-height: 1.4;
+}
+.artisan-empty,
+.artisan-error {
+  padding: 10px;
+  border-radius: 10px;
+  background: var(--md-sys-color-surface-container-high);
+  color: var(--md-sys-color-on-surface-variant);
+  font-size: 11px;
+  line-height: 1.4;
+}
+.artisan-error {
+  background: rgba(176, 48, 32, 0.16);
+  color: var(--md-sys-color-error);
+}
+
+/* ---- Indice bas de scène ---- */
+#hint {
+  position: absolute;
+  bottom: 16px;
+  left: 20px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--md-sys-color-on-surface-variant);
+  font-size: 11px;
+  z-index: 10;
+  font-family: var(--mono);
+}
+#hint md-icon {
+  --md-icon-size: 14px;
+  color: var(--md-sys-color-primary);
+}
+
+/* ---- Export PDF (impression du panneau d'info uniquement) ---- */
+@media print {
+  .jumeau-app * {
+    visibility: hidden;
+  }
+  .jumeau-app #info-panel,
+  .jumeau-app #info-panel * {
+    visibility: visible;
+  }
+  .jumeau-app #info-panel {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    max-height: none;
+    box-shadow: none;
+    border: none;
+    overflow: visible;
+    color: #111;
+  }
+  .jumeau-app #info-panel .reco b,
+  .jumeau-app #info-panel h3,
+  .jumeau-app #info-panel .reco-title,
+  .jumeau-app #info-panel .cs-value {
+    color: #111 !important;
+  }
+  .jumeau-app #info-export-pdf,
+  .jumeau-app #info-risk-filter,
+  .jumeau-app .artisan-search-btn {
+    display: none !important;
+  }
+}
+
+/* ---- Responsive ---- */
+@media (max-width: 880px) {
+  .reco-overview-trigger {
+    --md-elevated-button-label-text-size: 0;
+    min-width: 48px;
+  }
+  .reco-overview-backdrop { padding: 0; }
+  .reco-overview-sheet {
+    width: 100%;
+    height: 100%;
+    max-height: none;
+    border: 0;
+    border-radius: 0;
+  }
+  .reco-overview-header,
+  .reco-overview-toolbar,
+  .reco-overview-content { padding-left: 18px; padding-right: 18px; }
+  .reco-overview-toolbar { align-items: stretch; flex-direction: column; }
+  .reco-overview-toolbar label { justify-content: space-between; }
+  .reco-overview-grid { grid-template-columns: 1fr; }
+  .reco-overview-card-head { flex-direction: column; }
+  .reco-overview-cost { text-align: left; }
+  .jumeau-sovereign-badge {
+    display: none;
+  }
+  #toggle-panel {
+    top: 12px;
+    left: 12px;
+    width: 250px;
+  }
+  #info-panel {
+    top: 12px;
+    right: 12px;
+    width: min(360px, calc(100vw - 24px));
+  }
+  #risk-legend {
+    gap: 10px;
+    padding: 7px 12px;
+    font-size: 10px;
+  }
+  #hint {
+    display: none;
+  }
+}

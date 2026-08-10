@@ -112,6 +112,13 @@ def _mock_handler(request: httpx.Request) -> httpx.Response:
         return httpx.Response(200, json={"data": []})
     if path.endswith("/zonage_sismique") or path.endswith("/radon") or path.endswith("/mvt"):
         return httpx.Response(404, json={"error": "not found"})
+    if (
+        path.endswith("/pprn")
+        or path.endswith("/pprt")
+        or path.endswith("/ssp")
+        or path.endswith("/installations_classees")
+    ):
+        return httpx.Response(404, json={"error": "not found"})
     if path.endswith("/v1/bdnb/geocodage"):
         return httpx.Response(200, json=BDNB_GEOCODAGE_RESPONSE)
     if path.endswith("/v1/bdnb/donnees/batiment_groupe_complet/adresse"):
@@ -147,7 +154,7 @@ async def test_climate_open_meteo():
 
 async def test_georisques_partial_failure():
     async with _mock_client() as client:
-        data = await georisques_connector.fetch_georisques(client, "06088", 43.6959, 7.2661)
+        data = await georisques_connector.fetch_georisques_raw(client, "06088", 43.6959, 7.2661)
     assert data["risques_commune"] is not None
     assert data["zonage_sismique"] is None
     erreurs_sources = {e["source"] for e in data["erreurs"]}

@@ -59,6 +59,10 @@ class TyphoonState(TypedDict, total=False):
     interpretations: dict[str, Any]
 >>>>>>> 565653094351f2bb74c354c73f4ff02443987314
 
+    # Ecrit par interpretation_agent : top 3 des risques principaux
+    # (scores deterministes + narration LLM), cf. app/agents/risques_principaux.py
+    risques_principaux: dict[str, Any]
+
     # Ecrit par digital_twin_agent (sortie finale, cf. contrat "Jumeau
     # numerique 3D" du README)
     digital_twin: dict[str, Any]

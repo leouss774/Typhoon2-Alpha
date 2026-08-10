@@ -28,12 +28,23 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 # backend/app/recommandations/config.py -> backend/
 _BACKEND_DIR = Path(__file__).resolve().parent.parent.parent
 load_dotenv(_BACKEND_DIR / ".env")
 =======
 load_dotenv()
 >>>>>>> 565653094351f2bb74c354c73f4ff02443987314
+=======
+# Charge le .env racine du projet en priorite, puis backend/.env en repli
+# (load_dotenv n'ecrase pas les variables deja definies : l'ordre fait la
+# precedence). Certains postes ne renseignent que backend/.env — sans ce
+# repli, /diagnostic/recommandations repond 502 "MISTRAL_API_KEY manquant"
+# alors que la cle existe.
+ROOT_DIR = Path(__file__).resolve().parents[3]
+load_dotenv(ROOT_DIR / ".env")
+load_dotenv(ROOT_DIR / "backend" / ".env")
+>>>>>>> ed3af665b03ebacb0f8660044d6c058e8126a651
 
 MISTRAL_API_KEY = os.getenv("MISTRAL_API_KEY")
 
