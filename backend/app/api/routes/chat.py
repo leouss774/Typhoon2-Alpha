@@ -63,9 +63,23 @@ def _label_zone(name: str) -> str:
     return ZONE_LABELS.get(name, name.replace("_", " ").capitalize())
 
 
+def _format_cout(cout: dict | str) -> str | None:
+    """Formate cout_estime (chaîne libre, ou objet {montant_min,montant_max,devise})."""
+    if isinstance(cout, str):
+        return cout.strip() or None
+    if isinstance(cout, dict):
+        mini, maxi = cout.get("montant_min"), cout.get("montant_max")
+        devise = cout.get("devise") or "€"
+        if mini is not None and maxi is not None and mini != maxi:
+            return f"{mini}–{maxi} {devise}"
+        if mini is not None or maxi is not None:
+            return f"{mini if mini is not None else maxi} {devise}"
+    return None
+
+
 def _reco_one_line(reco: dict) -> str:
     bits = [str(reco.get("mesure") or reco.get("travaux") or "").strip()]
-    cout = reco.get("cout_estime")
+    cout = _format_cout(reco.get("cout_estime"))
     if cout:
         bits.append(f"coût {cout}")
     gain = reco.get("gain_resilience")
