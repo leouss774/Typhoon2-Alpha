@@ -202,15 +202,59 @@ export interface BdnbBatiment {
   classe_bilan_dpe?: string | null;
   conso_5_usages_ep_m2?: number | null;
   emission_ges_5_usages_m2?: number | null;
+  // DPE officiel (logements réellement diagnostiqués) — distinction C4
+  identifiant_dpe?: string | null;
   date_reception_dpe?: string | null;
+  type_dpe?: string | null;
+  annee_construction_dpe?: number | null;
   type_batiment_dpe?: string | null;
+  nb_classe_bilan_dpe_a?: number | null;
+  nb_classe_bilan_dpe_b?: number | null;
+  nb_classe_bilan_dpe_c?: number | null;
+  nb_classe_bilan_dpe_d?: number | null;
+  nb_classe_bilan_dpe_e?: number | null;
+  nb_classe_bilan_dpe_f?: number | null;
+  nb_classe_bilan_dpe_g?: number | null;
   type_energie_chauffage?: string | null;
   type_generateur_chauffage?: string | null;
   type_isolation_mur_exterieur?: string | null;
   type_isolation_plancher_haut?: string | null;
   type_isolation_plancher_bas?: string | null;
+  // Détail enveloppe (DPE ADEME via BDNB — champs gratuits)
+  materiaux_structure_mur_exterieur?: string | null;
+  type_plancher_bas_deperditif?: string | null;
+  type_plancher_haut_deperditif?: string | null;
+  u_mur_exterieur?: number | null;
+  u_plancher_bas_final_deperditif?: number | null;
+  u_plancher_haut_deperditif?: number | null;
   type_vitrage?: string | null;
+  type_materiaux_menuiserie?: string | null;
+  u_baie_vitree?: number | null;
+  facteur_solaire_baie_vitree?: number | null;
+  vitrage_vir?: boolean | null;
+  epaisseur_lame?: number | null;
+  type_gaz_lame?: string | null;
+  pourcentage_surface_baie_vitree_exterieur?: number | null;
+  type_fermeture?: string | null;
   type_production_energie_renouvelable?: string | null;
+  // Systèmes (DPE ADEME via BDNB)
+  type_ventilation?: string | null;
+  type_installation_chauffage?: string | null;
+  nb_installation_chauffage?: number | null;
+  type_energie_chauffage_appoint?: string | null;
+  type_generateur_chauffage_appoint?: string | null;
+  type_generateur_ecs?: string | null;
+  type_installation_ecs?: string | null;
+  nb_installation_ecs?: number | null;
+  ecs_solaire?: boolean | null;
+  type_generateur_climatisation?: string | null;
+  type_generateur_climatisation_anciennete?: string | null;
+  // Confort
+  classe_inertie?: string | null;
+  traversant?: string | null;
+  presence_balcon?: boolean | null;
+  // Risque argile — éligibilité arrêté 2021 (BDNB)
+  arrete_2021?: boolean | null;
   // ENR — potentiels BDNB (souvent renseignés même sans DPE)
   batenr_favorabilite_solaire_thermique?: boolean | null;
   batenr_favorabilite_geothermie_sonde?: boolean | null;
@@ -223,6 +267,21 @@ export interface BdnbAsset {
   cle_interop_adr?: string | null;
   batiment?: BdnbBatiment | null;
   autres_batiments_meme_adresse?: BdnbBatiment[] | null;
+}
+
+/** Niveaux de risque bâtiment — table BDNB `batiment_groupe_risques` (story D2). */
+export interface BatimentRisques {
+  batiment_groupe_id?: string | null;
+  alea_argile?: string | null;
+  alea_radon?: string | null;
+  alea_sismique?: string | null;
+  code_departement_insee?: string | null;
+}
+
+/** Contrat GET /diagnostic/zone/building (fiche complète au clic — story A2). */
+export interface BatimentFiche {
+  batiment?: BdnbBatiment | null;
+  risques?: BatimentRisques | null;
 }
 
 export interface GeocodeSuggestion {

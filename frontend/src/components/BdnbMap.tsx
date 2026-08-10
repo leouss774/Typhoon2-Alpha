@@ -1,7 +1,7 @@
 // =============================================================================
 //   TYPHOON — /zone : BdnbMap — carte « BDNB only » pour l'onglet Analyse
-//   Reprend le socle de ZoneMap SANS les couches Géorisques : ici uniquement
-//   le bâti BDNB + parcelles cadastrales.
+//   Carte OpenLayers « BDNB only » : uniquement le bâti BDNB + parcelles
+//   cadastrales (sans les couches Géorisques de la carte unifiée Mapbox).
 //
 //   Couches :
 //     1. Emprise du bâtiment  — geom_groupe (GeoJSON, EPSG:2154 → 4326),

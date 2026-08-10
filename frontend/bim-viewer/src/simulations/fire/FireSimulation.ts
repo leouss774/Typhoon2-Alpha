@@ -157,6 +157,8 @@ export class FireSimulation {
   private smoke?: THREE.Points;
   private smokeMaterial?: THREE.ShaderMaterial;
   private smokeGeometry?: THREE.BufferGeometry;
+  /** Éclairage vacillant du foyer (élévation : le feu éclaire la façade). */
+  private light?: THREE.PointLight;
   private elapsed = 0;
   private prevEnabled = false;
   private totalFloors = 1;
@@ -393,8 +395,15 @@ export class FireSimulation {
       this.smoke.frustumCulled = false;
       scene.add(this.smoke);
     }
+    if (!this.light) {
+      this.light = new THREE.PointLight(0xff7a1a, 0, this.buildingHeight * 7 + 30, 1.8);
+      this.light.name = "Simulation · Foyer";
+      this.light.position.set(0, this.buildingHeight * 1.15, 0);
+      scene.add(this.light);
+    }
     this.points.visible = this.enabled;
     this.smoke.visible = this.enabled;
+    this.light.visible = this.enabled;
 
     // Nouvelle mise en route → la propagation repart du RDC
     if (this.enabled && !this.prevEnabled) {
@@ -420,6 +429,11 @@ export class FireSimulation {
     }
     if (!this.enabled) {
       return;
+    }
+    // Vacillement du foyer : intensité bruitée, proportionnelle au niveau.
+    if (this.light) {
+      const f = 0.55 + 0.45 * Math.sin(elapsed * this.speed * 13.7) * Math.sin(elapsed * this.speed * 7.3 + 1.7);
+      this.light.intensity = (2.0 + 6.5 * f) * levelIntensity(this.level);
     }
     this.elapsed += dt * this.speed;
 
@@ -536,6 +550,10 @@ export class FireSimulation {
       this.smokeMaterial.uniforms.uTex.value.dispose();
       this.smokeMaterial.dispose();
       this.smokeMaterial = undefined;
+    }
+    if (this.light) {
+      scene.remove(this.light);
+      this.light = undefined;
     }
     this.anchors = [];
     this.restoreBuilding();

@@ -156,12 +156,20 @@ export default class Viewer3D {
     this.renderer.setSize(this.width, this.height);
     // this.renderer.outputEncoding = THREE.sRGBEncoding;
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
-    this.renderer.toneMappingExposure = 1;
-    // this.renderer.physicallyCorrectLights = true;
+    // Typhon : rendu cinématique (ACES) au lieu du look « maquette grise ».
+    this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    this.renderer.toneMappingExposure = 1.18;
     this.renderer.useLegacyLights = false;
-    this.renderer.setClearColor(0xa9a9a9, 1);
+    this.renderer.setClearColor(0x87a3c2, 1);
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+    // Ciel en dégradé (canvas) — remplace le fond gris neutre.
+    if (this.scene) {
+      this.scene.background = makeSkyGradient();
+      // Léger brouillard d'horizon pour la profondeur (coloré comme le ciel).
+      this.scene.fog = new THREE.Fog(0x9db8d4, 120, 420);
+    }
 
     // css2dRenderer.domElement should be added to dom element by caller
     this.css2dRenderer = new CSS2DRenderer();
@@ -351,12 +359,23 @@ export default class Viewer3D {
     // TODO: move light settings into project settings panel
     // Maybe we can automatically calculate light direction, intensity, etc. according to models' materials
     const color = 0xffffff;
-    const highIntensity = 0.3;
-    const dl = new THREE.DirectionalLight(color, highIntensity);
-    dl.position.set(-2, 2, 4);
+    // Élévation Typhoon : lumière directionnelle forte (unités physiques) +
+    // ombres portées douces — le rendu « maquette plate » venait de l'absence
+    // d'ombres et d'une intensité 10× trop faible.
+    const dl = new THREE.DirectionalLight(color, 2.6);
+    dl.position.set(18, 38, 12);
+    dl.castShadow = true;
+    dl.shadow.mapSize.set(2048, 2048);
+    dl.shadow.camera.near = 1;
+    dl.shadow.camera.far = 120;
+    dl.shadow.camera.left = -40;
+    dl.shadow.camera.right = 40;
+    dl.shadow.camera.top = 40;
+    dl.shadow.camera.bottom = -40;
+    dl.shadow.bias = -0.0004;
     this.directionalLight = dl;
-    this.ambientLight = new THREE.AmbientLight(0x303030);
-    this.hemisphereLight = new THREE.HemisphereLight(color, 0xdddddd, 3);
+    this.ambientLight = new THREE.AmbientLight(0x404050, 0.55);
+    this.hemisphereLight = new THREE.HemisphereLight(color, 0xbfc9d4, 0.9);
     this.hemisphereLight.position.set(0, 300, 0);
 
     this.scene.add(dl);
@@ -1047,6 +1066,79 @@ export default class Viewer3D {
     }
   }
 
+  /**
+   * Élévation du jumeau procédural Typhoon : matériaux PBR texturés par
+   * partie (murs, toiture, vitrage, porte), ombres portées sur le bâtiment
+   * et sol récepteur sous l'empreinte.
+   */
+  private styleTyphoonModel(object: THREE.Object3D) {
+    const box = new THREE.Box3().setFromObject(object);
+    const size = box.getSize(new THREE.Vector3());
+    const groundY = box.min.y - 0.03;
+
+    // ── Matériaux texturés par partie ──
+    const brickTex = makeBrickTexture();
+    const concreteTex = makeConcreteTexture();
+    const tileTex = makeTileTexture();
+    const woodTex = makeWoodTexture();
+
+    object.traverse((obj) => {
+      if (!(obj instanceof THREE.Mesh)) {
+        return;
+      }
+      obj.castShadow = true;
+      const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
+      mats.forEach((mat) => {
+        if (!(mat instanceof THREE.MeshStandardMaterial)) {
+          return;
+        }
+        const name = obj.name || "";
+        if (/vitrage|fenetre|glass|baie/i.test(name)) {
+          // Verre : réflectif + translucide (brillance via l'environnement PMREM).
+          mat.metalness = 0.85;
+          mat.roughness = 0.08;
+          mat.envMapIntensity = 1.6;
+          mat.transparent = true;
+          mat.opacity = 0.32;
+          mat.color.setHex(0x9fc4dd);
+        } else if (/^toiture$/i.test(name)) {
+          mat.map = tileTex;
+          mat.roughness = 0.85;
+        } else if (/^porte$/i.test(name)) {
+          mat.map = woodTex;
+          mat.roughness = 0.55;
+        } else if (/^cadres$/i.test(name)) {
+          mat.color.setHex(0x2c3035);
+          mat.metalness = 0.7;
+          mat.roughness = 0.4;
+        } else if (/^planchers$/i.test(name)) {
+          mat.map = concreteTex;
+          mat.roughness = 0.95;
+        } else if (/^etage[_ ]/i.test(name) || /^murs$/i.test(name)) {
+          // Murs porteurs : brique (teinte douce, répétée).
+          mat.map = brickTex;
+          mat.roughness = 0.92;
+        }
+      });
+    });
+
+    // ── Sol récepteur d'ombres sous l'empreinte ──
+    const ground = new THREE.Mesh(
+      new THREE.CircleGeometry(Math.max(size.x, size.z) * 1.7, 48),
+      new THREE.MeshStandardMaterial({
+        color: 0x5a5f5c,
+        roughness: 0.95,
+        metalness: 0,
+        map: makeGroundTexture()
+      })
+    );
+    ground.rotation.x = -Math.PI / 2;
+    ground.position.set(0, groundY, 0);
+    ground.receiveShadow = true;
+    ground.name = "Typhoon · Sol";
+    this.scene!.add(ground);
+  }
+
   private getGltfLoader() {
     if (!this.gltfLoader) {
       this.gltfLoader = new GLTFLoader();
@@ -1098,6 +1190,12 @@ export default class Viewer3D {
     // Simulations : la structure du modèle (étages séparés, toiture...) est
     // enregistrée dès le chargement pour dimensionner les effets.
     this.simulations && this.simulations.bindModel(object);
+    // Élévation Typhoon : le jumeau procédural (Etage_*/Toiture/Vitrage/Porte)
+    // reçoit des matériaux texturés, des ombres et un sol — les autres modèles
+    // (IFC/glTF clients) ne sont pas touchés.
+    if (isTyphoonModel(object)) {
+      this.styleTyphoonModel(object);
+    }
     const bbox = new THREE.BoxHelper(object);
     bbox.visible = false;
     bbox.matrixAutoUpdate = matrixAutoUpdate;
@@ -2039,4 +2137,156 @@ export default class Viewer3D {
     updateCameraSettings(this.orthoCamera, this.settings.camera);
     this.enableRender(10);
   }
+}
+
+/**
+ * Ciel en dégradé vertical (canvas) — bleu au zénith, brume claire à
+ * l'horizon. Utilisé comme `scene.background` pour remplacer le fond gris
+ * neutre du viewer (élévation Typhoon).
+ */
+function makeSkyGradient(): THREE.Texture {
+  const c = document.createElement("canvas");
+  c.width = 2;
+  c.height = 256;
+  const ctx = c.getContext("2d")!;
+  const g = ctx.createLinearGradient(0, 0, 0, 256);
+  g.addColorStop(0, "#3d6ea8"); // zénith
+  g.addColorStop(0.55, "#8fb2d8");
+  g.addColorStop(0.85, "#d7e4f0"); // horizon
+  g.addColorStop(1, "#e8eef5");
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, 2, 256);
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
+/** Détecte le jumeau procédural Typhoon (nœuds Etage-N, Toiture, Vitrage, Porte). */
+function isTyphoonModel(object: THREE.Object3D): boolean {
+  let found = false;
+  object.traverse((obj) => {
+    const n = obj.name || "";
+    if (/^etage[_ ]/i.test(n) || /^toiture$/i.test(n) || /^vitrage$/i.test(n) || /^porte$/i.test(n)) {
+      found = true;
+    }
+  });
+  return found;
+}
+
+/** Texture procédurale de brique (canvas, répétable). */
+function makeBrickTexture(): THREE.CanvasTexture {
+  const c = document.createElement("canvas");
+  c.width = 256;
+  c.height = 256;
+  const ctx = c.getContext("2d")!;
+  ctx.fillStyle = "#b98a5e";
+  ctx.fillRect(0, 0, 256, 256);
+  const bh = 32;
+  const bw = 64;
+  for (let row = 0; row < 8; row++) {
+    const off = (row % 2) * (bw / 2);
+    for (let x = -bw; x < 256 + bw; x += bw) {
+      const s = 0.8 + Math.random() * 0.35;
+      ctx.fillStyle = `rgb(${Math.round(186 * s)},${Math.round(132 * s)},${Math.round(88 * s)})`;
+      ctx.fillRect(x + off + 2, row * bh + 2, bw - 4, bh - 4);
+    }
+  }
+  const id = ctx.createImageData(256, 256);
+  const d = id.data;
+  for (let i = 0; i < d.length; i += 4) {
+    const n = (Math.random() - 0.5) * 14;
+    d[i] = d[i + 1] = d[i + 2] = n;
+    d[i + 3] = 255;
+  }
+  ctx.putImageData(id, 0, 0);
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  tex.repeat.set(2, 2);
+  return tex;
+}
+
+/** Texture procédurale de béton clair. */
+function makeConcreteTexture(): THREE.CanvasTexture {
+  const c = document.createElement("canvas");
+  c.width = c.height = 256;
+  const ctx = c.getContext("2d")!;
+  ctx.fillStyle = "#b9b4ac";
+  ctx.fillRect(0, 0, 256, 256);
+  const id = ctx.createImageData(256, 256);
+  const d = id.data;
+  for (let i = 0; i < d.length; i += 4) {
+    const n = (Math.random() - 0.5) * 26;
+    d[i] = d[i + 1] = d[i + 2] = n;
+    d[i + 3] = 255;
+  }
+  ctx.putImageData(id, 0, 0);
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  return tex;
+}
+
+/** Texture procédurale de tuiles de toiture (ardoise). */
+function makeTileTexture(): THREE.CanvasTexture {
+  const c = document.createElement("canvas");
+  c.width = 128;
+  c.height = 128;
+  const ctx = c.getContext("2d")!;
+  ctx.fillStyle = "#3a3d40";
+  ctx.fillRect(0, 0, 128, 128);
+  for (let row = 0; row < 8; row++) {
+    for (let x = 0; x < 128; x += 32) {
+      const s = 0.75 + Math.random() * 0.5;
+      ctx.fillStyle = `rgb(${Math.round(66 * s)},${Math.round(69 * s)},${Math.round(74 * s)})`;
+      ctx.fillRect(x + 1, row * 16 + 1, 30, 14);
+    }
+  }
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  tex.repeat.set(2, 1);
+  return tex;
+}
+
+/** Texture procédurale de bois (porte). */
+function makeWoodTexture(): THREE.CanvasTexture {
+  const c = document.createElement("canvas");
+  c.width = c.height = 128;
+  const ctx = c.getContext("2d")!;
+  ctx.fillStyle = "#6d4a2c";
+  ctx.fillRect(0, 0, 128, 128);
+  for (let x = 0; x < 128; x += 3) {
+    const v = 60 + Math.random() * 40;
+    ctx.strokeStyle = `rgb(${v},${Math.round(v * 0.68)},${Math.round(v * 0.42)})`;
+    ctx.beginPath();
+    ctx.moveTo(x + Math.random() * 2, 0);
+    ctx.bezierCurveTo(x + Math.random() * 4, 42, x - Math.random() * 4, 86, x + Math.random() * 2, 128);
+    ctx.stroke();
+  }
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
+/** Texture procédurale du sol (asphalte tacheté). */
+function makeGroundTexture(): THREE.CanvasTexture {
+  const c = document.createElement("canvas");
+  c.width = c.height = 256;
+  const ctx = c.getContext("2d")!;
+  ctx.fillStyle = "#565b58";
+  ctx.fillRect(0, 0, 256, 256);
+  const id = ctx.createImageData(256, 256);
+  const d = id.data;
+  for (let i = 0; i < d.length; i += 4) {
+    const n = (Math.random() - 0.5) * 30;
+    d[i] = d[i + 1] = d[i + 2] = n;
+    d[i + 3] = 255;
+  }
+  ctx.putImageData(id, 0, 0);
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  tex.repeat.set(3, 3);
+  return tex;
 }

@@ -14,6 +14,9 @@ langchain-community
 httpx
 requests
 
+# --- Géométries (reprojection BDNB Lambert-93 → WGS84 pour MapLibre) ---
+pyproj
+
 # --- Lookup local DVF ---
 pandas
 

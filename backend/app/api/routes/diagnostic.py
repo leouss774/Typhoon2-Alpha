@@ -23,7 +23,12 @@ from app.agents import digital_twin_agent, interpretation_agent, recommandations
 from app.digital_twin.gltf_builder import build_glb_from_bdnb
 from app.agents.collector_agent import collect
 from app.agents.graph import diagnostic_graph
-from app.connectors.bdnb import BdnbAdresseIntrouvable, fetch_bdnb
+from app.connectors.bdnb import (
+    BdnbAdresseIntrouvable,
+    fetch_batiment_groupe,
+    fetch_bdnb,
+    fetch_buildings_in_bbox,
+)
 from app.connectors.geocoding import GeocodingError, geocode_address
 from app.connectors.georisques import get_risque_report
 from app.core.config import settings
@@ -434,3 +439,73 @@ async def diagnostic_adresse_gltf(
             "Cache-Control": "public, max-age=3600",
         },
     )
+
+
+# ---------------------------------------------------------------------------
+# Bâtiments par emprise (étape 2 « Cartographie » — extrusion MapLibre 2D/3D)
+# ---------------------------------------------------------------------------
+
+@router.get("/diagnostic/zone/building")
+async def zone_building(
+    id: str = Query(..., min_length=9, description="batiment_groupe_id BDNB (ex. bdnb-bg-XXXX-XXXX-XXXX)"),
+) -> dict:
+    """Fiche complète d'un bâtiment par identifiant (story A2 — clic sur la carte).
+
+    Retourne `{batiment, risques}` : la ligne complète `batiment_groupe_complet`
+    (alimente les sections Identification / Enveloppe / Systèmes / DPE du panneau
+    fiche) et les niveaux de risque bâtiment `batiment_groupe_risques` (argile,
+    radon, sismique — story D2).
+
+    Codes de retour :
+      200 : fiche trouvée
+      404 : identifiant inconnu dans la BDNB
+      502 : API BDNB indisponible
+    """
+    logger.info("GET /diagnostic/zone/building  id=%r", id)
+    async with httpx.AsyncClient(timeout=20) as client:
+        try:
+            fiche = await fetch_batiment_groupe(client, id)
+        except Exception as exc:
+            logger.warning(
+                "  [zone/building] BDNB indisponible pour %r -> %s: %s",
+                id, type(exc).__name__, exc,
+            )
+            raise HTTPException(
+                status_code=502,
+                detail={"error": "bdnb_fiche_erreur", "detail": str(exc)},
+            ) from exc
+    if fiche is None:
+        raise HTTPException(
+            status_code=404,
+            detail={"error": "batiment_inconnu", "detail": f"Aucun bâtiment BDNB pour {id!r}."},
+        )
+    return fiche
+
+
+@router.get("/diagnostic/zone/buildings")
+async def zone_buildings(
+    west: float = Query(..., description="Ouest de la bbox (WGS84)"),
+    south: float = Query(..., description="Sud de la bbox (WGS84)"),
+    east: float = Query(..., description="Est de la bbox (WGS84)"),
+    north: float = Query(..., description="Nord de la bbox (WGS84)"),
+    limit: int = Query(60, ge=0, le=10000, description="Nombre max de bâtiments retournés (paginé par pages de 10 ; 0 = tous, jusqu'à épuisement)"),
+) -> dict:
+    """Retourne la GeoJSON FeatureCollection des bâtiments BDNB (empreinte +
+    hauteur moyenne, WGS84) intersectant la bounding box du viewport — pour la
+    couche `fill-extrusion` de la carte Mapbox (toggle 2D/3D).
+
+    `limit <= 0` charge tous les bâtiments de la bbox (pagination jusqu'à
+    épuisement, plafond de sécurité 10 000). Le frontend recharge cette couche
+    au `moveend` (bbox courante) plutot que de charger tout le bâti d'un coup.
+    """
+    async with httpx.AsyncClient(timeout=30) as client:
+        try:
+            return await fetch_buildings_in_bbox(
+                client, west=west, south=south, east=east, north=north, limit=limit
+            )
+        except Exception as exc:
+            logger.warning("  [zone/buildings] BDNB bbox indisponible -> %s: %s", type(exc).__name__, exc)
+            raise HTTPException(
+                status_code=502,
+                detail={"error": "bdnb_bbox_erreur", "detail": str(exc)},
+            ) from exc

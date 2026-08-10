@@ -186,6 +186,9 @@
   -webkit-mask: url('/vetter-consulting/assets/img/typhoon-wordmark.svg') no-repeat center / contain;
   mask: url('/vetter-consulting/assets/img/typhoon-wordmark.svg') no-repeat center / contain;
 }
+/* Thème clair : la sidenav suit les jetons M3 clairs (surface-container-low
+   = #f1f5f8, texte sombre) — pas de surcharge sombre. Le wordmark masqué
+   reste teinté var(--accent), lisible sur fond clair comme sombre. */
 /* Replié (desktop) : seule l'icône d'expansion reste dans l'en-tête (centrée) */
 @media (min-width: 901px) {
   .zone-app.nav-collapsed .sidenav-header {
@@ -618,7 +621,10 @@
   align-items: center;
   justify-content: center;
   gap: 12px;
-  padding: 10px 20px;
+  /* Même hauteur que l'en-tête de la sidenav (64px) : les deux barres
+     supérieures s'alignent bord à bord (bordure basse alignée). */
+  height: 64px;
+  padding: 0 20px;
   background: var(--md-sys-color-surface-container);
   border-bottom: 1px solid var(--md-sys-color-outline-variant);
   z-index: 30;
@@ -1166,11 +1172,128 @@
   overflow: hidden;
 }
 .zone-workspace[hidden],
-.zone-analyse[hidden],
+.zone-merge[hidden],
 .zone-bim[hidden],
 .zone-recommendations[hidden],
 .zone-report[hidden] {
   display: none;
+}
+
+/* ============================================================================
+   ÉTAPES CARTOGRAPHIE & ANALYSE — panneau latéral rétractable + carte unifiée
+============================================================================ */
+
+.zone-merge {
+  grid-column: 1;
+  grid-row: 1;
+  display: grid;
+  /* Piste de gauche DÉFINIE (minmax 0→40 %) : un auto laisserait le panneau
+     se caler sur le max-content de son contenu (~1000 px) au lieu de 40 %,
+     écrasant la carte (espace blanc). Le minmax(0, …) permet aussi au panneau
+     de se replier sans que son contenu force la piste à rester large. */
+  grid-template-columns: minmax(0, 40%) minmax(0, 1fr); /* panneau | carte */
+  grid-template-rows: 1fr;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Colonne gauche : panneau latéral (aléas / fiche), rétractable */
+.zone-merge-left {
+  position: relative;
+  /* Remplit sa piste (40 %) — pas de largeur en % ici : la piste est déjà
+     bornée par minmax(0, 40%). */
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--md-sys-color-surface-container-low);
+  border-right: 1px solid var(--md-sys-color-outline-variant);
+  transition: width 0.28s ease;
+}
+.zone-app.panel-collapsed .zone-merge {
+  /* Panneau replié → piste gauche à 0, la carte occupe toute la largeur. */
+  grid-template-columns: minmax(0, 0fr) minmax(0, 1fr);
+}
+.zone-app.panel-collapsed .zone-merge-left {
+  width: 0;
+  border-right: none;
+  /* retire le panneau replié de l'arbre d'accessibilité (non focusable) */
+  visibility: hidden;
+  transition: width 0.28s ease, visibility 0s linear 0.28s;
+}
+
+/* Boutons réduire / agrandir le panneau latéral */
+.panel-collapse-btn,
+.panel-expand-btn {
+  position: absolute;
+  top: 10px;
+  z-index: 5;
+  --md-icon-button-icon-size: 18px;
+  width: 32px;
+  height: 32px;
+  background: var(--md-sys-color-surface-container-high);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: 8px;
+  color: var(--md-sys-color-on-surface-variant);
+}
+.panel-collapse-btn {
+  right: 10px;
+}
+.panel-expand-btn {
+  left: 10px;
+}
+
+.zone-panel-body {
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+.zone-panel-body > .zone-results,
+.zone-panel-body > .gr-panel,
+.zone-panel-body > .gr-empty {
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* Colonne droite : carte unifiée */
+.zone-merge-map {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--md-sys-color-surface);
+}
+.zone-merge-map .zone-map-holder {
+  flex: 1;
+  min-height: 0;
+}
+/* Mobile : carte au-dessus, panneau en dessous */
+@media (max-width: 900px) {
+  .zone-merge {
+    grid-template-columns: 1fr;
+    grid-template-rows: minmax(45vh, 60vh) 1fr;
+  }
+  .zone-merge-map {
+    grid-row: 1;
+  }
+  .zone-merge-left {
+    grid-row: 2;
+    width: 100%;
+    border-right: none;
+    border-top: 1px solid var(--md-sys-color-outline-variant);
+  }
+  /* Mobile : le repli garde la colonne unique empilée (carte au-dessus),
+     on neutralise la piste 0fr desktop. */
+  .zone-app.panel-collapsed .zone-merge {
+    grid-template-columns: 1fr;
+  }
+  .zone-app.panel-collapsed .zone-merge-left {
+    width: 0;
+  }
 }
 
 /* ── Étape Recommandations ─────────────────────────────────────────────── */
@@ -1442,416 +1565,6 @@
 }
 .bim-sim-note strong {
   font-weight: 600;
-}
-
-/* ── Étape 4 — onglets Jumeau 3D / Vue terrain 3D (CesiumJS) ── */
-.bim-view-tabs {
-  display: flex;
-  gap: 6px;
-  padding: 4px;
-  border-radius: 999px;
-  border: 1px solid var(--md-sys-color-outline-variant);
-  background: var(--md-sys-color-surface-container-low);
-  width: fit-content;
-  max-width: 100%;
-}
-.bim-view-tab {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 7px 14px;
-  border: none;
-  border-radius: 999px;
-  background: transparent;
-  color: var(--md-sys-color-on-surface-variant);
-  font-family: var(--serif);
-  font-size: 12.5px;
-  font-weight: 600;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: background 0.16s ease, color 0.16s ease, box-shadow 0.16s ease;
-}
-.bim-view-tab md-icon {
-  --md-icon-size: 17px;
-}
-.bim-view-tab:hover {
-  background: color-mix(in srgb, var(--md-sys-color-primary) 12%, transparent);
-}
-.bim-view-tab.active {
-  background: var(--md-sys-color-primary);
-  color: var(--md-sys-color-on-primary);
-  box-shadow: 0 2px 10px color-mix(in srgb, var(--md-sys-color-primary) 35%, transparent);
-}
-
-/* Panneau Cesium — même gabarit que le cadre iframe du Jumeau 3D */
-.cesium-panel {
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-.cesium-wrap {
-  position: relative;
-  flex: 1;
-  min-height: 420px;
-  border-radius: 16px;
-  overflow: hidden;
-  border: 1px solid var(--md-sys-color-outline-variant);
-  background: #0b0d10;
-}
-.cesium-canvas {
-  position: absolute;
-  inset: 0;
-}
-.cesium-wrap .cesium-viewer,
-.cesium-wrap .cesium-viewer canvas {
-  width: 100%;
-  height: 100%;
-}
-.cesium-wrap .cesium-viewer-bottom {
-  left: 8px;
-  right: 8px;
-}
-.cesium-loading {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  background: #0b0d10;
-  color: #e8e6dc;
-  font-size: 13px;
-  z-index: 2;
-}
-.cesium-loading md-icon {
-  --md-icon-size: 34px;
-  color: var(--md-sys-color-primary);
-}
-.cesium-loading md-linear-progress {
-  width: 180px;
-}
-.cesium-error {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  padding: 24px;
-  background: #0b0d10;
-  color: #ffb4ab;
-  font-size: 13px;
-  text-align: center;
-  z-index: 2;
-}
-.cesium-suspense {
-  position: static;
-  min-height: 420px;
-  border-radius: 16px;
-}
-
-/* Barre de toggles des couches sur le globe (même état que l'étape 2) */
-.cesium-layerbar {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-.cesium-layer-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 5px 10px;
-  border: 1px solid var(--md-sys-color-outline-variant);
-  border-radius: 999px;
-  background: var(--md-sys-color-surface-container-low);
-  color: var(--md-sys-color-on-surface-variant);
-  font-size: 11.5px;
-  cursor: pointer;
-  transition: border-color 0.16s, background 0.16s, color 0.16s;
-}
-.cesium-layer-chip md-icon {
-  --md-icon-size: 15px;
-}
-.cesium-layer-chip .cesium-chip-eye {
-  --md-icon-size: 14px;
-}
-.cesium-layer-chip:hover {
-  border-color: var(--md-sys-color-primary);
-}
-.cesium-layer-chip.on {
-  border-color: var(--md-sys-color-primary);
-  background: color-mix(in srgb, var(--md-sys-color-primary) 16%, transparent);
-  color: var(--md-sys-color-on-surface);
-}
-
-.cesium-note {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  margin: 0;
-  padding: 8px 12px;
-  border: 1px solid var(--md-sys-color-outline-variant);
-  border-radius: 10px;
-  background: var(--md-sys-color-surface-container-low);
-  color: var(--md-sys-color-on-surface-variant);
-  font-size: 11px;
-  line-height: 1.45;
-}
-.cesium-note md-icon {
-  --md-icon-size: 16px;
-  flex-shrink: 0;
-  margin-top: 1px;
-}
-.cesium-note strong {
-  color: var(--md-sys-color-on-surface);
-}
-
-/* ── Barre de simulations (pipeline CZML, Sprint 2) ── */
-.cesium-simbar {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 6px;
-  padding: 8px 12px;
-  border: 1px solid color-mix(in srgb, var(--md-sys-color-primary) 30%, var(--md-sys-color-outline-variant));
-  border-radius: 14px;
-  background: color-mix(in srgb, var(--md-sys-color-primary) 6%, var(--md-sys-color-surface-container-low));
-}
-.cesium-simbar-title {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  margin-right: 4px;
-  font-size: 10px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--md-sys-color-primary);
-}
-.cesium-simbar-title md-icon {
-  --md-icon-size: 15px;
-}
-.cesium-sim-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 5px 11px;
-  border: 1px solid var(--md-sys-color-outline-variant);
-  border-radius: 999px;
-  background: var(--md-sys-color-surface-container-low);
-  color: var(--md-sys-color-on-surface-variant);
-  font-size: 11.5px;
-  cursor: pointer;
-  transition: border-color 0.16s, background 0.16s, color 0.16s, transform 0.16s;
-}
-.cesium-sim-btn md-icon {
-  --md-icon-size: 15px;
-}
-.cesium-sim-btn:hover:not(:disabled) {
-  border-color: var(--md-sys-color-primary);
-  color: var(--md-sys-color-on-surface);
-  transform: translateY(-1px);
-}
-.cesium-sim-btn.active {
-  border-color: var(--md-sys-color-primary);
-  background: var(--md-sys-color-primary);
-  color: var(--md-sys-color-on-primary);
-}
-.cesium-sim-btn:disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
-}
-.cesium-sim-status {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  margin-left: 2px;
-  font-size: 11.5px;
-  color: var(--md-sys-color-on-surface-variant);
-}
-.cesium-sim-status md-icon {
-  --md-icon-size: 16px;
-}
-.cesium-sim-status md-linear-progress {
-  width: 90px;
-}
-.cesium-sim-status.s-ready {
-  color: var(--md-sys-color-primary);
-}
-.cesium-sim-status.s-error {
-  color: var(--md-sys-color-error);
-}
-.cesium-sim-stop {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 26px;
-  height: 26px;
-  margin-left: 2px;
-  border: 1px solid var(--md-sys-color-outline-variant);
-  border-radius: 50%;
-  background: var(--md-sys-color-surface-container-low);
-  color: var(--md-sys-color-on-surface-variant);
-  cursor: pointer;
-  transition: border-color 0.16s, color 0.16s;
-}
-.cesium-sim-stop:hover {
-  border-color: var(--md-sys-color-error);
-  color: var(--md-sys-color-error);
-}
-.cesium-sim-stop md-icon {
-  --md-icon-size: 15px;
-}
-
-/* ── Outil « placer une source » (inondation pilotée par un clic sur le globe) ── */
-.cesium-sim-btn.source-btn {
-  border-style: dashed;
-  color: var(--md-sys-color-primary);
-}
-.cesium-sim-btn.source-btn md-icon {
-  color: #38bdf8;
-}
-.cesium-sim-btn.source-btn.active {
-  border-style: solid;
-  background: color-mix(in srgb, #38bdf8 22%, var(--md-sys-color-surface-container-low));
-  border-color: #38bdf8;
-  color: var(--md-sys-color-on-surface);
-  box-shadow: 0 0 14px rgba(56, 189, 248, 0.35);
-}
-.cesium-sim-btn.source-btn.active md-icon {
-  color: #38bdf8;
-}
-
-/* Indication « cliquez sur le globe » pendant le mode source */
-.cesium-sim-hint {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 5px 12px;
-  border-radius: 999px;
-  border: 1px solid rgba(56, 189, 248, 0.55);
-  background: rgba(56, 189, 248, 0.1);
-  color: #7dd3fc;
-  font-size: 11.5px;
-  animation: zone-error-in 0.2s ease;
-}
-.cesium-sim-hint md-icon {
-  --md-icon-size: 15px;
-  animation: zone-source-pulse 1.6s ease-in-out infinite;
-}
-@keyframes zone-source-pulse {
-  0%,
-  100% {
-    transform: scale(1);
-    opacity: 1;
-  }
-  50% {
-    transform: scale(1.25);
-    opacity: 0.7;
-  }
-}
-
-/* Contrôle de la source placée : coordonnées + curseur d'intensité */
-.cesium-source-ctrl {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  padding: 4px 6px 4px 12px;
-  border: 1px solid rgba(56, 189, 248, 0.4);
-  border-radius: 999px;
-  background: color-mix(in srgb, #38bdf8 8%, var(--md-sys-color-surface-container-low));
-  animation: zone-error-in 0.2s ease;
-}
-.cesium-source-info {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 11px;
-  color: var(--md-sys-color-on-surface-variant);
-  white-space: nowrap;
-}
-.cesium-source-info md-icon {
-  --md-icon-size: 15px;
-  color: #38bdf8;
-}
-.cesium-source-info span {
-  font-family: var(--mono);
-}
-.cesium-source-range {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-}
-.cesium-source-range-label {
-  font-size: 10px;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--md-sys-color-on-surface-variant);
-}
-.cesium-source-range input[type='range'] {
-  width: 110px;
-  height: 4px;
-  appearance: none;
-  -webkit-appearance: none;
-  border-radius: 2px;
-  background: linear-gradient(
-    to right,
-    #0ea5e9 0%,
-    #38bdf8 100%
-  );
-  cursor: pointer;
-}
-.cesium-source-range input[type='range']::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: #bae6fd;
-  border: 2px solid #0284c7;
-  box-shadow: 0 0 8px rgba(56, 189, 248, 0.6);
-  transition: transform 0.15s;
-}
-.cesium-source-range input[type='range']::-webkit-slider-thumb:hover {
-  transform: scale(1.2);
-}
-.cesium-source-range input[type='range']::-moz-range-thumb {
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: #bae6fd;
-  border: 2px solid #0284c7;
-}
-.cesium-source-range-val {
-  font-family: var(--mono);
-  font-size: 11px;
-  font-weight: 600;
-  color: #7dd3fc;
-  min-width: 34px;
-  text-align: right;
-}
-.cesium-source-close {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  border: none;
-  border-radius: 50%;
-  background: transparent;
-  color: var(--md-sys-color-on-surface-variant);
-  cursor: pointer;
-  transition: background 0.15s, color 0.15s;
-}
-.cesium-source-close:hover {
-  background: var(--md-sys-color-error-container);
-  color: var(--md-sys-color-error);
-}
-.cesium-source-close md-icon {
-  --md-icon-size: 15px;
 }
 
 @media (max-width: 900px) {
@@ -2346,15 +2059,18 @@
   transform: translate(-50%, -50%);
   cursor: default;
 }
-.bdnb-map-tools {
+.bdnb-map-tools,
+.zone-map-tools {
   position: absolute;
   top: 10px;
   right: 10px;
   display: flex;
+  align-items: center;
   gap: 6px;
   z-index: 2;
 }
-.bdnb-map-tools md-icon-button {
+.bdnb-map-tools md-icon-button,
+.zone-map-tools md-icon-button {
   --md-icon-button-icon-size: 18px;
   width: 34px;
   height: 34px;
@@ -2363,7 +2079,47 @@
   border-radius: 8px;
   color: var(--md-sys-color-on-surface-variant);
 }
-.bdnb-map-tools md-icon-button[selected] {
+/* Toggle 2D/3D (bâti BDNB extrudé par hauteur réelle) : pastille compacte,
+   même famille que les outils de la carte (icône + libellé 3D/2D), active
+   en accent — utilisé par la carte Cartographie comme par la carte Analyse. */
+.bdnb-map-tools .map-3d-toggle.analyse,
+.zone-map-tools .map-3d-toggle.analyse {
+  position: static;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 34px;
+  padding: 0 12px;
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: 8px;
+  background: var(--md-sys-color-surface-container-high);
+  color: var(--md-sys-color-on-surface-variant);
+  font-family: var(--serif);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  box-shadow: none;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.bdnb-map-tools .map-3d-toggle.analyse md-icon,
+.zone-map-tools .map-3d-toggle.analyse md-icon {
+  --md-icon-size: 17px;
+}
+.bdnb-map-tools .map-3d-toggle.analyse:hover,
+.zone-map-tools .map-3d-toggle.analyse:hover {
+  background: var(--md-sys-color-primary);
+  color: var(--md-sys-color-on-primary);
+  border-color: var(--md-sys-color-primary);
+}
+.bdnb-map-tools .map-3d-toggle.analyse.active,
+.zone-map-tools .map-3d-toggle.analyse.active {
+  background: var(--md-sys-color-primary);
+  color: var(--md-sys-color-on-primary);
+  border-color: var(--md-sys-color-primary);
+}
+.bdnb-map-tools md-icon-button[selected],
+.zone-map-tools md-icon-button[selected] {
   color: var(--md-sys-color-on-primary-container);
   background: var(--md-sys-color-primary-container);
   border-color: var(--md-sys-color-primary);
@@ -3415,6 +3171,130 @@
   height: 100%;
 }
 
+.zone-map-holder {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+/* ── Toggle 2D/3D (bâtiments extrudés BDNB) ── */
+.map-3d-toggle {
+  position: absolute;
+  left: 12px;
+  bottom: 60px;
+  z-index: 6;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: 999px;
+  background: var(--md-sys-color-surface-container-high);
+  color: var(--md-sys-color-on-surface);
+  font-family: var(--serif);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.map-3d-toggle md-icon {
+  --md-icon-size: 16px;
+}
+.map-3d-toggle:hover {
+  background: var(--md-sys-color-primary);
+  color: var(--md-sys-color-on-primary);
+  border-color: var(--md-sys-color-primary);
+}
+.map-3d-toggle.active {
+  background: var(--md-sys-color-primary);
+  color: var(--md-sys-color-on-primary);
+  border-color: var(--md-sys-color-primary);
+}
+
+/* ── Popup Mapbox (classes .mapboxgl-) ── */
+.mb-demo-wrap .mapboxgl-popup-content {
+  background: var(--md-sys-color-surface-container-high);
+  color: var(--md-sys-color-on-surface);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: 12px;
+  padding: 14px 16px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6);
+  font-family: inherit;
+  font-size: 11px;
+  min-width: 240px;
+}
+.mb-demo-wrap .mapboxgl-popup-anchor-top .mapboxgl-popup-tip {
+  border-bottom-color: var(--md-sys-color-surface-container-high);
+}
+.mb-demo-wrap .mapboxgl-popup-anchor-bottom .mapboxgl-popup-tip {
+  border-top-color: var(--md-sys-color-surface-container-high);
+}
+.mb-demo-wrap .mapboxgl-popup-anchor-left .mapboxgl-popup-tip {
+  border-right-color: var(--md-sys-color-surface-container-high);
+}
+.mb-demo-wrap .mapboxgl-popup-anchor-right .mapboxgl-popup-tip {
+  border-left-color: var(--md-sys-color-surface-container-high);
+}
+.mb-demo-wrap .mapboxgl-popup-close-button {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  width: 20px;
+  height: 20px;
+  line-height: 1;
+  font-size: 16px;
+  color: var(--md-sys-color-on-surface-variant);
+  background: none;
+  border: none;
+  border-radius: 6px;
+  padding: 0;
+  cursor: pointer;
+}
+.mb-demo-wrap .mapboxgl-popup-close-button:hover {
+  color: var(--md-sys-color-on-surface);
+  background: var(--md-sys-color-surface-container);
+}
+.mb-demo-wrap .mapboxgl-marker .map-pin {
+  transform: none;
+}
+.mb-demo-wrap .pop-title {
+  font-family: var(--serif);
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  padding-right: 18px;
+  color: var(--md-sys-color-on-surface);
+}
+.mb-demo-wrap .pop-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  margin-bottom: 4px;
+  color: var(--md-sys-color-on-surface-variant);
+}
+.mb-demo-wrap .pop-row span:last-child {
+  color: var(--md-sys-color-on-surface);
+  font-weight: 600;
+}
+.mb-demo-wrap .pop-links {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+}
+.mb-demo-wrap .pop-links a {
+  flex: 1;
+  text-align: center;
+  font-size: 10px;
+  font-weight: 600;
+  text-decoration: none;
+  padding: 5px;
+  border-radius: 6px;
+  background: var(--md-sys-color-surface-container);
+  color: var(--md-sys-color-primary);
+}
+
 /* ── Contrôles OpenLayers (thème sombre) ── */
 .zone-map-wrap .ol-zoom {
   bottom: 60px;
@@ -3589,53 +3469,6 @@
   font-size: 9px;
   color: var(--md-sys-color-on-surface-variant);
   margin-left: auto;
-}
-
-/* ── Bandeau bas ── */
-.map-strip {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  padding: 8px 16px;
-  background: var(--md-sys-color-surface-container-high);
-  border-top: 1px solid var(--md-sys-color-outline-variant);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  font-family: var(--mono);
-  font-size: 9.5px;
-  color: var(--md-sys-color-on-surface-variant);
-  z-index: 5;
-}
-.map-strip > span {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  min-width: 0;
-}
-.map-strip #strip-text {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.strip-dot {
-  width: 6px;
-  height: 6px;
-  background: var(--md-sys-color-primary);
-  border-radius: 50%;
-  flex-shrink: 0;
-  animation: zone-pulse 2s infinite;
-}
-@keyframes zone-pulse {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.3;
-  }
 }
 
 .wms-badge {
@@ -3886,4 +3719,924 @@
     display: inline-flex;
     margin-right: 2px;
   }
+}
+
+/* ============================================================================
+   GORENOVE LAYOUT — Étape 3 « Analyse » (fiche bâtiment BDNB)
+   Split 50/50 : carte 3D gauche · panneau fiche droite.
+   Classes préfixées .gr- pour éviter toute collision avec le reste de l'app.
+============================================================================ */
+
+/* ── Layout principal ── */
+.gr-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* ── Colonne carte ── */
+.gr-map-col {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-right: 1px solid var(--md-sys-color-outline-variant);
+}
+
+.gr-map-col > div:first-child {
+  flex: 1;
+  min-height: 0;
+}
+
+.gr-map-credit {
+  flex-shrink: 0;
+  margin: 0;
+  padding: 4px 10px;
+  font-size: 0.68rem;
+  color: var(--md-sys-color-on-surface-variant);
+  background: var(--md-sys-color-surface-container-low);
+  border-top: 1px solid var(--md-sys-color-outline-variant);
+  line-height: 1.4;
+}
+
+/* ── Colonne panneau fiche ── */
+.gr-panel {
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  background: var(--md-sys-color-surface-container-low);
+  scrollbar-width: thin;
+  scrollbar-color: var(--md-sys-color-outline-variant) transparent;
+}
+
+/* ── En-tête du panneau ── */
+.gr-panel-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 20px 12px;
+  border-bottom: 1px solid var(--md-sys-color-outline-variant);
+  background: var(--md-sys-color-surface-container);
+  flex-wrap: wrap;
+  flex-shrink: 0;
+}
+
+.gr-panel-address {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--md-sys-color-on-surface);
+  line-height: 1.4;
+  flex: 1 1 auto;
+}
+
+.gr-src-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 99px;
+  font-size: 0.72rem;
+  background: color-mix(in srgb, var(--accent) 14%, var(--md-sys-color-surface-container-high));
+  color: var(--md-sys-color-primary);
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.gr-src-chip md-icon { font-size: 14px; }
+
+/* ── Chips résumé ── */
+.gr-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 10px 20px;
+  border-bottom: 1px solid var(--md-sys-color-outline-variant);
+  background: var(--md-sys-color-surface-container);
+  flex-shrink: 0;
+}
+
+.gr-chip {
+  display: inline-block;
+  padding: 3px 12px;
+  border-radius: 99px;
+  font-size: 0.78rem;
+  background: color-mix(in srgb, var(--accent) 16%, var(--md-sys-color-surface-container-high));
+  color: var(--md-sys-color-primary);
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, transparent);
+}
+
+/* ── Bandeau avertissement ── */
+.gr-warning {
+  margin: 12px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--md-sys-color-outline-variant);
+  background: var(--md-sys-color-surface-container);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.gr-warning-summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+.gr-warning-summary::-webkit-details-marker { display: none; }
+.gr-warning-summary:hover {
+  background: var(--md-sys-color-surface-container-high);
+}
+
+.gr-warning-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--accent) 15%, transparent);
+  color: var(--md-sys-color-primary);
+  flex-shrink: 0;
+}
+.gr-warning-icon md-icon { font-size: 16px; }
+
+.gr-warning-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--md-sys-color-on-surface);
+  flex: 1;
+}
+
+.gr-warning-chevron {
+  font-size: 18px;
+  color: var(--md-sys-color-on-surface-variant);
+  transition: transform 0.2s ease;
+}
+.gr-warning[open] .gr-warning-chevron {
+  transform: rotate(180deg);
+}
+
+.gr-warning-body {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  border-top: 1px solid var(--md-sys-color-outline-variant);
+}
+
+.gr-warning-col {
+  padding: 14px 16px;
+}
+.gr-warning-col--no {
+  border-left: 1px solid var(--md-sys-color-outline-variant);
+}
+
+.gr-warning-col-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.gr-warning-col-title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+.gr-warning-col--yes .gr-warning-col-title { color: #3aa76d; }
+.gr-warning-col--no  .gr-warning-col-title { color: #d92c2c; }
+
+.gr-status-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.gr-status-icon--yes { background: rgba(58, 167, 109, 0.2); color: #3aa76d; }
+.gr-status-icon--no  { background: rgba(217, 44, 44, 0.2); color: #d92c2c; }
+.gr-status-icon md-icon { font-size: 14px; }
+.gr-status-icon--sm { width: 20px; height: 20px; }
+.gr-status-icon--sm md-icon { font-size: 12px; }
+
+.gr-warning-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.gr-warning-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 0.8rem;
+  color: var(--md-sys-color-on-surface-variant);
+  line-height: 1.5;
+}
+
+/* ── Sections ── */
+.gr-section {
+  margin: 12px 16px;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--md-sys-color-outline-variant);
+  background: var(--md-sys-color-surface-container);
+  flex-shrink: 0;
+}
+
+.gr-section-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: var(--md-sys-color-surface-container-high);
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+.gr-section-header::-webkit-details-marker { display: none; }
+.gr-section-header:hover {
+  background: color-mix(in srgb, var(--md-sys-color-surface-container-high) 92%, var(--accent));
+}
+.gr-section[open] .gr-section-header {
+  border-bottom: 1px solid var(--md-sys-color-outline-variant);
+}
+
+.gr-section-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--accent) 18%, var(--md-sys-color-surface-container));
+  color: var(--md-sys-color-primary);
+  flex-shrink: 0;
+}
+.gr-section-icon md-icon { font-size: 18px; }
+.gr-section-id-text {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--md-sys-color-primary);
+}
+
+.gr-section-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.gr-section-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--md-sys-color-on-surface);
+}
+.gr-section-source {
+  font-size: 0.72rem;
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+.gr-section-chevron {
+  font-size: 18px;
+  color: var(--md-sys-color-on-surface-variant);
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+.gr-section[open] .gr-section-chevron {
+  transform: rotate(180deg);
+}
+
+.gr-section-body {
+  padding: 14px 16px;
+}
+
+/* ── Grille de data-cards ── */
+.gr-card-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.gr-card-grid--icon {
+  grid-template-columns: repeat(2, 1fr);
+}
+.gr-card-grid--array {
+  grid-template-columns: 1fr;
+}
+.gr-card-grid--risk {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+/* ── Data card (simple) ── */
+.gr-data-card {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--md-sys-color-surface-container-high);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  min-width: 0;
+}
+.gr-data-card-label {
+  font-size: 0.7rem;
+  color: var(--md-sys-color-on-surface-variant);
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.gr-data-card-value {
+  font-size: 0.8rem;
+  color: var(--md-sys-color-on-surface);
+  font-weight: 500;
+}
+.gr-data-card-sub {
+  font-size: 0.68rem;
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+.gr-data-card--icon {
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 10px;
+}
+.gr-data-card-icon {
+  font-size: 20px;
+  margin-top: 2px;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+}
+.gr-data-card-icon md-icon {
+  --md-icon-size: 20px;
+  color: var(--md-sys-color-on-surface-variant);
+}
+.gr-data-card-content {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  flex: 1;
+}
+.gr-data-card--icon .gr-data-card-label {
+  white-space: normal;
+  overflow: visible;
+}
+
+.gr-data-card--warn {
+  border-color: rgba(242, 163, 60, 0.4);
+  background: rgba(242, 163, 60, 0.06);
+}
+.gr-data-card--warn .gr-data-card-label {
+  color: rgba(242, 163, 60, 0.9);
+}
+
+/* ── Array card (énergie) ── */
+.gr-array-card {
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: var(--md-sys-color-surface-container-high);
+  border: 1px solid var(--md-sys-color-outline-variant);
+}
+.gr-array-card--warn {
+  border-color: rgba(242, 163, 60, 0.4);
+  background: rgba(242, 163, 60, 0.06);
+}
+
+.gr-array-card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.gr-array-card-icon {
+  font-size: 18px;
+  display: inline-flex;
+  align-items: center;
+}
+.gr-array-card-icon md-icon {
+  --md-icon-size: 18px;
+  color: var(--md-sys-color-on-surface-variant);
+}
+.gr-array-card-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--md-sys-color-on-surface);
+}
+
+.gr-array-card-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.gr-array-card-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 0.78rem;
+}
+.gr-array-card-row-label {
+  color: var(--md-sys-color-on-surface-variant);
+  flex-shrink: 0;
+}
+.gr-array-card-row-value {
+  font-weight: 500;
+  color: var(--md-sys-color-on-surface);
+  text-align: right;
+}
+
+/* ── DPE Scale ── */
+.gr-dpe-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.gr-dpe-label-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 60px;
+}
+.gr-dpe-label-text {
+  font-size: 0.72rem;
+  color: var(--md-sys-color-on-surface-variant);
+  text-align: center;
+}
+
+.gr-dpe-scale-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.gr-dpe-scale {
+  display: flex;
+  gap: 4px;
+}
+
+.gr-dpe-pill {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  background: color-mix(in srgb, var(--dpe-color) 20%, var(--md-sys-color-surface-container-high));
+  color: color-mix(in srgb, var(--dpe-color) 70%, var(--md-sys-color-on-surface));
+  border: 2px solid transparent;
+  transition: all 0.15s ease;
+}
+.gr-dpe-pill.active {
+  background: var(--dpe-color);
+  color: #fff;
+  border-color: var(--dpe-color);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--dpe-color) 50%, transparent);
+  transform: scale(1.15);
+}
+
+.gr-dpe-scale-info {
+  font-size: 0.75rem;
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+/* ── Perf cards ── */
+.gr-perf-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.gr-perf-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--md-sys-color-surface-container-high);
+  border: 1px solid var(--md-sys-color-outline-variant);
+}
+.gr-perf-card-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.72rem;
+  color: var(--md-sys-color-on-surface-variant);
+}
+.gr-perf-card-label md-icon { font-size: 14px; }
+
+.gr-perf-card-value {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.gr-perf-card-value strong {
+  font-size: 0.9rem;
+  color: var(--md-sys-color-on-surface);
+}
+.gr-perf-sub {
+  font-size: 0.68rem;
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+/* ── Risk cards ── */
+.gr-risk-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: rgba(212, 172, 62, 0.1);
+  border: 1px solid rgba(212, 172, 62, 0.35);
+  margin-bottom: 12px;
+  font-size: 0.82rem;
+}
+.gr-risk-banner md-icon { color: #d4ac3e; }
+.gr-risk-banner > div { display: flex; flex-direction: column; gap: 2px; }
+.gr-risk-label { font-weight: 600; color: var(--md-sys-color-on-surface); font-size: 0.8rem; }
+.gr-risk-value { color: var(--md-sys-color-on-surface-variant); font-size: 0.78rem; }
+
+/* Plusieurs bandeaux risques (argile / radon / sismique — story D2) */
+.gr-risk-banners {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.gr-risk-banners .gr-risk-banner { margin-bottom: 0; }
+
+/* Éligibilité argile (arrêté 2021) */
+.gr-risk-elig {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: rgba(58, 167, 109, 0.1);
+  border: 1px solid rgba(58, 167, 109, 0.35);
+  margin-bottom: 12px;
+  font-size: 0.78rem;
+  color: var(--md-sys-color-on-surface-variant);
+  line-height: 1.45;
+}
+.gr-risk-elig md-icon { color: #3aa76d; font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+.gr-risk-elig--no {
+  background: rgba(212, 172, 62, 0.1);
+  border-color: rgba(212, 172, 62, 0.35);
+}
+.gr-risk-elig--no md-icon { color: #d4ac3e; }
+
+/* Confort thermique & dispositions (BDNB) */
+.gr-comfort-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-top: 12px;
+}
+.gr-comfort-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--md-sys-color-surface-container-high);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  min-width: 0;
+}
+.gr-comfort-item md-icon {
+  color: var(--md-sys-color-primary);
+  font-size: 18px;
+  flex-shrink: 0;
+}
+.gr-comfort-item > div {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+.gr-comfort-label {
+  font-size: 0.68rem;
+  color: var(--md-sys-color-on-surface-variant);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.gr-comfort-value {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--md-sys-color-on-surface);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Fiche en chargement / erreur (sélection au clic — story A2) ── */
+.gr-fiche-progress {
+  width: 100%;
+  border-radius: 0;
+  margin-bottom: 4px;
+}
+.gr-fiche-error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: rgba(217, 44, 44, 0.08);
+  border: 1px solid rgba(217, 44, 44, 0.35);
+  font-size: 0.78rem;
+  color: var(--md-sys-color-on-surface);
+  margin-bottom: 10px;
+}
+.gr-fiche-error md-icon { color: #d92c2c; font-size: 18px; }
+
+/* ── DPE officiel recensé (distinction C4) ── */
+.gr-dpe-officiel {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: rgba(58, 167, 109, 0.08);
+  border: 1px solid rgba(58, 167, 109, 0.35);
+  margin-bottom: 12px;
+  font-size: 0.78rem;
+}
+.gr-dpe-officiel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.gr-dpe-officiel-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 700;
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  color: #2e8b5c;
+}
+.gr-dpe-officiel-badge md-icon { font-size: 15px; }
+.gr-dpe-officiel-id {
+  font-family: var(--md-ref-typeface-mono, ui-monospace, SFMono-Regular, monospace);
+  font-size: 0.72rem;
+  color: var(--md-sys-color-on-surface-variant);
+}
+.gr-dpe-officiel-date {
+  color: var(--md-sys-color-on-surface-variant);
+}
+.gr-dpe-distrib {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 2px;
+}
+.gr-dpe-distrib-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--dpe-color) 16%, transparent);
+  border: 1px solid color-mix(in srgb, var(--dpe-color) 45%, transparent);
+  font-size: 0.72rem;
+  color: var(--md-sys-color-on-surface);
+}
+.gr-dpe-distrib-chip b { color: var(--dpe-color); }
+.gr-dpe-distrib-total {
+  font-size: 0.7rem;
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+.gr-risk-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--md-sys-color-outline-variant);
+  background: var(--md-sys-color-surface-container-high);
+}
+.gr-risk-card--warn {
+  border-color: rgba(208, 112, 48, 0.4);
+  background: rgba(208, 112, 48, 0.07);
+}
+.gr-risk-card--warn md-icon { color: #d07030; }
+.gr-risk-card--ok {
+  border-color: rgba(58, 167, 109, 0.3);
+  background: rgba(58, 167, 109, 0.05);
+}
+.gr-risk-card--ok md-icon { color: #3aa76d; }
+.gr-risk-card--na md-icon { color: var(--md-sys-color-on-surface-variant); }
+
+.gr-risk-card md-icon { font-size: 20px; margin-top: 1px; flex-shrink: 0; }
+
+.gr-risk-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.gr-risk-card-label {
+  font-size: 0.78rem;
+  color: var(--md-sys-color-on-surface-variant);
+}
+.gr-risk-card-value {
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--md-sys-color-on-surface);
+}
+
+/* ── Points d'attention ── */
+.gr-attention {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--accent) 8%, var(--md-sys-color-surface-container));
+  border: 1px solid color-mix(in srgb, var(--accent) 25%, transparent);
+}
+.gr-attention-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--md-sys-color-primary);
+  margin-bottom: 8px;
+}
+.gr-attention-header md-icon { font-size: 16px; }
+.gr-attention-list {
+  margin: 0;
+  padding-left: 1.2em;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.gr-attention-list li {
+  font-size: 0.78rem;
+  color: var(--md-sys-color-on-surface-variant);
+  line-height: 1.5;
+}
+
+/* ── Valeur NA ── */
+.gr-na {
+  color: var(--md-sys-color-on-surface-variant) !important;
+  font-style: italic;
+}
+
+/* ── États vides ── */
+.gr-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  height: 100%;
+  padding: 40px 24px;
+  text-align: center;
+  color: var(--md-sys-color-on-surface-variant);
+}
+.gr-empty md-icon { font-size: 48px; opacity: 0.5; }
+.gr-empty h2 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--md-sys-color-on-surface);
+}
+.gr-empty p { margin: 0; font-size: 0.9rem; max-width: 420px; line-height: 1.6; }
+.gr-empty-detail {
+  font-size: 0.75rem;
+  color: var(--md-sys-color-error);
+  background: var(--md-sys-color-error-container);
+  padding: 4px 10px;
+  border-radius: 6px;
+}
+
+/* ── zone-analyse host ── */
+.zone-analyse {
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Responsive : mobile — carte masquée, panneau plein écran ── */
+@media (max-width: 900px) {
+  .gr-layout {
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr;
+  }
+  .gr-map-col {
+    display: none;
+  }
+  .gr-panel {
+    height: 100%;
+  }
+  .gr-card-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .gr-card-grid--icon {
+    grid-template-columns: 1fr;
+  }
+  .gr-card-grid--risk {
+    grid-template-columns: 1fr;
+  }
+  .gr-warning-body {
+    grid-template-columns: 1fr;
+  }
+  .gr-warning-col--no {
+    border-left: none;
+    border-top: 1px solid var(--md-sys-color-outline-variant);
+  }
+  .gr-perf-cards {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ══ Carte unifiée Mapbox GL JS ══════════
+   Mapbox est l'unique moteur de carte (MapLibre supprimé). */
+.mb-demo-wrap {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+}
+.mb-demo-map {
+  width: 100%;
+  height: 100%;
+}
+.mb-demo-error {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 24px;
+  text-align: center;
+  color: var(--md-sys-color-error);
+}
+.mb-demo-error md-icon {
+  --md-icon-size: 32px;
+}
+.mb-demo-tools {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  z-index: 2;
+}
+.mb-demo-tools md-icon-button {
+  --md-icon-button-icon-size: 18px;
+  width: 34px;
+  height: 34px;
+  background: var(--md-sys-color-surface-container-high);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: 8px;
+  color: var(--md-sys-color-on-surface-variant);
+}
+.mb-demo-tools .map-3d-toggle.analyse {
+  position: static;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 34px;
+  padding: 0 12px;
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: 8px;
+  background: var(--md-sys-color-surface-container-high);
+  color: var(--md-sys-color-on-surface-variant);
+  font-family: var(--serif);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+}
+.mb-demo-tools .map-3d-toggle.analyse.active {
+  background: var(--md-sys-color-primary);
+  color: var(--md-sys-color-on-primary);
+  border-color: var(--md-sys-color-primary);
+}
+.mb-demo-wrap .mapboxgl-ctrl-attrib {
+  font-size: 10px;
 }

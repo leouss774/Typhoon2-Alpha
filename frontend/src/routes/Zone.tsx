@@ -1,11 +1,11 @@
 // =============================================================================
 //   TYPHOON — /zone : diagnostic géo-risque par adresse (Stepper Material 3)
-//   Étapes :
-//     1. Adresse      — hero centré façon Gemini (champ de recherche au centre)
-//     2. Cartographie — carte OpenLayers + panneau aléas (data viz Géorisques)
-//     3. Analyse      — fiche bâtiment BDNB (Synthèse / Construction / Énergie…)
-//     4. Jumeau BIM   — viewer 3D thingraph en iframe (glTF généré depuis l'emprise BDNB)
-//     5. Rapport IA   — rapport narratif Mistral + export PDF
+//     1. Adresse         — hero centré façon Gemini (champ de recherche au centre)
+//     2. Cartographie    — aléas & risques (panneau latéral rétractable) + carte unifiée
+//     3. Analyse         — fiche bâtiment BDNB (panneau latéral rétractable) + carte unifiée
+//     4. Jumeau BIM      — viewer 3D thingraph en iframe (glTF généré depuis l'emprise BDNB)
+//     5. Recommandations — recommandations détaillées (RAG Mistral)
+//     6. Rapport IA      — rapport narratif Mistral + export PDF
 //
 //   Stepper linéaire : les étapes 2-4 sont bloquées tant qu'aucune adresse
 //   n'a été diagnostiquée — l'étape Adresse passe en état d'erreur (icône
@@ -16,8 +16,8 @@ import { useEffect, useRef, useState, type CSSProperties, type ReactNode, type R
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import type { Menu } from '@material/web/menu/menu.js';
 import type { MdSwitch } from '@material/web/switch/switch.js';
-import { ZoneMap } from '../components/ZoneMap';
-import { ZoneAnalyse } from '../components/ZoneAnalyse';
+import { MapboxFloodMap } from '../components/MapboxFloodMap';
+import { BuildingFiche } from '../components/BuildingFiche';
 import { ZoneBIM } from '../components/ZoneBIM';
 import { ZoneRecommendations } from '../components/ZoneRecommendations';
 import { ZoneSidenav, useIsMobile } from '../components/ZoneSidenav';
@@ -35,6 +35,9 @@ import {
   type RisqueReport,
   type RapportNarratif,
   type GeocodeSuggestion,
+  type BdnbBatiment,
+  type BatimentRisques,
+  type BatimentFiche,
 } from '../zone/config';
 import type { RecommendationZone } from '../jumeau/recommendations';
 import {
@@ -139,8 +142,18 @@ export function Zone() {
   const [rapport, setRapport] = useState<RapportNarratif | null>(null);
   const [rapportLoading, setRapportLoading] = useState(false);
   const [rapportError, setRapportError] = useState<RapportError | null>(null);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  /* Panneau latéral (aléas ou fiche) rétractable : replié → carte plein écran. */
+  const [panelCollapsed, setPanelCollapsed] = useState(false);
+  /* Moteur de carte : Mapbox GL JS (unique, pas de fallback MapLibre). */
   const [visibleLayerKeys, setVisibleLayerKeys] = useState<ReadonlySet<string>>(new Set());
+
+  /* Story A2 — sélection d'un bâtiment au clic sur la carte : la fiche de
+     l'étape Analyse suit le bâtiment sélectionné (sinon le bâtiment diagnostiqué). */
+  const [selectedBatiment, setSelectedBatiment] = useState<BdnbBatiment | null>(null);
+  const [selectedRisques, setSelectedRisques] = useState<BatimentRisques | null>(null);
+  const [ficheLoading, setFicheLoading] = useState(false);
+  const [ficheError, setFicheError] = useState<string | null>(null);
+  const ficheRequestId = useRef(0);
 
   /* Champ de la topbar (étapes 2-4) et champ du hero (étape 1) : deux
      instances distinctes de md-outlined-text-field, chacune avec son ref. */
@@ -148,7 +161,6 @@ export function Zone() {
   const heroInputRef = useRef<HTMLInputElement>(null);
   const lastQuery = useRef('');
   const banTimeout = useRef<number | null>(null);
-  const userClosedSidebar = useRef(false);
   const recommendationsRequestId = useRef(0);
 
   async function loadDetailedRecommendations(address: string) {
@@ -244,8 +256,11 @@ export function Zone() {
           return next;
         });
         setStepError(false);
-        setStep(1);
-        if (!userClosedSidebar.current) setSidebarOpen(true);
+        ficheRequestId.current += 1;
+        setSelectedBatiment(null);
+        setSelectedRisques(null);
+        setFicheError(null);
+        setStep(1); // → étape Cartographie (aléas + carte unifiée)
         setVisibleLayerKeys(
           new Set(
             (cached.report.aleas || [])
@@ -264,7 +279,10 @@ export function Zone() {
       setRapport(null);
       setRapportError(null);
       setFromCache(false);
-      setSidebarOpen(false);
+      setSelectedBatiment(null);
+      setSelectedRisques(null);
+      setFicheError(null);
+      ficheRequestId.current += 1;
     }
     /* Rafraîchissement forcé : on laisse le rapport actuel (et son badge
        éventuel) en place pendant le chargement — il n'est remplacé qu'en
@@ -301,8 +319,7 @@ export function Zone() {
         return next;
       });
       setStepError(false); // l'adresse est validée → étapes suivantes débloquées
-      setStep(1); // → étape Cartographie
-      if (!userClosedSidebar.current) setSidebarOpen(true);
+      setStep(1); // → étape Cartographie (aléas + carte unifiée)
       setVisibleLayerKeys(
         new Set((r.aleas || []).filter((a) => a.present === true).map((a) => a.code))
       );
@@ -318,6 +335,38 @@ export function Zone() {
   function handleRefresh() {
     if (!report) return;
     void runDiagnosis(report.adresse_normalisee || report.adresse_saisie, { force: true });
+  }
+
+  /* ── Story A2 : clic sur un bâtiment de la carte → chargement de sa fiche BDNB ── */
+  async function handleSelectBuilding(id: string | null) {
+    if (!id) {
+      /* Clic dans le vide → réinitialisation : retour à la fiche du bâtiment diagnostiqué. */
+      setSelectedBatiment(null);
+      setSelectedRisques(null);
+      setFicheError(null);
+      return;
+    }
+    if (id === selectedBatiment?.batiment_groupe_id) return;
+    const requestId = ++ficheRequestId.current;
+    setFicheLoading(true);
+    setFicheError(null);
+    setStep(2); // → étape Analyse : afficher la fiche du bâtiment cliqué
+    try {
+      const resp = await fetch(`${API}/diagnostic/zone/building?id=${encodeURIComponent(id)}`);
+      if (requestId !== ficheRequestId.current) return; // sélection plus récente
+      if (!resp.ok) throw new Error(`Fiche HTTP ${resp.status}`);
+      const fiche = (await resp.json()) as BatimentFiche;
+      if (requestId !== ficheRequestId.current) return;
+      setSelectedBatiment(fiche.batiment ?? null);
+      setSelectedRisques(fiche.risques ?? null);
+    } catch (err) {
+      if (requestId !== ficheRequestId.current) return;
+      setSelectedBatiment(null);
+      setSelectedRisques(null);
+      setFicheError(err instanceof Error ? err.message : 'Fiche indisponible');
+    } finally {
+      if (requestId === ficheRequestId.current) setFicheLoading(false);
+    }
   }
 
   /* ── Rapport narratif IA (Mistral) — POST RisqueReport → RapportNarratif ── */
@@ -421,13 +470,6 @@ export function Zone() {
     });
   }
 
-  function toggleSidebar() {
-    setSidebarOpen((o) => {
-      userClosedSidebar.current = o; // fermeture manuelle → true · réouverture → false
-      return !o;
-    });
-  }
-
   /* ── Historique « Récent » (sidenav) ── */
   function handleOpenConversation(address: string) {
     setDrawerOpen(false);
@@ -463,24 +505,20 @@ export function Zone() {
     }))
   );
 
-  const wmsActive = !!report && report.aleas.some((a) => WMS_LAYER_MAP[a.code]);
-  const pdfUrl = report
-    ? `${API}/diagnostic/adresse/rapport-pdf?lat=${report.lat}&lon=${report.lon}`
-    : '#';
-
-  const stripText = report
-    ? `${report.adresse_normalisee} · ${report.alea_count} aléa(s) · 0 simulés`
-    : 'En attente d’une adresse';
-
   const allPresentVisible =
     report !== null &&
     (report.aleas || []).length > 0 &&
     (report.aleas || []).every((a) => visibleLayerKeys.has(a.code));
 
+  const wmsActive = !!report && report.aleas.some((a) => WMS_LAYER_MAP[a.code]);
+  const pdfUrl = report
+    ? `${API}/diagnostic/adresse/rapport-pdf?lat=${report.lat}&lon=${report.lon}`
+    : '#';
+
   return (
     <main
       className={`zone-app${theme === 'light' ? ' theme-light' : ''}${
-        sidebarOpen ? ' sidebar-open' : ''
+        panelCollapsed ? ' panel-collapsed' : ''
       }${navCollapsed && !isMobile ? ' nav-collapsed' : ''}${drawerOpen ? ' drawer-open' : ''}`}
       style={{ '--accent': accent } as CSSProperties}
     >
@@ -640,30 +678,25 @@ export function Zone() {
                 </div>
               </div>
 
-              <div className="topbar-actions">
-                <md-icon-button
-                  toggle
-                  selected={sidebarOpen}
-                  className="panel-toggle"
-                  aria-label="Afficher / masquer le panneau des aléas"
-                  title="Panneau des aléas"
-                  aria-pressed={sidebarOpen}
-                  onClick={toggleSidebar}
-                >
-                  <md-icon>view_sidebar</md-icon>
-                  <md-icon slot="selected">view_sidebar</md-icon>
-                </md-icon-button>
-              </div>
             </div>
           </header>
 
           <div className={`zone-stage${step === 1 ? ' workspace' : ' flat'}`}>
-            {/* Workspace — toujours monté pour préserver la carte OpenLayers
-                (masqué via [hidden] hors de l'étape Cartographie) */}
-            <div className="zone-workspace" hidden={step !== 1}>
-              {/* SIDEBAR (couches + résultats) */}
-              <aside className="zone-sidebar">
-                {report ? (
+            {/* ÉTAPES 2-3 — CARTOGRAPHIE & ANALYSE : panneau latéral + carte unifiée */}
+            <div className="zone-merge" hidden={step !== 1 && step !== 2}>
+              {/* PANNEAU LATÉRAL (rétractable) — contenu selon l'étape */}
+              <aside className="zone-merge-left">
+                <md-icon-button
+                  className="panel-collapse-btn"
+                  aria-label="Réduire le panneau"
+                  title="Réduire le panneau (carte plein écran)"
+                  onClick={() => setPanelCollapsed(true)}
+                >
+                  <md-icon>chevron_left</md-icon>
+                </md-icon-button>
+                <div className="zone-panel-body">
+                  {report ? (
+                    step === 1 ? (
                   <section className="zone-results">
                     <div className="addr-heading">
                       <div className="addr-title-row">
@@ -804,47 +837,62 @@ export function Zone() {
                       </span>
                     </div>
                   </section>
-                ) : (
-                  <div className="sidebar-empty">
-                    <md-icon>gps_fixed</md-icon>
-                    <p>Recherchez une adresse pour afficher le diagnostic géo-risque.</p>
-                  </div>
-                )}
-              </aside>
-
-              {/* CARTE */}
-              <section className="zone-map-wrap">
-                <ZoneMap report={report} visibleLayerKeys={visibleLayerKeys} />
-
-                <div className="map-strip">
-                  <span>
-                    <span className="strip-dot" />
-                    <span id="strip-text">{stripText}</span>
-                  </span>
-                  <span>© CARTO · © OpenStreetMap contributors · © BRGM Géorisques</span>
+                    ) : (
+                      <BuildingFiche
+                        report={report}
+                        batiment={selectedBatiment}
+                        risques={selectedRisques}
+                        loading={ficheLoading}
+                        error={ficheError}
+                      />
+                    )
+                  ) : (
+                    <div className="sidebar-empty">
+                      <md-icon>gps_fixed</md-icon>
+                      <p>Recherchez une adresse pour afficher le diagnostic géo-risque.</p>
+                    </div>
+                  )}
                 </div>
+              </aside>                {/* CARTE UNIFIÉE — Mapbox GL JS · bâti BDNB 3D, satellite,
+                    parcelles, aléas, montée des eaux */}
+              <section className="zone-merge-map">
+                {panelCollapsed && (
+                  <md-icon-button
+                    className="panel-expand-btn"
+                    aria-label="Agrandir le panneau"
+                    title="Agrandir le panneau"
+                    onClick={() => setPanelCollapsed(false)}
+                  >
+                    <md-icon>chevron_right</md-icon>
+                  </md-icon-button>
+                )}
+                <MapboxFloodMap
+                  report={report}
+                  visibleLayerKeys={visibleLayerKeys}
+                  batiment={selectedBatiment ?? undefined}
+                  selectedId={selectedBatiment?.batiment_groupe_id ?? null}
+                  onSelect={(id) => void handleSelectBuilding(id)}
+                  showRisks={step === 1}
+                  allowParcels={step === 2}
+                  buildingsLimit={step === 1 ? 500 : 200}
+                  initial3D
+                  fitZoom={16.5}
+                />
                 {wmsActive && <div className="wms-badge">WMS BRGM actif</div>}
               </section>
             </div>
 
-            {/* ÉTAPE 3 — ANALYSE BDNB (fiche bâtiment) */}
-            <section className="zone-analyse" hidden={step !== 2}>
-              <ZoneAnalyse report={report} />
-            </section>
-
-            {/* ÉTAPE 4 — JUMEAU BIM (viewer 3D + onglet « Vue terrain 3D » Cesium) */}
+            {/* ÉTAPE 4 — JUMEAU BIM (viewer 3D) */}
             <section className="zone-bim" hidden={step !== 3}>
               <ZoneBIM
                 report={report}
                 recommendationZones={detailedRecommendationZones}
                 recommendationZonesLoading={detailedRecommendationsLoading}
                 recommendationZonesError={detailedRecommendationsError}
-                visibleLayerKeys={visibleLayerKeys}
-                onToggleLayer={toggleLayer}
               />
             </section>
 
-            {/* ÉTAPE 5 — RAPPORT IA (Mistral) */}
+            {/* ÉTAPE 5 — RECOMMANDATIONS (détaillées, RAG Mistral) */}
             <section className="zone-recommendations" hidden={step !== 4}>
               <ZoneRecommendations
                 report={report}
