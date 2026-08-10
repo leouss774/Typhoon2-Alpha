@@ -247,7 +247,7 @@ export function ComprendreRisques({
                         Pas assez d'aléas distincts pour un radar — voir le détail ci-dessous.
                       </p>
                     )}
-                  </div>
+                  
                 </div>
                 </div>
 
