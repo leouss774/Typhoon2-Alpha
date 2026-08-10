@@ -1186,7 +1186,32 @@
   #property-id-screen .pid-gauge-card .gw { width: 100px; height: 100px; }
   #property-id-screen .pid-gauge-card .gw .gc { font-size: 22px; }
 }
+
+/* ── Vol continu depuis zone.html (clic sur le pin du bien) ───────────────
+   Même view-transition-name que le conteneur de carte de zone.html : le
+   navigateur morphe la carte vers la scène 3D (Chrome 126+, même origine).
+   Déclaratif uniquement — sans support, navigation classique sans erreur. */
+@media (prefers-reduced-motion: no-preference) {
+  @view-transition { navigation: auto; }
+  #scene-container { view-transition-name: jumeau-scene; }
+}
+/* Arrivée en vol (?lat&lon dans l'URL, classe posée avant le premier
+   rendu) : le jumeau est visible immédiatement — ni écran d'accueil, ni
+   fondu d'app-ui, la continuité vient du morph + de la descente caméra. */
+html.arrivee-vol #home-screen { display: none !important; }
+html.arrivee-vol #app-ui { opacity: 1; transition: none; }
 </style>
+<script>
+  /* Avant le premier rendu : détecte l'arrivée « vol continu » depuis
+     zone.html pour ne jamais peindre l'écran d'accueil (le snapshot de la
+     View Transition doit montrer la scène 3D, pas l'accueil). */
+  (function () {
+    var p = new URLSearchParams(window.location.search);
+    if (p.has('lat') && p.has('lon')) {
+      document.documentElement.classList.add('arrivee-vol');
+    }
+  })();
+</script>
 </head>
 <body>
 
@@ -1843,6 +1868,10 @@
 <!-- Uniquement le coeur de Three.js. Pas de THREE.OrbitControls (peu fiable
      sur les CDN) : contrôle caméra personnalisé plus bas. -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<!-- Tween.js (MIT, ~5 Ko) : séquence caméra du vol continu carte → jumeau.
+     Choisi plutôt que GSAP : une seule interpolation à jouer, pas besoin de
+     timelines. Repli : sans TWEEN (CDN bloqué), caméra en position finale. -->
+<script src="https://unpkg.com/@tweenjs/tween.js@18.6.4/dist/tween.umd.js"></script>
 <script>
 if (typeof THREE === 'undefined') {
   document.body.innerHTML = '<div style="color:#1E2A33;background:#FFF5F3;padding:30px;font-family:sans-serif;max-width:600px;margin:60px auto;border-radius:10px;border:1px solid #F3D9D2;">' +
@@ -4018,6 +4047,7 @@ function animate(now) {
   requestAnimationFrame(animate);
   const dt = Math.min((now - lastTime) / 1000, 0.1); lastTime = now;
   const elapsed = now / 1000;
+  if (window.TWEEN) TWEEN.update(now); // vol d'arrivée caméra (section 11bis)
   updateCameraPosition(dt);
   animateEffects(dt, elapsed);
   animateClickPulses(dt);
@@ -4032,6 +4062,56 @@ window.addEventListener('resize', () => {
 
 // ---------- 11. DÉMARRAGE ----------
 loadDataset(DEFAULT_DATA);
+
+// ---------- 11bis. ARRIVÉE EN VOL DEPUIS LA CARTE (zone.html) ----------
+// Raccord avec le zoom carte : la carte s'est arrêtée à la verticale du
+// bien, nord vers le haut. La caméra part donc du zénith (phi ≈ 0, theta 0 :
+// caméra plein sud du bâtiment, nord en haut de l'écran — même orientation
+// que la carte) puis descend vers la vue orbitale habituelle en ~1 s,
+// easing Quadratic.Out : la décélération prolonge l'accélération (easeIn)
+// du zoom OpenLayers. Ce bloc s'exécute pendant le parse, avant le premier
+// rendu : le snapshot de la View Transition montre déjà la vue zénithale.
+// Sans paramètres lat/lon (accès direct, rechargement), sans TWEEN (CDN
+// indisponible) ou avec prefers-reduced-motion: reduce : la caméra reste à
+// sa position finale, aucune animation.
+(function () {
+  const params = new URLSearchParams(window.location.search);
+  if (!params.has('lat') || !params.has('lon')) return;
+  const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduced || !window.TWEEN) return;
+
+  // Position finale = celle posée par loadDataset/fitCameraToHouse.
+  const fin = { r: targetRadius, t: targetTheta, p: targetPhi };
+  // Départ zénithal : phi 0.08 (et non 0 : lookAt avec up = +Y dégénère à
+  // la verticale exacte), cadrage large borné par le plan far de la caméra.
+  const depart = { r: Math.min(fin.r * 3.2, 240), t: 0, p: 0.08 };
+
+  // Le brouillard est calibré pour le cadrage final : on l'écarte pendant
+  // la descente pour que le bâtiment reste visible depuis le zénith.
+  const fogFin = scene.fog ? { near: scene.fog.near, far: scene.fog.far } : null;
+  if (scene.fog) { scene.fog.near = depart.r * 1.3; scene.fog.far = depart.r * 4.0; }
+
+  radius = targetRadius = depart.r;
+  theta = targetTheta = depart.t;
+  phi = targetPhi = depart.p;
+  updateCameraPosition(0); // première image = vue zénithale, avant tout RAF
+
+  new TWEEN.Tween(depart)
+    .to(fin, 1000)
+    .easing(TWEEN.Easing.Quadratic.Out)
+    .onUpdate(() => {
+      // On pilote valeurs courantes ET cibles : le lissage interne de
+      // updateCameraPosition (interpolation vers les cibles) ne doit pas
+      // lutter contre le tween.
+      radius = targetRadius = depart.r;
+      theta = targetTheta = depart.t;
+      phi = targetPhi = depart.p;
+    })
+    .onComplete(() => {
+      if (scene.fog && fogFin) { scene.fog.near = fogFin.near; scene.fog.far = fogFin.far; }
+    })
+    .start();
+})();
 </script>
 
 <script>

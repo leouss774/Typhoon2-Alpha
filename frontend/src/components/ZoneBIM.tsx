@@ -10,7 +10,7 @@
 //   `model` (patch local du clone) — aucune dépendance à son API service.
 // =============================================================================
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { RisqueReport } from '../zone/config';
 import { API } from '../zone/config';
@@ -19,6 +19,8 @@ export function ZoneBIM({ report }: { report: RisqueReport | null }) {
   const [loaded, setLoaded] = useState(false);
   const [attempt, setAttempt] = useState(0);
   const navigate = useNavigate();
+  // Nouvel horodatage à chaque diagnostic et à chaque « Recharger ».
+  const bust = useMemo(() => Date.now(), [attempt, report?.adresse_saisie]);
 
   /* Nouveau diagnostic ou rechargement manuel → on réaffiche le voile de
      chargement le temps que l'iframe remonte. */
@@ -37,11 +39,13 @@ export function ZoneBIM({ report }: { report: RisqueReport | null }) {
   }
 
   const batiment = report.bdnb?.batiment || null;
-  // `_r` : cache-buster — l'endpoint répond Cache-Control max-age=3600, sans
-  // lui le bouton « Recharger » resservirait le .glb du cache navigateur.
+  // `_r` : cache-buster horodaté — un compteur (0,1,2…) retombait sur des
+  // URL déjà mises en cache lors de visites précédentes (l'endpoint servait
+  // alors max-age=3600) et resservait d'anciens modèles. L'horodatage
+  // garantit une URL inédite à chaque diagnostic et à chaque « Recharger ».
   const modelUrl = `${API}/diagnostic/adresse/gltf?q=${encodeURIComponent(
     report.adresse_saisie
-  )}&_r=${attempt}`;
+  )}&_r=${bust}`;
   const iframeSrc = `/bim-viewer/projects/remote?model=${encodeURIComponent(modelUrl)}`;
   const iframeKey = `${attempt}-${report.adresse_saisie}`;
 

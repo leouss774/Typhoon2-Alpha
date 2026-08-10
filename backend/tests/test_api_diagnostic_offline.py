@@ -493,6 +493,46 @@ def test_gltf_builder_bim_fenetres_et_porte():
     assert not any(m["name"] == "Vitrage" for m in doc3["materials"])
 
 
+def test_gltf_builder_bim_sol_urbain_avec_route():
+    """Mode immeuble : le sol devient un trottoir dallé (au-dessus de l'herbe
+    du viewer) et une bande de chaussée est posée le long de la façade côté
+    rue (entree_facade). Une maison (immeuble=False) garde le gazon et
+    n'embarque jamais le matériau Route."""
+    from app.digital_twin.gltf_builder import build_glb_bim
+
+    polygones = [
+        {"exterieur": [[0.0, 0.0], [20.0, 0.0], [20.0, 10.0], [0.0, 10.0]], "trous": []}
+    ]
+
+    def doc_of(glb):
+        json_len, _ = struct.unpack("<II", glb[12:20])
+        return json.loads(glb[20 : 20 + json_len].decode("utf-8"))
+
+    # Immeuble, rue au sud (+z dans le repère scène)
+    doc = doc_of(build_glb_bim(
+        polygones, hauteur_m=18.0, label="test", floors=6,
+        pente_toit_deg=0.0, entree_facade="murs_sud", immeuble=True,
+    ))
+    names = [m["name"] for m in doc["materials"]]
+    assert names[-2:] == ["Sol", "Route"]
+    prims = doc["meshes"][0]["primitives"]
+    route_pos = doc["accessors"][prims[names.index("Route")]["attributes"]["POSITION"]]
+    # La chaussée est au sud du bâtiment (z > 10, la façade sud) et surélevée
+    # au-dessus du trottoir (0.03 vs 0.02).
+    assert route_pos["min"][2] > 10.0, "route pas au sud du batiment"
+    assert abs(route_pos["min"][1] - 0.03) < 1e-6
+    sol_pos = doc["accessors"][prims[names.index("Sol")]["attributes"]["POSITION"]]
+    assert abs(sol_pos["min"][1] - 0.02) < 1e-6, "trottoir pas au-dessus de l'herbe du viewer"
+
+    # Maison : pas de Route, gazon sous le plan d'herbe du viewer (-0.05)
+    doc2 = doc_of(build_glb_bim(polygones, hauteur_m=6.0, label="test", floors=2))
+    names2 = [m["name"] for m in doc2["materials"]]
+    assert "Route" not in names2
+    prims2 = doc2["meshes"][0]["primitives"]
+    sol2 = doc2["accessors"][prims2[names2.index("Sol")]["attributes"]["POSITION"]]
+    assert abs(sol2["min"][1] + 0.05) < 1e-6
+
+
 def test_gltf_builder_bim_trou_cour_interieure():
     """Un trou (cour intérieure) dans l'emprise : la surface triangulée des
     planchers vaut exterieur - trou, et aucun triangle n'empiète sur la cour

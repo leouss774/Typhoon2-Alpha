@@ -371,8 +371,9 @@ def _add_ring_walls(
     tris: list[tuple[int, int, int]],
     ring: list[Point2D],
     height: float,
+    y0: float = 0.0,
 ) -> None:
-    """One wall quad per edge of the ring.
+    """One wall quad per edge of the ring, from y0 up to height.
 
     Winding convention (footprint.py) : exterior rings are CCW, holes (cours
     intérieures) are CW. The horizontal normal (dz, -dx) of a CCW edge points
@@ -388,8 +389,8 @@ def _add_ring_walls(
         if length < 1e-9:
             continue
         nx, nz = dz / length, -dx / length
-        a = (x0, 0.0, z0)
-        b = (x1, 0.0, z1)
+        a = (x0, y0, z0)
+        b = (x1, y0, z1)
         c = (x1, height, z1)
         d = (x0, height, z0)
         _push_quad(verts, tris, a, b, c, d, (nx, 0.0, nz))
@@ -901,10 +902,18 @@ _TOIT_TEXTURES: dict[str, str] = {
 _MUR_TEXTURE_DEFAUT = "mur_defaut.jpg"
 _TOIT_TEXTURE_DEFAUT = "toit_defaut.jpg"
 
-# Textures fixes (indépendantes de la BDNB) des autres surfaces.
+# Textures fixes (indépendantes de la BDNB) des autres surfaces. Le sol
+# dépend du contexte : gazon pour une maison (campagne/périurbain), dallage
+# de trottoir + route asphaltée côté rue pour un immeuble (urbain).
 _SOL_TEXTURE = "sol_herbe.jpg"
+_SOL_TROTTOIR_TEXTURE = "sol_trottoir.jpg"
+_SOL_ROUTE_TEXTURE = "sol_route.jpg"
 _PLANCHER_TEXTURE = "plancher_granite.jpg"
 _PORTE_TEXTURE = "porte.jpg"
+
+# Dimensions de la scène de rue (mode immeuble), en mètres.
+_TROTTOIR_LARGEUR_M = 6.0   # bande de trottoir entre la façade et la route
+_ROUTE_LARGEUR_M = 8.0      # chaussée le long de la façade côté rue
 
 # Taille "monde" d'un carreau de texture, en mètres (une texture 1K seamless
 # répétée tous les N mètres). Clé = nom de matériau glTF.
@@ -913,6 +922,19 @@ _TEXTURE_TILE_M: dict[str, float] = {
     "Toiture": 3.0,
     "Sol": 5.0,
     "Planchers": 2.0,
+}
+
+# Affinage par fichier : l'échelle dépend du motif réel de l'image (une
+# brique fait ~6 cm de haut, un bloc de pierre de taille ~60 cm…). Sans
+# entrée ici, c'est le pas du matériau (_TEXTURE_TILE_M) qui s'applique.
+_TEXTURE_TILE_PAR_FICHIER: dict[str, float] = {
+    "mur_brique.jpg": 1.6,
+    "mur_agglomere.jpg": 2.2,
+    "mur_defaut.jpg": 2.2,
+    "mur_bois.jpg": 2.0,
+    "toit_tuiles.jpg": 2.0,
+    "toit_ardoises.jpg": 2.2,
+    "toit_zinc.jpg": 2.5,
 }
 
 # Matériaux dont la texture est AJUSTÉE à la partie (une seule occurrence de
@@ -1086,7 +1108,10 @@ def _build_bim_parts(
                 d = (rx0, ridge_h, rz0)
                 _push_quad(roof_v, roof_t, a, b, c, d, (0.0, 1.0, 0.0))
     else:
-        # Toit plat : dalle triangulée (avec trous) à hauteur ridge_h.
+        # Toit plat : dalle triangulée (avec trous) à hauteur ridge_h,
+        # bordée d'un acrotère (muret périphérique de 0.8 m) — la
+        # signature des toitures-terrasses réelles, sans lui la dalle
+        # ressemble à une boîte tranchée au couteau.
         for poly in polygones:
             ext = poly.get("exterieur") or []
             if len(ext) < 3:
@@ -1099,6 +1124,13 @@ def _build_bim_parts(
                 roof_v.append((ring[c][0], ridge_h, ring[c][1]))
                 roof_t.append((base, base + 1, base + 2))
                 base += 3
+            # Acrotère sur le contour extérieur ET les cours intérieures
+            # (le matériau Toiture est double face : visible des deux côtés).
+            acro = _ensure_ccw(list(ext))
+            _add_ring_walls(roof_v, roof_t, acro, ridge_h + 0.8, y0=ridge_h)
+            for trou in poly.get("trous") or []:
+                if len(trou) >= 3:
+                    _add_ring_walls(roof_v, roof_t, list(trou), ridge_h + 0.8, y0=ridge_h)
 
     # -- Floor slabs : un plancher par niveau (visible en coupe) --
     # Bornés sous l'avant-toit : le dernier plancher ne doit pas dépasser
@@ -1271,7 +1303,7 @@ def _serialise_parts_glb(
             if mat_def.get("name") in _TEXTURE_FIT_MATERIALS:
                 uvs = _fit_uvs(vertices)
             else:
-                tile_m = _TEXTURE_TILE_M.get(mat_def.get("name", ""), 3.0)
+                tile_m = mat_def.get("_tile_m") or _TEXTURE_TILE_M.get(mat_def.get("name", ""), 3.0)
                 uvs = _planar_uvs(vertices, triangles, tile_m)
             uv_data: list[float] = []
             for u, v in uvs:
@@ -1307,6 +1339,7 @@ def _serialise_parts_glb(
     samplers: list[dict[str, Any]] = []
     texture_index_by_path: dict[str, int] = {}
     for mat_def in materials:
+        mat_def.pop("_tile_m", None)
         tex_path = mat_def.pop("_texture", None)
         if tex_path is None:
             continue
@@ -1373,7 +1406,10 @@ def _serialise_parts_glb(
 
 
 def _materials_for(
-    mat_mur: str | None, mat_toit: str | None, immeuble: bool = False
+    mat_mur: str | None,
+    mat_toit: str | None,
+    immeuble: bool = False,
+    toit_plat: bool = False,
 ) -> list[dict[str, Any]]:
     mur = _couleur_slug(mat_mur, _MUR_COULEURS, _DEFAUT_MUR, _MUR_PRIORITE)
     toit = _couleur_slug(mat_toit, _TOIT_COULEURS, _DEFAUT_TOIT, _TOIT_PRIORITE)
@@ -1400,6 +1436,9 @@ def _materials_for(
     if tex_mur is not None:
         murs_mat["_texture"] = tex_mur
         murs_mat["pbrMetallicRoughness"]["baseColorFactor"] = [1.0, 1.0, 1.0, 1.0]
+        tile = _TEXTURE_TILE_PAR_FICHIER.get(tex_mur.name)
+        if tile is not None:
+            murs_mat["_tile_m"] = tile
 
     toit_mat: dict[str, Any] = {
         "name": "Toiture",
@@ -1410,10 +1449,20 @@ def _materials_for(
         },
         "doubleSided": True,
     }
-    tex_toit = _texture_for_slug(mat_toit, _TOIT_TEXTURES, _TOIT_TEXTURE_DEFAUT, _TOIT_PRIORITE)
+    # Toit plat au matériau indéterminé : dalles béton de toiture-terrasse
+    # plutôt qu'un gris uni (il n'existe pas de fichier toit_defaut).
+    tex_toit = _texture_for_slug(
+        mat_toit,
+        _TOIT_TEXTURES,
+        "toit_beton.jpg" if toit_plat else _TOIT_TEXTURE_DEFAUT,
+        _TOIT_PRIORITE,
+    )
     if tex_toit is not None:
         toit_mat["_texture"] = tex_toit
         toit_mat["pbrMetallicRoughness"]["baseColorFactor"] = [1.0, 1.0, 1.0, 1.0]
+        tile = _TEXTURE_TILE_PAR_FICHIER.get(tex_toit.name)
+        if tile is not None:
+            toit_mat["_tile_m"] = tile
 
     mats: list[dict[str, Any]] = [
         murs_mat,
@@ -1466,15 +1515,43 @@ def _materials_for(
         },
     ]
 
-    # Textures fixes (indépendantes de la BDNB) : sol, planchers, porte.
-    # Même contrat fail-soft : fichier absent → couleur unie conservée.
-    statiques = {"Sol": _SOL_TEXTURE, "Planchers": _PLANCHER_TEXTURE, "Porte": _PORTE_TEXTURE}
+    # Matériau de la chaussée (mode immeuble). Émis seulement si la partie
+    # "route" a de la géométrie (le filtre used-parts de _serialise_parts_glb
+    # l'écarte sinon) — les maisons n'embarquent donc jamais ce matériau.
+    mats.append({
+        "name": "Route",
+        "pbrMetallicRoughness": {
+            "baseColorFactor": [0.18, 0.18, 0.19, 1.0],
+            "metallicFactor": 0.0,
+            "roughnessFactor": 1.0,
+        },
+        "doubleSided": True,
+    })
+
+    # Textures fixes (indépendantes de la BDNB) : sol, route, planchers,
+    # porte. Même contrat fail-soft : fichier absent → couleur unie.
+    # "_tile_m" (clé privée, retirée à la sérialisation) écrase le pas de
+    # répétition par défaut du matériau.
+    statiques: dict[str, tuple[str, float | None]] = {
+        "Sol": (_SOL_TROTTOIR_TEXTURE, 2.5) if immeuble else (_SOL_TEXTURE, None),
+        "Route": (_SOL_ROUTE_TEXTURE, 4.0),
+        "Planchers": (_PLANCHER_TEXTURE, None),
+        "Porte": (_PORTE_TEXTURE, None),
+    }
     for mat_def in mats:
-        filename = statiques.get(mat_def["name"])
-        tex = _texture_file(filename) if filename else None
+        entry = statiques.get(mat_def["name"])
+        if not entry:
+            continue
+        filename, tile_m = entry
+        tex = _texture_file(filename)
         if tex is not None:
             mat_def["_texture"] = tex
             mat_def["pbrMetallicRoughness"]["baseColorFactor"] = [1.0, 1.0, 1.0, 1.0]
+            if tile_m is not None:
+                mat_def["_tile_m"] = tile_m
+        elif mat_def["name"] == "Sol" and immeuble:
+            # Pas de texture trottoir : gris minéral plutôt que le vert gazon.
+            mat_def["pbrMetallicRoughness"]["baseColorFactor"] = [0.62, 0.61, 0.59, 1.0]
 
     return mats
 
@@ -1563,16 +1640,23 @@ def build_glb_bim(
     )
 
     # -- Sol : plan d'assise sous le bâtiment (contexte visuel, évite la
-    # maison "flottante" dans le viewer). Légèrement sous y=0 pour ne pas
-    # z-fighter avec la dalle du rez-de-chaussée.
+    # maison "flottante" dans le viewer).
+    # Maison : gazon à -5 cm (sous le plan d'herbe du viewer, il s'y fond).
+    # Immeuble : trottoir dallé à +2 cm (AU-DESSUS de l'herbe du viewer) +
+    # bande de chaussée asphaltée le long de la façade côté rue (+3 cm),
+    # déduite du point d'adresse géocodé (entree_facade).
     all_pts = [pt for poly in polygones for pt in (poly.get("exterieur") or [])]
     if all_pts:
         xs = [p[0] for p in all_pts]
         zs = [p[1] for p in all_pts]
-        marge = max(12.0, 0.6 * max(max(xs) - min(xs), max(zs) - min(zs)))
-        x0, x1 = min(xs) - marge, max(xs) + marge
-        z0, z1 = min(zs) - marge, max(zs) + marge
-        y_sol = -0.05
+        bx0, bx1 = min(xs), max(xs)
+        bz0, bz1 = min(zs), max(zs)
+        marge = max(12.0, 0.6 * max(bx1 - bx0, bz1 - bz0))
+        if immeuble:
+            marge = max(marge, _TROTTOIR_LARGEUR_M + _ROUTE_LARGEUR_M + 6.0)
+        x0, x1 = bx0 - marge, bx1 + marge
+        z0, z1 = bz0 - marge, bz1 + marge
+        y_sol = 0.02 if immeuble else -0.05
         sol_v: list[Point3D] = []
         sol_t: list[tuple[int, int, int]] = []
         _push_quad(
@@ -1582,7 +1666,35 @@ def build_glb_bim(
         )
         parts["sol"] = (sol_v, sol_t)
 
-    materials = _materials_for(mat_mur, mat_toit, immeuble=immeuble)
+        if immeuble:
+            # Chaussée : bande parallèle à la façade rue, à _TROTTOIR_LARGEUR_M
+            # du bâtiment. Convention repère : x = Est, z = Sud (nord -> -z).
+            entree_o = str(entree_facade or "").lower().replace("murs_", "").strip()
+            if entree_o not in _ORIENTATIONS:
+                entree_o = "sud"
+            t, r = _TROTTOIR_LARGEUR_M, _ROUTE_LARGEUR_M
+            if entree_o == "sud":
+                rx0, rx1, rz0, rz1 = x0, x1, bz1 + t, bz1 + t + r
+            elif entree_o == "nord":
+                rx0, rx1, rz0, rz1 = x0, x1, bz0 - t - r, bz0 - t
+            elif entree_o == "est":
+                rx0, rx1, rz0, rz1 = bx1 + t, bx1 + t + r, z0, z1
+            else:  # ouest
+                rx0, rx1, rz0, rz1 = bx0 - t - r, bx0 - t, z0, z1
+            y_route = 0.03
+            route_v: list[Point3D] = []
+            route_t: list[tuple[int, int, int]] = []
+            _push_quad(
+                route_v, route_t,
+                (rx0, y_route, rz0), (rx1, y_route, rz0),
+                (rx1, y_route, rz1), (rx0, y_route, rz1),
+                (0.0, 1.0, 0.0),
+            )
+            parts["route"] = (route_v, route_t)
+
+    materials = _materials_for(
+        mat_mur, mat_toit, immeuble=immeuble, toit_plat=not roof_pitched
+    )
 
     return _serialise_parts_glb(parts, materials, label)
 
@@ -1641,6 +1753,14 @@ def build_glb_from_bdnb(
             ratio_vitrage /= 100.0
     if not facades_vitrage or not ratio_vitrage:
         facades_vitrage, ratio_vitrage = [], None
+
+    # Enrichissement visuel : la couverture DPE des baies vitrées est très
+    # partielle — sans donnée, on pose une grille de fenêtres par défaut sur
+    # les quatre façades (ratio modeste) plutôt que des façades aveugles.
+    # Purement cosmétique : aucune donnée de risque n'est inventée.
+    if not facades_vitrage:
+        facades_vitrage = ["murs_nord", "murs_sud", "murs_est", "murs_ouest"]
+        ratio_vitrage = 0.12
 
     # -- Porte d'entree : facade la plus proche du point d'adresse geocode --
     entree_facade: str | None = None
