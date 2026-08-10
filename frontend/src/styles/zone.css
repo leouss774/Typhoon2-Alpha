@@ -2710,6 +2710,41 @@
   font-size: 10px;
   color: var(--md-sys-color-on-surface-variant);
 }
+.report-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+.report-official {
+  --md-text-button-label-text-size: 12px;
+}
+.report-export-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 12px 0 0;
+  padding: 10px 14px;
+  border: 1px solid color-mix(in srgb, var(--md-sys-color-error) 45%, var(--md-sys-color-outline-variant));
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--md-sys-color-error-container) 55%, transparent);
+  color: var(--md-sys-color-on-error-container);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.report-export-error md-icon {
+  --md-icon-size: 17px;
+  color: var(--md-sys-color-error);
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.report-regenerate {
+  --md-text-button-label-text-size: 12px;
+  flex-shrink: 0;
+}
+.report-regenerate:hover {
+  color: var(--md-sys-color-primary);
+}
 .report-export {
   --md-elevated-button-label-text-size: 12px;
   flex-shrink: 0;
@@ -3833,6 +3868,12 @@
     flex-direction: column;
     align-items: flex-start;
     gap: 12px;
+  }
+  .report-actions {
+    width: 100%;
+  }
+  .report-actions > * {
+    flex: 1;
   }
   .report-export {
     width: 100%;

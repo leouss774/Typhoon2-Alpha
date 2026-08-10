@@ -123,6 +123,15 @@ export function Zone() {
   const [rapport, setRapport] = useState<RapportNarratif | null>(null);
   const [rapportLoading, setRapportLoading] = useState(false);
   const [rapportError, setRapportError] = useState<RapportError | null>(null);
+  /* true quand l'étape Rapport IA a été atteinte pendant le chargement des
+     recommandations : le rapport n'est généré qu'une fois celles-ci prêtes. */
+  const [rapportWaiting, setRapportWaiting] = useState(false);
+  /* Export PDF du rapport IA (jsPDF côté client) — vrai bouton de téléchargement. */
+  const [exportingPdf, setExportingPdf] = useState(false);
+  const [exportPdfError, setExportPdfError] = useState<string | null>(null);
+  /* Intention « régénération forcée » mémorisée quand la relance est différée
+     par l'attente des recommandations (sinon force serait perdu). */
+  const rapportForceRef = useRef(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [visibleLayerKeys, setVisibleLayerKeys] = useState<ReadonlySet<string>>(new Set());
 
@@ -305,6 +314,20 @@ export function Zone() {
     }
   }
 
+  /* Rapport IA en attente : si l'étape 5 a été atteinte pendant le chargement
+     des recommandations détaillées, on génère le rapport dès qu'elles sont
+     prêtes (même en cas d'échec : le rapport reste générable). L'intention
+     « force » est conservée pour la relance (Régénérer). */
+  useEffect(() => {
+    if (rapportWaiting && !detailedRecommendationsLoading && step === 5 && report) {
+      const force = rapportForceRef.current;
+      rapportForceRef.current = false;
+      setRapportWaiting(false);
+      void loadRapport(force);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rapportWaiting, detailedRecommendationsLoading, step, report]);
+
   /* Conseil actionnable selon le code d'erreur renvoyé par le backend. */
   function hintForRapportError(code: string | undefined, status: number): string | undefined {
     if (code === 'mistral_api_key_manquante') {
@@ -332,6 +355,9 @@ export function Zone() {
     }
     setStepError(false);
     setStep(i);
+    /* Quitter l'étape Rapport IA avant la fin des recommandations : on retire
+       l'état « en attente » (sera redéclenché si l'on revient à l'étape 5). */
+    if (i !== 5) setRapportWaiting(false);
     if (i === 0) window.setTimeout(() => heroInputRef.current?.focus(), 80);
     if (i === 6 && report) void loadRapport();
   }
@@ -386,9 +412,28 @@ export function Zone() {
   );
 
   const wmsActive = !!report && report.aleas.some((a) => WMS_LAYER_MAP[a.code]);
+  /* PDF officiel Géorisques (ERRIAL) — lien secondaire conservé. */
   const pdfUrl = report
     ? `${API}/diagnostic/adresse/rapport-pdf?lat=${report.lat}&lon=${report.lon}`
     : '#';
+
+  /* ── Export PDF du rapport IA (client-side, jsPDF importé à la demande) ── */
+  async function handleExportPdf() {
+    if (!report || !rapport || exportingPdf) return;
+    setExportingPdf(true);
+    setExportPdfError(null);
+    try {
+      const { exportRapportPdf } = await import('../zone/pdf-export');
+      await exportRapportPdf(report, rapport);
+    } catch (err) {
+      console.error('Export PDF du rapport IA échoué :', err);
+      setExportPdfError(
+        "L'export PDF a échoué dans le navigateur. Réessayez — si le problème persiste, utilisez le lien « PDF officiel Géorisques »."
+      );
+    } finally {
+      setExportingPdf(false);
+    }
+  }
 
   const stripText = report
     ? `${report.adresse_normalisee} · ${report.alea_count} aléa(s) · 0 simulés`
@@ -778,6 +823,16 @@ export function Zone() {
                   <p>Mistral analyse les données Géorisques de {report.adresse_normalisee}.</p>
                   <md-linear-progress indeterminate></md-linear-progress>
                 </div>
+              ) : rapportWaiting && !rapport ? (
+                <div className="report-empty">
+                  <md-icon>hourglass_top</md-icon>
+                  <h2>Analyse des recommandations en cours…</h2>
+                  <p>
+                    Le rapport IA sera généré dès la fin de l'analyse détaillée
+                    du bien.
+                  </p>
+                  <md-linear-progress indeterminate></md-linear-progress>
+                </div>
               ) : rapportError ? (
                 <div className="report-error" role="alert">
                   <div className="report-error-icon">
@@ -827,15 +882,43 @@ export function Zone() {
                         {report.date_generation}
                       </p>
                     </div>
-                    <md-elevated-button
-                      className="pdf-btn report-export"
-                      href={pdfUrl}
-                      target="_blank"
-                      rel="noopener"
-                    >
-                      <md-icon slot="icon">picture_as_pdf</md-icon>
-                      Exporter en PDF
-                    </md-elevated-button>
+                    <div className="report-actions">
+                      <md-text-button
+                        className="report-regenerate"
+                        aria-label="Régénérer le rapport IA (nouvel appel Mistral, sans cache)"
+                        title="Régénérer avec le prompt actuel"
+                        onClick={() => void loadRapport(true)}
+                      >
+                        <md-icon slot="icon">refresh</md-icon>
+                        Régénérer
+                      </md-text-button>
+                      <md-elevated-button
+                        className="pdf-btn report-export"
+                        disabled={exportingPdf}
+                        aria-busy={exportingPdf || undefined}
+                        onClick={handleExportPdf}
+                      >
+                        <md-icon slot="icon">
+                          {exportingPdf ? 'hourglass_top' : 'picture_as_pdf'}
+                        </md-icon>
+                        {exportingPdf ? 'Génération du PDF…' : 'Exporter en PDF'}
+                      </md-elevated-button>
+                      <md-text-button
+                        className="report-official"
+                        href={pdfUrl}
+                        target="_blank"
+                        rel="noopener"
+                        title="PDF officiel Géorisques (ERRIAL) pour ces coordonnées"
+                      >
+                        PDF officiel Géorisques
+                      </md-text-button>
+                    </div>
+                    {exportPdfError && (
+                      <p className="report-export-error" role="alert">
+                        <md-icon>error</md-icon>
+                        <span>{exportPdfError}</span>
+                      </p>
+                    )}
                   </header>
 
                   <p className="report-intro">{rapport.introduction}</p>
