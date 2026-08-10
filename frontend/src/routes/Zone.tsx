@@ -146,6 +146,9 @@ export function Zone() {
   /* true quand l'étape Rapport IA a été atteinte pendant le chargement des
      recommandations : le rapport n'est généré qu'une fois celles-ci prêtes. */
   const [rapportWaiting, setRapportWaiting] = useState(false);
+  /* Export PDF du rapport IA (jsPDF côté client) — vrai bouton de téléchargement. */
+  const [exportingPdf, setExportingPdf] = useState(false);
+  const [exportPdfError, setExportPdfError] = useState<string | null>(null);
   /* Intention « régénération forcée » mémorisée quand la relance est différée
      par l'attente des recommandations (sinon force serait perdu). */
   const rapportForceRef = useRef(false);
@@ -508,9 +511,28 @@ export function Zone() {
   );
 
   const wmsActive = !!report && report.aleas.some((a) => WMS_LAYER_MAP[a.code]);
+  /* PDF officiel Géorisques (ERRIAL) — lien secondaire conservé. */
   const pdfUrl = report
     ? `${API}/diagnostic/adresse/rapport-pdf?lat=${report.lat}&lon=${report.lon}`
     : '#';
+
+  /* ── Export PDF du rapport IA (client-side, jsPDF importé à la demande) ── */
+  async function handleExportPdf() {
+    if (!report || !rapport || exportingPdf) return;
+    setExportingPdf(true);
+    setExportPdfError(null);
+    try {
+      const { exportRapportPdf } = await import('../zone/pdf-export');
+      await exportRapportPdf(report, rapport);
+    } catch (err) {
+      console.error('Export PDF du rapport IA échoué :', err);
+      setExportPdfError(
+        "L'export PDF a échoué dans le navigateur. Réessayez — si le problème persiste, utilisez le lien « PDF officiel Géorisques »."
+      );
+    } finally {
+      setExportingPdf(false);
+    }
+  }
 
   const stripText = report
     ? `${report.adresse_normalisee} · ${report.alea_count} aléa(s) · 0 simulés`
@@ -987,14 +1009,31 @@ export function Zone() {
                       </md-text-button>
                       <md-elevated-button
                         className="pdf-btn report-export"
+                        disabled={exportingPdf}
+                        aria-busy={exportingPdf || undefined}
+                        onClick={handleExportPdf}
+                      >
+                        <md-icon slot="icon">
+                          {exportingPdf ? 'hourglass_top' : 'picture_as_pdf'}
+                        </md-icon>
+                        {exportingPdf ? 'Génération du PDF…' : 'Exporter en PDF'}
+                      </md-elevated-button>
+                      <md-text-button
+                        className="report-official"
                         href={pdfUrl}
                         target="_blank"
                         rel="noopener"
+                        title="PDF officiel Géorisques (ERRIAL) pour ces coordonnées"
                       >
-                        <md-icon slot="icon">picture_as_pdf</md-icon>
-                        Exporter en PDF
-                      </md-elevated-button>
+                        PDF officiel Géorisques
+                      </md-text-button>
                     </div>
+                    {exportPdfError && (
+                      <p className="report-export-error" role="alert">
+                        <md-icon>error</md-icon>
+                        <span>{exportPdfError}</span>
+                      </p>
+                    )}
                   </header>
 
                   <p className="report-intro">{rapport.introduction}</p>
