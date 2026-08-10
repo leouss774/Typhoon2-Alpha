@@ -134,7 +134,38 @@ export interface RisqueReport {
   aleas: AleaDetail[];
   erreurs_partielles: string[];
   bdnb?: BdnbAsset | null;
+  recommandations?: RecommandationsIA | null;
   avertissement?: string;
+}
+
+export interface RecommandationsIA {
+  resume: string;
+  actions_prioritaires: string[];
+  points_vigilance?: string[];
+  modele?: string;
+  metadata?: Record<string, unknown>;
+}
+
+// ---------------------------------------------------------------------------
+// Risques principaux (panneau « Comprendre les risques »)
+// Contrat backend app/agents/risques_principaux.py — top 3 par aléa, scores
+// déterministes du moteur (F×V) + narration LLM (explication, facteurs
+// aggravants, zone la plus exposée). `niveau` utilise les clés D03.
+// ---------------------------------------------------------------------------
+
+export interface RisquePrincipal {
+  code: string;
+  libelle: string;
+  score: number;
+  niveau?: string | null;
+  explication?: string;
+  facteurs_aggravants?: string[];
+  zone_la_plus_exposee?: string | null;
+}
+
+export interface RisquesPrincipaux {
+  risques: RisquePrincipal[];
+  source?: string; // moteur_deterministe | moteur_deterministe_et_llm
 }
 
 // ---------------------------------------------------------------------------

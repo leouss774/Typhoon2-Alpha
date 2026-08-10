@@ -22,6 +22,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes import artisans, diagnostic, health, property_id as property_id_router
 from app.api.routes import geocoding as geocoding_router
+from app.api.routes import simulation as simulation_router
 from app.core.logging import configure_logging, get_logger
 from app.property_id.service import init_service as init_property_id_service
 from app.recommandations.service import load_index
@@ -44,6 +45,7 @@ app.include_router(artisans.router)
 app.include_router(artisans.legacy_router)
 app.include_router(property_id_router.router)
 app.include_router(geocoding_router.router, prefix="/api", tags=["geocoding"])
+app.include_router(simulation_router.router, tags=["simulation"])
 
 
 @app.on_event("startup")

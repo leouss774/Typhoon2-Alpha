@@ -467,9 +467,17 @@ def test_gltf_builder_bim_fenetres_et_porte():
     doc2 = json.loads(glb2[20 : 20 + json_len2].decode("utf-8"))
     names2 = [m["name"] for m in doc2["materials"]]
     assert names2 == ["Murs", "Toiture", "Planchers", "Cadres", "Vitrage", "Porte", "Sol"]
-    prims2 = doc2["meshes"][0]["primitives"]
-    porte_pos = doc2["accessors"][prims2[5]["attributes"]["POSITION"]]
+    # build_glb_from_bdnb emet une node par partie (etages separes) : la
+    # porte vit dans sa propre mesh "Porte", pas dans la primitive 5.
+    porte_mesh = next(m for m in doc2["meshes"] if m["name"] == "Porte")
+    porte_pos = doc2["accessors"][porte_mesh["primitives"][0]["attributes"]["POSITION"]]
     assert porte_pos["count"] > 0, "porte absente malgre un point d'adresse fourni"
+    # Les etages sont bien des nodes independantes (nb_niveau=2 ; la pente
+    # raide du toit peut absorber la derniere bande -> au moins une node
+    # "Etage" + autant de meshes que de nodes).
+    node_names2 = [n["name"] for n in doc2["nodes"]]
+    assert any(n.startswith("Etage ") for n in node_names2), node_names2
+    assert len(doc2["meshes"]) == len(doc2["nodes"])
 
     # --- La porte est INDEPENDANTE du vitrage DPE : un batiment sans donnees
     # de baies vitrees (couverture DPE partielle) garde sa porte cote rue.
@@ -568,6 +576,69 @@ def test_gltf_builder_bim_deux_trous():
     assert abs(area - 582.0) < 1.0, f"aire {area} != 582"
 
 
+def test_gltf_builder_bim_etages_separes_en_noeuds():
+    """etages_separes + parts_as_nodes : chaque etage devient une node glTF
+    independante ("Etage 1".."Etage N") avec sa propre mesh — le decoupage
+    par niveau requis par la simulation sismique du viewer (cisaillement /
+    effondrement en corps rigides, sans avoir a decouper le maillage cote
+    client)."""
+    from app.digital_twin.gltf_builder import build_glb_bim
+
+    polygones = [
+        {"exterieur": [[0.0, 0.0], [20.0, 0.0], [20.0, 10.0], [0.0, 10.0]], "trous": []}
+    ]
+    # Pente douce (20°) : l'avant-toit reste au-dessus du dernier niveau,
+    # donc les 3 bandes d'etage survivent (une pente raide les absorberait
+    # geometriquement — comportement correct, teste ailleurs). Fenetres +
+    # porte incluses : regression du mapping materiaux par NOM de partie
+    # (avec etages_separes il y a plus de parties que de materiaux — un
+    # IndexError sur les materiaux etait leve).
+    glb = build_glb_bim(
+        polygones,
+        hauteur_m=8.0,
+        label="test",
+        floors=3,
+        pente_toit_deg=20.0,
+        ridge_axis_deg=0.0,
+        facades_avec_vitrage=["murs_est", "murs_ouest", "murs_nord"],
+        ratio_vitrage=0.15,
+        entree_facade="murs_sud",
+        etages_separes=True,
+        parts_as_nodes=True,
+    )
+    assert glb is not None
+    json_len, _ = struct.unpack("<II", glb[12:20])
+    doc = json.loads(glb[20 : 20 + json_len].decode("utf-8"))
+
+    node_names = [n["name"] for n in doc["nodes"]]
+    etages = [n for n in node_names if n.startswith("Etage ")]
+    assert len(etages) == 3, f"nodes inattendues : {node_names}"
+    assert "Toiture" in node_names
+    assert "Planchers" in node_names
+
+    # Une mesh par node, dans le meme ordre (node[i].mesh == i)
+    assert len(doc["meshes"]) == len(doc["nodes"])
+    assert [m["name"] for m in doc["meshes"]] == node_names
+    # Materiaux dedupliques (Murs partage par les etages) : les 6 restent
+    # et chaque primitive pointe un index valide.
+    assert [m["name"] for m in doc["materials"]] == ["Murs", "Toiture", "Planchers", "Cadres", "Vitrage", "Porte", "Sol"]
+    for mesh in doc["meshes"]:
+        mat = mesh["primitives"][0].get("material")
+        assert mat is not None and mat < len(doc["materials"])
+
+    # Chaque etage possede sa propre geometrie dans une bande verticale
+    # distincte : Etage 1 commence au sol, Etage 3 est au-dessus.
+    bands: dict[str, tuple[list[float], list[float]]] = {}
+    for node, mesh in zip(doc["nodes"], doc["meshes"]):
+        prim = mesh["primitives"][0]
+        pos = doc["accessors"][prim["attributes"]["POSITION"]]
+        assert pos["count"] > 0
+        bands[node["name"]] = (pos["min"], pos["max"])
+
+    assert abs(bands["Etage 1"][0][1] - 0.0) < 1e-6, "Etage 1 ne part pas du sol"
+    assert bands["Etage 3"][1][1] > bands["Etage 1"][1][1] + 1.0, "bandes d'etage non empilees"
+
+
 def test_rapport_narratif_erreurs_contractees():
     """POST /diagnostic/adresse/rapport : le contrat d'erreur est structure —
     (error, detail, cause) — et distingue clé API manquante (503) d'un échec
@@ -628,5 +699,6 @@ if __name__ == "__main__":
     test_gltf_builder_utilise_lemprise_bdnb_reelle()
     test_gltf_builder_faces_orientees_vers_lexterieur()
     test_gltf_builder_bim_fenetres_et_porte()
+    test_gltf_builder_bim_etages_separes_en_noeuds()
     test_rapport_narratif_erreurs_contractees()
     print("\nTOUS LES TESTS test_api_diagnostic_offline PASSENT")

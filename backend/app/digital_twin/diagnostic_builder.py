@@ -44,19 +44,21 @@ def build_diagnostic(
     risk_result: dict[str, Any],
     formulaire: dict[str, Any] | None = None,
     interpretations: dict[str, Any] | None = None,
+    risques_principaux: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Assemble le diagnostic final de vulnérabilité climatique.
 
     Combine les données collectées (building_data), les scores de risque
-    (risk_result), les interprétations LLM (interpretations) et la géométrie
-    du bâtiment dans un dictionnaire unique transmis au frontend.
+    (risk_result), les interprétations LLM (interpretations), la synthèse des
+    risques principaux (risques_principaux) et la géométrie du bâtiment dans
+    un dictionnaire unique transmis au frontend.
 
     Returns
     -------
     dict
         Le diagnostic complet avec adresse, bien, geometry, score_global,
         zones (enrichies des conclusions interprétées), projection_2050,
-        climat, marché (DVF), et métadonnées de construction.
+        risques_principaux, climat, marché (DVF), et métadonnées.
     """
     logger.info("diagnostic_builder -- assemblage du diagnostic")
 
@@ -120,6 +122,7 @@ def build_diagnostic(
         "score_global": risk_result["score_global"],
         "zones": zones_enriched,
         "projection_2050": risk_result["projection_2050"],
+        "risques_principaux": risques_principaux or {"risques": [], "source": "moteur_deterministe"},
         "climat": {
             "2050": {
                 "temperature_max_projetee_c": projection.get("temperature_max_absolue_c") if projection.get("temperature_max_absolue_c") is not None else projection.get("temperature_max_moyenne_c"),

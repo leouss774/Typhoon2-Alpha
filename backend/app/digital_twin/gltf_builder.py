@@ -380,6 +380,25 @@ def _add_ring_walls(
     OUTWARD, and of a CW edge points INTO the courtyard — so the same formula
     produces facade walls for the exterior and courtyard walls for holes.
     """
+    _add_ring_walls_band(verts, tris, ring, 0.0, height)
+
+
+def _add_ring_walls_band(
+    verts: list[Point3D],
+    tris: list[tuple[int, int, int]],
+    ring: list[Point2D],
+    y0: float,
+    y1: float,
+) -> None:
+    """Wall quads per edge of the ring between heights `y0` and `y1`.
+
+    Variante `_add_ring_walls` tronquee a une bande d'etage : les murs sont
+    decoupes en tranches horizontales (une par niveau) — c'est ce decoupage
+    qui permet, cote viewer, de deplacer/cisailer chaque etage independamment
+    (simulation sismique, effondrement en corps rigides).
+    """
+    if y1 - y0 < 1e-9:
+        return
     n = len(ring)
     for i in range(n):
         x0, z0 = ring[i]
@@ -391,8 +410,8 @@ def _add_ring_walls(
         nx, nz = dz / length, -dx / length
         a = (x0, y0, z0)
         b = (x1, y0, z1)
-        c = (x1, height, z1)
-        d = (x0, height, z0)
+        c = (x1, y1, z1)
+        d = (x0, y1, z0)
         _push_quad(verts, tris, a, b, c, d, (nx, 0.0, nz))
 
 
@@ -1051,9 +1070,16 @@ def _build_bim_parts(
     facades_avec_vitrage: list[str] | None = None,
     ratio_vitrage: float | None = None,
     entree_facade: str | None = None,
+    etages_separes: bool = False,
 ) -> dict[str, tuple[list[Point3D], list[tuple[int, int, int]]]]:
-    """Build the three mesh parts (murs, toiture, planchers) for a set of
-    footprint polygons (footprint.py convention: exterieur + trous)."""
+    """Build the mesh parts (murs ou etages, toiture, planchers) for a set of
+    footprint polygons (footprint.py convention: exterieur + trous).
+
+    `etages_separes` : quand True, la cle "murs" est remplacee par une cle
+    "etage_1".."etage_N" par niveau (bandes de murs decoupees en tranches
+    horizontales) — cote viewer, chaque etage devient un noeud independant
+    manipurable (cisaillement sismique, effondrement).
+    """
     walls_v: list[Point3D] = []
     walls_t: list[tuple[int, int, int]] = []
     roof_v: list[Point3D] = []
@@ -1061,22 +1087,44 @@ def _build_bim_parts(
     slab_v: list[Point3D] = []
     slab_t: list[tuple[int, int, int]] = []
 
-    # -- Walls : every polygon, exterior + courtyards (holes) --
-    for poly in polygones:
-        ext = poly.get("exterieur") or []
-        if len(ext) < 3:
-            continue
-        # Exterior CCW (footprint.py normalise) — normals point outward.
-        if _signed_area_2d(ext) < 0:
-            ext = list(reversed(ext))
-        _add_ring_walls(walls_v, walls_t, ext, eave_h)
-        for trou in poly.get("trous") or []:
-            if len(trou) < 3:
+    def _iter_rings() -> tuple[list[Point2D], ...]:
+        """(exterieur CCW, cours CW) normalises pour tous les polygones."""
+        rings: list[list[Point2D]] = []
+        for poly in polygones:
+            ext = poly.get("exterieur") or []
+            if len(ext) < 3:
                 continue
-            # Courtyard walls : CW ring → normals point INTO the hole.
-            if _signed_area_2d(trou) > 0:
-                trou = list(reversed(trou))
-            _add_ring_walls(walls_v, walls_t, trou, eave_h)
+            if _signed_area_2d(ext) < 0:
+                ext = list(reversed(ext))
+            rings.append(ext)
+            for trou in poly.get("trous") or []:
+                if len(trou) < 3:
+                    continue
+                if _signed_area_2d(trou) > 0:
+                    trou = list(reversed(trou))
+                rings.append(trou)
+        return tuple(rings)
+
+    # -- Walls : every polygon, exterior + courtyards (holes) --
+    if etages_separes and floors > 1:
+        # Une cle "etage_k" par niveau : bande [ (k-1)*level_h, min(k*level_h,
+        # eave_h) ]. Le dernier niveau est ecrête par l'avant-toit.
+        etages: dict[str, tuple[list[Point3D], list[tuple[int, int, int]]]] = {}
+        for k in range(floors):
+            y0 = k * level_h
+            y1 = min((k + 1) * level_h, eave_h)
+            if y1 - y0 < 0.15:
+                continue
+            ev: list[Point3D] = []
+            et: list[tuple[int, int, int]] = []
+            for ring in _iter_rings():
+                _add_ring_walls_band(ev, et, ring, y0, y1)
+            etages[f"etage_{k + 1}"] = (ev, et)
+        walls_part: dict[str, tuple[list[Point3D], list[tuple[int, int, int]]]] = etages
+    else:
+        for ring in _iter_rings():
+            _add_ring_walls(walls_v, walls_t, ring, eave_h)
+        walls_part = {"murs": (walls_v, walls_t)}
 
     # -- Roof --
     if roof_pitched and ridge_h > eave_h + 0.05:
@@ -1200,7 +1248,7 @@ def _build_bim_parts(
             )
 
     return {
-        "murs": (walls_v, walls_t),
+        **walls_part,
         "toiture": (roof_v, roof_t),
         "planchers": (slab_v, slab_t),
         "cadres": (frame_v, frame_t),
@@ -1213,25 +1261,53 @@ def _serialise_parts_glb(
     parts: dict[str, tuple[list[Point3D], list[tuple[int, int, int]]]],
     materials: list[dict[str, Any]],
     label: str,
+    parts_as_nodes: bool = False,
 ) -> bytes:
-    """Serialise several named mesh parts into ONE glTF mesh (one primitive
-    per part, each with its own material)."""
+    """Serialise several named mesh parts into a .glb.
+
+    Default : UNE mesh avec une primitive par partie (une seule node).
+    `parts_as_nodes=True` : chaque partie devient sa propre node + sa propre
+    mesh (nommee d'apres la partie) — le viewer peut alors deplacer chaque
+    etage independamment (simulation sismique / effondrement).
+    """
     primitives: list[dict[str, Any]] = []
     accessors: list[dict[str, Any]] = []
     buffer_views: list[dict[str, Any]] = []
     bin_parts: list[bytes] = []
+    # En mode nodes : une mesh par partie (son primitive unique) + son node.
+    per_part_primitive: dict[str, dict[str, Any]] = {}
 
     # On n'emet que les parties qui ont de la geometrie, et uniquement LEURS
     # materiaux : un batiment sans fenetres ne transporte pas de material
     # "Vitrage" inutilise (le viewer et le contrat restent propres).
+    #
+    # NB : le materiau est associe par NOM de partie (pas par position dans
+    # `parts`) : avec `etages_separes`, il y a plus de parties (etage_1..N)
+    # que de materiaux — les etages partagent le materiau "Murs" (index 0).
     part_names = list(parts.keys())
-    used = [(orig, name) for orig, name in enumerate(part_names) if parts[name][1]]
-    mat_index = {orig: new for new, (orig, _name) in enumerate(used)}
-    materials = [materials[orig] for orig, _name in used]
+    used = [name for name in part_names if parts[name][1]]
+
+    _MATERIAL_BY_PART = {
+        "murs": 0,
+        "toiture": 1,
+        "planchers": 2,
+        "cadres": 3,
+        "vitrage": 4,
+        "porte": 5,
+        "sol": 6,
+    }
+    used_mat_ids: list[int] = []
+    for name in used:
+        mid = _MATERIAL_BY_PART.get(name, 0)  # etage_N -> Murs
+        if mid not in used_mat_ids:
+            used_mat_ids.append(mid)
+    mat_index = {mid: new for new, mid in enumerate(used_mat_ids)}
+    materials = [materials[mid] for mid in used_mat_ids]
 
     byte_cursor = 0
-    for _orig_i, name in used:
+    for name in used:
         vertices, triangles = parts[name]
+        mid = _MATERIAL_BY_PART.get(name, 0)
         use_u32 = len(vertices) > 65535
         idx_data: list[int] = []
         for a, b, c in triangles:
@@ -1294,11 +1370,12 @@ def _serialise_parts_glb(
             "min": pos_min,
             "max": pos_max,
         })
+
         attributes: dict[str, int] = {"POSITION": acc_base + 1}
 
         # -- TEXCOORD_0 : seulement pour les parties dont le matériau porte
         # une texture (UV planaires monde, cf. _planar_uvs).
-        mat_def = materials[mat_index[_orig_i]]
+        mat_def = materials[mat_index[mid]]
         if "_texture" in mat_def and vertices:
             if mat_def.get("name") in _TEXTURE_FIT_MATERIALS:
                 uvs = _fit_uvs(vertices)
@@ -1326,11 +1403,13 @@ def _serialise_parts_glb(
             })
             attributes["TEXCOORD_0"] = len(accessors) - 1
 
-        primitives.append({
+        primitive = {
             "attributes": attributes,
             "indices": acc_base,
-            "material": mat_index[_orig_i],
-        })
+            "material": mat_index[mid],
+        }
+        primitives.append(primitive)
+        per_part_primitive[name] = primitive
 
     # -- Textures : embarquer chaque image (une fois) dans le buffer binaire,
     # brancher baseColorTexture, retirer la clé privée "_texture".
@@ -1377,21 +1456,33 @@ def _serialise_parts_glb(
 
     bin_buffer = b"".join(bin_parts)
 
+    if parts_as_nodes and len(used) > 1:
+        # Chaque partie -> node nommee + mesh a un seul primitive.
+        nodes = [
+            {"mesh": i, "name": _PART_NODE_LABEL.get(name, name)}
+            for i, name in enumerate(used)
+        ]
+        meshes = [
+            {
+                "name": _PART_NODE_LABEL.get(name, name),
+                "primitives": [per_part_primitive[name]],
+            }
+            for name in used
+        ]
+    else:
+        nodes = [{"mesh": 0, "name": label}]
+        meshes = [{"name": label, "primitives": primitives}]
+
     gltf = {
         "asset": {
             "version": "2.0",
-            "generator": "Typhoon gltf_builder v2 (BIM)",
+            "generator": "Typhoon gltf_builder v2.1 (BIM)",
             "copyright": f"Typhoon — {label}",
         },
         "scene": 0,
-        "scenes": [{"name": "Scene", "nodes": [0]}],
-        "nodes": [{"mesh": 0, "name": label}],
-        "meshes": [
-            {
-                "name": label,
-                "primitives": primitives,
-            }
-        ],
+        "scenes": [{"name": "Scene", "nodes": [i for i in range(len(nodes))]}],
+        "nodes": nodes,
+        "meshes": meshes,
         "materials": materials,
         "accessors": accessors,
         "bufferViews": buffer_views,
@@ -1403,6 +1494,21 @@ def _serialise_parts_glb(
         gltf["textures"] = textures
 
     return _assemble_glb(gltf, bin_buffer)
+
+
+
+# Libelle lisible des noeuds glTF (BimTree / selection) : les cles internes
+# "etage_1" deviennent "Étage 1", etc. — le viewer s'appuie sur le prefixe
+# "Etage " (sans accent) pour decouper la structure par niveau.
+_PART_NODE_LABEL = {
+    "toiture": "Toiture",
+    "planchers": "Planchers",
+    "cadres": "Cadres",
+    "vitrage": "Vitrage",
+    "porte": "Porte",
+    "murs": "Murs",
+    **{f"etage_{k}": f"Etage {k}" for k in range(1, 10)},
+}
 
 
 def _materials_for(
@@ -1568,17 +1674,28 @@ def build_glb_bim(
     facades_avec_vitrage: list[str] | None = None,
     ratio_vitrage: float | None = None,
     entree_facade: str | None = None,
+
     immeuble: bool = False,
+
+    etages_separes: bool = False,
+    parts_as_nodes: bool = False,
+
 ) -> bytes:
     """
     Build a BIM-grade .glb from footprint polygons (footprint.py convention:
     list of {"exterieur": [[x,z],...], "trous": [[[...]...]...]}, metres in
     the scene frame).
 
-    Structure : murs (tous les polygones + cours intérieures), planchers par
-    niveau (`floors`), toit deux pans (`pente_toit_deg`, `ridge_axis_deg`) ou
-    plat. Trois matériaux (Murs / Toiture / Planchers) colorés depuis les
-    libellés BDNB.
+    Structure : murs (tous les polygones + cours intérieures) ou etages
+    (`etages_separes` : une bande de murs par niveau), planchers par niveau
+    (`floors`), toit deux pans (`pente_toit_deg`, `ridge_axis_deg`) ou plat.
+    Les materiaux (Murs / Toiture / Planchers) sont colores depuis les
+    libelles BDNB.
+
+    `parts_as_nodes` : quand True, chaque partie devient un noeud glTF
+    independant (murs/etages, toiture, planchers, vitrage...) — requis pour
+    la simulation sismique cote viewer (cisaillement / effondrement par
+    etage).
     """
     if not polygones:
         raise ValueError("polygones must not be empty")
@@ -1637,6 +1754,7 @@ def build_glb_bim(
     parts = _build_bim_parts(
         polygones, eave_h, ridge_h, ridge_axis_deg, floors, level_h, roof_pitched,
         facades_avec_vitrage, ratio_vitrage, entree_facade,
+        etages_separes=etages_separes,
     )
 
     # -- Sol : plan d'assise sous le bâtiment (contexte visuel, évite la
@@ -1696,7 +1814,7 @@ def build_glb_bim(
         mat_mur, mat_toit, immeuble=immeuble, toit_plat=not roof_pitched
     )
 
-    return _serialise_parts_glb(parts, materials, label)
+    return _serialise_parts_glb(parts, materials, label, parts_as_nodes=parts_as_nodes)
 
 
 # ---------------------------------------------------------------------------
@@ -1825,7 +1943,14 @@ def build_glb_from_bdnb(
             facades_avec_vitrage=facades_vitrage,
             ratio_vitrage=ratio_vitrage,
             entree_facade=entree_facade,
+
             immeuble=immeuble,
+
+            # Découpe par étage + une node par partie : la simulation sismique
+            # du viewer peut cisailer/effondrer chaque niveau indépendamment.
+            etages_separes=True,
+            parts_as_nodes=True,
+
         )
 
     # Fallback: build a simple rectangle from surface_emprise_sol

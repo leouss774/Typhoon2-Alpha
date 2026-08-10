@@ -43,6 +43,9 @@ export default class Viewer3DContainer extends Vue {
   loadingText = "";
   projectSettings?:SettingsType;
   showProjectSettingPanel = false;
+  /** Au moins une simulation (inondation/feu/séisme) est active : le bouton
+   *  flottant « Simulations » passe en surbrillance (point pulsant). */
+  simulationsActive = false;
 
   mounted() {
     this.initProjectSettings();
@@ -96,6 +99,17 @@ export default class Viewer3DContainer extends Vue {
       viewer && viewer.resize(window.innerWidth, window.innerHeight);
     }, false);
 
+    // Simulations : suit l'activité pour le bouton flottant et ouvre le
+    // panneau dat.gui dès qu'une simulation s'active (auto-dérivée du
+    // rapport typhon ou déclenchée à la main) — sinon personne ne les trouve.
+    viewer.simulations && (viewer.simulations.onActivityChange = (active: boolean) => {
+      const wasActive = this.simulationsActive;
+      this.simulationsActive = active;
+      if (active && !wasActive) {
+        viewer.openSimulationsPanel();
+      }
+    });
+
     viewer.watch("selectedObject", (obj: any) => {
       if (obj?.userData?.gltfExtensions) {
         const extensions = obj?.userData?.gltfExtensions;
@@ -130,6 +144,11 @@ export default class Viewer3DContainer extends Vue {
 
   beforeDestroy() {
     if (this.viewer) {
+      // Détache l'abonnement avant de détruire le viewer : dispose() ne doit
+      // plus référencer ce composant (callback → composant mort).
+      if (this.viewer.simulations) {
+        this.viewer.simulations.onActivityChange = undefined;
+      }
       this.viewer.beforeDestroy();
       this.viewer = undefined;
     }
@@ -139,6 +158,7 @@ export default class Viewer3DContainer extends Vue {
     }
     this.selectedObjId = "";
     this.loadingText = "";
+    this.simulationsActive = false;
   }
 
   initAxesRenderer(viewer: Viewer3D) {
@@ -274,6 +294,15 @@ export default class Viewer3DContainer extends Vue {
         <button class={styles.backToProjects} onClick={() => this.goToProjects()} title="Revenir aux projets d'exemple du viewer">
           <i class="el-icon-back" />
           <span>Projets</span>
+        </button>
+        <button
+          class={`${styles.simulationsButton}${this.simulationsActive ? " " + styles.simulationsButtonActive : ""}`}
+          onClick={() => this.viewer && this.viewer.openSimulationsPanel()}
+          title={"Simulations de catastrophes (inondation, feu, séisme)" + (this.simulationsActive ? " — une simulation est en cours" : "")}
+        >
+          <i class="el-icon-caret-right" />
+          <span>Simulations</span>
+          <i class={`${styles.simStatusDot}${this.simulationsActive ? " " + styles.simStatusDotActive : ""}`} />
         </button>
         <input type="file" id="uploadModelFile" style="display: none" onChange={ this.uploadModelFile(this.viewer) } />
         {this.onLoading && <ProgressBar text={this.loadingText} progressValue={this.loadingProgress} />}
