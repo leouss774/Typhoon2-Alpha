@@ -41,6 +41,7 @@ app.add_middleware(
 
 app.include_router(health.router)
 app.include_router(diagnostic.router)
+app.include_router(chat.router)
 app.include_router(artisans.router)
 app.include_router(artisans.legacy_router)
 app.include_router(property_id_router.router)
