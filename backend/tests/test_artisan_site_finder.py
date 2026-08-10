@@ -1,9 +1,19 @@
-from app.artisans.site_finder import _extract_contact, _response_data, _url_candidate
+from app.artisans.site_finder import _extract_contact, _nettoyer_nom_entreprise, _response_data, _url_candidate
+
+
+def test_nettoyer_nom_entreprise():
+    assert _nettoyer_nom_entreprise("MONSIEUR JEAN DUPONT") == "JEAN DUPONT"
+    assert _nettoyer_nom_entreprise("SARL ARTELIA") == "ARTELIA"
+    assert _nettoyer_nom_entreprise("SAS GINGER CEBTP") == "GINGER CEBTP"
+    assert _nettoyer_nom_entreprise("MADAME SOPHIE MARTIN EI") == "SOPHIE MARTIN"
 
 
 def test_rejette_annuaires_et_reseaux_sociaux():
     assert _url_candidate("https://annuaire-entreprises.data.gouv.fr/entreprise/123") is None
     assert _url_candidate("https://www.facebook.com/artisan") is None
+    assert _url_candidate("https://www.pappers.fr/entreprise/artelia-347474261") is None
+    assert _url_candidate("https://www.infogreffe.fr/entreprise/ginger-cebtp") is None
+    assert _url_candidate("https://www.bodacc.fr/annonce/detail") is None
 
 
 def test_normalise_un_site_entreprise():

@@ -237,18 +237,15 @@ export function ComprendreRisques({
                     <h3>Équilibre des risques par aléa</h3>
                     <p className="risk-card-hint">
                       Diagramme en toile d'araignée — score de risque (0 = aucun risque, 100 =
-                      risque critique) pour chaque aléa climatique et géologique identifié
-                      (inondation, RGA, sismique…), agrégé sur l'ensemble des zones du bien.
+                      risque critique) pour chaque zone, calculé à partir de l'aléa
+                      climatique et géologique dominant (inondation, RGA, sismique…).
                     </p>
                     {entries.length >= 3 ? (
                       <RadarChart entries={entries} />
                     ) : (
-                      <p className="risk-card-hint">
-                        Pas assez d'aléas distincts pour un radar — voir le détail ci-dessous.
-                      </p>
+                      <p className="risk-card-hint">Pas assez de zones distinctes pour un radar.</p>
                     )}
                   </div>
-                </div>
                 </div>
 
                 {/* ── Risques principaux + facteurs aggravants (bas du dashboard) ── */}
