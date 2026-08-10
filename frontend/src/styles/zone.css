@@ -1532,8 +1532,9 @@
 }
 .risk-radar-svg {
   width: 100%;
-  max-width: 280px;
+  max-width: 320px;
   height: auto;
+  overflow: visible;
 }
 .risk-radar-ring {
   fill: none;
