@@ -153,6 +153,107 @@
   white-space: nowrap;
 }
 
+/* ---- Diagnostic réel par adresse (topbar) ---- */
+.jumeau-addr-form {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  max-width: 560px;
+  min-width: 0;
+  margin: 0 12px;
+}
+.jumeau-addr-input {
+  flex: 1;
+  min-width: 0;
+  height: 40px;
+  padding: 0 16px;
+  font: inherit;
+  font-size: 13px;
+  color: var(--md-sys-color-on-surface);
+  background: var(--md-sys-color-surface-container-high);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: 999px;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+.jumeau-addr-input::placeholder {
+  color: var(--md-sys-color-on-surface-variant);
+  opacity: 0.7;
+}
+.jumeau-addr-input:focus {
+  border-color: var(--md-sys-color-primary);
+}
+.jumeau-addr-input:disabled {
+  opacity: 0.6;
+}
+
+/* ---- Bandeau d'état (démo / chargement / erreur) ---- */
+.jumeau-status {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 20px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--md-sys-color-on-surface-variant);
+  background: var(--md-sys-color-surface-container);
+  border-bottom: 1px solid var(--md-sys-color-outline-variant);
+  z-index: 14;
+}
+.jumeau-status md-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+.jumeau-status.is-demo md-icon {
+  color: var(--md-sys-color-primary);
+}
+.jumeau-status.is-loading md-icon {
+  color: var(--md-sys-color-primary);
+  animation: jumeau-spin 1.2s linear infinite;
+}
+.jumeau-status.is-loading md-linear-progress {
+  flex: 0 0 160px;
+  margin-left: auto;
+}
+.jumeau-status.is-error {
+  color: var(--md-sys-color-error);
+}
+.jumeau-status.is-error md-icon {
+  color: var(--md-sys-color-error);
+}
+.jumeau-status-retry {
+  margin-left: auto;
+  padding: 5px 14px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--md-sys-color-on-error-container);
+  background: var(--md-sys-color-error-container);
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+}
+@keyframes jumeau-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (max-width: 760px) {
+  .jumeau-addr-form {
+    max-width: none;
+  }
+  .jumeau-topbar {
+    flex-wrap: wrap;
+    height: auto;
+    padding: 10px 16px;
+  }
+  .jumeau-sovereign-badge {
+    display: none;
+  }
+}
+
 /* ---- Scène (zone plein écran) ---- */
 .jumeau-scene {
   position: relative;
@@ -1081,6 +1182,26 @@
 
 /* ---- Responsive ---- */
 @media (max-width: 880px) {
+  .reco-overview-trigger {
+    --md-elevated-button-label-text-size: 0;
+    min-width: 48px;
+  }
+  .reco-overview-backdrop { padding: 0; }
+  .reco-overview-sheet {
+    width: 100%;
+    height: 100%;
+    max-height: none;
+    border: 0;
+    border-radius: 0;
+  }
+  .reco-overview-header,
+  .reco-overview-toolbar,
+  .reco-overview-content { padding-left: 18px; padding-right: 18px; }
+  .reco-overview-toolbar { align-items: stretch; flex-direction: column; }
+  .reco-overview-toolbar label { justify-content: space-between; }
+  .reco-overview-grid { grid-template-columns: 1fr; }
+  .reco-overview-card-head { flex-direction: column; }
+  .reco-overview-cost { text-align: left; }
   .jumeau-sovereign-badge {
     display: none;
   }

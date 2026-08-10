@@ -110,7 +110,9 @@ export default class SkyboxUtils {
    */
   public static async createSkyFromTextures(subFolder: "cloudy" = "cloudy"): Promise<THREE.CubeTexture> {
     const loader = new THREE.CubeTextureLoader();
-    loader.setPath(`images/skybox/${subFolder}/`);
+    // BASE_URL : le viewer est servi sous /bim-viewer/ — un chemin relatif se
+    // résoudrait contre /bim-viewer/projects/... et casserait (404 silencieux).
+    loader.setPath(`${process.env.BASE_URL || "/"}images/skybox/${subFolder}/`);
     // six pictures in order of: x, -x, y, -y, z, -z, aka, right, left, top, bottom, front, back
     const pictures = ["right.jpg", "left.jpg", "top.jpg", "bottom.jpg", "front.jpg", "back.jpg"];
     return new Promise<THREE.CubeTexture>((resolve, reject) => {

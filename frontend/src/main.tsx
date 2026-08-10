@@ -23,6 +23,44 @@ import '@material/web/tabs/tabs.js';
 import '@material/web/tabs/primary-tab.js';
 import '@material/web/textfield/outlined-text-field.js';
 
+/* ── Nettoyage des cibles tactiles Material Web ────────────────────────────
+   Les composants @material/web (md-icon-button, md-switch…) insèrent dans
+   leur shadow DOM un <span class="touch"></span> : une zone d'emphase
+   invisible de 48 px (accessibilité tactile). L'UI Typhoon est pilotée au
+   pointeur/clavier — on retire ces spans du DOM. Seuls les spans sont
+   visés (le <input class="touch"> du md-switch est fonctionnel : on le
+   garde). Un MutationObserver couvre les composants ajoutés dynamiquement
+   (menus, panneaux) et les re-rendus Lit. */
+function removeTouchSpans(root: Document | ShadowRoot) {
+  root.querySelectorAll('span.touch').forEach((el) => el.remove());
+}
+
+const observedShadowRoots = new WeakSet<ShadowRoot>();
+function watchShadowRoot(el: Element) {
+  if (el.shadowRoot && !observedShadowRoots.has(el.shadowRoot)) {
+    observedShadowRoots.add(el.shadowRoot);
+    removeTouchSpans(el.shadowRoot);
+    new MutationObserver(() => removeTouchSpans(el.shadowRoot!)).observe(el.shadowRoot, {
+      childList: true,
+      subtree: true,
+    });
+  }
+}
+
+const touchCleaner = new MutationObserver((mutations) => {
+  for (const m of mutations) {
+    m.addedNodes.forEach((node) => {
+      if (node instanceof Element) {
+        watchShadowRoot(node);
+        node.querySelectorAll('*').forEach(watchShadowRoot);
+      }
+    });
+  }
+});
+touchCleaner.observe(document.documentElement, { childList: true, subtree: true });
+
+document.querySelectorAll('*').forEach(watchShadowRoot);
+
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <BrowserRouter>
