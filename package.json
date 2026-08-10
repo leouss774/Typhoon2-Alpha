@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "@turf/turf": "^7.4.0",
+    "maplibre-gl": "^6.1.0"
+  }
+}

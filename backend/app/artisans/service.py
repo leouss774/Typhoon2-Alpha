@@ -10,7 +10,6 @@ from urllib.parse import urlparse
 import httpx
 
 from app.artisans.classification import classer_avec_mistral, decision_regle
-from app.artisans.site_finder import enrichir_coordonnees
 
 ADEME_API = "https://data.ademe.fr/data-fair/api/v1/datasets/liste-des-entreprises-rge-2/lines"
 ENTREPRISES_API = "https://recherche-entreprises.api.gouv.fr/search"
@@ -250,16 +249,6 @@ async def matcher(adresse: str, zones: list[dict[str, Any]], limite: int = 5, cl
                     groupe.update(categorie="non_rge", libelle=config["libelle"],
                         annuaire_reference=config["annuaire_reference"],
                         entreprises=await rechercher_non_rge(client, code_postal, config["code_naf"], limite))
-                for entreprise in groupe["entreprises"]:
-                    if not all(entreprise.get(key) for key in ("site_officiel", "telephone", "email")):
-                        contact = await enrichir_coordonnees(entreprise)
-                        for key in ("site_officiel", "telephone", "email"):
-                            if not entreprise.get(key) and contact.get(key):
-                                entreprise[key] = contact[key]
-                        if contact.get("site_officiel"):
-                            entreprise["type_lien"] = "site_entreprise_mistral_web_search"
-                        if any(contact.values()):
-                            entreprise["contact_enrichi_par"] = "mistral_web_search"
             except (httpx.HTTPError, ValueError) as exc:
                 groupe.update(entreprises=[], erreur=f"Source externe indisponible : {type(exc).__name__}")
             resultats.append(groupe)
@@ -270,7 +259,7 @@ async def matcher(adresse: str, zones: list[dict[str, Any]], limite: int = 5, cl
         "adresse": adresse, "code_postal": code_postal,
         "avertissement_score": "Score objectif de correspondance, pas une note de qualité/prix.",
         "avertissement_sites": (
-            "Sites issus des donnees publiques ou recherches par Mistral Web Search. "
+            "Sites issus des donnees publiques (ADEME/RGE). "
             "Aucun lien n'est affiche lorsque le site officiel ne peut pas etre confirme."
         ),
         "recommandations_traitees": resultats,

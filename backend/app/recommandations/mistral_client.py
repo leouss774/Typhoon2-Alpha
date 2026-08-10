@@ -36,17 +36,20 @@ CHAT_MAX_TOKENS = 1000
 CHAT_TEXT_MAX_TOKENS = 1800
 
 _client: Mistral | None = None
+_cached_api_key: str | None = None
 
 
 def get_client() -> Mistral:
-    global _client
-    if _client is None:
-        if not settings.mistral_api_key:
+    global _client, _cached_api_key
+    current_key = settings.mistral_api_key
+    if _client is None or _cached_api_key != current_key:
+        if not current_key:
             raise RuntimeError(
-                "MISTRAL_API_KEY manquant. Renseigne-la dans backend/.env "
-                "(voir backend/.env.example)."
+                "MISTRAL_API_KEY manquant. Renseigne-la dans le .env racine "
+                "du projet (voir .env.example à la racine)."
             )
-        _client = Mistral(api_key=settings.mistral_api_key, timeout_ms=REQUEST_TIMEOUT_MS)
+        _client = Mistral(api_key=current_key, timeout_ms=REQUEST_TIMEOUT_MS)
+        _cached_api_key = current_key
     return _client
 
 
@@ -55,14 +58,41 @@ def _is_rate_limit_error(e: Exception) -> bool:
     return "429" in msg or "rate_limited" in msg or "rate limit" in msg
 
 
+def _is_capacity_error(e: Exception) -> bool:
+    """Une saturation du service/model tier n'est pas un quota temporaire.
+
+    Mistral renvoie le code 3505 dans ce cas. Attendre 20 puis 40 secondes
+    dans une requete HTTP ne libere pas cette capacite et rend le diagnostic
+    inutilisable. Le niveau appelant gere deja cet echec en mode fail-soft.
+    """
+    msg = str(e).lower()
+    return (
+        "request_tier_capacity_exceeded" in msg
+        or "service tier capacity exceeded" in msg
+        or '"code":"3505"' in msg.replace(" ", "")
+    )
+
+
 def _backoff_seconds(e: Exception, attempt: int) -> float:
     if _is_rate_limit_error(e):
         return min(60, 20 * (attempt + 1))
     return 5 * (attempt + 1)
 
 
-def chat_json(system_prompt: str, user_prompt: str, max_retries: int = 5) -> dict:
-    """Appelle le modele de chat Mistral et force une reponse JSON."""
+def chat_json(
+    system_prompt: str,
+    user_prompt: str,
+    max_retries: int = 5,
+    max_tokens: int | None = None,
+) -> dict:
+    """Appelle le modele de chat Mistral et force une reponse JSON.
+
+    `max_tokens` par defaut = CHAT_MAX_TOKENS (1000, concision des
+    recommandations travaux). Le rapport narratif (introduction + sections +
+    synthese + obligations) depasse facilement ce plafond et se retrouvait
+    tronque en plein JSON ("Unterminated string") : il passe explicitement
+    max_tokens=4000 (cf. rapport_narratif.py).
+    """
     client = get_client()
     last_err: Exception | None = None
     for attempt in range(max_retries):
@@ -75,15 +105,26 @@ def chat_json(system_prompt: str, user_prompt: str, max_retries: int = 5) -> dic
                 ],
                 response_format={"type": "json_object"},
                 temperature=0.1,
-                max_tokens=CHAT_MAX_TOKENS,
+                max_tokens=max_tokens or CHAT_MAX_TOKENS,
             )
             content = response.choices[0].message.content
             time.sleep(THROTTLE_SECONDS)
+            if isinstance(content, list):
+                text_parts = []
+                for chunk in content:
+                    text = getattr(chunk, "text", None)
+                    if isinstance(text, str):
+                        text_parts.append(text)
+                    elif hasattr(text, "text"):
+                        text_parts.append(str(text.text))
+                content = "".join(text_parts)
             return json.loads(content)
         except Exception as e:
             last_err = e
-            wait = _backoff_seconds(e, attempt)
             print(f"    [retry {attempt + 1}/{max_retries}] erreur Mistral chat: {e}")
+            if _is_capacity_error(e) or attempt == max_retries - 1:
+                break
+            wait = _backoff_seconds(e, attempt)
             print(f"    -> attente {wait:.0f}s avant nouvelle tentative")
             time.sleep(wait)
     raise RuntimeError(f"Echec appel Mistral (chat) apres {max_retries} tentatives: {last_err}")
@@ -133,8 +174,10 @@ def embed_texts(texts: list[str], max_retries: int = 5) -> list[list[float]]:
             return [item.embedding for item in response.data]
         except Exception as e:
             last_err = e
-            wait = _backoff_seconds(e, attempt)
             print(f"    [retry embeddings {attempt + 1}/{max_retries}] erreur Mistral: {e}")
+            if _is_capacity_error(e) or attempt == max_retries - 1:
+                break
+            wait = _backoff_seconds(e, attempt)
             print(f"    -> attente {wait:.0f}s avant nouvelle tentative")
             time.sleep(wait)
     raise RuntimeError(f"Echec appel Mistral (embeddings) apres {max_retries} tentatives: {last_err}")

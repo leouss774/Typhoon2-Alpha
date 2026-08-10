@@ -137,10 +137,60 @@
   // qu'aucune lib de scroll pilotée en JS n'est utilisée (cf. consigne :
   // pas de GSAP sauf nécessité réelle — un simple reveal n'en a pas besoin).
 
+  // ---- Démos de la section Fonctionnalités : zoom carte + suggestions de chat ----
+  function initFeaturesDemo() {
+    const mapEl = document.getElementById('mapExplorer');
+    if (mapEl) {
+      const img = mapEl.querySelector('.map-mini');
+      let scale = 1;
+      mapEl.querySelectorAll('[data-map-action]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const action = btn.getAttribute('data-map-action');
+          if (action === 'in') scale = Math.min(1.8, scale + 0.2);
+          else if (action === 'out') scale = Math.max(1, scale - 0.2);
+          else scale = 1;
+          if (img) img.style.transform = 'scale(' + scale + ')';
+        });
+      });
+    }
+
+    const chatQ = document.getElementById('featureChatQuestion');
+    const chatA = document.getElementById('featureChatAnswer');
+    if (!chatQ || !chatA) return;
+    const answerText = chatA.querySelector('.answer-text');
+    const dots = chatA.querySelector('.typing-dots');
+    const answers = {
+      toiture: { q: 'Pourquoi ma toiture est-elle exposée ?', a: 'Le score combine chaleur, ancienneté et matériau observé.' },
+      priorites: { q: 'Quelle action dois-je réaliser en premier ?', a: 'Priorisez la toiture, puis planifiez le renforcement de l’enveloppe.' },
+      '2050': { q: 'Et à horizon 2050 ?', a: 'L’exposition à la chaleur augmente sur ce bâtiment si aucun travaux n’est engagé.' }
+    };
+    function showAnswer(entry) {
+      if (!entry) return;
+      chatQ.textContent = entry.q;
+      if (answerText) answerText.style.opacity = '0';
+      if (dots) dots.style.display = 'inline-flex';
+      const delay = reduceMotion ? 0 : 650;
+      setTimeout(() => {
+        if (dots) dots.style.display = 'none';
+        if (answerText) { answerText.textContent = entry.a; answerText.style.opacity = '1'; }
+      }, delay);
+    }
+    document.querySelectorAll('.chat-suggestions button').forEach((btn) => {
+      btn.addEventListener('click', () => showAnswer(answers[btn.getAttribute('data-chat-question')]));
+    });
+    // Réponse initiale : petit temps de "réflexion" avant l'affichage, comme un vrai échange.
+    if (answerText) answerText.style.opacity = '0';
+    setTimeout(() => {
+      if (dots) dots.style.display = 'none';
+      if (answerText) answerText.style.opacity = '1';
+    }, reduceMotion ? 0 : 900);
+  }
+
   initHeaderScrollState();
   initHeroIntro();
   initHeroVideo();
   initLazyVideos();
   initBgWaves();
   initHeroParallax();
+  initFeaturesDemo();
 })();

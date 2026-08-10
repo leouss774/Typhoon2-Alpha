@@ -93,13 +93,17 @@ def _building_data_factice(
 # ---------------------------------------------------------------------------
 
 def test_niveau():
-    assert _niveau(5) == "faible"
+    # D03 : cinq bandes alignees sur le Risk Engine (rules/_common.yaml)
+    assert _niveau(0) == "tres faible"
+    assert _niveau(19) == "tres faible"
     assert _niveau(20) == "faible"
-    assert _niveau(30) == "modere"
-    assert _niveau(45) == "modere"
+    assert _niveau(39) == "faible"
+    assert _niveau(40) == "modere"
+    assert _niveau(59) == "modere"
     assert _niveau(60) == "eleve"
-    assert _niveau(70) == "eleve"
-    assert _niveau(80) == "critique"
+    assert _niveau(79) == "eleve"
+    assert _niveau(80) == "tres eleve"
+    assert _niveau(100) == "tres eleve"
     print("test_niveau OK")
 
 
