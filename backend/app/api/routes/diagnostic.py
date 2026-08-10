@@ -16,7 +16,7 @@ import time
 import uuid
 
 import httpx
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Response
 from pydantic import BaseModel, Field
 
 from app.agents import digital_twin_agent, interpretation_agent, recommandations_agent, scoring_agent
@@ -31,6 +31,8 @@ from app.connectors.bdnb import (
 )
 from app.connectors.geocoding import GeocodingError, geocode_address
 from app.connectors.georisques import get_risque_report
+from app.connectors.lidar_hd import fetch_building_lidar
+from app.connectors.lidar_mesh import build_building_mesh, build_building_meta
 from app.core.config import settings
 from app.core.logging import get_logger
 from app.recommandations.adresse_recommandations import recommander
@@ -415,11 +417,27 @@ async def diagnostic_adresse_gltf(
             detail={"error": "gltf_geocodage_erreur", "detail": str(exc)},
         ) from exc
 
-    # Step 3 — Build .glb (fallback to box if needed). Le point d'adresse
-    # geocode (lat/lon) sert a poser la porte d'entree sur la facade rue.
-    glb_bytes = build_glb_from_bdnb(
-        batiment, adresse_label=geo.label, adresse_lat=geo.lat, adresse_lon=geo.lon
-    )
+    # Step 3 — Build .glb : maillage LiDAR HD réel d'abord (toit LiDAR HD +
+    # murs footprint, texture BD ORTHO — plan jumeau Phases 2/3b), repli sur
+    # l'extrusion procédurale footprint → glTF, puis boîte 10×10×6 en dernier
+    # recours. Le point d'adresse géocodé sert de repli lon/lat au LiDAR.
+    glb_bytes = None
+    try:
+        glb_bytes = await build_building_mesh(
+            batiment.get("geom_groupe") if isinstance(batiment, dict) else None,
+            lon=geo.lon,
+            lat=geo.lat,
+            building_id=batiment.get("batiment_groupe_id") if isinstance(batiment, dict) else None,
+        )
+    except Exception as exc:
+        logger.warning("  [gltf] maillage LiDAR HD indisponible -> %s: %s", type(exc).__name__, exc)
+        glb_bytes = None
+
+    if glb_bytes is None:
+        # Repli : extrusion procédurale du footprint BDNB.
+        glb_bytes = build_glb_from_bdnb(
+            batiment, adresse_label=geo.label, adresse_lat=geo.lat, adresse_lon=geo.lon
+        )
 
     if glb_bytes is None:
         # Ultimate fallback: flat 10×10×6 m box
@@ -509,3 +527,134 @@ async def zone_buildings(
                 status_code=502,
                 detail={"error": "bdnb_bbox_erreur", "detail": str(exc)},
             ) from exc
+
+
+@router.get("/diagnostic/zone/lidar")
+async def zone_lidar(
+    geom: str = Query("", description="geom_groupe BDNB (JSON) du bâtiment — bbox exacte + marge"),
+    lon: float | None = Query(None, description="Longitude WGS84 (repli si pas de geom)"),
+    lat: float | None = Query(None, description="Latitude WGS84 (repli si pas de geom)"),
+) -> dict:
+    """Nuage de points LiDAR HD IGN du bâtiment (Phase 2 du plan jumeau 3D).
+
+    Repere local du viewer : x = Est, y = hauteur au-dessus du sol, z = Sud
+    (metres). Retourne uniquement les points classes `batiment` (6) + `sol`
+    (2) presents dans la bbox de l'empreinte + marge 2 m — lus par plages
+    HTTP dans le COPC (pas de telechargement de la dalle complete).
+
+    200 : { count, batiment, sol, hauteur_max_m, bbox_l93, dalle, points }
+    404 : pas de dalle LiDAR HD sur la zone / aucun point
+    502 : WFS ou COPC indisponible
+    """
+    import json
+
+    geom_groupe: dict | None = None
+    if geom:
+        try:
+            geom_groupe = json.loads(geom)
+        except json.JSONDecodeError:
+            geom_groupe = None
+
+    try:
+        lidar = await fetch_building_lidar(geom_groupe, lon=lon, lat=lat)
+    except Exception as exc:
+        logger.warning("  [zone/lidar] indisponible -> %s: %s", type(exc).__name__, exc)
+        raise HTTPException(
+            status_code=502,
+            detail={"error": "lidar_hd_indisponible", "detail": str(exc)},
+        ) from exc
+
+    if not lidar or not lidar.get("count"):
+        raise HTTPException(
+            status_code=404,
+            detail={"error": "lidar_hd_absent", "detail": "Pas de dalle LiDAR HD ou de points bâtiment sur cette zone."},
+        )
+    return lidar
+
+
+@router.get("/diagnostic/zone/lidar/mesh")
+async def zone_lidar_mesh(
+    geom: str = Query("", description="geom_groupe BDNB (JSON) du bâtiment"),
+    lon: float | None = Query(None, description="Longitude WGS84 (repli)"),
+    lat: float | None = Query(None, description="Latitude WGS84 (repli)"),
+    building_id: str = Query("", description="id BDNB du bâtiment (clé de cache)"),
+) -> Response:
+    """Phase 3b : maillage GLB du bâtiment (toit LiDAR HD + murs footprint).
+
+    Texture BD ORTHO sur le toit, cache disque par bâtiment. Le front charge
+    le GLB (GLTFLoader) et retombe sur le nuage de points puis le bâti
+    procédural si indisponible.
+
+    200 : GLB binaire (model/gltf-binary)
+    404 : pas de maillage possible (peu de points / zone non couverte)
+    502 : WFS/COPC/WMTS indisponible
+    """
+    import json
+
+    geom_groupe: dict | None = None
+    if geom:
+        try:
+            geom_groupe = json.loads(geom)
+        except json.JSONDecodeError:
+            geom_groupe = None
+
+    try:
+        glb = await build_building_mesh(
+            geom_groupe,
+            lon=lon,
+            lat=lat,
+            building_id=building_id or None,
+        )
+    except Exception as exc:
+        logger.warning("  [zone/lidar/mesh] indisponible -> %s: %s", type(exc).__name__, exc)
+        raise HTTPException(
+            status_code=502,
+            detail={"error": "lidar_mesh_indisponible", "detail": str(exc)},
+        ) from exc
+
+    if not glb:
+        raise HTTPException(
+            status_code=404,
+            detail={"error": "lidar_mesh_absent", "detail": "Pas de maillage possible (points LiDAR insuffisants ou zone non couverte)."},
+        )
+    return Response(content=glb, media_type="model/gltf-binary")
+
+
+@router.get("/diagnostic/zone/lidar/mesh/meta")
+async def zone_lidar_mesh_meta(
+    geom: str = Query("", description="geom_groupe BDNB (JSON) du bâtiment"),
+    lon: float | None = Query(None, description="Longitude WGS84 (repli)"),
+    lat: float | None = Query(None, description="Latitude WGS84 (repli)"),
+    building_id: str = Query("", description="id BDNB du bâtiment (clé de cache)"),
+) -> dict:
+    """Meta du maillage : footprint local (x, z) + hauteurs — pour découper
+    les 7 zones de risque (Phase 5) sur la géométrie réelle côté viewer."""
+    import json
+
+    geom_groupe: dict | None = None
+    if geom:
+        try:
+            geom_groupe = json.loads(geom)
+        except json.JSONDecodeError:
+            geom_groupe = None
+
+    try:
+        meta = await build_building_meta(
+            geom_groupe,
+            lon=lon,
+            lat=lat,
+            building_id=building_id or None,
+        )
+    except Exception as exc:
+        logger.warning("  [zone/lidar/mesh/meta] indisponible -> %s: %s", type(exc).__name__, exc)
+        raise HTTPException(
+            status_code=502,
+            detail={"error": "lidar_mesh_meta_indisponible", "detail": str(exc)},
+        ) from exc
+
+    if not meta:
+        raise HTTPException(
+            status_code=404,
+            detail={"error": "lidar_mesh_absent", "detail": "Pas de maillage possible sur cette zone."},
+        )
+    return meta

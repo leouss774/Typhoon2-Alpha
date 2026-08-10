@@ -26,6 +26,7 @@ backend/.env
 node_modules/
 frontend/.next/
 *.tsbuildinfo
+*.log
 
 # OS / éditeurs
 .DS_Store

@@ -20,7 +20,7 @@ from __future__ import annotations
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.routes import artisans, diagnostic, health, property_id as property_id_router
+from app.api.routes import artisans, chat, diagnostic, health, property_id as property_id_router
 from app.api.routes import geocoding as geocoding_router
 from app.api.routes import simulation as simulation_router
 from app.core.logging import configure_logging, get_logger
@@ -41,6 +41,7 @@ app.add_middleware(
 
 app.include_router(health.router)
 app.include_router(diagnostic.router)
+app.include_router(chat.router)
 app.include_router(artisans.router)
 app.include_router(artisans.legacy_router)
 app.include_router(property_id_router.router)

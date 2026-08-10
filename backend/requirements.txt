@@ -16,6 +16,8 @@ requests
 
 # --- Géométries (reprojection BDNB Lambert-93 → WGS84 pour MapLibre) ---
 pyproj
+laspy>=2.5
+lazrs>=0.5
 
 # --- Lookup local DVF ---
 pandas
@@ -40,3 +42,6 @@ sqlalchemy
 # --- Tests ---
 pytest
 pytest-asyncio
+scipy>=1.16
+pillow>=11.0
+trimesh>=4.0

@@ -38,12 +38,13 @@ function lambert93ToWgs84(x: number, y: number): [number, number] {
   const y0 = 12_655_600;
   const c = 11754255.426;
   const n = 0.725607765;
-  const e = 0.082483257;
+  const e = 0.08181919106; // GRS80 (premiere excentricite)
   const dx = x - x0;
   const dy = y - y0;
   const r = Math.sqrt(dx * dx + dy * dy);
-  const gamma = Math.atan2(dx, dy);
-  const lon = gamma / n + 3; // 3° E (méridien de référence)
+  // Theta = angle polaire (petit angle positif = est du meridien origine).
+  const gamma = Math.atan2(dx, -dy);
+  const lon = (gamma / n) * (180 / Math.PI) + 3; // 3° E (meridien de reference)
   const lat = 2 * Math.atan(Math.pow(c / r, 1 / n)) - Math.PI / 2;
   let lat2 = lat;
   for (let i = 0; i < 5; i++) {

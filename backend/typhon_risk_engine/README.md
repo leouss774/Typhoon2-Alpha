@@ -1,26 +1,8 @@
 # Risk Engine Typhon
 
-> ## ⚠️ STATUT : EN MIGRATION — NE PAS UTILISER EN PRODUCTION
->
-> Ce module est un **candidat au remplacement futur** de `app/scoring/risk_model.py`.
-> Il contient un moteur de règles YAML complet (P01–P14) **non connecté** à l'API FastAPI.
->
-> **Source de vérité actuelle pour le scoring** : `backend/app/scoring/risk_model.py`
-> (importé par `app/agents/scoring_agent.py` et appelé par les routes `/diagnostic*`).
->
-> **Ne modifier que `risk_model.py`** pour tout changement affectant le comportement
-> de production. Les modifications ici n'ont aucun effet sur l'API tant que la
-> migration n'est pas terminée.
->
-> Voir `typhoon_reaudit_feature_restructure.md` §2.2 pour le contexte.
-> Date de ce statut : 02/08/2026.
-
----
-
 Moteur multi-périls déterministe pour l'assurance habitation française. Produit, **par péril et indépendamment**, un indice ordinal d'aléa `F`, un indice de vulnérabilité `V`, un risque `R` et un score de confiance.
 
 **Ne produit ni AAL, ni euros, ni score global.**
-
 
 ## Installation
 

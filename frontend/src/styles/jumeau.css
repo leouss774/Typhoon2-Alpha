@@ -520,6 +520,11 @@
   color: var(--d03-faible);
   border: 1px solid rgba(110, 158, 82, 0.4);
 }
+.badge-lidar {
+  background: rgba(56, 132, 255, 0.16);
+  color: #7cb2ff;
+  border: 1px solid rgba(56, 132, 255, 0.45);
+}
 
 /* ---- Panneau droit (détail de zone) ---- */
 #info-panel {

@@ -188,6 +188,11 @@ export function JumeauNumerique() {
           </div>
           <div className="addr-line" id="addr-line">—</div>
 
+          {/* Badge nuage de points LiDAR HD (rempli par scene-engine.js) */}
+          <div id="lidar-badge" className="data-badge badge-lidar" style={{ display: 'none' }}>
+            LiDAR HD IGN
+          </div>
+
           <div id="toggle-buttons">
             <button id="btn-2025" type="button" className="active">2025</button>
             <button id="btn-2050" type="button">2050</button>

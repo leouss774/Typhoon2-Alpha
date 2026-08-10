@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Comment ça marche — Typhoon</title>
+<meta name="description" content="Typhoon en pratique : le moteur multi-agents derrière chaque diagnostic, et les métiers qui nous font déjà confiance.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='6' fill='%23316f96'/%3E%3Cpath d='M12 4 6 6.5v5c0 4 2.5 6.8 6 8 3.5-1.2 6-4 6-8v-5z' fill='none' stroke='%23fff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='m9.3 12 1.7 1.7 3-3' fill='none' stroke='%23fff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/landing/site.css?v=8">
+<style>
+  html { scroll-behavior: smooth; }
+  body { margin: 0; font-family: 'Inter', 'Segoe UI', system-ui, sans-serif; }
+  #home-screen .typhoon-logo { display: flex; align-items: center; gap: 10px; margin-bottom: 0; text-decoration: none; }
+  #home-screen .typhoon-logo .mark-img { height: 30px; width: auto; }
+  #home-screen .typhoon-logo .name { font-family: var(--font-head); font-size: 15px; font-weight: 700; letter-spacing: 0.04em; line-height: 1.1; color: var(--mk-ink); }
+  #home-screen .typhoon-logo .baseline { font-size: 10.5px; letter-spacing: 0.03em; color: var(--mk-muted); }
+</style>
+</head>
+<body>
+
+<div id="home-screen">
+  <header id="home-header">
+    <a class="typhoon-logo" href="index.html">
+      <img class="mark-img" src="assets/landing/SVG/logo-typhoon-blue.svg" alt="Typhoon" width="120" height="79">
+      <div>
+        <div class="name">TYPHOON</div>
+        <div class="baseline">Diagnostic Climatique Immobilier</div>
+      </div>
+    </a>
+    <nav id="home-nav">
+      <a href="#home-features">Comment ça marche</a>
+      <a href="#home-trust">Ils nous font confiance</a>
+      <a href="index.html#home-missions">Nos missions</a>
+    </nav>
+    <div id="home-header-actions">
+      <a class="btn-primary" href="index.html#diagnostic">Vérifier une adresse →</a>
+    </div>
+  </header>
+
+  <section id="page-hero" class="reveal">
+    <div class="mk-eyebrow">Comment ça marche</div>
+    <h1>Le moteur multi-agents derrière chaque diagnostic</h1>
+    <p class="mk-lead">Croisement des données bâtimentaires et climatiques, jumeau numérique, score de résilience — et les métiers qui s'appuient déjà sur nos diagnostics.</p>
+  </section>
+
+  <section id="home-features" class="reveal">
+    <div class="mk-eyebrow">Comment ça marche</div>
+    <h2>Le moteur derrière les deux modes</h2>
+    <p class="mk-lead">Notre orchestrateur multi-agents croise l'adresse ou la zone recherchée avec les bases de risques climatiques (Géorisques, Copernicus, BDNB) pour construire le jumeau numérique et calculer le score de résilience — sans aucune saisie manuelle.</p>
+    <img id="features-banner" src="assets/landing/data-orchestration.jpg.jpeg" alt="Les données BDNB, Géorisques et Copernicus convergent vers le jumeau numérique du bien">
+    <div id="home-feature-grid" class="reveal reveal-stagger">
+      <div class="feature-card">
+        <div class="fc-icon"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12l9-9 9 9"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/></svg></div>
+        <h3>Jumeau numérique du bien</h3>
+        <p>Une reconstitution 3D de votre maison qui visualise, zone par zone, son exposition aux risques climatiques actuels et futurs.</p>
+      </div>
+      <div class="feature-card">
+        <div class="fc-icon"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94z"/></svg></div>
+        <h3>Recommandations de travaux</h3>
+        <p>Des préconisations concrètes et chiffrées pour renforcer les zones les plus vulnérables de votre bien, classées par impact.</p>
+      </div>
+      <div class="feature-card">
+        <div class="fc-icon"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5 3.5 9 8 11 4.5-2 8-6 8-11V5z"/><path d="m9 12 2 2 4-4"/></svg></div>
+        <h3>Certification &amp; prime réduite</h3>
+        <p>Engagez les travaux recommandés et obtenez la certification Climato-Résilient Typhoon, ouvrant droit à une prime sur votre cotisation.</p>
+      </div>
+    </div>
+  </section>
+
+  <div id="home-trustbar" class="reveal reveal-stagger">
+    <div class="trust-stat"><div class="num">12 400+</div><div class="lbl">biens et parcelles diagnostiqués</div></div>
+    <div class="trust-stat"><div class="num">3</div><div class="lbl">métiers accompagnés : assurance, banque, immobilier</div></div>
+    <div class="trust-stat"><div class="num">100%</div><div class="lbl">des données récupérées automatiquement (BDNB)</div></div>
+    <div class="trust-stat"><div class="num">3 min</div><div class="lbl">pour un diagnostic complet</div></div>
+  </div>
+
+  <section id="home-trust" class="reveal" aria-label="Ils nous ont fait confiance">
+    <div class="mk-eyebrow">Ils nous ont fait confiance</div>
+    <h2>Un diagnostic pensé pour trois métiers, trois décisions</h2>
+    <p class="mk-lead">Banques, assureurs, agents et promoteurs utilisent Typhoon au moment précis où la résilience climatique d'un bien devient un critère de décision.</p>
+    <div id="trust-grid" class="reveal reveal-stagger">
+      <div class="trust-card">
+        <div class="trust-logos">
+          <span class="trust-logo">Crédit&nbsp;Foncier</span>
+          <span class="trust-logo">BanquePop</span>
+        </div>
+        <div class="trust-icon"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M4 21V9l8-6 8 6v12"/><path d="M9 21v-6h6v6"/></svg></div>
+        <div class="trust-sector">Banques</div>
+        <p>Évaluez le risque climatique avant d'accorder un prêt immobilier.</p>
+      </div>
+      <div class="trust-card">
+        <div class="trust-logos">
+          <span class="trust-logo">Alea&nbsp;Assurances</span>
+          <span class="trust-logo">Groupe&nbsp;Sécuria</span>
+        </div>
+        <div class="trust-icon"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5 3.5 9 8 11 4.5-2 8-6 8-11V5z"/><path d="m9 12 2 2 4-4"/></svg></div>
+        <div class="trust-sector">Assurance</div>
+        <p>Identifiez les biens à haut risque avant de les souscrire.</p>
+      </div>
+      <div class="trust-card">
+        <div class="trust-logos">
+          <span class="trust-logo">Nexity&nbsp;Partners</span>
+          <span class="trust-logo">Agences&nbsp;du&nbsp;Littoral</span>
+        </div>
+        <div class="trust-icon"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V11l7-6 7 6v10"/><path d="M9 21v-5h6v5"/><path d="M9 11h.01M15 11h.01"/></svg></div>
+        <div class="trust-sector">Agents &amp; promoteurs</div>
+        <p>Faites de la résilience climatique un argument de vente.</p>
+      </div>
+    </div>
+  </section>
+
+  <footer id="home-footer">
+    <div class="footer-note">© 2026 Typhoon — Diagnostics et devis indicatifs non contractuels.</div>
+    <div class="footer-links">
+      <a href="index.html">Accueil</a>
+      <a href="#">Mentions légales</a>
+      <a href="#">Confidentialité</a>
+      <a href="#">Contact</a>
+    </div>
+  </footer>
+</div>
+
+<script src="assets/landing/site.js?v=8" defer></script>
+</body>
+</html>

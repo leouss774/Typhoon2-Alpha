@@ -147,6 +147,28 @@ export interface RecommandationsIA {
 }
 
 // ---------------------------------------------------------------------------
+// Risques principaux (panneau « Comprendre les risques »)
+// Contrat backend app/agents/risques_principaux.py — top 3 par aléa, scores
+// déterministes du moteur (F×V) + narration LLM (explication, facteurs
+// aggravants, zone la plus exposée). `niveau` utilise les clés D03.
+// ---------------------------------------------------------------------------
+
+export interface RisquePrincipal {
+  code: string;
+  libelle: string;
+  score: number;
+  niveau?: string | null;
+  explication?: string;
+  facteurs_aggravants?: string[];
+  zone_la_plus_exposee?: string | null;
+}
+
+export interface RisquesPrincipaux {
+  risques: RisquePrincipal[];
+  source?: string; // moteur_deterministe | moteur_deterministe_et_llm
+}
+
+// ---------------------------------------------------------------------------
 // Fiche BDNB (étape 3 « Analyse ») — backend app/connectors/bdnb.py
 // batiment_groupe_complet : 139 champs ; on ne type que ceux affichés.
 // Beaucoup sont null (ex. énergie/DPE sur les bâtiments anciens) — l'UI

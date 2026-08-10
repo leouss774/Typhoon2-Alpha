@@ -46,6 +46,9 @@ if (MAPBOX_TOKEN) {
 const BUILDINGS_LAYER = 'mb-buildings-3d';
 const BUILDINGS_SOURCE = 'mb-bdnb-buildings';
 const BUILDINGS_OUTLINE_LAYER = 'mb-buildings-outline';
+/* Bâtiments 3D natifs Mapbox (source composite/building — tout le bâti OSM,
+ * « vibe ville numérique »). Ajoutés sous la couche BDNB. */
+const NATIVE_BUILDINGS_LAYER = 'mb-native-buildings';
 
 /* Fond sombre 2D — tuiles CARTO dark de l'ancienne carte MapLibre. */
 const CARTO_DARK_LAYER = 'mb-carto-dark';
@@ -128,6 +131,9 @@ export function MapboxFloodMap({
   const markerRef = useRef<mapboxgl.Marker | null>(null);
   const popupRef = useRef<mapboxgl.Popup | null>(null);
   const pinElRef = useRef<HTMLDivElement | null>(null);
+  /* Indicateur du bâtiment cible (épingle accrochée à la géométrie BDNB),
+   * visible en 2D comme en 3D. */
+  const buildingPinRef = useRef<mapboxgl.Marker | null>(null);
 
   const [is3d, setIs3d] = useState(initial3D);
   const [showParcels, setShowParcels] = useState(false);
@@ -196,8 +202,10 @@ export function MapboxFloodMap({
       // Si le style a fini par se charger (retry HMR/dev), on lève le bandeau.
       setMapError(null);
       ensureBaseLayers(map);
+      ensureNativeBuildings(map);
       ensureBuildingsLayer(map);
       updateBuildingsTarget(map);
+      placeBuildingPin(map);
       void loadBuildings(map);
       if (showRisks) renderReport(map, latestReportRef.current);
     });
@@ -210,15 +218,27 @@ export function MapboxFloodMap({
 
     /* Clic bâtiment / vide */
     const queryBuildings = (point: mapboxgl.PointLike) => {
-      if (!map.getLayer(BUILDINGS_LAYER)) return [];
-      return map.queryRenderedFeatures(point, { layers: [BUILDINGS_LAYER] });
+      const ids: string[] = [];
+      if (map.getLayer(BUILDINGS_LAYER)) ids.push(BUILDINGS_LAYER);
+      if (map.getLayer(NATIVE_BUILDINGS_LAYER)) ids.push(NATIVE_BUILDINGS_LAYER);
+      if (map.getLayer('building')) ids.push('building');
+      return ids.length ? map.queryRenderedFeatures(point, { layers: ids }) : [];
     };
     map.on('click', (e) => {
       const features = queryBuildings(e.point);
-      const id = (features[0]?.properties?.batiment_groupe_id as string | undefined) ?? null;
-      selectedIdRef.current = id;
-      updateBuildingsTarget(map);
-      onSelectRef.current?.(id);
+      let id = (features[0]?.properties?.batiment_groupe_id as string | undefined) ?? null;
+      // Clic sur un bâtiment Mapbox générique (pas d'id BDNB) : on résout le
+      // bâtiment BDNB le plus proche du point via une mini-bbox.
+      if (!id) void resolveBuildingAt(e.lngLat).then((resolved) => {
+        selectedIdRef.current = resolved;
+        updateBuildingsTarget(map);
+        onSelectRef.current?.(resolved);
+      });
+      else {
+        selectedIdRef.current = id;
+        updateBuildingsTarget(map);
+        onSelectRef.current?.(id);
+      }
     });
     map.on('mousemove', (e) => {
       const features = queryBuildings(e.point);
@@ -258,6 +278,8 @@ export function MapboxFloodMap({
       popupRef.current = null;
       pinElRef.current?.remove();
       pinElRef.current = null;
+      buildingPinRef.current?.remove();
+      buildingPinRef.current = null;
       map.remove();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -268,6 +290,7 @@ export function MapboxFloodMap({
     const map = mapRef.current;
     if (!map || !mapReadyRef.current) return;
     updateBuildingsTarget(map);
+    placeBuildingPin(map);
     const b = currentBatiment();
     if (b?.geom_groupe) {
       try {
@@ -312,6 +335,39 @@ export function MapboxFloodMap({
   }, [selectedId]);
 
   /* ═══════════ Couches sources et rendu ═══════════ */
+
+  /** Bâtiments 3D natifs Mapbox : tout le bâti OSM extrudé (hauteurs réelles
+   *  OSM, approx.) — remplace le chargement BDNB par viewport pour l'effet
+   *  « ville numérique » en vue 3D. */
+  function ensureNativeBuildings(map: mapboxgl.Map) {
+    if (map.getLayer(NATIVE_BUILDINGS_LAYER)) return;
+    map.addLayer({
+      id: NATIVE_BUILDINGS_LAYER,
+      type: 'fill-extrusion',
+      source: 'composite',
+      'source-layer': 'building',
+      minzoom: 14,
+      layout: { visibility: is3dRef.current ? 'visible' : 'none' },
+      paint: {
+        'fill-extrusion-height': [
+          'interpolate', ['linear'], ['zoom'],
+          14, 0,
+          15.2, ['coalesce', ['get', 'height'], 8],
+        ],
+        'fill-extrusion-base': [
+          'interpolate', ['linear'], ['zoom'],
+          14, 0,
+          15.2, ['coalesce', ['get', 'min_height'], 0],
+        ],
+        'fill-extrusion-color': [
+          'interpolate', ['linear'], ['coalesce', ['get', 'height'], 8],
+          0, '#4a5568', 10, '#6b7c93', 25, '#93a7bf', 45, '#c3d2e2',
+        ],
+        'fill-extrusion-opacity': 0.9,
+        'fill-extrusion-vertical-gradient': true,
+      },
+    });
+  }
 
   /** Fond sombre CARTO (vue 2D) + parcelles cadastrales IGN (toggle). */
   function ensureBaseLayers(map: mapboxgl.Map) {
@@ -379,8 +435,13 @@ export function MapboxFloodMap({
   function updateBuildingsTarget(map: mapboxgl.Map) {
     const targetId = highlightId() ?? null;
     const accent = currentAccent();
-    if (map.getLayer(BUILDINGS_LAYER))
+    if (map.getLayer(BUILDINGS_LAYER)) {
       map.setPaintProperty(BUILDINGS_LAYER, 'fill-extrusion-color', buildingColorExpr(targetId, accent));
+      // En 3D, la ville est rendue par les bâtiments natifs Mapbox : la couche
+      // BDNB ne garde que le bâtiment cible (surligné en accent) pour éviter
+      // la double extrusion sur les mêmes empreintes.
+      map.setFilter(BUILDINGS_LAYER, targetId ? ['==', ['get', 'batiment_groupe_id'], targetId] : ['==', ['get', 'batiment_groupe_id'], '']);
+    }
     if (map.getLayer(BUILDINGS_OUTLINE_LAYER)) {
       map.setFilter(BUILDINGS_OUTLINE_LAYER, targetId ? ['==', ['get', 'batiment_groupe_id'], targetId] : ['==', ['get', 'batiment_groupe_id'], '']);
       map.setPaintProperty(BUILDINGS_OUTLINE_LAYER, 'line-color', accent);
@@ -508,6 +569,27 @@ export function MapboxFloodMap({
       .addTo(map);
   }
 
+  /** Épingle « bâtiment cible » : accrochée au centre de l'empreinte BDNB
+   *  (géométrie réelle), visible en 2D comme en 3D. Le surlignage accent
+   *  de la couche BDNB fait le reste en 3D. */
+  function placeBuildingPin(map: mapboxgl.Map) {
+    buildingPinRef.current?.remove();
+    buildingPinRef.current = null;
+    const b = currentBatiment();
+    if (!b?.geom_groupe) return;
+    try {
+      const wgs = geomToWgs84(b.geom_groupe as Record<string, unknown>);
+      const c = polygonCenter(wgs?.coordinates);
+      if (!c) return;
+      const el = document.createElement('div');
+      el.className = 'bldg-pin';
+      el.innerHTML = '<span class="bldg-pin-dot"></span>';
+      buildingPinRef.current = new mapboxgl.Marker({ element: el, anchor: 'bottom', offset: [0, 0] })
+        .setLngLat([c[0], c[1]])
+        .addTo(map);
+    } catch { /* */ }
+  }
+
   async function loadBuildings(map: mapboxgl.Map) {
     let west = 0, south = 0, east = 0, north = 0;
     try {
@@ -540,15 +622,38 @@ export function MapboxFloodMap({
     const map = mapRef.current;
     if (!map) return;
     is3dRef.current = enabled; setIs3d(enabled);
-    for (const id of [BUILDINGS_LAYER, BUILDINGS_OUTLINE_LAYER]) {
+    for (const id of [BUILDINGS_LAYER, BUILDINGS_OUTLINE_LAYER, NATIVE_BUILDINGS_LAYER]) {
       if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', enabled ? 'visible' : 'none');
     }
+    if (enabled) updateBuildingsTarget(map); // filtre BDNB → bâtiment cible
     /* Vue 2D → fond sombre CARTO (celui de l'ancienne carte MapLibre). */
     if (map.getLayer(CARTO_DARK_LAYER)) {
       map.setLayoutProperty(CARTO_DARK_LAYER, 'visibility', enabled ? 'none' : 'visible');
     }
     map.easeTo({ pitch: enabled ? 55 : 0, duration: 800 });
     if (enabled) void loadBuildings(map);
+  }
+
+  /** Résout le bâtiment BDNB le plus proche d'un point de clic (mini-bbox). */
+  async function resolveBuildingAt(lngLat: mapboxgl.LngLat): Promise<string | null> {
+    const d = 0.0012; // ~130 m — couvre le bâtiment même si le clic est en bordure
+    const url =
+      `${API}/diagnostic/zone/buildings?west=${lngLat.lng - d}&south=${lngLat.lat - d}` +
+      `&east=${lngLat.lng + d}&north=${lngLat.lat + d}&limit=10`;
+    try {
+      const resp = await fetch(url);
+      if (!resp.ok) return null;
+      const fc = (await resp.json()) as GeoJSON.FeatureCollection;
+      let best: string | null = null;
+      let bestD = Infinity;
+      for (const f of fc.features || []) {
+        const c = polygonCenter((f.geometry as { coordinates?: unknown } | null)?.coordinates);
+        if (!c) continue;
+        const dd = (c[0] - lngLat.lng) ** 2 + (c[1] - lngLat.lat) ** 2;
+        if (dd < bestD) { bestD = dd; best = (f.properties?.batiment_groupe_id as string | undefined) ?? null; }
+      }
+      return best;
+    } catch { return null; }
   }
 
   function toggleParcels(enabled: boolean) {

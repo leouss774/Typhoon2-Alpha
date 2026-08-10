@@ -24,6 +24,16 @@ export function loadFromAddress(adresse) {
   return _loadFromAddress(adresse);
 }
 
+// Échappement HTML partagé : utilisé par le rendu DOM du moteur ET par
+// matchArtisans() (exporté pour la page /artisans). Défini au niveau module
+// pour être accessible des deux côtés sans duplication.
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
 export function initScene() {
 /* =========================================================================
    TYPHOON — JUMEAU NUMÉRIQUE 3D — moteur réel (diagnostic du bien)
@@ -136,9 +146,88 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(window.devicePixelRatio);
 container.appendChild(renderer.domElement);
 
-scene.add(new THREE.HemisphereLight(0x3a7bd5, 0x04070c, 0.7));
-const rim = new THREE.DirectionalLight(0x4da6ff, 0.5); rim.position.set(-8, 10, -6); scene.add(rim);
-const key = new THREE.DirectionalLight(0xbfe0ff, 0.4); key.position.set(8, 12, 8); scene.add(key);
+// --- Éclairage réaliste (Track B — REALISM_PLAN) ---
+// Soleil directionnel dont la direction suit lat/lon + date réels (ombre
+// crédible), hémisphère ciel/sol neutre, fill doux. Ombres activées, reçues
+// par un sol qui suit le bas du bâti (syncGround). Les calques de risque
+// (fils, remplissages, eau, fissures) restent en MeshBasicMaterial.
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+let sunLight = null;
+let ground = null;
+
+// Approx. NOAA de la position solaire (élévation/azimut depuis lat/lon + date).
+function solarElevAzimuth(lat, lon, date) {
+  const rad = Math.PI / 180;
+  const d = date || new Date();
+  const doy = (Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) - Date.UTC(d.getFullYear(), 0, 1)) / 86400000 + 1;
+  const decl = 23.45 * Math.sin(2 * Math.PI * (284 + doy) / 365);
+  const utcH = d.getUTCHours() + d.getUTCMinutes() / 60;
+  const hourAngle = (utcH + lon / 15 - 12) * 15;
+  const el = Math.asin(
+    Math.sin(lat * rad) * Math.sin(decl * rad) +
+    Math.cos(lat * rad) * Math.cos(decl * rad) * Math.cos(hourAngle * rad)
+  );
+  let az = Math.atan2(
+    Math.sin(hourAngle * rad),
+    Math.cos(hourAngle * rad) * Math.sin(lat * rad) - Math.tan(decl * rad) * Math.cos(lat * rad)
+  );
+  return { elevation: Math.max(6, Math.min(82, el / rad)), azimuth: ((az / rad + 180) % 360 + 360) % 360 };
+}
+
+function setupLights() {
+  const hemi = new THREE.HemisphereLight(0xd9e7ff, 0x3a3f45, 0.75);
+  scene.add(hemi);
+  const fill = new THREE.DirectionalLight(0xffffff, 0.45);
+  fill.position.set(-6, 8, -8);
+  scene.add(fill);
+  sunLight = new THREE.DirectionalLight(0xfff1d6, 1.7);
+  sunLight.castShadow = true;
+  sunLight.shadow.mapSize.set(2048, 2048);
+  sunLight.shadow.camera.left = -18; sunLight.shadow.camera.right = 18;
+  sunLight.shadow.camera.top = 18; sunLight.shadow.camera.bottom = -18;
+  sunLight.shadow.camera.near = 1; sunLight.shadow.camera.far = 60;
+  sunLight.shadow.bias = -0.0004;
+  scene.add(sunLight);
+  positionSun(null, null);
+
+  // Sol recevant les ombres (léger ; recale sous le bâti par syncGround).
+  ground = new THREE.Mesh(
+    new THREE.PlaneGeometry(90, 90),
+    new THREE.MeshStandardMaterial({ color: 0xdaddd4, roughness: 1, metalness: 0 })
+  );
+  ground.rotation.x = -Math.PI / 2;
+  ground.position.y = -0.06;
+  ground.receiveShadow = true;
+  scene.add(ground);
+}
+
+function positionSun(lat, lon) {
+  if (!sunLight) return;
+  const pos = (typeof lat === 'number' && typeof lon === 'number')
+    ? solarElevAzimuth(lat, lon)
+    : { elevation: 38, azimuth: 150 };
+  const el = pos.elevation * Math.PI / 180, az = pos.azimuth * Math.PI / 180;
+  const dist = 12;
+  sunLight.position.set(
+    dist * Math.cos(el) * Math.sin(az),   // +x = Est
+    dist * Math.sin(el),
+    -dist * Math.cos(el) * Math.cos(az)   // +z = Sud
+  );
+}
+
+function syncGround() {
+  if (!ground) return;
+  let minY = -0.06;
+  try {
+    if (meshGroup) { const b = new THREE.Box3().setFromObject(meshGroup); minY = b.min.y - 0.04; }
+    else if (house) { const b = new THREE.Box3().setFromObject(house); minY = b.min.y - 0.05; }
+  } catch (e) { /* scène pas encore construite au premier montage */ }
+  ground.position.y = Math.min(minY, -0.03);
+}
+
+setupLights();
 
 const grid = new THREE.GridHelper(60, 60, 0x1560ff, 0x0d2647);
 grid.material.transparent = true; grid.material.opacity = 0.45;
@@ -419,6 +508,24 @@ function drawRoofTexture(slug) {
 
 // ---------- 4. CONSTRUCTION PARAMÉTRIQUE DE LA MAISON ----------
 let house = null, zoneGroups = {}, zoneFillMeshes = {}, interactiveMeshes = [];
+// Nuage de points LiDAR HD IGN (Track A, phase 3a du plan jumeau 3D) :
+// couche de points non interactive, affichee au-dessus du bati procedural.
+let lidarPoints = null;
+// Maillage reel (Phase 3b) : scene GLB (toit LiDAR HD + texture BD ORTHO +
+// murs footprint). Quand il est pret, il REMPLACE le bati procedural et le
+// nuage de points ; sinon on garde nuage + bati procedural (fallback).
+let meshGroup = null;
+let houseProvenance = null;  // 'footprint' | 'box-fallback' (Track A REALISM_PLAN)
+// Lumiere neutre ajoutee quand le maillage texturé est affiche : les lumières
+// bleues du scan holographique teintent la BD ORTHO en bleu fonce.
+let meshLight = null;
+// Phase 5 : zones de risque remappees sur la geometrie reelle du maillage
+// (toiture = faces du toit, murs_* = quads de murs par orientation cardinale,
+// fondations = bande basse des murs, sous_sol = plan du footprint). Les fills
+// translucides colores reprennent exactement le contrat des zones procedurales
+// (registerFill/zoneFillMeshes/interactiveMeshes) : survol, clic, panneau,
+// couleurs par score — tout fonctionne sans changement du code d'interaction.
+let meshZonesRoot = null;
 let crackMesh = null, waterMesh = null, stainMeshes = {};
 let houseDims = {};
 let labelSprites = {}, leaderLines = {};
@@ -445,6 +552,10 @@ function disposeHouse() {
   crackMesh = null; waterMesh = null; stainMeshes = {};
   labelSprites = {}; leaderLines = {}; zoneAnchors = {};
   structureMeshes = []; openingMeshes = [];
+  if (lidarPoints) { scene.remove(lidarPoints); lidarPoints = null; }
+  if (meshGroup) { scene.remove(meshGroup); meshGroup = null; }
+  if (meshLight) { scene.remove(meshLight); meshLight = null; }
+  if (meshZonesRoot) { scene.remove(meshZonesRoot); meshZonesRoot = null; }
 }
 
 function registerFill(zoneName, fillMesh) {
@@ -458,8 +569,12 @@ function registerFill(zoneName, fillMesh) {
 // duplication de donnees) : computeVertexNormals est deja fait une fois par
 // registerFill/addRawPart, appeler ceci AVANT ou APRES n'a pas d'incidence.
 function addStructureLayer(group, geometry, texture) {
-  const mat = new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide });
+  // Track B (REALISM_PLAN) : le volume texturé passe en MeshStandardMaterial
+  // pour répondre au soleil/aux ombres ; les calques de risque restent en
+  // MeshBasicMaterial translucide par-dessus.
+  const mat = new THREE.MeshStandardMaterial({ map: texture, side: THREE.DoubleSide, roughness: 0.9, metalness: 0.02 });
   const mesh = new THREE.Mesh(geometry, mat);
+  mesh.castShadow = true;
   group.add(mesh);
   structureMeshes.push(mesh);
   return mesh;
@@ -1032,6 +1147,14 @@ function buildAnnexes(g, dims) {
 
 function buildHouse(geometry) {
   const polys = footprintPolygons(geometry);
+  // Track A (REALISM_PLAN) : traçabilité de la provenance géométrique — la
+  // boîte générique n'est qu'un dernier recours. window + dataset permettent
+  // de mesurer sa fréquence d'utilisation dans la prod.
+  const provenance = polys ? 'footprint' : 'box-fallback';
+  houseProvenance = provenance;
+  container.dataset.geometryProvenance = provenance;
+  window.__houseProvenance = provenance;
+  if (!polys) console.warn('[jumeau] footprint BDNB absent -> buildHouseFromBox (géométrie approximative)');
   if (polys) buildHouseFromFootprint(geometry, polys);
   else buildHouseFromBox(geometry);
   // buildLabels() desactive : les etiquettes rectangulaires noires flottant
@@ -1156,8 +1279,9 @@ function buildHouseFromBox(geometry) {
       const rotation = sign * roofAngle;
       const position = new THREE.Vector3(0, (eavesY + ridgeY) / 2, sign * (roofHalfSpan / 2));
 
-      const structMesh = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ map: pentTexture, side: THREE.DoubleSide }));
+      const structMesh = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ map: pentTexture, side: THREE.DoubleSide, roughness: 0.9, metalness: 0.02 }));
       structMesh.rotation.x = rotation; structMesh.position.copy(position);
+      structMesh.castShadow = true;
       zoneGroups.toiture.add(structMesh); structureMeshes.push(structMesh);
 
       const mesh = new THREE.Mesh(geo, makeFillMat(0x3fb950, 0.16));
@@ -1302,7 +1426,15 @@ function applyZoneEffect(zoneName, score) {
     crackMesh.material.needsUpdate = true;
   }
   if (zoneName === "sous_sol" && waterMesh) {
-    waterMesh.userData.targetRatio = effect.waterHeightRatio || 0;
+    // Phase 6 : si une hauteur d'eau REELLE (fourchette PPRI Géorisques) est
+    // dispo, elle prime sur le ratio derive du score — l'animation monte
+    // alors a la hauteur reelle en metres (maxWaterRise = 2.4 m).
+    const real = currentZones && currentZones.sous_sol && currentZones.sous_sol.hauteur_eau_m;
+    if (typeof real === 'number' && real > 0) {
+      waterMesh.userData.targetRatio = Math.min(real / maxWaterRise, 1);
+    } else {
+      waterMesh.userData.targetRatio = effect.waterHeightRatio || 0;
+    }
   }
   if (zoneName.startsWith("murs_") && stainMeshes[zoneName]) {
     stainMeshes[zoneName].material.opacity = effect.humidityOpacity || 0;
@@ -1421,6 +1553,10 @@ const cameraTarget = new THREE.Vector3(0, 2.2, 0);
 let radius = 17, theta = Math.PI / 4, phi = Math.PI / 3;
 let targetTheta = theta, targetPhi = phi, targetRadius = radius;
 let isDragging = false, lastX = 0, lastY = 0, idleTime = 0;
+// Phase 6 (seisme) : secousse de camera quand la zone sismique reelle >= 4
+// (decret n°2010-1255 — Alpes/Pyrenees). Amortie, ~3.5 s, declenchee au
+// chargement puis plus jamais (pas de bruit permanent).
+let seismicShake = null;
 
 function updateCameraPosition(dt) {
   if (!isDragging) { idleTime += dt; if (idleTime > 2) targetTheta += dt * 0.05; }
@@ -1428,7 +1564,26 @@ function updateCameraPosition(dt) {
   camera.position.x = cameraTarget.x + radius * Math.sin(phi) * Math.sin(theta);
   camera.position.y = cameraTarget.y + radius * Math.cos(phi);
   camera.position.z = cameraTarget.z + radius * Math.sin(phi) * Math.cos(theta);
+  if (seismicShake && seismicShake.t < seismicShake.duration) {
+    const k = seismicShake.magnitude * Math.sin(seismicShake.t * 42) * (1 - seismicShake.t / seismicShake.duration);
+    camera.position.x += k;
+    camera.position.z += k * 0.65;
+    camera.position.y += k * 0.45;
+    seismicShake.t += dt;
+  }
   camera.lookAt(cameraTarget);
+}
+
+function startSeismicShakeIfNeeded() {
+  const zone = currentZones && currentZones.fondations && currentZones.fondations.zone_sismique;
+  if (zone == null || seismicShake) return;
+  const n = parseInt(zone, 10);
+  if (!Number.isNaN(n) && n >= 4) {
+    // Petite latence : la scene doit d'abord se stabiliser (fit camera).
+    setTimeout(() => {
+      seismicShake = { t: 0, duration: 3.5, magnitude: 0.14 };
+    }, 1400);
+  }
 }
 renderer.domElement.addEventListener('mousedown', e => { isDragging = true; idleTime = 0; lastX = e.clientX; lastY = e.clientY; });
 _mouseUpHandler = () => { isDragging = false; idleTime = 0; };
@@ -1598,13 +1753,190 @@ function publishRecommendations() {
   }));
 }
 
+// ---- Phase 3a (Track A) : nuage de points LiDAR HD IGN ----
+// Les points arrivent du backend dans le repere local du viewer
+// (x = Est, y = hauteur au-dessus du sol, z = Sud) — meme convention que
+// `geometry.footprint`. On les affiche en `THREE.Points`, non interactifs,
+// au-dessus du bati procedural (qui reste le fallback de dernier recours).
+function renderLiDARPoints(lidar) {
+  if (lidarPoints) { scene.remove(lidarPoints); lidarPoints = null; }
+  const pts = lidar && lidar.points;
+  if (!pts || !pts.length) return;
+
+  const N = pts.length;
+  const positions = new Float32Array(N * 3);
+  const colors = new Float32Array(N * 3);
+  const building = new THREE.Color(0x8fb7ff);  // batiment (classe 6)
+  const ground = new THREE.Color(0x5a6472);    // sol (classe 2)
+
+  for (let i = 0; i < N; i++) {
+    const p = pts[i];
+    positions[i * 3] = p[0];
+    positions[i * 3 + 1] = p[1];
+    positions[i * 3 + 2] = p[2];
+    const c = p[3] === 6 ? building : ground;
+    colors[i * 3] = c.r; colors[i * 3 + 1] = c.g; colors[i * 3 + 2] = c.b;
+  }
+
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+  const material = new THREE.PointsMaterial({
+    size: 0.12,
+    vertexColors: true,
+    sizeAttenuation: true,
+    transparent: true,
+    opacity: 0.95,
+  });
+  lidarPoints = new THREE.Points(geometry, material);
+  lidarPoints.renderOrder = 10;
+  lidarPoints.name = 'lidar-hd';
+  scene.add(lidarPoints);
+
+  // Indicateur visuel discret (source réelle + hauteur mesurée).
+  const badge = document.getElementById('lidar-badge');
+  if (badge) {
+    const hauteur = lidar.hauteur_max_m != null ? `${Math.round(lidar.hauteur_max_m)} m` : '';
+    badge.textContent = `LiDAR HD IGN · ${lidar.batiment || 0} pts bâti` + (hauteur ? ` · ${hauteur}` : '');
+    badge.style.display = 'inline-flex';
+  }
+}
+
+// ---- Phase 5 : zones de risque sur la geometrie reelle du maillage ----
+function findNamedMesh(group, name) {
+  let found = null;
+  group.traverse(o => { if (o.isMesh && !found && (o.name === name || (o.parent && o.parent.name === name))) found = o; });
+  return found;
+}
+
+function meshTranslucentMat(hex, opacity) {
+  return new THREE.MeshPhongMaterial({
+    color: hex, transparent: true, opacity, depthWrite: false,
+    side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1,
+  });
+}
+
+function buildSubGeometry(geo, faces) {
+  const pos = geo.attributes.position;
+  const idx = geo.index;
+  const subPos = [];
+  const subIdx = [];
+  const vmap = {};
+  let vcount = 0;
+  const getV = i => {
+    if (vmap[i] === undefined) {
+      vmap[i] = vcount++;
+      subPos.push(pos.getX(i), pos.getY(i), pos.getZ(i));
+    }
+    return vmap[i];
+  };
+  faces.forEach(f => {
+    const ia = idx ? idx.getX(f * 3) : f * 3;
+    const ib = idx ? idx.getX(f * 3 + 1) : f * 3 + 1;
+    const ic = idx ? idx.getX(f * 3 + 2) : f * 3 + 2;
+    subIdx.push(getV(ia), getV(ib), getV(ic));
+  });
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(subPos, 3));
+  g.setIndex(subIdx);
+  g.computeVertexNormals();
+  return g;
+}
+
+function buildMeshZones(meshGroup, meta) {
+  if (meshZonesRoot) scene.remove(meshZonesRoot);
+  meshZonesRoot = new THREE.Group();
+  meshZonesRoot.name = 'mesh-zones';
+  scene.add(meshZonesRoot);
+
+  // Regroupe les zones (les groupes procedurales ont ete reinitialises par
+  // disposeHouse au chargement du maillage).
+  ZONE_NAMES.forEach(name => {
+    zoneGroups[name] = new THREE.Group();
+    zoneGroups[name].name = name;
+    zoneFillMeshes[name] = [];
+    meshZonesRoot.add(zoneGroups[name]);
+  });
+
+  // --- toiture : copie translucide du mesh de toit (BD ORTHO) ---
+  const toitMesh = findNamedMesh(meshGroup, 'toit');
+  if (toitMesh) {
+    const fill = new THREE.Mesh(toitMesh.geometry, meshTranslucentMat(0x3fb950, 0.28));
+    zoneGroups.toiture.add(fill);
+    registerFill('toiture', fill);
+  }
+
+  // --- murs : split des faces par orientation (+ bande fondations) ---
+  const mursMesh = findNamedMesh(meshGroup, 'murs');
+  if (mursMesh) {
+    const geo = mursMesh.geometry;
+    const pos = geo.attributes.position;
+    const idx = geo.index;
+    const triCount = idx ? idx.count / 3 : pos.count / 3;
+    const facesByZone = { murs_nord: [], murs_sud: [], murs_est: [], murs_ouest: [], fondations: [] };
+    for (let f = 0; f < triCount; f++) {
+      const ia = idx ? idx.getX(f * 3) : f * 3;
+      const ib = idx ? idx.getX(f * 3 + 1) : f * 3 + 1;
+      const ic = idx ? idx.getX(f * 3 + 2) : f * 3 + 2;
+      const ax = pos.getX(ia), ay = pos.getY(ia), az = pos.getZ(ia);
+      const bx = pos.getX(ib), by = pos.getY(ib), bz = pos.getZ(ib);
+      const cx = pos.getX(ic), cyy = pos.getY(ic), cz = pos.getZ(ic);
+      const n = new THREE.Vector3()
+        .subVectors(new THREE.Vector3(bx, by, bz), new THREE.Vector3(ax, ay, az))
+        .cross(new THREE.Vector3().subVectors(new THREE.Vector3(cx, cyy, cz), new THREE.Vector3(ax, ay, az)))
+        .normalize();
+      const cy = (ay + by + cyy) / 3;
+      let zone;
+      if (cy < 0.75) zone = 'fondations'; // bande basse (sol ~ -0.25 m)
+      else if (Math.abs(n.x) >= Math.abs(n.z)) zone = n.x > 0 ? 'murs_est' : 'murs_ouest';
+      else zone = n.z > 0 ? 'murs_sud' : 'murs_nord'; // +z = Sud, -z = Nord
+      facesByZone[zone].push(f);
+    }
+    Object.keys(facesByZone).forEach(zone => {
+      if (!facesByZone[zone].length) return;
+      const fill = new THREE.Mesh(buildSubGeometry(geo, facesByZone[zone]), meshTranslucentMat(0x3fb950, 0.24));
+      zoneGroups[zone].add(fill);
+      registerFill(zone, fill);
+    });
+  }
+
+  // --- sous_sol : plan translucide du footprint reel (double aussi de
+  // plan d'eau pour la montee des eaux — meme contrat que waterMesh). ---
+  const fp = meta && meta.footprint;
+  if (fp && fp.length >= 3) {
+    const shape = new THREE.Shape();
+    fp.forEach((pt, i) => (i ? shape.lineTo(pt[0], pt[1]) : shape.moveTo(pt[0], pt[1])));
+    shape.closePath();
+    const planeGeo = new THREE.ShapeGeometry(shape);
+    const fill = new THREE.Mesh(planeGeo, meshTranslucentMat(0x3fb950, 0.20));
+    fill.rotation.x = -Math.PI / 2;
+    fill.position.y = 0.02;
+    fill.userData.baseY = 0.02;
+    zoneGroups.sous_sol.add(fill);
+    registerFill('sous_sol', fill);
+    waterMesh = fill; // anime par animateEffects (montee des eaux reelle)
+  }
+
+  // Couleurs reelles des zones du diagnostic sur la geometrie.
+  ZONE_NAMES.forEach(name => {
+    if (currentZones && currentZones[name]) updateZoneColor(name, currentZones[name].risque, false);
+  });
+}
+
 function loadDataset(data) {
   rawData = data;
   recommandationsReady = !data._resume;
   buildHouse(data.geometry);
   fitCameraToHouse();
+  startSeismicShakeIfNeeded();
   document.getElementById('scene-container').classList.add('scene-ready');
   document.getElementById('addr-line').textContent = data.adresse || '—';
+  // Soleil réel : lat/lon du diagnostic (contrat _resume.building_data.adresse).
+  try {
+    const bd = (data._resume && data._resume.building_data) || {};
+    if (bd.adresse) positionSun(bd.adresse.lat, bd.adresse.lon);
+  } catch (e) { /* contrat sans _resume (données de démo) : angle par défaut */ }
+  syncGround();
   const climat = data.climat;
   const climPanel = document.getElementById('climat-panel');
   const climToggleBtn = document.getElementById('btn-climat-toggle');
@@ -1675,7 +2007,9 @@ function mergeRecommandations(fullContract) {
   if (currentYear === 2025) {
     currentZones = JSON.parse(JSON.stringify(rawData.zones));
     const infoPanel = document.getElementById('info-panel');
-    if (infoPanel.style.display === 'block' && infoPanel.dataset.zone) {
+    // Garde nulle : si l'utilisateur a quitté la scène pendant la fusion en
+    // arrière-plan, le panneau n'existe plus — ne pas planter la fusion.
+    if (infoPanel && infoPanel.style.display === 'block' && infoPanel.dataset.zone) {
       showZonePanel(infoPanel.dataset.zone);
     }
   }
@@ -1766,17 +2100,7 @@ if (exportPdfBtn) {
   const fn = () => window.print();
   exportPdfBtn.addEventListener('click', fn);
   _elementHandlers.push({ el: exportPdfBtn, type: 'click', fn });
-}
-
-// Echappe le texte libre produit par le LLM avant insertion via innerHTML.
-function escapeHtml(str) {
-  if (str === null || str === undefined) return '';
-  return String(str)
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-}
-
-// Construit la phrase "coût estimé" complète à partir de l'objet
+}// Construit la phrase "coût estimé" complète à partir de l'objet
 // cout_estime produit par l'agent recommandations : montant_min/max/devise/unite
 // + infos de contexte (date_estimation, zone_geo, hypotheses).
 function formatCoutEstime(cout) {
@@ -1817,143 +2141,16 @@ function recoGain(r) { return typeof r.gain_resilience === 'number' ? r.gain_res
 async function rechercherArtisans(zoneName, data, container, button) {
   const apiBaseInput = document.getElementById('api-base-input');
   const apiBase = (apiBaseInput && apiBaseInput.value || window.TYPHOON_API).trim();
-  button.disabled = true;
-  button.textContent = 'Recherche dans les annuaires officiels…';
-  container.innerHTML = '';
-  try {
-    const response = await fetch(apiBase + '/artisans/match', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        adresse: rawData.adresse || '',
-        limite: 5,
-        zones: [{
-          zone: zoneName,
-          risques: [data.alea_principal || ''],
-          recommandations: data.recommandations || []
-        }]
-      })
-    });
-    const payload = await response.json();
-    if (!response.ok) throw new Error(payload.detail || `Erreur HTTP ${response.status}`);
-    const groupes = payload.recommandations_traitees || [];
-    if (!groupes.length) {
-      container.className = 'artisan-results artisan-empty';
-      container.textContent = 'Aucun métier n’a pu être associé automatiquement à ces recommandations.';
-      return;
-    }
-    groupes.forEach(groupe => {
-      const section = document.createElement('div');
-      section.className = 'artisan-group';
-      const heading = document.createElement('div');
-      heading.className = 'artisan-group-head';
-      const title = document.createElement('div');
-      title.className = 'artisan-group-title';
-      title.textContent = groupe.libelle || groupe.domaine_recherche || groupe.cle;
-      const category = document.createElement('span');
-      category.className = 'artisan-group-badge';
-      category.textContent = groupe.categorie === 'rge' ? 'RGE' : 'Métier local';
-      heading.appendChild(title);
-      heading.appendChild(category);
-      section.appendChild(heading);
-      if (groupe.erreur) {
-        const error = document.createElement('div');
-        error.className = 'artisan-error';
-        error.textContent = groupe.erreur;
-        section.appendChild(error);
-      }
-      (groupe.entreprises || []).forEach(entreprise => {
-        const card = document.createElement('div');
-        card.className = 'artisan-card';
-        const cardTop = document.createElement('div');
-        cardTop.className = 'artisan-card-top';
-        const name = document.createElement('div');
-        name.className = 'artisan-name';
-        name.textContent = entreprise.nom_entreprise || 'Entreprise';
-        const score = document.createElement('div');
-        score.className = 'artisan-score';
-        score.innerHTML = `${Number(entreprise.score_objectif_sur_100) || 0}<small>/100</small>`;
-        cardTop.appendChild(name);
-        cardTop.appendChild(score);
-        card.appendChild(cardTop);
-
-        const meta = document.createElement('div');
-        meta.className = 'artisan-meta';
-        const addressText = [entreprise.adresse, entreprise.code_postal, entreprise.commune].filter(Boolean).join(' ');
-        if (addressText) {
-          const row = document.createElement('div');
-          row.className = 'artisan-meta-row';
-          row.innerHTML = `<span class="artisan-meta-icon">⌖</span><span>${escapeHtml(addressText)}</span>`;
-          meta.appendChild(row);
-        }
-        if (entreprise.telephone || entreprise.email) {
-          const row = document.createElement('div');
-          row.className = 'artisan-meta-row';
-          row.innerHTML = `<span class="artisan-meta-icon">✆</span><span>${escapeHtml([entreprise.telephone, entreprise.email].filter(Boolean).join(' · '))}</span>`;
-          meta.appendChild(row);
-        }
-        card.appendChild(meta);
-
-        const actions = document.createElement('div');
-        actions.className = 'artisan-actions';
-        if (entreprise.telephone) {
-          const phone = document.createElement('a');
-          phone.href = `tel:${String(entreprise.telephone).replace(/[^\d+]/g, '')}`;
-          phone.className = 'artisan-action primary';
-          phone.textContent = '✆ Appeler';
-          actions.appendChild(phone);
-        }
-        if (entreprise.email) {
-          const email = document.createElement('a');
-          email.href = `mailto:${entreprise.email}`;
-          email.className = 'artisan-action';
-          email.textContent = '✉ Envoyer un e-mail';
-          actions.appendChild(email);
-        }
-        if (addressText) {
-          const directions = document.createElement('a');
-          directions.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addressText)}`;
-          directions.target = '_blank';
-          directions.rel = 'noopener';
-          directions.className = 'artisan-action';
-          directions.textContent = '⌖ Itinéraire';
-          actions.appendChild(directions);
-        }
-        if (entreprise.site_officiel) {
-          const site = document.createElement('a');
-          site.href = entreprise.site_officiel;
-          site.target = '_blank';
-          site.rel = 'noopener';
-          site.className = 'artisan-action';
-          site.textContent = '↗ Site officiel';
-          actions.appendChild(site);
-        }
-        if (actions.childElementCount) card.appendChild(actions);
-
-        if (!entreprise.site_officiel) {
-          const missing = document.createElement('div');
-          missing.className = 'artisan-site-missing';
-          missing.textContent = entreprise.telephone || entreprise.email
-            ? 'Contact direct disponible sans site officiel.'
-            : 'Aucun contact direct vérifiable trouvé pour cette entreprise.';
-          card.appendChild(missing);
-        }
-        section.appendChild(card);
-      });
-      container.appendChild(section);
-    });
-    const warning = document.createElement('small');
-    warning.className = 'artisan-note';
-    warning.textContent = [payload.avertissement_score, payload.avertissement_sites].filter(Boolean).join(' ');
-    container.appendChild(warning);
-  } catch (error) {
-    container.className = 'artisan-results artisan-error';
-    container.textContent = `Recherche indisponible : ${error.message}`;
-  } finally {
-    button.disabled = false;
-    button.textContent = 'Rechercher des artisans correspondants';
-  }
+  return matchArtisans({
+    apiBase,
+    adresse: (rawData && rawData.adresse) || '',
+    zoneName,
+    data,
+    container,
+    button,
+  });
 }
+
 let infoRiskFilter = 'tous';
 
 function showZonePanel(zoneName) {
@@ -2232,6 +2429,8 @@ _resizeHandler = () => {
 window.addEventListener('resize', _resizeHandler);
 
 // ---------- 11. DÉMARRAGE ----------
+// Repli démo par défaut (comportement d'origine) : le moteur charge le jeu
+// de données d'exemple tant que le front ne fournit pas de diagnostic réel.
 loadDataset(DEFAULT_DATA);
 
 // Diagnostic reel par adresse (meme flux que le formulaire du front natif) :
@@ -2255,12 +2454,139 @@ _loadFromAddress = function (adresse) {
     .then(contract => {
       loadDataset(contract);
       fetchRecommandations(apiBase, contract);
+      // Phase 3a (Track A) : nuage de points LiDAR HD — non bloquant. En cas
+      // d'echec (dalle absente, WFS/COPC indisponible), la geometrie
+      // procedurale reste affichee : c'est le fallback de dernier recours.
+      fetchLiDAR(apiBase, contract);
       return contract;
     });
 };
 
+function lidarQuery(contract) {
+  const bat = contract._resume && contract._resume.building_data
+    && contract._resume.building_data.bdnb
+    && contract._resume.building_data.bdnb.batiment;
+  const params = {};
+  if (bat && bat.geom_groupe) params.geom = JSON.stringify(bat.geom_groupe);
+  if (bat && bat.batiment_groupe_id) params.building_id = bat.batiment_groupe_id;
+  return params;
+}
+
+function fetchLiDAR(apiBase, contract) {
+  const url = new URL(apiBase + '/diagnostic/zone/lidar');
+  const q = lidarQuery(contract);
+  if (q.geom) url.searchParams.set('geom', q.geom);
+  if (q.building_id) url.searchParams.set('building_id', q.building_id);
+  fetch(url.toString())
+    .then(async response => {
+      if (!response.ok) {
+        const body = await response.text();
+        throw new Error(`${response.status} ${response.statusText} — ${body.slice(0, 200)}`);
+      }
+      return response.json();
+    })
+    .then(lidar => {
+      if (lidar && lidar.points && lidar.points.length) {
+        renderLiDARPoints(lidar);
+        // Phase 3b : une fois le nuage affiche (rendu immediat), on tente le
+        // maillage reel (toit LiDAR + texture BD ORTHO). Premier passage
+        // ~10-20 s (reconstruction), ensuite instantane (cache par batiment).
+        loadLiDARMesh(apiBase, contract);
+      }
+    })
+    .catch(err => {
+      // Fallback silencieux : le bati procedural reste en place.
+      console.info('[jumeau] LiDAR HD indisponible, bati procedural conserve :', err.message);
+    });
+}
+
+// Phase 3b (Track B) : maillage reel du batiment — GLB (toit LiDAR HD + murs
+// footprint + texture BD ORTHO sur le toit) servi par le backend, mis en
+// cache par batiment. S'il se charge, il remplace le bati procedural et le
+// nuage de points ; sinon on conserve le rendu actuel (fallback).
+function loadLiDARMesh(apiBase, contract) {
+  const url = new URL(apiBase + '/diagnostic/zone/lidar/mesh');
+  const q = lidarQuery(contract);
+  if (q.geom) url.searchParams.set('geom', q.geom);
+  if (q.building_id) url.searchParams.set('building_id', q.building_id);
+  const metaUrl = new URL(apiBase + '/diagnostic/zone/lidar/mesh/meta');
+  if (q.geom) metaUrl.searchParams.set('geom', q.geom);
+  if (q.building_id) metaUrl.searchParams.set('building_id', q.building_id);
+  // Meta (footprint local) en parallele — Phase 5 (zones sur la geometrie).
+  const metaPromise = fetch(metaUrl.toString())
+    .then(r => (r.ok ? r.json() : null))
+    .catch(() => null);
+  fetch(url.toString())
+    .then(async response => {
+      if (!response.ok) {
+        const body = await response.text();
+        throw new Error(`${response.status} — ${body.slice(0, 150)}`);
+      }
+      return response.arrayBuffer();
+    })
+    .then(async buf => {
+      const { GLTFLoader } = await import('three/examples/jsm/loaders/GLTFLoader.js');
+      const loader = new GLTFLoader();
+      return new Promise((resolve, reject) => loader.parse(buf, '', resolve, reject));
+    })
+    .then(async gltf => {
+      const meta = await metaPromise;
+      if (gltf && gltf.scene && meta && meta.footprint) {
+        buildMeshZones(gltf.scene, meta);
+      }
+      return gltf;
+    })
+    .then(gltf => {
+      if (!gltf || !gltf.scene) return;
+      if (meshGroup) scene.remove(meshGroup);
+      meshGroup = gltf.scene;
+      meshGroup.name = 'lidar-mesh';
+      meshGroup.traverse(o => { if (o.isMesh) o.castShadow = true; });
+      scene.add(meshGroup);
+      // Lumiere blanche neutre pour rendre la texture BD ORTHO avec ses
+      // vraies couleurs (les lumières bleues du scan la teintent sinon).
+      if (!meshLight) {
+        meshLight = new THREE.DirectionalLight(0xffffff, 1.1);
+        meshLight.position.set(10, 24, 8);
+        scene.add(meshLight);
+      }
+      // Le maillage remplace le bati procedural et le nuage de points.
+      if (house) { scene.remove(house); house = null; }
+      if (lidarPoints) { scene.remove(lidarPoints); lidarPoints = null; }
+      // Recentrage de la camera sur l'emprise reelle du maillage.
+      const box = new THREE.Box3().setFromObject(meshGroup);
+      const size = box.getSize(new THREE.Vector3());
+      houseDims = {
+        W: size.x, D: size.z, ridgeY: size.y,
+        bounds: { minX: box.min.x, maxX: box.max.x, minZ: box.min.z, maxZ: box.max.z },
+      };
+      fitCameraToHouse();
+      syncGround();
+      startSeismicShakeIfNeeded();
+      const badge = document.getElementById('lidar-badge');
+      if (badge) {
+        const hauteur = size.y ? `${Math.round(size.y)} m` : '';
+        badge.textContent = 'Maillage LiDAR HD + BD ORTHO IGN' + (hauteur ? ` · ${hauteur}` : '');
+      }
+    })
+    .catch(err => {
+      // Fallback : le nuage de points / bati procedural reste en place.
+      console.info('[jumeau] Maillage LiDAR indisponible, nuage + bati conserves :', err.message);
+    });
+}
+
 _canvas = renderer.domElement;
 _renderer = renderer;
+
+// Re-attache le canvas au conteneur VIVANT du DOM : en dev (StrictMode),
+// React demonte/remonte le composant et remplace le noeud `#scene-container`
+// d'origine — le canvas cree au debut d'initScene resterait sinon accroche a
+// l'ancien noeud (detache) et l'ecran serait vide malgre une scene active.
+const liveContainer = document.getElementById('scene-container');
+if (liveContainer && _canvas.parentElement !== liveContainer) {
+  if (_canvas.parentElement) _canvas.parentElement.removeChild(_canvas);
+  liveContainer.appendChild(_canvas);
+}
 }
 
 export function disposeScene() {
@@ -2280,5 +2606,198 @@ export function disposeScene() {
   }
   _canvas = null; _resizeHandler = null; _mouseUpHandler = null; _mouseMoveHandler = null;
   _loadFromAddress = null;
+}
+
+// ===========================================================================
+// EXPORT — matchArtisans
+//
+// Recherche d'artisans autonome (paramètres explicites) : il sert la page
+// /artisans, qui n'a PAS de moteur 3D monté. Même requête /artisans/match
+// que rechercherArtisans() du moteur, mais sans dépendre de l'état du
+// moteur (le moteur reste un port direct, ses fonctions sont privées).
+// ===========================================================================
+
+// Recherche d'artisans autonome (même requête /artisans/match que
+// rechercherArtisans() du moteur, mais sans dépendre de l'état du moteur) :
+// adresse et données de zone passées explicitement. Rend les résultats dans
+// `container` (groupes par métier, cartes entreprises, notes d'avertissement).
+export async function matchArtisans({
+  apiBase,
+  adresse,
+  zoneName,
+  data,
+  container,
+  button,
+  limite = 5,
+}) {
+  if (button) {
+    button.disabled = true;
+    button.textContent = 'Recherche dans les annuaires officiels…';
+  }
+  if (container) container.innerHTML = '';
+  try {
+    const response = await fetch(apiBase + '/artisans/match', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        adresse: adresse || '',
+        limite,
+        zones: [{
+          zone: zoneName,
+          risques: [data && data.alea_principal ? data.alea_principal : ''],
+          recommandations: (data && data.recommandations) || [],
+        }],
+      }),
+    });
+    const payload = await response.json();
+    if (!response.ok) throw new Error(payload.detail || `Erreur HTTP ${response.status}`);
+    const groupes = payload.recommandations_traitees || [];
+    if (!groupes.length) {
+      if (container) {
+        container.className = 'artisan-results artisan-empty';
+        container.textContent =
+          'Aucun métier n’a pu être associé automatiquement à ces recommandations.';
+      }
+      return;
+    }
+    if (container) container.className = 'artisan-results';
+    groupes.forEach(groupe => {
+      if (!container) return;
+      const section = document.createElement('div');
+      section.className = 'artisan-group';
+      const heading = document.createElement('div');
+      heading.className = 'artisan-group-head';
+      const title = document.createElement('div');
+      title.className = 'artisan-group-title';
+      title.textContent = groupe.libelle || groupe.domaine_recherche || groupe.cle;
+      const category = document.createElement('span');
+      category.className = 'artisan-group-badge';
+      category.textContent = groupe.categorie === 'rge' ? 'RGE' : 'Métier local';
+      heading.appendChild(title);
+      heading.appendChild(category);
+      section.appendChild(heading);
+      if (groupe.erreur) {
+        const error = document.createElement('div');
+        error.className = 'artisan-error';
+        error.textContent = groupe.erreur;
+        section.appendChild(error);
+      }
+      (groupe.entreprises || []).forEach(entreprise => {
+        const card = document.createElement('div');
+        card.className = 'artisan-card';
+        const cardTop = document.createElement('div');
+        cardTop.className = 'artisan-card-top';
+        const name = document.createElement('div');
+        name.className = 'artisan-name';
+        name.textContent = entreprise.nom_entreprise || 'Entreprise';
+        const score = document.createElement('div');
+        score.className = 'artisan-score';
+        score.innerHTML = `${Number(entreprise.score_objectif_sur_100) || 0}<small>/100</small>`;
+        cardTop.appendChild(name);
+        cardTop.appendChild(score);
+        card.appendChild(cardTop);
+
+        const meta = document.createElement('div');
+        meta.className = 'artisan-meta';
+        const addressText = [entreprise.adresse, entreprise.code_postal, entreprise.commune]
+          .filter(Boolean)
+          .join(' ');
+        if (addressText) {
+          const row = document.createElement('div');
+          row.className = 'artisan-meta-row';
+          row.innerHTML =
+            `<span class="artisan-meta-icon">⌖</span><span>${escapeHtml(addressText)}</span>`;
+          meta.appendChild(row);
+        }
+        if (entreprise.telephone || entreprise.email) {
+          const row = document.createElement('div');
+          row.className = 'artisan-meta-row';
+          row.innerHTML =
+            `<span class="artisan-meta-icon">✆</span><span>${escapeHtml(
+              [entreprise.telephone, entreprise.email].filter(Boolean).join(' · '),
+            )}</span>`;
+          meta.appendChild(row);
+        }
+        card.appendChild(meta);
+
+        const actions = document.createElement('div');
+        actions.className = 'artisan-actions';
+        if (entreprise.telephone) {
+          const phone = document.createElement('a');
+          phone.href = `tel:${String(entreprise.telephone).replace(/[^\d+]/g, '')}`;
+          phone.className = 'artisan-action primary';
+          phone.textContent = '✆ Appeler';
+          actions.appendChild(phone);
+        }
+        if (entreprise.email) {
+          const email = document.createElement('a');
+          email.href = `mailto:${entreprise.email}`;
+          email.className = 'artisan-action';
+          email.textContent = '✉ Envoyer un e-mail';
+          actions.appendChild(email);
+        }
+        if (addressText) {
+          const directions = document.createElement('a');
+          directions.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+            addressText,
+          )}`;
+          directions.target = '_blank';
+          directions.rel = 'noopener';
+          directions.className = 'artisan-action';
+          directions.textContent = '⌖ Itinéraire';
+          actions.appendChild(directions);
+        }
+        if (entreprise.site_officiel) {
+          const site = document.createElement('a');
+          site.href = entreprise.site_officiel;
+          site.target = '_blank';
+          site.rel = 'noopener';
+          site.className = 'artisan-action';
+          site.textContent = '↗ Site officiel';
+          actions.appendChild(site);
+        }
+        if (actions.childElementCount) card.appendChild(actions);
+
+        if (!entreprise.site_officiel) {
+          const missing = document.createElement('div');
+          missing.className = 'artisan-site-missing';
+          missing.textContent = entreprise.telephone || entreprise.email
+            ? 'Contact direct disponible sans site officiel.'
+            : 'Aucun contact direct vérifiable trouvé pour cette entreprise.';
+          card.appendChild(missing);
+        }
+        section.appendChild(card);
+      });
+      container.appendChild(section);
+    });
+    const warning = document.createElement('small');
+    warning.className = 'artisan-note';
+    warning.textContent = [payload.avertissement_score, payload.avertissement_sites]
+      .filter(Boolean)
+      .join(' ');
+    container.appendChild(warning);
+    // Recommandations non classifiées : ne pas les laisser disparaître
+    // silencieusement — note explicite quand le classifieur n'a rien matché.
+    const nonClassees = payload.recommandations_non_classifiees;
+    if (Array.isArray(nonClassees) && nonClassees.length > 0) {
+      const note = document.createElement('div');
+      note.className = 'artisan-note';
+      note.textContent = `${nonClassees.length} recommandation(s) n’ont pas pu être associées à un métier (${nonClassees
+        .map(r => r.zone || r.mesure || '?')
+        .slice(0, 3)
+        .join(', ')}${nonClassees.length > 3 ? ', …' : ''}).`;
+      container.appendChild(note);
+    }
+  } catch (error) {
+    if (container) {
+      container.className = 'artisan-results artisan-error';
+      container.textContent = `Recherche indisponible : ${error.message}`;
+    }
+  } finally {
+    if (button) {
+      button.disabled = false;
+      button.textContent = 'Rechercher des artisans correspondants';
+    }
+  }
 }
 

@@ -52,6 +52,8 @@ class AleaDetail(BaseModel):
     present_commune: bool | None = None # statut au niveau de la commune (ex: existant/concerné)
     niveau: NiveauRisque | None       # None si Géorisques ne fournit pas de gradation
     zonage: str | None = None         # ex: "Zone sismique 2 - faible"
+    hauteur_eau_m: float | None = None  # hauteur d'inondation réelle (fourchette PPRI), Phase 6
+    zone_sismique: str | None = None  # "1".."5" (décret n°2010-1255), si dispo
     catnat_historique: list[dict] | None = None  # arrêtés CatNat, si dispo
     source: str = "georisques"
     url_detail: str | None = None     # lien vers la fiche officielle Géorisques

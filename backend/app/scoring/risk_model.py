@@ -133,13 +133,39 @@ def _combine_risk(f_score: float, v_score: float) -> float:
     return 100.0 * math.sqrt(f_score / 100.0) * math.sqrt(v / 100.0)
 
 
+def _niveau_d03(risque: int) -> str:
+    """Clés D03 exposées au frontend (frontend/src/zone/config.ts) :
+    tres_faible | faible | modere | eleve | critique.
+
+    Identique à `_niveau` (mêmes bornes 0-19/20-39/40-59/60-79/80-100), mais
+    avec le vocabulaire de la légende frontend pour un `bandForKey` direct
+    (le backend `_niveau` renvoie « tres eleve », que le frontend ne connaît
+    pas).
+    """
+    if risque < 20:
+        return "tres_faible"
+    if risque < 40:
+        return "faible"
+    if risque < 60:
+        return "modere"
+    if risque < 80:
+        return "eleve"
+    return "critique"
+
+
 def _data_list(georisques: dict[str, Any] | None, key: str) -> list:
-    """Extrait la liste « data » d'un sous-champ Géorisques paginé."""
+    """Extrait la liste d'un sous-champ Géorisques paginé.
+
+    Deux formes selon l'endpoint : `data` (gaspar/risques, catnat…) ou
+    `content` (gaspar/pprn, gaspar/pprt — reponse paginee Spring).
+    """
     valeur = (georisques or {}).get(key)
     if isinstance(valeur, list):
         return valeur
     if isinstance(valeur, dict):
         data = valeur.get("data")
+        if not isinstance(data, list):
+            data = valeur.get("content")
         if isinstance(data, list):
             return data
     return []
@@ -248,6 +274,20 @@ def _vulnerabilite_batiment(bdnb: dict[str, Any] | None) -> tuple[float, str, di
 # ---------------------------------------------------------------------------
 
 
+def _secheresse_catnat_subscore(georisques: dict[str, Any] | None) -> tuple[int, str]:
+    """Sous-score « sécheresse » à partir de l'historique CATNAT de la commune.
+
+    C'est le même signal que le repli de `_argile_subscore` quand la BDNB ne
+    fournit pas d'aléa argile : chaque arrêté « sécheresse » fait monter le
+    score (20 + 12 × n, plafonné à 65). Il alimente le risque « Sécheresse »
+    distinct de l'aléa RGA au niveau du bâtiment.
+    """
+    secheresses = _count_catnat(georisques, "sécheresse") or _count_catnat(georisques, "secheresse")
+    base = min(20 + secheresses * 12, 65)
+    source = f"{secheresses} arrêté(s) CATNAT « sécheresse » recensé(s) sur la commune"
+    return base, source
+
+
 def _argile_subscore(
     bdnb: dict[str, Any] | None,
     georisques: dict[str, Any] | None,
@@ -265,11 +305,11 @@ def _argile_subscore(
         source = f"aléa retrait-gonflement des argiles = « {alea} » (BDNB, au niveau du bâtiment)"
         tracking = {"source": "bdnb.alea_argile", "statut": SourceStatus.AVAILABLE.value, "valeur": str(alea)}
     else:
+        base, src_secheresse = _secheresse_catnat_subscore(georisques)
         secheresses = _count_catnat(georisques, "sécheresse") or _count_catnat(georisques, "secheresse")
-        base = min(20 + secheresses * 12, 65)
         source = (
-            f"aléa argile non fourni par la BDNB pour ce bâtiment ; "
-            f"{secheresses} arrêté(s) CATNAT « sécheresse » recensé(s) sur la commune (indicateur de repli)"
+            f"aléa argile non fourni par la BDNB pour ce bâtiment ; {src_secheresse} "
+            "(indicateur de repli)"
         )
         tracking = {"source": "fallback.catnat", "statut": SourceStatus.NO_FEATURE_FOUND.value, "fallback": True, "nb_catnat_secheresse": secheresses}
 
@@ -280,6 +320,39 @@ def _argile_subscore(
     return _clamp(base), source, tracking
 
 
+def _ppr_inondation(georisques: dict[str, Any] | None) -> tuple[bool, float | None, str | None]:
+    """(ppri_present, hauteur_eau_m, zone_ppr) depuis les PPR bruts.
+
+    Phase 6 : hauteur reelle derivee du zonage reglementaire du PPRI
+    (rouge = interdiction -> bande 1.5-3 m, bleue = prescriptions -> 0.5-1.5 m).
+    """
+    pprs = _data_list(georisques, "ppr")
+    if not pprs:
+        return False, None, None
+    has_rouge = False
+    has_bleue = False
+    ppri = False
+    for ppr in pprs:
+        if not isinstance(ppr, dict):
+            continue
+        modele = (ppr.get("modeleProcedure") or "").lower()
+        lib = (ppr.get("libPpr") or "").lower()
+        if "inondation" in modele or "inondation" in lib or "ppri" in lib:
+            ppri = True
+        reg = ppr.get("zonageReglementaire") or {}
+        for lt in (reg.get("listTypeReg") or []):
+            code = (lt.get("code") or "").lower()
+            if code in ("03", "r"):
+                has_rouge = True
+            elif code in ("02", "b"):
+                has_bleue = True
+    if not (ppri and (has_rouge or has_bleue)):
+        return ppri, None, None
+    if has_rouge:
+        return True, 2.0, "rouge"
+    return True, 1.0, "bleue"
+
+
 def _inondation_subscore(
     georisques: dict[str, Any] | None,
     precip_delta_pct: float = 0.0,
@@ -288,6 +361,7 @@ def _inondation_subscore(
     hazard_present = _has_hazard(georisques, "inondation")
     zones_inondables = _truthy_hazard_flag((georisques or {}).get("zones_inondables"))
     zones_en_erreur = _source_en_erreur(georisques, "zones_inondables")
+    ppri, hauteur_eau_m, zone_ppr = _ppr_inondation(georisques)
 
     base = 15
     if inondations >= 6:
@@ -309,6 +383,9 @@ def _inondation_subscore(
         source += " ; parcelle en zone inondable connue (atlas Géorisques)"
     elif zones_en_erreur:
         source += " ; atlas zones inondables indisponible (API en erreur) — non pris en compte"
+    if ppri:
+        source += " ; PPRI prescrit sur la commune" + (f" (zone {zone_ppr})" if zone_ppr else "")
+        base = max(base, 60)
 
     tracking: dict[str, Any] = {
         "source": "georisques.inondation",
@@ -316,6 +393,9 @@ def _inondation_subscore(
         "nb_catnat": inondations,
         "zones_inondables": zones_inondables,
         "zones_inondables_en_erreur": zones_en_erreur,
+        "ppri_present": ppri,
+        "hauteur_eau_m": hauteur_eau_m,
+        "zone_ppr": zone_ppr,
     }
     if zones_en_erreur:
         tracking["statut"] = SourceStatus.SOURCE_ERROR.value
@@ -589,6 +669,10 @@ def _compute_zones_for_period(
         f_score=f_fondations, v_score=v_base,
         sources=[argile_t, mvt_t, sismique_t, v_tracking],
     )
+    # Phase 6 : zone sismique reglementaire reelle (decret n°2010-1255) —
+    # sert au viewer pour declencher un effet de secousse quand zone >= 4.
+    if isinstance(sismique_t, dict) and sismique_t.get("zone") is not None:
+        zones["fondations"]["zone_sismique"] = str(sismique_t["zone"])
 
     # --- Murs (4 façades) ---
     f_murs = precip_score * 0.5 + sismique_score * 0.3 + canicule_score * 0.2
@@ -624,12 +708,60 @@ def _compute_zones_for_period(
         f_score=f_sous_sol, v_score=v_base,
         sources=[inondation_t, radon_t, v_tracking],
     )
+    # Phase 6 : hauteur d'eau reelle (fourchette PPRI) — le viewer l'utilise
+    # en priorite pour animer la montee des eaux (au lieu du ratio derive du
+    # score).
+    if isinstance(inondation_t, dict) and inondation_t.get("hauteur_eau_m") is not None:
+        zones["sous_sol"]["hauteur_eau_m"] = inondation_t["hauteur_eau_m"]
+        if inondation_t.get("zone_ppr"):
+            zones["sous_sol"]["zone_ppr"] = inondation_t["zone_ppr"]
 
     for zone_name in ZONE_NAMES:
         z = zones[zone_name]
         logger.info("  [%s] risque=%d (%s) | F=%.1f V=%.1f", zone_name, z["risque"], z["niveau"], z.get("_f_score", 0), z.get("_v_score", 0))
 
-    return zones, sources_tracking
+    # --- Risques par aléa (niveau bâtiment, pas par zone) ---------------
+    # Les 8 sous-scores F ci-dessus sont déjà calculés une fois pour tout le
+    # bâtiment (RGA, inondation... ne dépendent pas de la façade regardée) :
+    # on les expose tels quels plutôt que de les recalculer, pour un radar
+    # "par aléa" (incendie, inondation, RGA, sismique...) séparé du radar
+    # "par zone" existant. Aucun changement au calcul F/V/R des zones.
+    risques_par_alea = {
+        "argile": {
+            "label": "Retrait-gonflement des argiles",
+            "risque": argile_score, "niveau": _niveau(argile_score), "justification": argile_src,
+        },
+        "inondation": {
+            "label": "Inondation",
+            "risque": inondation_score, "niveau": _niveau(inondation_score), "justification": inondation_src,
+        },
+        "mouvement_terrain": {
+            "label": "Mouvement de terrain",
+            "risque": mvt_score, "niveau": _niveau(mvt_score), "justification": mvt_src,
+        },
+        "sismique": {
+            "label": "Sismique",
+            "risque": sismique_score, "niveau": _niveau(sismique_score), "justification": sismique_src,
+        },
+        "radon": {
+            "label": "Radon",
+            "risque": radon_score, "niveau": _niveau(radon_score), "justification": radon_src,
+        },
+        "canicule": {
+            "label": "Canicule / stress thermique",
+            "risque": canicule_score, "niveau": _niveau(canicule_score), "justification": canicule_src,
+        },
+        "precipitation": {
+            "label": "Précipitations intenses",
+            "risque": precip_score, "niveau": _niveau(precip_score), "justification": precip_src,
+        },
+        "feu_foret": {
+            "label": "Feu de forêt",
+            "risque": feu_foret_score, "niveau": _niveau(feu_foret_score), "justification": feu_foret_src,
+        },
+    }
+
+    return zones, sources_tracking, risques_par_alea
 
 
 def _score_global(zones: dict[str, dict[str, Any]]) -> int:
@@ -641,6 +773,103 @@ def _score_global(zones: dict[str, dict[str, Any]]) -> int:
         + murs_moyenne * 0.40
     )
     return _clamp(total)
+
+
+# ---------------------------------------------------------------------------
+# Risques par aléa (top-N consommé par « Comprendre les risques »)
+# ---------------------------------------------------------------------------
+
+# Aléas suivis par le moteur, avec leur vocabulaire frontend (codes ALEA_ICONS
+# de zone/config.ts) et la fonction F qui les alimente. `rga` porte l'aléa
+# retrait-gonflement au niveau du bâtiment (BDNB) ; `secheresse` porte
+# l'historique CATNAT « sécheresse » de la commune (signal distinct, cf.
+# _secheresse_catnat_subscore).
+def _alea_candidats(
+    bdnb: dict[str, Any] | None,
+    georisques: dict[str, Any] | None,
+    reference: dict[str, Any] | None,
+) -> list[dict[str, Any]]:
+    """Calcule les sous-scores F de tous les aléas et les expose en candidats."""
+    argile_score, argile_src, _ = _argile_subscore(bdnb, georisques)
+    inondation_score, inondation_src, _ = _inondation_subscore(georisques)
+    mvt_score, mvt_src, _ = _mouvement_terrain_subscore(georisques)
+    sismique_score, sismique_src, _ = _sismique_subscore(georisques)
+    radon_score, radon_src, _ = _radon_subscore(georisques)
+    canicule_score, canicule_src, _ = _canicule_subscore(reference)
+    feu_foret_score, feu_foret_src, _ = _feu_foret_subscore(georisques)
+
+    candidats = [
+        {"code": "rga", "libelle": "Retrait-gonflement des argiles", "f_score": argile_score, "justification": argile_src},
+        {"code": "inondation", "libelle": "Inondation / remontée de nappe", "f_score": inondation_score, "justification": inondation_src},
+        {"code": "mouvement_terrain", "libelle": "Mouvement de terrain", "f_score": mvt_score, "justification": mvt_src},
+        {"code": "sismicite", "libelle": "Sismicité", "f_score": sismique_score, "justification": sismique_src},
+        {"code": "radon", "libelle": "Radon", "f_score": radon_score, "justification": radon_src},
+        {"code": "canicule", "libelle": "Canicule / stress thermique", "f_score": canicule_score, "justification": canicule_src},
+        {"code": "feu_foret", "libelle": "Feu de forêt", "f_score": feu_foret_score, "justification": feu_foret_src},
+    ]
+
+    # La « Sécheresse » (historique CATNAT de la commune) n'est un signal
+    # DISTINCT du RGA que lorsque la BDNB fournit un aléa argile au niveau du
+    # bâtiment. Sinon, `rga` retombe déjà sur ce même repli CATNAT → deux
+    # candidats avec le même score se dupliqueraient dans le top 3.
+    batiment = (bdnb or {}).get("batiment") if isinstance(bdnb, dict) else None
+    alea_argile = batiment.get("alea_argile") if isinstance(batiment, dict) else None
+    if alea_argile is None and isinstance(bdnb, dict):
+        alea_argile = bdnb.get("alea_argile")
+    if alea_argile:
+        secheresse_score, secheresse_src = _secheresse_catnat_subscore(georisques)
+        candidats.append(
+            {"code": "secheresse", "libelle": "Sécheresse", "f_score": secheresse_score, "justification": secheresse_src}
+        )
+
+    return candidats
+
+
+def compute_alea_risks(building_data: dict[str, Any]) -> list[dict[str, Any]]:
+    """Score de risque par aléa (déterministe), trié du plus exposé au moins exposé.
+
+    Même méthodologie que les zones (D05) : R = 100 × (F/100)^0.5 × (V/100)^0.5,
+    où F est le sous-score d'aléa et V la vulnérabilité du bâtiment. Les aléas
+    sans signal réel (F < 20 : absent ou très faible) sont écartés pour ne pas
+    polluer le classement — un aléa « feu de forêt non recensé » (F=10) ne doit
+    jamais apparaître comme un risque du bien.
+
+    Chaque entrée : {code, libelle, score, niveau (clé D03 frontend),
+    justification, _f_score, _v_score}.
+
+    Consommé par `app.agents.risques_principaux` (synthèse LLM du top 3).
+    """
+    georisques = building_data.get("georisques")
+    bdnb = building_data.get("bdnb")
+    climat = building_data.get("climat_open_meteo") or {}
+    reference = climat.get("reference_2015_2024")
+    projection = climat.get("projection_2041_2050")
+
+    v_base, _, _ = _vulnerabilite_batiment(bdnb)
+
+    risques = []
+    for candidat in _alea_candidats(bdnb, georisques, reference):
+        f = float(candidat["f_score"])
+        if f < 20:
+            continue  # aléa absent / très faible : aucun signal exploitable
+        score = _clamp(_combine_risk(f, v_base))
+        if score < 20:
+            continue
+        risques.append(
+            {
+                "code": candidat["code"],
+                "libelle": candidat["libelle"],
+                "score": score,
+                "niveau": _niveau_d03(score),
+                "justification": candidat["justification"],
+                "_f_score": round(f, 1),
+                "_v_score": round(v_base, 1),
+            }
+        )
+
+    risques.sort(key=lambda r: r["score"], reverse=True)
+    return risques
+
 
 
 def compute_risk_scores(building_data: dict[str, Any]) -> dict[str, Any]:
@@ -666,12 +895,12 @@ def compute_risk_scores(building_data: dict[str, Any]) -> dict[str, Any]:
     projection = climat.get("projection_2041_2050")
 
     logger.info("période référence (2025) :")
-    zones_2025, sources_2025 = _compute_zones_for_period(building_data, reference, is_projection=False)
+    zones_2025, sources_2025, risques_par_alea_2025 = _compute_zones_for_period(building_data, reference, is_projection=False)
     score_2025 = _score_global(zones_2025)
     logger.info("  -> score_global = %d", score_2025)
 
     logger.info("période projection (2050) :")
-    zones_2050, sources_2050 = _compute_zones_for_period(building_data, projection or reference, is_projection=True)
+    zones_2050, sources_2050, risques_par_alea_2050 = _compute_zones_for_period(building_data, projection or reference, is_projection=True)
     score_2050 = _score_global(zones_2050)
     logger.info("  -> score_global = %d", score_2050)
 
@@ -681,9 +910,11 @@ def compute_risk_scores(building_data: dict[str, Any]) -> dict[str, Any]:
     return {
         "score_global": score_2025,
         "zones": zones_2025,
+        "risques_par_alea": risques_par_alea_2025,
         "projection_2050": {
             "score_global": score_2050,
             "zones": zones_2050,
+            "risques_par_alea": risques_par_alea_2050,
         },
         "confidence": confidence,
         "sources": sources_2025,

@@ -8,20 +8,59 @@ from typing import Any
 from urllib.parse import urlparse
 
 from app.core.config import settings
+from app.core.logging import get_logger
 from app.recommandations.mistral_client import get_client
+
+logger = get_logger(__name__)
 
 SEARCH_MODEL = "mistral-medium-latest"
 EXCLUDED_HOSTS = {
     "annuaire-entreprises.data.gouv.fr",
+    "bilansgratuits.fr",
+    "bodacc.fr",
+    "bvdinfo.com",
     "data.ademe.fr",
-    "france-renov.gouv.fr",
+    "dirigeant.com",
     "facebook.com",
+    "france-renov.gouv.fr",
+    "hoodspot.fr",
+    "indexa.fr",
+    "infogreffe.fr",
     "instagram.com",
+    "kompass.com",
     "linkedin.com",
+    "maison.fr",
+    "manageo.fr",
     "pagesjaunes.fr",
+    "pappers.fr",
+    "score3.fr",
     "societe.com",
+    "twitter.com",
     "verif.com",
+    "wikipedia.org",
+    "x.com",
+    "youtube.com",
 }
+
+LEGAL_PREFIXES_RE = re.compile(
+    r"^(?:MONSIEUR|MADAME|MLLE|M\.|MME|SARL|SAS|SASU|EURL|EI|E\.I\.|S\.A\.R\.L\.|S\.A\.S\.|E\.U\.R\.L\.|SA|S\.A\.|SCOP|SNC|SELARL)\s+",
+    re.IGNORECASE,
+)
+LEGAL_SUFFIXES_RE = re.compile(
+    r"\s+(?:SARL|SAS|SASU|EURL|EI|E\.I\.|S\.A\.R\.L\.|S\.A\.S\.|E\.U\.R\.L\.|SA|S\.A\.|SCOP|SNC|SELARL)$",
+    re.IGNORECASE,
+)
+
+
+def _nettoyer_nom_entreprise(nom: str) -> str:
+    res = (nom or "").strip()
+    while True:
+        cleaned = LEGAL_PREFIXES_RE.sub("", res).strip()
+        if cleaned == res:
+            break
+        res = cleaned
+    res = LEGAL_SUFFIXES_RE.sub("", res).strip()
+    return res or (nom or "").strip()
 
 
 def _host(url: str) -> str:
@@ -85,19 +124,35 @@ def _extract_contact(response: Any) -> dict[str, str | None]:
 
 
 def _search_sync(entreprise: dict[str, Any]) -> dict[str, str | None]:
-    identifiant = entreprise.get("siret") or entreprise.get("siren") or "inconnu"
-    localisation = " ".join(
-        str(entreprise.get(key) or "") for key in ("adresse", "code_postal", "commune")
-    ).strip()
+    raw_nom = str(entreprise.get("nom_entreprise") or entreprise.get("nom_complet") or "").strip()
+    nom_nettoye = _nettoyer_nom_entreprise(raw_nom)
+    commune = str(entreprise.get("commune") or "").strip()
+    code_postal = str(entreprise.get("code_postal") or "").strip()
+    adresse = str(entreprise.get("adresse") or "").strip()
+    identifiant = str(entreprise.get("siret") or entreprise.get("siren") or "inconnu").strip()
+    activite = str(entreprise.get("libelle") or entreprise.get("activite_principale") or "").strip()
+
+    localisation_recherche = f"{commune} {code_postal}".strip() or adresse
+    query_cible = f"{nom_nettoye} {localisation_recherche} site officiel".strip()
+
     prompt = (
-        "Recherche les coordonnees de contact officielles de cette entreprise francaise. "
-        "Identifie-la strictement avec son nom, son SIREN/SIRET et sa localisation. "
-        "Consulte en priorite son site officiel et sa page contact. N'invente aucune donnee. "
-        "N'utilise ni reseau social ni fiche d'une autre entreprise. "
-        "Termine avec exactement trois lignes: SITE_OFFICIEL, TELEPHONE et EMAIL. "
-        "Mets INCONNU pour chaque valeur non confirmee. "
-        f"Nom: {entreprise.get('nom_entreprise') or entreprise.get('nom_complet')}. "
-        f"SIREN/SIRET: {identifiant}. Localisation: {localisation}."
+        f"Trouve le VRAI site web officiel d'entreprise et les coordonnees de contact direct pour: '{nom_nettoye}'.\n\n"
+        f"RECHERCHE PRINCIPALE SUR LE WEB: Utilise la requete de recherche '{query_cible}' ou '{nom_nettoye} {commune}'.\n\n"
+        "DIRECTIVES STRICTES:\n"
+        "1. Ne retiens JAMAIS un annuaire public, registre legal ou reseau social (ex: societe.com, pappers.fr, annuaire-entreprises.data.gouv.fr, infogreffe.fr, pagesjaunes.fr, facebook.com, linkedin.com, etc.). Seul le vrai domaine web officiel de l'entreprise est accepte.\n"
+        "2. Utilise le SIREN/SIRET et l'adresse uniquement pour VERIFIER en second lieu que l'entreprise trouvee correspond bien a la societe cible.\n"
+        "3. Si l'entreprise n'a aucun site web propre officiel, indique SITE_OFFICIEL: INCONNU.\n"
+        "4. N'invente aucune URL, telephone ou email.\n\n"
+        "CONTEXTE DE VERIFICATION:\n"
+        f"- Nom legal complet: {raw_nom}\n"
+        f"- Nom d'usage/recherche: {nom_nettoye}\n"
+        f"- SIREN/SIRET: {identifiant}\n"
+        f"- Adresse / Commune: {adresse} {code_postal} {commune}\n"
+        f"- Activite / Metier: {activite}\n\n"
+        "Reponds STRICTEMENT avec exactement 3 lignes a la fin:\n"
+        "SITE_OFFICIEL: <url du vrai site officiel ou INCONNU>\n"
+        "TELEPHONE: <numero ou INCONNU>\n"
+        "EMAIL: <email ou INCONNU>"
     )
     response = get_client().beta.conversations.start(
         model=SEARCH_MODEL,
@@ -118,9 +173,11 @@ async def enrichir_coordonnees(entreprise: dict[str, Any]) -> dict[str, str | No
         return empty
     try:
         return await asyncio.to_thread(_search_sync, entreprise)
-    except Exception:
+    except Exception as exc:
+        logger.debug("Échec enrichissement web pour %s: %s", entreprise.get("nom_entreprise"), exc)
         return empty
 
 
 async def trouver_site_officiel(entreprise: dict[str, Any]) -> str | None:
     return (await enrichir_coordonnees(entreprise))["site_officiel"]
+

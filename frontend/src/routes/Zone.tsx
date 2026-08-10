@@ -5,7 +5,8 @@
 //     3. Analyse         — fiche bâtiment BDNB (panneau latéral rétractable) + carte unifiée
 //     4. Jumeau BIM      — viewer 3D thingraph en iframe (glTF généré depuis l'emprise BDNB)
 //     5. Recommandations — recommandations détaillées (RAG Mistral)
-//     6. Rapport IA      — rapport narratif Mistral + export PDF
+//     6. Artisans        — professionnels associés aux travaux
+//     7. Rapport IA      — rapport narratif Mistral + export PDF
 //
 //   Stepper linéaire : les étapes 2-4 sont bloquées tant qu'aucune adresse
 //   n'a été diagnostiquée — l'étape Adresse passe en état d'erreur (icône
@@ -20,6 +21,7 @@ import { MapboxFloodMap } from '../components/MapboxFloodMap';
 import { BuildingFiche } from '../components/BuildingFiche';
 import { ZoneBIM } from '../components/ZoneBIM';
 import { ZoneRecommendations } from '../components/ZoneRecommendations';
+import { ZoneArtisans } from '../components/ZoneArtisans';
 import { ZoneSidenav, useIsMobile } from '../components/ZoneSidenav';
 import { useTyphoonTheme } from '../typhoon/useTyphoonTheme';
 import {
@@ -73,6 +75,7 @@ const STEPS = [
   { id: 'analyse', label: 'Analyse' },
   { id: 'bim', label: 'Jumeau BIM' },
   { id: 'recommandations', label: 'Recommandations' },
+  { id: 'artisans', label: 'Artisans' },
   { id: 'rapport', label: 'Rapport IA' },
 ] as const;
 
@@ -142,6 +145,9 @@ export function Zone() {
   const [rapport, setRapport] = useState<RapportNarratif | null>(null);
   const [rapportLoading, setRapportLoading] = useState(false);
   const [rapportError, setRapportError] = useState<RapportError | null>(null);
+  /* Export PDF du rapport IA (jsPDF côté client) — vrai bouton de téléchargement. */
+  const [exportingPdf, setExportingPdf] = useState(false);
+  const [exportPdfError, setExportPdfError] = useState<string | null>(null);
   /* Panneau latéral (aléas ou fiche) rétractable : replié → carte plein écran. */
   const [panelCollapsed, setPanelCollapsed] = useState(false);
   /* Moteur de carte : Mapbox GL JS (unique, pas de fallback MapLibre). */
@@ -457,7 +463,25 @@ export function Zone() {
     setStepError(false);
     setStep(i);
     if (i === 0) window.setTimeout(() => heroInputRef.current?.focus(), 80);
-    if (i === 5 && report) void loadRapport();
+    if (i === 6 && report) void loadRapport();
+  }
+
+  /* ── Export PDF du rapport IA (client-side, jsPDF importé à la demande) ── */
+  async function handleExportPdf() {
+    if (!report || !rapport || exportingPdf) return;
+    setExportingPdf(true);
+    setExportPdfError(null);
+    try {
+      const { exportRapportPdf } = await import('../zone/pdf-export');
+      await exportRapportPdf(report, rapport);
+    } catch (err) {
+      console.error('Export PDF du rapport IA échoué :', err);
+      setExportPdfError(
+        "L'export PDF a échoué dans le navigateur. Réessayez — si le problème persiste, utilisez le lien « PDF officiel Géorisques »."
+      );
+    } finally {
+      setExportingPdf(false);
+    }
   }
 
   /* ── Visibilité des couches ── */
@@ -902,7 +926,17 @@ export function Zone() {
               />
             </section>
 
-            <section className="zone-report" hidden={step !== 5}>
+            {/* ÉTAPE 6 — ARTISANS (associés aux travaux recommandés) */}
+            <section className="zone-artisans-step" hidden={step !== 5}>
+              <ZoneArtisans
+                report={report}
+                zones={detailedRecommendationZones}
+                loading={detailedRecommendationsLoading}
+                error={detailedRecommendationsError}
+              />
+            </section>
+
+            <section className="zone-report" hidden={step !== 6}>
               {!report ? (
                 <div className="report-empty">
                   <md-icon>description</md-icon>
@@ -968,15 +1002,25 @@ export function Zone() {
                         {report.date_generation}
                       </p>
                     </div>
-                    <md-elevated-button
-                      className="pdf-btn report-export"
-                      href={pdfUrl}
-                      target="_blank"
-                      rel="noopener"
-                    >
-                      <md-icon slot="icon">picture_as_pdf</md-icon>
-                      Exporter en PDF
-                    </md-elevated-button>
+                    <div className="report-export-group">
+                      <md-filled-button
+                        className="pdf-btn report-export"
+                        disabled={exportingPdf}
+                        onClick={() => void handleExportPdf()}
+                      >
+                        <md-icon slot="icon">picture_as_pdf</md-icon>
+                        {exportingPdf ? 'Export en cours…' : 'Exporter en PDF'}
+                      </md-filled-button>
+                      <a
+                        className="report-export-secondary"
+                        href={pdfUrl}
+                        target="_blank"
+                        rel="noopener"
+                      >
+                        PDF officiel Géorisques (ERRIAL)
+                      </a>
+                      {exportPdfError && <p className="report-export-error">{exportPdfError}</p>}
+                    </div>
                   </header>
 
                   <p className="report-intro">{rapport.introduction}</p>

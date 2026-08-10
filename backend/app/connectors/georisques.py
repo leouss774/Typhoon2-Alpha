@@ -63,8 +63,10 @@ async def fetch_georisques_raw(
         "zonage_sismique":    ("zonage_sismique",          {"code_insee": citycode}),
         "radon":              ("radon",                    {"code_insee": citycode}),
         "mouvements_terrain": ("mvt",                     {"latlon": latlon, "rayon": rayon_m}),
-        "ppr":                ("gaspar/pprn",              {"code_insee": citycode}),
-        "pprt":               ("gaspar/pprt",              {"code_insee": citycode}),
+        # pageSize=100 : la reponse gaspar est paginee (page de 10 par defaut)
+        # — sans ca, on ne lit que les 10 premiers PPR de la commune.
+        "ppr":                ("gaspar/pprn",              {"code_insee": citycode, "pageSize": 100}),
+        "pprt":               ("gaspar/pprt",              {"code_insee": citycode, "pageSize": 100}),
         "ssp":                ("ssp",                      {"code_insee": citycode}),
         "icpe":               ("installations_classees",   {"code_insee": citycode}),
     }
@@ -103,7 +105,11 @@ def _data_list(raw: dict, key: str) -> list:
     if isinstance(val, list):
         return val
     if isinstance(val, dict):
+        # Deux formes selon l'endpoint : `data` (gaspar/risques, catnat…) ou
+        # `content` (gaspar/pprn, gaspar/pprt — réponse paginée Spring).
         d = val.get("data")
+        if not isinstance(d, list):
+            d = val.get("content")
         return d if isinstance(d, list) else []
     return []
 
@@ -163,6 +169,47 @@ def _is_source_failed(raw: dict, cle: str) -> bool:
 # Normalisation aléa par aléa
 # ---------------------------------------------------------------------------
 
+def _ppr_inondation_info(raw: dict) -> tuple[bool, float | None, str | None]:
+    """Presence d'un PPRI sur la commune + hauteur d'eau representative.
+
+    Phase 6 du plan jumeau : la hauteur reelle d'inondation n'est pas
+    exposee en valeur numerique par l'API — on derive une fourchette depuis
+    le zonage reglementaire du/des PPR inondation (zone rouge = interdiction,
+    zone bleue = prescriptions) : rouge 1.5-3 m, bleue 0.5-1.5 m.
+
+    Retourne (ppri_present, hauteur_eau_m, zone_ppr).
+    """
+    pprs = _data_list(raw, "ppr")
+    if not pprs:
+        return False, None, None
+
+    has_rouge = False
+    has_bleue = False
+    ppri = False
+    for ppr in pprs:
+        if not isinstance(ppr, dict):
+            continue
+        modele = (ppr.get("modeleProcedure") or "").lower()
+        lib = (ppr.get("libPpr") or "").lower()
+        if "inondation" in modele or "inondation" in lib or "ppri" in lib or "ppr inondation" in lib:
+            ppri = True
+        # Zones reglementaires du PPR (rouge / bleue).
+        reg = ppr.get("zonageReglementaire") or {}
+        for lt in (reg.get("listTypeReg") or []):
+            code = (lt.get("code") or "").lower()
+            if code in ("03", "r"):
+                has_rouge = True
+            elif code in ("02", "b"):
+                has_bleue = True
+
+    if not (ppri and (has_rouge or has_bleue)):
+        return ppri, None, None
+
+    if has_rouge:
+        return True, 2.0, "rouge (interdiction)"  # bande 1.5-3 m
+    return True, 1.0, "bleue (prescriptions)"  # bande 0.5-1.5 m
+
+
 def _alea_inondation(raw: dict) -> AleaDetail:
     failed = _is_source_failed(raw, "risques_commune") and _is_source_failed(raw, "catnat")
     if failed:
@@ -186,11 +233,18 @@ def _alea_inondation(raw: dict) -> AleaDetail:
 
     catnat_hist = _catnat_entries_filtrees(raw, ["inondation", "coulée", "submersion"])
     is_commune = hazard or n_catnat > 0 or bool(zi)
+    ppri, hauteur_eau_m, zone_ppr = _ppr_inondation_info(raw)
+    if ppri:
+        is_commune = True
+        # Un PPRI prescrit est un signal fort : on releve le score.
+        score = max(score, 60)
     return AleaDetail(
         code="inondation", libelle="Inondation",
-        present=bool(zi),
+        present=bool(zi) or ppri,
         present_commune=is_commune,
         niveau=_score_to_niveau(score),
+        hauteur_eau_m=hauteur_eau_m,
+        zonage=("PPRI présent — zone " + zone_ppr) if (ppri and zone_ppr) else ("PPRI présent" if ppri else None),
         catnat_historique=catnat_hist,
         url_detail="https://www.georisques.gouv.fr/risques/inondations",
     )
@@ -263,6 +317,7 @@ def _alea_sismicite(raw: dict) -> AleaDetail:
         present_commune=is_commune,
         niveau=_score_to_niveau(score),
         zonage=zonage_str,
+        zone_sismique=str(zone_int) if zone_int is not None else None,
         url_detail="https://www.georisques.gouv.fr/risques/seismes",
     )
 

@@ -177,10 +177,15 @@
       @font-face { font-family: 'Neue Montreal'; src: url('vetter-consulting/assets/fonts/66a20363e5bbc5dbaa1b5959_PPNeueMontreal-SemiBold.otf') format('opentype'); font-weight: 600; font-style: normal; font-display: swap; }
       @font-face { font-family: 'Neue Montreal'; src: url('vetter-consulting/assets/fonts/66a20363e5bbc5dbaa1b595e_PPNeueMontreal-Bold.otf') format('opentype'); font-weight: 700; font-style: normal; font-display: swap; }
       .w-webflow-badge { display: none !important; }
-      /* Timer retiré : ni l'écran de préchargement à compte à rebours, ni
-         l'horloge fixe du template. !important pour battre les styles
-         inline posés par les interactions Webflow (IX2). */
-      .preloader, .clock { display: none !important; }
+      /* Préloader : comportement d'origine restauré (odomètre IX2 déclenché à
+         la fin du chargement). Sécurité : .is-hidden masque l'écran si IX2 ne
+         se déclenche pas (la page ne doit jamais rester bloquée). */
+      .preloader.is-hidden {
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+        transition: opacity .7s ease, visibility .7s ease;
+      }
       html, body { margin: 0; padding: 0; } .hero-wrapper.v2 { isolation: isolate; } .hero-layer-video { position: absolute; inset: 0; z-index: 2; overflow: hidden; pointer-events: none; opacity: 0.6; background: #000; } .hero-layer-video iframe, .hero-layer-video video { width: 100%; height: 100%; border: 0; transform: scale(1.18); transform-origin: center; object-fit: cover; display: block; }       .hero-layer-1 { z-index: 0; }
     </style>
     <style>
@@ -420,14 +425,21 @@
       html.theme-light .hero-layer-3 .hero-headline { color: #ffffff; }
       html.theme-light .hero-layer-3 .copytext { color: rgba(255, 255, 255, .85); }
 
-      /* Mots-clés is-white : plus de surlignage sombre en mode clair,
-         remplacé par une graisse de police plus forte */
+      /* Mots-clés is-white : graisse identique au mode sombre (plus de bold
+         en mode clair). Seule la couleur change entre les thèmes : blanc sur
+         fond sombre, texte sombre sur fond clair. */
       html.theme-light .is-white {
         background-color: transparent;
         color: var(--white);
-        font-weight: 700;
       }
       html.theme-light .hero-layer-3 .is-white { color: #ffffff; }
+
+      /* Textes superposés aux photos des acteurs (chess-grid-img-txt-layer) :
+         les photos restent sombres dans les deux thèmes, on garde donc le
+         blanc même en mode clair (sinon texte sombre sur photo illisible). */
+      html.theme-light ._06-testimonials .chess-grid-img-txt-layer .is-white {
+        color: #ffffff;
+      }
       html.theme-light .btn-txt.is-white { color: #f4f4f4; }
 
       /* Hamburger mobile (lignes blanches) -> sombres */
@@ -438,6 +450,15 @@
       html.theme-light .timeline-dot { box-shadow: 0 0 0 8px var(--black); }
       html.theme-light .gradient {
         background-image: linear-gradient(0deg, var(--black), rgba(255, 255, 255, 0));
+      }
+
+      /* Bloc témoignages (_01-proof) : fond volontairement sombre (#0e0e0e) dans
+         les deux thèmes. En mode clair les variables --white/--light-grey
+         s'inversent -> titres et textes sombres sur fond sombre, illisibles.
+         On restaure les valeurs du thème sombre à l'intérieur du bloc. */
+      html.theme-light ._01-proof {
+        --white: #f4f4f4;
+        --light-grey: #888;
       }
     </style>
     <script src="vetter-consulting/assets/js/lenis.min.js"></script>
@@ -491,13 +512,19 @@
         --roi-line: rgba(255, 255, 255, .14);
         --roi-card: rgba(255, 255, 255, .04);
         position: relative;
-        overflow: hidden;
-        padding: clamp(80px, 10vw, 130px) 24px;
+        /* La bande passe au-dessus de la ligne verticale fixe de la timeline
+           (timeline-bar) : celle-ci ne doit pas traverser la section ROI.
+           Pas d'overflow:hidden ici : il casserait le title sticky de la
+           structure mission-wrap (comme « Nos Acteurs »). */
+        z-index: 1;
         border-top: 1px solid var(--roi-line);
         border-bottom: 1px solid var(--roi-line);
         background:
           radial-gradient(1100px 460px at 50% -12%, var(--orange-tint, rgba(67, 134, 177, .16)), transparent 62%),
           linear-gradient(180deg, rgba(255, 255, 255, .025), rgba(255, 255, 255, 0) 38%, rgba(255, 255, 255, .025));
+        /* Fond opaque (couleur de page) pour masquer la timeline-bar fixe qui
+           se voit à travers le fond transparent de la section. Rendu identique. */
+        background-color: var(--black);
       }
       html.theme-light .roi-band {
         --roi-ink: #15181d;
@@ -507,8 +534,16 @@
         background:
           radial-gradient(1100px 460px at 50% -12%, var(--orange-tint, rgba(67, 134, 177, .18)), transparent 62%),
           linear-gradient(180deg, rgba(21, 24, 29, .03), rgba(21, 24, 29, 0) 38%, rgba(21, 24, 29, .03));
+        /* idem : fond opaque pour masquer la timeline-bar fixe en mode clair */
+        background-color: var(--black);
       }
-      .roi-band-inner { max-width: 1100px; margin: 0 auto; }
+      .roi-band-inner {
+        max-width: 1100px;
+        margin: 0 auto;
+        /* Le padding vertical qui était sur .roi-band passe ici (le bandeau
+           est devenu une section complète avec titre sticky). */
+        padding: clamp(80px, 10vw, 130px) 24px;
+      }
       .roi-equation {
         display: flex;
         align-items: center;
@@ -807,6 +842,15 @@
         .roi-x8 { transform: translate(-50%, -50%) !important; }
       }
     </style>
+    <!-- Titre de section « grand titre » : même structure que la section
+         « Nos fonctionnalités » (requirements-layer-1), pas le motif sticky
+         mission-wrap qui faisait chevaucher le titre et le contenu. -->
+    <div class="requirements-layer-1">
+      <div class="align-vertically is-center-aligned">
+        <div class="global-subline"></div>
+        <div class="requirements-txt">Votre ROI</div>
+      </div>
+    </div>
     <div class="roi-band-inner">
       <div class="roi-equation" role="img" aria-label="1 euro investi en mitigation climatique rapporte 8 euros de dommages évités">
         <div class="roi-side roi-in">
@@ -918,7 +962,7 @@
 .partners-loop{position:relative;z-index:1;background-color:var(--black,#090909);margin:5rem 0;padding:7rem 2.5rem 6rem;overflow:hidden;border-top:1px solid rgba(255,255,255,.08)}
 .partners-loop-inner{width:100%;max-width:1200px;margin:0 auto;display:flex;flex-direction:column;align-items:center;gap:2.25rem}
 .partners-loop-label{font-family:'Neue Montreal',sans-serif;font-size:11px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,.38);margin:0}
-.logoloop{position:relative;width:100%;--logoloop-gap:84px;--logoloop-logoHeight:44px}
+.logoloop{position:relative;width:100%;overflow:hidden;--logoloop-gap:84px;--logoloop-logoHeight:44px}
 .logoloop__track{display:flex;width:max-content;will-change:transform;user-select:none;position:relative;z-index:0}
 .logoloop__list{display:flex;align-items:center;margin:0;padding:0;list-style:none}
 .logoloop__item{flex:0 0 auto;margin-right:var(--logoloop-gap);font-size:var(--logoloop-logoHeight);line-height:1}
@@ -1167,6 +1211,31 @@ requestAnimationFrame(raf)
             if (saved.toLowerCase() !== '#4386b1') recolorIcons(saved);
           }
         } catch (e) {}
+      }
+    })();
+    </script>
+    <script>
+    /* ── Préloader & horloge navbar : comportement d'origine (Webflow IX2) ──
+       - Préloader : animation IX2 d'origine (« a-23 Preloader », déclenchée à
+         la fin du chargement) : le compteur « Votre portefeuille sans
+         Typhoon » défile en odomètre (05:00 → 04:59 → 04:58 → 04:57), puis
+         l'écran glisse vers le haut et disparaît. Les data-w-id des colonnes
+         et du conteneur sont restaurés pour que IX2 retrouve ses cibles.
+       - Horloge de la navbar : liée au défilement par l'interaction continue
+         IX2 « a-32 » (SCROLLING_IN_VIEW sur <body>) : le temps restant suit
+         la progression du scroll, de 04:56 (haut de page) à 00:00 (bas).
+       - Sécurité : si IX2 ne se déclenche pas, .is-hidden masque le préloader
+         après 9 s pour ne jamais bloquer la page. */
+    (function () {
+      var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      var preloader = document.querySelector('.preloader');
+      if (preloader && !reduce) {
+        window.setTimeout(function () {
+          var p = document.querySelector('.preloader');
+          if (!p) return;
+          if (getComputedStyle(p).display === 'none') return; /* IX2 a terminé */
+          p.classList.add('is-hidden');
+        }, 9000);
       }
     })();
     </script>
