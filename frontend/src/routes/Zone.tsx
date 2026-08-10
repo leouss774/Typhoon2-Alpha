@@ -143,6 +143,12 @@ export function Zone() {
   const [rapport, setRapport] = useState<RapportNarratif | null>(null);
   const [rapportLoading, setRapportLoading] = useState(false);
   const [rapportError, setRapportError] = useState<RapportError | null>(null);
+  /* true quand l'étape Rapport IA a été atteinte pendant le chargement des
+     recommandations : le rapport n'est généré qu'une fois celles-ci prêtes. */
+  const [rapportWaiting, setRapportWaiting] = useState(false);
+  /* Intention « régénération forcée » mémorisée quand la relance est différée
+     par l'attente des recommandations (sinon force serait perdu). */
+  const rapportForceRef = useRef(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [visibleLayerKeys, setVisibleLayerKeys] = useState<ReadonlySet<string>>(new Set());
 
@@ -269,6 +275,7 @@ export function Zone() {
       setReport(null);
       setRapport(null);
       setRapportError(null);
+      setRapportWaiting(false);
       setFromCache(false);
       setSidebarOpen(false);
     }
@@ -327,18 +334,31 @@ export function Zone() {
     void runDiagnosis(report.adresse_normalisee || report.adresse_saisie, { force: true });
   }
 
-  /* ── Rapport narratif IA (Mistral) — POST RisqueReport → RapportNarratif ── */
-  async function loadRapport() {
-    if (!report || rapport || rapportLoading) return;
+  /* ── Rapport narratif IA (Mistral) — POST RisqueReport → RapportNarratif ──
+     force = true : ignore le cache et régénère même si un rapport est déjà
+     affiché (le prompt du rapport a pu changer côté backend). */
+  async function loadRapport(force = false) {
+    if (!report || rapportLoading) return;
+    if (!force && rapport) return;
+    /* Le rapport IA ne s'affiche qu'une fois les recommandations chargées
+       (étape précédente) : on attend la fin de l'analyse détaillée. */
+    if (detailedRecommendationsLoading) {
+      rapportForceRef.current = force;
+      setRapportWaiting(true);
+      return;
+    }
+    rapportForceRef.current = false;
     /* Rapport Mistral déjà généré pour cette adresse (cache) → restitution
-       immédiate, aucun appel IA. */
-    if (!fromCache) {
+       immédiate, aucun appel IA. Le cache ne restitue que les rapports de la
+       version de prompt actuelle (RAPPORT_VERSION) — sinon on régénère. */
+    if (!force && !fromCache) {
       const cached = getCachedDiagnostic(report.adresse_normalisee || report.adresse_saisie);
       if (cached?.rapport) {
         setRapport(cached.rapport);
         return;
       }
     }
+    setRapportWaiting(false);
     setRapportLoading(true);
     setRapportError(null);
     try {
@@ -387,6 +407,20 @@ export function Zone() {
     }
   }
 
+  /* Rapport IA en attente : si l'étape 5 a été atteinte pendant le chargement
+     des recommandations détaillées, on génère le rapport dès qu'elles sont
+     prêtes (même en cas d'échec : le rapport reste générable). L'intention
+     « force » est conservée pour la relance (Régénérer). */
+  useEffect(() => {
+    if (rapportWaiting && !detailedRecommendationsLoading && step === 5 && report) {
+      const force = rapportForceRef.current;
+      rapportForceRef.current = false;
+      setRapportWaiting(false);
+      void loadRapport(force);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rapportWaiting, detailedRecommendationsLoading, step, report]);
+
   /* Conseil actionnable selon le code d'erreur renvoyé par le backend. */
   function hintForRapportError(code: string | undefined, status: number): string | undefined {
     if (code === 'mistral_api_key_manquante') {
@@ -414,6 +448,9 @@ export function Zone() {
     }
     setStepError(false);
     setStep(i);
+    /* Quitter l'étape Rapport IA avant la fin des recommandations : on retire
+       l'état « en attente » (sera redéclenché si l'on revient à l'étape 5). */
+    if (i !== 5) setRapportWaiting(false);
     if (i === 0) window.setTimeout(() => heroInputRef.current?.focus(), 80);
     if (i === 5 && report) void loadRapport();
   }
@@ -879,6 +916,16 @@ export function Zone() {
                   <p>Mistral analyse les données Géorisques de {report.adresse_normalisee}.</p>
                   <md-linear-progress indeterminate></md-linear-progress>
                 </div>
+              ) : rapportWaiting && !rapport ? (
+                <div className="report-empty">
+                  <md-icon>hourglass_top</md-icon>
+                  <h2>Analyse des recommandations en cours…</h2>
+                  <p>
+                    Le rapport IA sera généré dès la fin de l'analyse détaillée
+                    du bien.
+                  </p>
+                  <md-linear-progress indeterminate></md-linear-progress>
+                </div>
               ) : rapportError ? (
                 <div className="report-error" role="alert">
                   <div className="report-error-icon">
@@ -928,15 +975,26 @@ export function Zone() {
                         {report.date_generation}
                       </p>
                     </div>
-                    <md-elevated-button
-                      className="pdf-btn report-export"
-                      href={pdfUrl}
-                      target="_blank"
-                      rel="noopener"
-                    >
-                      <md-icon slot="icon">picture_as_pdf</md-icon>
-                      Exporter en PDF
-                    </md-elevated-button>
+                    <div className="report-actions">
+                      <md-text-button
+                        className="report-regenerate"
+                        aria-label="Régénérer le rapport IA (nouvel appel Mistral, sans cache)"
+                        title="Régénérer avec le prompt actuel"
+                        onClick={() => void loadRapport(true)}
+                      >
+                        <md-icon slot="icon">refresh</md-icon>
+                        Régénérer
+                      </md-text-button>
+                      <md-elevated-button
+                        className="pdf-btn report-export"
+                        href={pdfUrl}
+                        target="_blank"
+                        rel="noopener"
+                      >
+                        <md-icon slot="icon">picture_as_pdf</md-icon>
+                        Exporter en PDF
+                      </md-elevated-button>
+                    </div>
                   </header>
 
                   <p className="report-intro">{rapport.introduction}</p>

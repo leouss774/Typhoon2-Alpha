@@ -2710,6 +2710,19 @@
   font-size: 10px;
   color: var(--md-sys-color-on-surface-variant);
 }
+.report-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+.report-regenerate {
+  --md-text-button-label-text-size: 12px;
+  flex-shrink: 0;
+}
+.report-regenerate:hover {
+  color: var(--md-sys-color-primary);
+}
 .report-export {
   --md-elevated-button-label-text-size: 12px;
   flex-shrink: 0;
@@ -3833,6 +3846,12 @@
     flex-direction: column;
     align-items: flex-start;
     gap: 12px;
+  }
+  .report-actions {
+    width: 100%;
+  }
+  .report-actions > * {
+    flex: 1;
   }
   .report-export {
     width: 100%;
