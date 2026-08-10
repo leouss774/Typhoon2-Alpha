@@ -15,12 +15,6 @@
 //   niveaux réels calculés par le backend, sans inventer de donnée.
 // =============================================================================
 
-<<<<<<< HEAD
-import { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import type { RisqueReport } from '../zone/config';
-import { API } from '../zone/config';
-=======
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import type { RisqueReport, RisquesPrincipaux } from '../zone/config';
 import { API, ALEA_ICONS, ALEA_ICON_FALLBACK, WMS_LAYER_MAP, WFS_LAYER_MAP } from '../zone/config';
@@ -32,7 +26,6 @@ import {
   type SimulationStatus,
 } from '../zone3d/simulation';
 import type { CesiumSimulation } from '../zone3d/CesiumViewer';
->>>>>>> 96c53bfdba239cd51fff23ceb38332aa10c56f76
 
 /* Chargé à la demande (React.lazy) : le bundle Cesium (~10 Mo) n'est
    téléchargé qu'au premier clic sur l'onglet « Vue terrain 3D ». */
@@ -60,11 +53,6 @@ export function ZoneBIM({
   const [view, setView] = useState<'bim' | 'terrain'>('bim');
   const [loaded, setLoaded] = useState(false);
   const [attempt, setAttempt] = useState(0);
-<<<<<<< HEAD
-  const navigate = useNavigate();
-  // Nouvel horodatage à chaque diagnostic et à chaque « Recharger ».
-  const bust = useMemo(() => Date.now(), [attempt, report?.adresse_saisie]);
-=======
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
 
   /* Simulation CZML (Sprint 2) : alea lancé, statut du job, URL du CZML prêt. */
@@ -84,7 +72,6 @@ export function ZoneBIM({
   const [source, setSource] = useState<{ lat: number; lon: number } | null>(null);
   const [intensite, setIntensite] = useState(0.7);
   const intensiteTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
->>>>>>> 96c53bfdba239cd51fff23ceb38332aa10c56f76
 
   /* Nouveau diagnostic ou rechargement manuel → on réaffiche le voile de
      chargement le temps que l'iframe remonte, et on coupe toute simulation
@@ -137,13 +124,11 @@ export function ZoneBIM({
   }
 
   const batiment = report.bdnb?.batiment || null;
-  // `_r` : cache-buster horodaté — un compteur (0,1,2…) retombait sur des
-  // URL déjà mises en cache lors de visites précédentes (l'endpoint servait
-  // alors max-age=3600) et resservait d'anciens modèles. L'horodatage
-  // garantit une URL inédite à chaque diagnostic et à chaque « Recharger ».
+  // `_r` : cache-buster — l'endpoint répond Cache-Control max-age=3600, sans
+  // lui le bouton « Recharger » resservirait le .glb du cache navigateur.
   const modelUrl = `${API}/diagnostic/adresse/gltf?q=${encodeURIComponent(
     report.adresse_saisie
-  )}&_r=${bust}`;
+  )}&_r=${attempt}`;
   const iframeSrc = `/bim-viewer/projects/remote?model=${encodeURIComponent(modelUrl)}`;
   const iframeKey = `${attempt}-${report.adresse_saisie}`;
 
