@@ -37,6 +37,7 @@ import {
   type RisqueReport,
   type RapportNarratif,
   type GeocodeSuggestion,
+  type RisquesPrincipaux,
 } from '../zone/config';
 import type { RecommendationZone } from '../jumeau/recommendations';
 import {
@@ -119,6 +120,7 @@ export function Zone() {
   const [detailedRecommendationZones, setDetailedRecommendationZones] = useState<Record<string, RecommendationZone>>({});
   const [detailedRecommendationsLoading, setDetailedRecommendationsLoading] = useState(false);
   const [detailedRecommendationsError, setDetailedRecommendationsError] = useState<string | null>(null);
+  const [detailedRisquesPrincipaux, setDetailedRisquesPrincipaux] = useState<RisquesPrincipaux | null>(null);
   const [conversations, setConversations] = useState<Conversation[]>(() => loadConversations());
   const [rapport, setRapport] = useState<RapportNarratif | null>(null);
   const [rapportLoading, setRapportLoading] = useState(false);
@@ -149,6 +151,7 @@ export function Zone() {
     setDetailedRecommendationsLoading(true);
     setDetailedRecommendationsError(null);
     setDetailedRecommendationZones({});
+    setDetailedRisquesPrincipaux(null);
     try {
       const fastResponse = await fetch(`${API}/diagnostic/fast`, {
         method: 'POST',
@@ -168,6 +171,7 @@ export function Zone() {
       const detailedContract = await recommendationsResponse.json();
       if (requestId !== recommendationsRequestId.current) return;
       setDetailedRecommendationZones(detailedContract?.zones || {});
+      setDetailedRisquesPrincipaux(detailedContract?.risques_principaux || null);
     } catch (error) {
       if (requestId !== recommendationsRequestId.current) return;
       setDetailedRecommendationsError(error instanceof Error ? error.message : 'Recommandations détaillées indisponibles');
@@ -224,6 +228,7 @@ export function Zone() {
     setDetailedRecommendationZones({});
     setDetailedRecommendationsLoading(false);
     setDetailedRecommendationsError(null);
+    setDetailedRisquesPrincipaux(null);
     setRapport(null);
     setRapportError(null);
     setSidebarOpen(false);
@@ -782,6 +787,9 @@ export function Zone() {
                 recommendationZones={detailedRecommendationZones}
                 recommendationZonesLoading={detailedRecommendationsLoading}
                 recommendationZonesError={detailedRecommendationsError}
+                risquesPrincipaux={detailedRisquesPrincipaux}
+                visibleLayerKeys={visibleLayerKeys}
+                onToggleLayer={toggleLayer}
               />
             </section>
 
