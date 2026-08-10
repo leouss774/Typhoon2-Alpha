@@ -33,6 +33,7 @@ import {
   aleaScore,
   type AleaDetail,
   type RisqueReport,
+  type RisquesPrincipaux,
   type RapportNarratif,
   type GeocodeSuggestion,
 } from '../zone/config';
@@ -134,6 +135,9 @@ export function Zone() {
   const [detailedRecommendationZones, setDetailedRecommendationZones] = useState<Record<string, RecommendationZone>>({});
   const [detailedRecommendationsLoading, setDetailedRecommendationsLoading] = useState(false);
   const [detailedRecommendationsError, setDetailedRecommendationsError] = useState<string | null>(null);
+  /* Top 3 des risques principaux (scores moteur + narration LLM croisant les
+     données géo et bâtimentaires) — panneau « Comprendre les risques ». */
+  const [risquesPrincipaux, setRisquesPrincipaux] = useState<RisquesPrincipaux | null>(null);
   const [fromCache, setFromCache] = useState(false);
   const [conversations, setConversations] = useState<Conversation[]>(() => loadConversations());
   const [rapport, setRapport] = useState<RapportNarratif | null>(null);
@@ -156,6 +160,7 @@ export function Zone() {
     setDetailedRecommendationsLoading(true);
     setDetailedRecommendationsError(null);
     setDetailedRecommendationZones({});
+    setRisquesPrincipaux(null);
     try {
       const fastResponse = await fetch(`${API}/diagnostic/fast`, {
         method: 'POST',
@@ -175,6 +180,7 @@ export function Zone() {
       const detailedContract = await recommendationsResponse.json();
       if (requestId !== recommendationsRequestId.current) return;
       setDetailedRecommendationZones(detailedContract?.zones || {});
+      setRisquesPrincipaux(detailedContract?.risques_principaux || null);
     } catch (error) {
       if (requestId !== recommendationsRequestId.current) return;
       setDetailedRecommendationsError(error instanceof Error ? error.message : 'Recommandations détaillées indisponibles');
@@ -273,6 +279,7 @@ export function Zone() {
     setDetailedRecommendationZones({});
     setDetailedRecommendationsLoading(false);
     setDetailedRecommendationsError(null);
+    setRisquesPrincipaux(null);
 
     try {
       const resp = await fetch(`${API}/diagnostic/adresse?q=${encodeURIComponent(value)}`);
@@ -839,6 +846,7 @@ export function Zone() {
                 recommendationZones={detailedRecommendationZones}
                 recommendationZonesLoading={detailedRecommendationsLoading}
                 recommendationZonesError={detailedRecommendationsError}
+                risquesPrincipaux={risquesPrincipaux}
                 visibleLayerKeys={visibleLayerKeys}
                 onToggleLayer={toggleLayer}
               />

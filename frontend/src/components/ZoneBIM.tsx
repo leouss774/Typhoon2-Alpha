@@ -16,7 +16,7 @@
 // =============================================================================
 
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
-import type { RisqueReport } from '../zone/config';
+import type { RisqueReport, RisquesPrincipaux } from '../zone/config';
 import { API, ALEA_ICONS, ALEA_ICON_FALLBACK, WMS_LAYER_MAP, WFS_LAYER_MAP } from '../zone/config';
 import { ComprendreRisques } from './ComprendreRisques';
 import type { RecommendationZone } from '../jumeau/recommendations';
@@ -38,6 +38,7 @@ export function ZoneBIM({
   recommendationZones = {},
   recommendationZonesLoading = false,
   recommendationZonesError = null,
+  risquesPrincipaux = null,
   visibleLayerKeys,
   onToggleLayer,
 }: {
@@ -45,6 +46,7 @@ export function ZoneBIM({
   recommendationZones?: Record<string, RecommendationZone>;
   recommendationZonesLoading?: boolean;
   recommendationZonesError?: string | null;
+  risquesPrincipaux?: RisquesPrincipaux | null;
   visibleLayerKeys: ReadonlySet<string>;
   onToggleLayer: (code: string) => void;
 }) {
@@ -241,6 +243,7 @@ export function ZoneBIM({
             zones={recommendationZones}
             loading={recommendationZonesLoading}
             error={recommendationZonesError}
+            risquesPrincipaux={risquesPrincipaux}
           />
           <md-filled-button
             className="bim-action"

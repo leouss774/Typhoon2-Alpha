@@ -6,7 +6,12 @@
 // =============================================================================
 
 import { useEffect, useMemo, useState } from 'react';
-import { D03, bandForKey, type D03Band } from '../zone/config';
+import {
+  D03,
+  bandForKey,
+  type D03Band,
+  type RisquesPrincipaux,
+} from '../zone/config';
 import { formatZoneLabel, type RecommendationZone } from '../jumeau/recommendations';
 
 const NIVEAU_SCORE: Record<string, number> = {
@@ -139,10 +144,14 @@ export function ComprendreRisques({
   zones,
   loading,
   error,
+  risquesPrincipaux,
 }: {
   zones: Record<string, RecommendationZone>;
   loading?: boolean;
   error?: string | null;
+  /* Top 3 des risques principaux (scores moteur + narration LLM croisant les
+     données géo et bâtimentaires) — contrat app/agents/risques_principaux.py. */
+  risquesPrincipaux?: RisquesPrincipaux | null;
 }) {
   const [open, setOpen] = useState(false);
 

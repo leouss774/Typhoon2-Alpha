@@ -363,6 +363,14 @@ def run(state: TyphoonState) -> dict:
     house_context = _build_house_context(building_data)
     risk_context = _build_risk_context(risk_scores)
 
+    # Top 3 des risques principaux (scores déterministes + narration LLM qui
+    # croise les données géo et bâtimentaires). Toujours produit, même sans
+    # clé Mistral (classement déterministe seul). Import local pour éviter un
+    # import circulaire (risques_principaux importe les helpers de ce module).
+    from app.agents.risques_principaux import generer_risques_principaux
+
+    risques_principaux = generer_risques_principaux(building_data, risk_scores)
+
     logger.info(
         "interpretation_agent -- maison: %d sources, année=%s, matériaux murs=%s, toit=%s",
         sum(1 for v in [building_data.get("bdnb"), building_data.get("georisques"),
@@ -377,7 +385,7 @@ def run(state: TyphoonState) -> dict:
     from app.core.config import settings
     if not settings.mistral_api_key:
         logger.info("  interpretation_agent -- MISTRAL_API_KEY absente, aucune interprétation produite")
-        return {"interpretations": {}}
+        return {"interpretations": {}, "risques_principaux": risques_principaux}
 
     interpretations: dict[str, dict[str, Any]] = {}
     zones_2050 = risk_context.get("projection_2050", {}).get("zones", {})
@@ -393,10 +401,12 @@ def run(state: TyphoonState) -> dict:
             interpretations[zone_name] = interp
 
     logger.info(
-        "interpretation_agent -- terminé en %.2fs (%d zone(s) interprétée(s) sur %d)",
+        "interpretation_agent -- terminé en %.2fs (%d zone(s) interprétée(s) sur %d, %d risque(s) principal(aux), source=%s)",
         time.perf_counter() - t0,
         len(interpretations),
         len(risk_context["zones"]),
+        len(risques_principaux.get("risques", [])),
+        risques_principaux.get("source", "?"),
     )
 
-    return {"interpretations": interpretations}
+    return {"interpretations": interpretations, "risques_principaux": risques_principaux}
