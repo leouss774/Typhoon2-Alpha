@@ -24,16 +24,6 @@ export function loadFromAddress(adresse) {
   return _loadFromAddress(adresse);
 }
 
-// Échappement HTML partagé : utilisé par le rendu DOM du moteur ET par
-// matchArtisans() (exporté pour la page /artisans). Défini au niveau module
-// pour être accessible des deux côtés sans duplication.
-function escapeHtml(str) {
-  if (str === null || str === undefined) return '';
-  return String(str)
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-}
-
 export function initScene() {
 /* =========================================================================
    TYPHOON — JUMEAU NUMÉRIQUE 3D — moteur réel (diagnostic du bien)
@@ -1597,23 +1587,6 @@ let currentYear = 2025;
 // (demo, JSON importe) qui n'ont pas de second appel a attendre.
 let recommandationsReady = true;
 
-<<<<<<< HEAD
-// ---- Pont lecture-seule vers les vues React (ex. Vue d'ensemble des
-// recommandations) : aucune donnee reseau supplementaire — on re-emet une
-// copie de ce qui est deja en memoire (rawData) sous forme d'evenement DOM
-// + snapshot sur window. La vue React s'abonne a l'evenement (ou lit le
-// snapshot au montage si l'evenement est deja passe).
-function notifyRecommandationsUpdated() {
-  if (!rawData) return;
-  const snapshot = {
-    adresse: rawData.adresse || '',
-    score_global: rawData.score_global ?? null,
-    zones: rawData.zones || {},
-    projection_2050: rawData.projection_2050 || null,
-  };
-  window.__typhoonDiagnostic = snapshot;
-  window.dispatchEvent(new CustomEvent('typhoon:recommandationsUpdated', { detail: snapshot }));
-=======
 // Pont local vers la vue React globale. Aucun appel reseau n'est effectue :
 // le composant lit uniquement le snapshot 2025 deja charge et fusionne ici.
 function publishRecommendations() {
@@ -1623,7 +1596,6 @@ function publishRecommendations() {
       ready: recommandationsReady,
     },
   }));
->>>>>>> c504680905c50908ba8c186af7a81845622a2753
 }
 
 function loadDataset(data) {
@@ -1666,11 +1638,7 @@ function loadDataset(data) {
   }
   document.getElementById('info-panel').style.display = 'none';
   setYear(2025, true);
-<<<<<<< HEAD
-  notifyRecommandationsUpdated();
-=======
   publishRecommendations();
->>>>>>> c504680905c50908ba8c186af7a81845622a2753
 }
 
 // ---- Chargement en 2 temps (maison immediate, recommandations en fond) ----
@@ -1707,17 +1675,11 @@ function mergeRecommandations(fullContract) {
   if (currentYear === 2025) {
     currentZones = JSON.parse(JSON.stringify(rawData.zones));
     const infoPanel = document.getElementById('info-panel');
-    // Garde nulle : si l'utilisateur a quitté la scène pendant la fusion en
-    // arrière-plan, le panneau n'existe plus — ne pas planter la fusion.
-    if (infoPanel && infoPanel.style.display === 'block' && infoPanel.dataset.zone) {
+    if (infoPanel.style.display === 'block' && infoPanel.dataset.zone) {
       showZonePanel(infoPanel.dataset.zone);
     }
   }
-<<<<<<< HEAD
-  notifyRecommandationsUpdated();
-=======
   publishRecommendations();
->>>>>>> c504680905c50908ba8c186af7a81845622a2753
 }
 
 function fetchRecommandations(apiBase, fastContract) {
@@ -1804,7 +1766,17 @@ if (exportPdfBtn) {
   const fn = () => window.print();
   exportPdfBtn.addEventListener('click', fn);
   _elementHandlers.push({ el: exportPdfBtn, type: 'click', fn });
-}// Construit la phrase "coût estimé" complète à partir de l'objet
+}
+
+// Echappe le texte libre produit par le LLM avant insertion via innerHTML.
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+// Construit la phrase "coût estimé" complète à partir de l'objet
 // cout_estime produit par l'agent recommandations : montant_min/max/devise/unite
 // + infos de contexte (date_estimation, zone_geo, hypotheses).
 function formatCoutEstime(cout) {
@@ -1845,16 +1817,143 @@ function recoGain(r) { return typeof r.gain_resilience === 'number' ? r.gain_res
 async function rechercherArtisans(zoneName, data, container, button) {
   const apiBaseInput = document.getElementById('api-base-input');
   const apiBase = (apiBaseInput && apiBaseInput.value || window.TYPHOON_API).trim();
-  return matchArtisans({
-    apiBase,
-    adresse: (rawData && rawData.adresse) || '',
-    zoneName,
-    data,
-    container,
-    button,
-  });
-}
+  button.disabled = true;
+  button.textContent = 'Recherche dans les annuaires officiels…';
+  container.innerHTML = '';
+  try {
+    const response = await fetch(apiBase + '/artisans/match', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        adresse: rawData.adresse || '',
+        limite: 5,
+        zones: [{
+          zone: zoneName,
+          risques: [data.alea_principal || ''],
+          recommandations: data.recommandations || []
+        }]
+      })
+    });
+    const payload = await response.json();
+    if (!response.ok) throw new Error(payload.detail || `Erreur HTTP ${response.status}`);
+    const groupes = payload.recommandations_traitees || [];
+    if (!groupes.length) {
+      container.className = 'artisan-results artisan-empty';
+      container.textContent = 'Aucun métier n’a pu être associé automatiquement à ces recommandations.';
+      return;
+    }
+    groupes.forEach(groupe => {
+      const section = document.createElement('div');
+      section.className = 'artisan-group';
+      const heading = document.createElement('div');
+      heading.className = 'artisan-group-head';
+      const title = document.createElement('div');
+      title.className = 'artisan-group-title';
+      title.textContent = groupe.libelle || groupe.domaine_recherche || groupe.cle;
+      const category = document.createElement('span');
+      category.className = 'artisan-group-badge';
+      category.textContent = groupe.categorie === 'rge' ? 'RGE' : 'Métier local';
+      heading.appendChild(title);
+      heading.appendChild(category);
+      section.appendChild(heading);
+      if (groupe.erreur) {
+        const error = document.createElement('div');
+        error.className = 'artisan-error';
+        error.textContent = groupe.erreur;
+        section.appendChild(error);
+      }
+      (groupe.entreprises || []).forEach(entreprise => {
+        const card = document.createElement('div');
+        card.className = 'artisan-card';
+        const cardTop = document.createElement('div');
+        cardTop.className = 'artisan-card-top';
+        const name = document.createElement('div');
+        name.className = 'artisan-name';
+        name.textContent = entreprise.nom_entreprise || 'Entreprise';
+        const score = document.createElement('div');
+        score.className = 'artisan-score';
+        score.innerHTML = `${Number(entreprise.score_objectif_sur_100) || 0}<small>/100</small>`;
+        cardTop.appendChild(name);
+        cardTop.appendChild(score);
+        card.appendChild(cardTop);
 
+        const meta = document.createElement('div');
+        meta.className = 'artisan-meta';
+        const addressText = [entreprise.adresse, entreprise.code_postal, entreprise.commune].filter(Boolean).join(' ');
+        if (addressText) {
+          const row = document.createElement('div');
+          row.className = 'artisan-meta-row';
+          row.innerHTML = `<span class="artisan-meta-icon">⌖</span><span>${escapeHtml(addressText)}</span>`;
+          meta.appendChild(row);
+        }
+        if (entreprise.telephone || entreprise.email) {
+          const row = document.createElement('div');
+          row.className = 'artisan-meta-row';
+          row.innerHTML = `<span class="artisan-meta-icon">✆</span><span>${escapeHtml([entreprise.telephone, entreprise.email].filter(Boolean).join(' · '))}</span>`;
+          meta.appendChild(row);
+        }
+        card.appendChild(meta);
+
+        const actions = document.createElement('div');
+        actions.className = 'artisan-actions';
+        if (entreprise.telephone) {
+          const phone = document.createElement('a');
+          phone.href = `tel:${String(entreprise.telephone).replace(/[^\d+]/g, '')}`;
+          phone.className = 'artisan-action primary';
+          phone.textContent = '✆ Appeler';
+          actions.appendChild(phone);
+        }
+        if (entreprise.email) {
+          const email = document.createElement('a');
+          email.href = `mailto:${entreprise.email}`;
+          email.className = 'artisan-action';
+          email.textContent = '✉ Envoyer un e-mail';
+          actions.appendChild(email);
+        }
+        if (addressText) {
+          const directions = document.createElement('a');
+          directions.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addressText)}`;
+          directions.target = '_blank';
+          directions.rel = 'noopener';
+          directions.className = 'artisan-action';
+          directions.textContent = '⌖ Itinéraire';
+          actions.appendChild(directions);
+        }
+        if (entreprise.site_officiel) {
+          const site = document.createElement('a');
+          site.href = entreprise.site_officiel;
+          site.target = '_blank';
+          site.rel = 'noopener';
+          site.className = 'artisan-action';
+          site.textContent = '↗ Site officiel';
+          actions.appendChild(site);
+        }
+        if (actions.childElementCount) card.appendChild(actions);
+
+        if (!entreprise.site_officiel) {
+          const missing = document.createElement('div');
+          missing.className = 'artisan-site-missing';
+          missing.textContent = entreprise.telephone || entreprise.email
+            ? 'Contact direct disponible sans site officiel.'
+            : 'Aucun contact direct vérifiable trouvé pour cette entreprise.';
+          card.appendChild(missing);
+        }
+        section.appendChild(card);
+      });
+      container.appendChild(section);
+    });
+    const warning = document.createElement('small');
+    warning.className = 'artisan-note';
+    warning.textContent = [payload.avertissement_score, payload.avertissement_sites].filter(Boolean).join(' ');
+    container.appendChild(warning);
+  } catch (error) {
+    container.className = 'artisan-results artisan-error';
+    container.textContent = `Recherche indisponible : ${error.message}`;
+  } finally {
+    button.disabled = false;
+    button.textContent = 'Rechercher des artisans correspondants';
+  }
+}
 let infoRiskFilter = 'tous';
 
 function showZonePanel(zoneName) {
@@ -2133,8 +2232,6 @@ _resizeHandler = () => {
 window.addEventListener('resize', _resizeHandler);
 
 // ---------- 11. DÉMARRAGE ----------
-// Repli démo par défaut (comportement d'origine) : le moteur charge le jeu
-// de données d'exemple tant que le front ne fournit pas de diagnostic réel.
 loadDataset(DEFAULT_DATA);
 
 // Diagnostic reel par adresse (meme flux que le formulaire du front natif) :
@@ -2183,198 +2280,5 @@ export function disposeScene() {
   }
   _canvas = null; _resizeHandler = null; _mouseUpHandler = null; _mouseMoveHandler = null;
   _loadFromAddress = null;
-}
-
-// ===========================================================================
-// EXPORT — matchArtisans
-//
-// Recherche d'artisans autonome (paramètres explicites) : il sert la page
-// /artisans, qui n'a PAS de moteur 3D monté. Même requête /artisans/match
-// que rechercherArtisans() du moteur, mais sans dépendre de l'état du
-// moteur (le moteur reste un port direct, ses fonctions sont privées).
-// ===========================================================================
-
-// Recherche d'artisans autonome (même requête /artisans/match que
-// rechercherArtisans() du moteur, mais sans dépendre de l'état du moteur) :
-// adresse et données de zone passées explicitement. Rend les résultats dans
-// `container` (groupes par métier, cartes entreprises, notes d'avertissement).
-export async function matchArtisans({
-  apiBase,
-  adresse,
-  zoneName,
-  data,
-  container,
-  button,
-  limite = 5,
-}) {
-  if (button) {
-    button.disabled = true;
-    button.textContent = 'Recherche dans les annuaires officiels…';
-  }
-  if (container) container.innerHTML = '';
-  try {
-    const response = await fetch(apiBase + '/artisans/match', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        adresse: adresse || '',
-        limite,
-        zones: [{
-          zone: zoneName,
-          risques: [data && data.alea_principal ? data.alea_principal : ''],
-          recommandations: (data && data.recommandations) || [],
-        }],
-      }),
-    });
-    const payload = await response.json();
-    if (!response.ok) throw new Error(payload.detail || `Erreur HTTP ${response.status}`);
-    const groupes = payload.recommandations_traitees || [];
-    if (!groupes.length) {
-      if (container) {
-        container.className = 'artisan-results artisan-empty';
-        container.textContent =
-          'Aucun métier n’a pu être associé automatiquement à ces recommandations.';
-      }
-      return;
-    }
-    if (container) container.className = 'artisan-results';
-    groupes.forEach(groupe => {
-      if (!container) return;
-      const section = document.createElement('div');
-      section.className = 'artisan-group';
-      const heading = document.createElement('div');
-      heading.className = 'artisan-group-head';
-      const title = document.createElement('div');
-      title.className = 'artisan-group-title';
-      title.textContent = groupe.libelle || groupe.domaine_recherche || groupe.cle;
-      const category = document.createElement('span');
-      category.className = 'artisan-group-badge';
-      category.textContent = groupe.categorie === 'rge' ? 'RGE' : 'Métier local';
-      heading.appendChild(title);
-      heading.appendChild(category);
-      section.appendChild(heading);
-      if (groupe.erreur) {
-        const error = document.createElement('div');
-        error.className = 'artisan-error';
-        error.textContent = groupe.erreur;
-        section.appendChild(error);
-      }
-      (groupe.entreprises || []).forEach(entreprise => {
-        const card = document.createElement('div');
-        card.className = 'artisan-card';
-        const cardTop = document.createElement('div');
-        cardTop.className = 'artisan-card-top';
-        const name = document.createElement('div');
-        name.className = 'artisan-name';
-        name.textContent = entreprise.nom_entreprise || 'Entreprise';
-        const score = document.createElement('div');
-        score.className = 'artisan-score';
-        score.innerHTML = `${Number(entreprise.score_objectif_sur_100) || 0}<small>/100</small>`;
-        cardTop.appendChild(name);
-        cardTop.appendChild(score);
-        card.appendChild(cardTop);
-
-        const meta = document.createElement('div');
-        meta.className = 'artisan-meta';
-        const addressText = [entreprise.adresse, entreprise.code_postal, entreprise.commune]
-          .filter(Boolean)
-          .join(' ');
-        if (addressText) {
-          const row = document.createElement('div');
-          row.className = 'artisan-meta-row';
-          row.innerHTML =
-            `<span class="artisan-meta-icon">⌖</span><span>${escapeHtml(addressText)}</span>`;
-          meta.appendChild(row);
-        }
-        if (entreprise.telephone || entreprise.email) {
-          const row = document.createElement('div');
-          row.className = 'artisan-meta-row';
-          row.innerHTML =
-            `<span class="artisan-meta-icon">✆</span><span>${escapeHtml(
-              [entreprise.telephone, entreprise.email].filter(Boolean).join(' · '),
-            )}</span>`;
-          meta.appendChild(row);
-        }
-        card.appendChild(meta);
-
-        const actions = document.createElement('div');
-        actions.className = 'artisan-actions';
-        if (entreprise.telephone) {
-          const phone = document.createElement('a');
-          phone.href = `tel:${String(entreprise.telephone).replace(/[^\d+]/g, '')}`;
-          phone.className = 'artisan-action primary';
-          phone.textContent = '✆ Appeler';
-          actions.appendChild(phone);
-        }
-        if (entreprise.email) {
-          const email = document.createElement('a');
-          email.href = `mailto:${entreprise.email}`;
-          email.className = 'artisan-action';
-          email.textContent = '✉ Envoyer un e-mail';
-          actions.appendChild(email);
-        }
-        if (addressText) {
-          const directions = document.createElement('a');
-          directions.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-            addressText,
-          )}`;
-          directions.target = '_blank';
-          directions.rel = 'noopener';
-          directions.className = 'artisan-action';
-          directions.textContent = '⌖ Itinéraire';
-          actions.appendChild(directions);
-        }
-        if (entreprise.site_officiel) {
-          const site = document.createElement('a');
-          site.href = entreprise.site_officiel;
-          site.target = '_blank';
-          site.rel = 'noopener';
-          site.className = 'artisan-action';
-          site.textContent = '↗ Site officiel';
-          actions.appendChild(site);
-        }
-        if (actions.childElementCount) card.appendChild(actions);
-
-        if (!entreprise.site_officiel) {
-          const missing = document.createElement('div');
-          missing.className = 'artisan-site-missing';
-          missing.textContent = entreprise.telephone || entreprise.email
-            ? 'Contact direct disponible sans site officiel.'
-            : 'Aucun contact direct vérifiable trouvé pour cette entreprise.';
-          card.appendChild(missing);
-        }
-        section.appendChild(card);
-      });
-      container.appendChild(section);
-    });
-    const warning = document.createElement('small');
-    warning.className = 'artisan-note';
-    warning.textContent = [payload.avertissement_score, payload.avertissement_sites]
-      .filter(Boolean)
-      .join(' ');
-    container.appendChild(warning);
-    // Recommandations non classifiées : ne pas les laisser disparaître
-    // silencieusement — note explicite quand le classifieur n'a rien matché.
-    const nonClassees = payload.recommandations_non_classifiees;
-    if (Array.isArray(nonClassees) && nonClassees.length > 0) {
-      const note = document.createElement('div');
-      note.className = 'artisan-note';
-      note.textContent = `${nonClassees.length} recommandation(s) n’ont pas pu être associées à un métier (${nonClassees
-        .map(r => r.zone || r.mesure || '?')
-        .slice(0, 3)
-        .join(', ')}${nonClassees.length > 3 ? ', …' : ''}).`;
-      container.appendChild(note);
-    }
-  } catch (error) {
-    if (container) {
-      container.className = 'artisan-results artisan-error';
-      container.textContent = `Recherche indisponible : ${error.message}`;
-    }
-  } finally {
-    if (button) {
-      button.disabled = false;
-      button.textContent = 'Rechercher des artisans correspondants';
-    }
-  }
 }
 
