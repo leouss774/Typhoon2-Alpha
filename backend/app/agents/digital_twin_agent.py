@@ -24,6 +24,7 @@ def run(state: TyphoonState) -> dict:
         state["risk_scores"],
         formulaire=state.get("formulaire"),
         interpretations=state.get("interpretations"),
+        risques_principaux=state.get("risques_principaux"),
     )
     logger.info("diagnostic_agent (noeud) -- terminé en %.2fs", time.perf_counter() - t0)
     return {"digital_twin": diagnostic}
