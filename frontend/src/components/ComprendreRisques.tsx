@@ -1,8 +1,9 @@
 // =============================================================================
 //   TYPHOON — /zone : panneau « Comprendre risque »
-//   Tableau de bord analytique agrégeant les scores de risque par zone du
-//   bâtiment (fondations, murs, toiture, sous-sol…), calculés côté backend
-//   à partir des données Géorisques (voir /diagnostic/recommandations).
+//   Tableau de bord analytique agrégeant les scores de risque par aléa
+//   (inondation, RGA, sismicité…) sur l'ensemble des zones du bâtiment,
+//   calculés côté backend à partir des données Géorisques
+//   (voir /diagnostic/recommandations).
 // =============================================================================
 
 import { useEffect, useMemo, useState } from 'react';
@@ -34,28 +35,58 @@ function zoneScore(zone: RecommendationZone): number | null {
   return null;
 }
 
-/* Les 4 façades (murs_nord/sud/est/ouest) partagent le même modèle de risque
-   côté backend (risk_model.py::_score_global) — on les fusionne en une seule
-   entrée « Murs » plutôt que d'afficher 4 lignes quasi identiques. */
-const MURS_GROUP_KEY = 'murs';
-function groupKey(key: string): string {
-  return key.startsWith('murs_') ? MURS_GROUP_KEY : key;
-}
+const ALEA_INCONNU = 'Aléa non renseigné';
 
-type ZoneEntry = { key: string; label: string; score: number; band: D03Band; aleaPrincipal?: string };
+type ZoneEntry = { key: string; label: string; score: number; band: D03Band; zones: string[] };
 
 function polarPoint(cx: number, cy: number, r: number, angle: number): [number, number] {
   return [cx + r * Math.cos(angle), cy + r * Math.sin(angle)];
 }
 
+/* Les libellés d'aléa sont du texte libre ("Retrait-gonflement des argiles") et
+   peuvent dépasser largement les 4 mots courts des anciennes zones — on les
+   découpe en plusieurs lignes plutôt que de laisser le SVG les tronquer. */
+function wrapLabel(label: string, maxCharsPerLine = 12, maxLines = 3): string[] {
+  // Les mots composés ("Retrait-gonflement") dépassent parfois à eux seuls
+  // maxCharsPerLine : on les coupe aussi au tiret pour permettre le retour à
+  // la ligne (le tiret est conservé sur le premier segment).
+  const words = label
+    .split(/\s+/)
+    .filter(Boolean)
+    .flatMap((word) =>
+      word.length > maxCharsPerLine
+        ? word.split(/(?<=-)/)
+        : [word],
+    );
+  const lines: string[] = [];
+  let current = '';
+  for (const word of words) {
+    const candidate = current ? `${current} ${word}` : word;
+    if (candidate.length > maxCharsPerLine && current) {
+      lines.push(current);
+      current = word;
+    } else {
+      current = candidate;
+    }
+  }
+  if (current) lines.push(current);
+  if (lines.length > maxLines) {
+    const kept = lines.slice(0, maxLines);
+    kept[maxLines - 1] = `${kept[maxLines - 1]}…`;
+    return kept;
+  }
+  return lines;
+}
+
 function RadarChart({ entries }: { entries: ZoneEntry[] }) {
-  const w = 300;
-  const h = 240;
+  const w = 340;
+  const h = 300;
   const cx = w / 2;
   const cy = h / 2;
-  const maxR = 58;
-  const labelR = maxR + 34;
+  const maxR = 60;
+  const labelR = maxR + 32;
   const n = entries.length;
+  const lineHeight = 11;
 
   const ringPolygon = (r: number) =>
     entries
@@ -68,7 +99,7 @@ function RadarChart({ entries }: { entries: ZoneEntry[] }) {
   const dataPolygon = dataPoints.map((p) => p.join(',')).join(' ');
 
   return (
-    <svg viewBox={`0 0 ${w} ${h}`} className="risk-radar-svg" role="img" aria-label="Radar des scores de risque par zone">
+    <svg viewBox={`0 0 ${w} ${h}`} className="risk-radar-svg" role="img" aria-label="Radar des scores de risque par aléa">
       {[0.25, 0.5, 0.75, 1].map((f) => (
         <polygon key={f} points={ringPolygon(maxR * f)} className="risk-radar-ring" />
       ))}
@@ -83,9 +114,15 @@ function RadarChart({ entries }: { entries: ZoneEntry[] }) {
       {entries.map((e, i) => {
         const [x, y] = polarPoint(cx, cy, labelR, (2 * Math.PI * i) / n - Math.PI / 2);
         const anchor = Math.abs(x - cx) < 4 ? 'middle' : x > cx ? 'start' : 'end';
+        const lines = wrapLabel(e.label);
+        const startDy = -((lines.length - 1) / 2) * lineHeight;
         return (
-          <text key={i} x={x} y={y} textAnchor={anchor} dominantBaseline="middle" className="risk-radar-label">
-            {e.label}
+          <text key={i} x={x} y={y} textAnchor={anchor} className="risk-radar-label">
+            {lines.map((line, li) => (
+              <tspan key={li} x={x} dy={li === 0 ? startDy : lineHeight}>
+                {line}
+              </tspan>
+            ))}
           </text>
         );
       })}
@@ -139,28 +176,27 @@ export function ComprendreRisques({
   }, [open]);
 
   const entries = useMemo<ZoneEntry[]>(() => {
-    const groups = new Map<string, { scores: number[]; niveaux: string[]; aleaPrincipal?: string }>();
+    const groups = new Map<string, { scores: number[]; niveaux: string[]; zones: string[] }>();
     Object.entries(zones || {}).forEach(([key, zone]) => {
       const score = zoneScore(zone);
       if (score == null) return;
-      const gKey = groupKey(key);
-      const group = groups.get(gKey) || { scores: [], niveaux: [] };
+      const gKey = zone.alea_principal?.trim() || ALEA_INCONNU;
+      const group = groups.get(gKey) || { scores: [], niveaux: [], zones: [] };
       group.scores.push(score);
       if (zone.niveau) group.niveaux.push(zone.niveau);
-      if (!group.aleaPrincipal && zone.alea_principal) group.aleaPrincipal = zone.alea_principal;
+      group.zones.push(formatZoneLabel(key));
       groups.set(gKey, group);
     });
 
     return [...groups.entries()]
-      .map(([key, group]) => {
+      .map(([label, group]) => {
         const score = Math.round(group.scores.reduce((sum, s) => sum + s, 0) / group.scores.length);
         const worstNiveau = group.niveaux.reduce<string | undefined>(
           (worst, n) => (worst == null || (NIVEAU_SCORE[n] ?? 0) > (NIVEAU_SCORE[worst] ?? 0) ? n : worst),
           undefined,
         );
         const band = worstNiveau ? bandForKey(worstNiveau) || bandForScore(score) : bandForScore(score);
-        const label = key === MURS_GROUP_KEY ? 'Murs' : formatZoneLabel(key);
-        return { key, label, score, band, aleaPrincipal: group.aleaPrincipal } as ZoneEntry;
+        return { key: label, label, score, band, zones: group.zones } as ZoneEntry;
       })
       .sort((a, b) => b.score - a.score);
   }, [zones]);
@@ -174,7 +210,7 @@ export function ComprendreRisques({
     <>
       <md-elevated-button
         className="bim-action"
-        aria-label="Comprendre les risques du bien par zone"
+        aria-label="Comprendre les risques du bien par aléa"
         onClick={() => setOpen(true)}
       >
         <md-icon slot="icon">analytics</md-icon>
@@ -195,9 +231,9 @@ export function ComprendreRisques({
                 <span className="risk-sheet-eyebrow">Tableau de bord analytique</span>
                 <h2 id="risk-sheet-title">Comprendre les risques de votre bien</h2>
                 <p>
-                  Le score global agrège l'exposition de chaque zone du bien aux différents
-                  aléas. Utilisez le radar pour visualiser en un coup d'œil l'équilibre — ou
-                  le déséquilibre — des risques entre zones.
+                  Le score global agrège l'exposition du bien à chaque aléa identifié. Utilisez
+                  le radar pour visualiser en un coup d'œil l'équilibre — ou le déséquilibre —
+                  des risques entre aléas.
                 </p>
               </div>
               <md-icon-button aria-label="Fermer" onClick={() => setOpen(false)}>
@@ -208,7 +244,7 @@ export function ComprendreRisques({
             {loading && entries.length === 0 && (
               <div className="risk-state">
                 <span className="risk-status-dot" />
-                Calcul des scores de risque par zone…
+                Calcul des scores de risque par aléa…
               </div>
             )}
             {!loading && error && entries.length === 0 && (
@@ -243,12 +279,9 @@ export function ComprendreRisques({
                     {entries.length >= 3 ? (
                       <RadarChart entries={entries} />
                     ) : (
-                      <p className="risk-card-hint">
-                        Pas assez d'aléas distincts pour un radar — voir le détail ci-dessous.
-                      </p>
+                      <p className="risk-card-hint">Pas assez d'aléas distincts pour un radar.</p>
                     )}
                   
-                </div>
                 </div>
 
                 {/* ── Risques principaux + facteurs aggravants (bas du dashboard) ── */}

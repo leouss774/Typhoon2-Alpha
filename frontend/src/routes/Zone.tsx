@@ -5,7 +5,9 @@
 //     2. Cartographie — carte OpenLayers + panneau aléas (data viz Géorisques)
 //     3. Analyse      — fiche bâtiment BDNB (Synthèse / Construction / Énergie…)
 //     4. Jumeau BIM   — viewer 3D thingraph en iframe (glTF généré depuis l'emprise BDNB)
-//     5. Rapport IA   — rapport narratif Mistral + export PDF
+//     5. Recommandations — plan d'adaptation du bien
+//     6. Artisans       — professionnels associés aux travaux
+//     7. Rapport IA     — rapport narratif Mistral + export PDF
 //
 //   Stepper linéaire : les étapes 2-4 sont bloquées tant qu'aucune adresse
 //   n'a été diagnostiquée — l'étape Adresse passe en état d'erreur (icône
@@ -13,15 +15,15 @@
 // =============================================================================
 
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode, type RefObject } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import type { Menu } from '@material/web/menu/menu.js';
 import type { MdSwitch } from '@material/web/switch/switch.js';
 import { ZoneMap } from '../components/ZoneMap';
 import { ZoneAnalyse } from '../components/ZoneAnalyse';
 import { ZoneBIM } from '../components/ZoneBIM';
 import { ZoneRecommendations } from '../components/ZoneRecommendations';
-import { ZoneSidenav, useIsMobile } from '../components/ZoneSidenav';
-import { useTyphoonTheme } from '../typhoon/useTyphoonTheme';
+import { ZoneArtisans } from '../components/ZoneArtisans';
+import { ACCENTS, useTyphoonTheme } from '../typhoon/useTyphoonTheme';
 import {
   API,
   D03,
@@ -33,9 +35,9 @@ import {
   aleaScore,
   type AleaDetail,
   type RisqueReport,
-  type RisquesPrincipaux,
   type RapportNarratif,
   type GeocodeSuggestion,
+  type RisquesPrincipaux,
 } from '../zone/config';
 import type { RecommendationZone } from '../jumeau/recommendations';
 import {
@@ -45,12 +47,6 @@ import {
   saveConversations,
   type Conversation,
 } from '../zone/conversations';
-import {
-  getCachedDiagnostic,
-  putCachedDiagnostic,
-  putCachedRapport,
-  removeCachedDiagnostic,
-} from '../zone/diagnosticCache';
 import '../styles/zone.css';
 
 const LEGEND_RANGES = ['<20', '20–39', '40–59', '60–79', '≥80'];
@@ -71,12 +67,12 @@ const STEPS = [
   { id: 'analyse', label: 'Analyse' },
   { id: 'bim', label: 'Jumeau BIM' },
   { id: 'recommandations', label: 'Recommandations' },
+  { id: 'artisans', label: 'Artisans' },
   { id: 'rapport', label: 'Rapport IA' },
 ] as const;
 
 export function Zone() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
   const { theme, accent, toggleTheme, pickAccent, resetAccent } = useTyphoonTheme();
   const isMobile = useIsMobile();
   const [navCollapsed, setNavCollapsed] = useState(false);
@@ -114,17 +110,6 @@ export function Zone() {
     return () => sw.removeEventListener('change', onChange);
   }, [toggleTheme]);
 
-  /* Arrivée depuis /settings (historique « Récent ») : ?q=<adresse> lance
-     directement le diagnostic au montage. On consomme le ref pour ne pas
-     relancer sous React StrictMode (double effet en dev). */
-  const bootQuery = useRef(searchParams.get('q'));
-  useEffect(() => {
-    const q = bootQuery.current;
-    bootQuery.current = null;
-    if (q) void runDiagnosis(q);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   const [step, setStep] = useState(0);
   const [stepError, setStepError] = useState(false);
   const [suggestions, setSuggestions] = useState<GeocodeSuggestion[]>([]);
@@ -135,14 +120,20 @@ export function Zone() {
   const [detailedRecommendationZones, setDetailedRecommendationZones] = useState<Record<string, RecommendationZone>>({});
   const [detailedRecommendationsLoading, setDetailedRecommendationsLoading] = useState(false);
   const [detailedRecommendationsError, setDetailedRecommendationsError] = useState<string | null>(null);
-  /* Top 3 des risques principaux (scores moteur + narration LLM croisant les
-     données géo et bâtimentaires) — panneau « Comprendre les risques ». */
-  const [risquesPrincipaux, setRisquesPrincipaux] = useState<RisquesPrincipaux | null>(null);
-  const [fromCache, setFromCache] = useState(false);
+  const [detailedRisquesPrincipaux, setDetailedRisquesPrincipaux] = useState<RisquesPrincipaux | null>(null);
   const [conversations, setConversations] = useState<Conversation[]>(() => loadConversations());
   const [rapport, setRapport] = useState<RapportNarratif | null>(null);
   const [rapportLoading, setRapportLoading] = useState(false);
   const [rapportError, setRapportError] = useState<RapportError | null>(null);
+  /* true quand l'étape Rapport IA a été atteinte pendant le chargement des
+     recommandations : le rapport n'est généré qu'une fois celles-ci prêtes. */
+  const [rapportWaiting, setRapportWaiting] = useState(false);
+  /* Export PDF du rapport IA (jsPDF côté client) — vrai bouton de téléchargement. */
+  const [exportingPdf, setExportingPdf] = useState(false);
+  const [exportPdfError, setExportPdfError] = useState<string | null>(null);
+  /* Intention « régénération forcée » mémorisée quand la relance est différée
+     par l'attente des recommandations (sinon force serait perdu). */
+  const rapportForceRef = useRef(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [visibleLayerKeys, setVisibleLayerKeys] = useState<ReadonlySet<string>>(new Set());
 
@@ -160,7 +151,7 @@ export function Zone() {
     setDetailedRecommendationsLoading(true);
     setDetailedRecommendationsError(null);
     setDetailedRecommendationZones({});
-    setRisquesPrincipaux(null);
+    setDetailedRisquesPrincipaux(null);
     try {
       const fastResponse = await fetch(`${API}/diagnostic/fast`, {
         method: 'POST',
@@ -180,7 +171,7 @@ export function Zone() {
       const detailedContract = await recommendationsResponse.json();
       if (requestId !== recommendationsRequestId.current) return;
       setDetailedRecommendationZones(detailedContract?.zones || {});
-      setRisquesPrincipaux(detailedContract?.risques_principaux || null);
+      setDetailedRisquesPrincipaux(detailedContract?.risques_principaux || null);
     } catch (error) {
       if (requestId !== recommendationsRequestId.current) return;
       setDetailedRecommendationsError(error instanceof Error ? error.message : 'Recommandations détaillées indisponibles');
@@ -222,10 +213,8 @@ export function Zone() {
     void runDiagnosis(s.label);
   }
 
-  /* ── Diagnostic ──  Le cache local (façon « historique ChatGPT ») sert la
-     même adresse instantanément sans refetch ; un bouton « rafraîchir »
-     force un appel réseau (voir handleRefresh). */
-  async function runDiagnosis(q: string, opts: { force?: boolean } = {}) {
+  /* ── Diagnostic ── */
+  async function runDiagnosis(q: string) {
     const value = q.trim();
     if (!value) {
       setDiagError('Saisissez une adresse.');
@@ -233,53 +222,16 @@ export function Zone() {
     }
     hideSuggestions();
     setDiagError(null);
-
-    /* Cache local : si l'adresse a déjà été diagnostiquée (et est encore
-       fraîche), on restitue le rapport complet + le rapport Mistral sans
-       aucun appel réseau. */
-    if (!opts.force) {
-      const cached = getCachedDiagnostic(value);
-      if (cached) {
-        setReport(cached.report);
-        setRapport(cached.rapport ?? null);
-        setRapportError(null);
-        setFromCache(true);
-        setConversations((prev) => {
-          const next = addConversation(prev, cached.report.adresse_normalisee || value);
-          saveConversations(next);
-          return next;
-        });
-        setStepError(false);
-        setStep(1);
-        if (!userClosedSidebar.current) setSidebarOpen(true);
-        setVisibleLayerKeys(
-          new Set(
-            (cached.report.aleas || [])
-              .filter((a) => a.present === true)
-              .map((a) => a.code)
-          )
-        );
-        return;
-      }
-    }
-
     setLoading(true);
-    if (!opts.force) {
-      /* Nouveau diagnostic : on nettoie l'ancien état pendant le chargement. */
-      setReport(null);
-      setRapport(null);
-      setRapportError(null);
-      setFromCache(false);
-      setSidebarOpen(false);
-    }
-    /* Rafraîchissement forcé : on laisse le rapport actuel (et son badge
-       éventuel) en place pendant le chargement — il n'est remplacé qu'en
-       cas de succès, jamais effacé si le réseau échoue. */
+    setReport(null);
     recommendationsRequestId.current += 1;
     setDetailedRecommendationZones({});
     setDetailedRecommendationsLoading(false);
     setDetailedRecommendationsError(null);
-    setRisquesPrincipaux(null);
+    setDetailedRisquesPrincipaux(null);
+    setRapport(null);
+    setRapportError(null);
+    setSidebarOpen(false);
 
     try {
       const resp = await fetch(`${API}/diagnostic/adresse?q=${encodeURIComponent(value)}`);
@@ -299,8 +251,6 @@ export function Zone() {
       const r = (await resp.json()) as RisqueReport;
       setReport(r);
       void loadDetailedRecommendations(r.adresse_normalisee || value);
-      setFromCache(false); // données fraîches du réseau → badge « en cache » retiré
-      putCachedDiagnostic(r); // sauvegarde le résultat pour les prochains passages
       /* Historique « Récent » (localStorage) : adresse normalisée ou requête brute. */
       setConversations((prev) => {
         const next = addConversation(prev, r.adresse_normalisee || value);
@@ -320,25 +270,9 @@ export function Zone() {
     }
   }
 
-  /* Rafraîchissement forcé : ignore le cache et relance le diagnostic réseau,
-     puis met à jour l'entrée cachée (le rapport Mistral est conservé). */
-  function handleRefresh() {
-    if (!report) return;
-    void runDiagnosis(report.adresse_normalisee || report.adresse_saisie, { force: true });
-  }
-
   /* ── Rapport narratif IA (Mistral) — POST RisqueReport → RapportNarratif ── */
   async function loadRapport() {
     if (!report || rapport || rapportLoading) return;
-    /* Rapport Mistral déjà généré pour cette adresse (cache) → restitution
-       immédiate, aucun appel IA. */
-    if (!fromCache) {
-      const cached = getCachedDiagnostic(report.adresse_normalisee || report.adresse_saisie);
-      if (cached?.rapport) {
-        setRapport(cached.rapport);
-        return;
-      }
-    }
     setRapportLoading(true);
     setRapportError(null);
     try {
@@ -371,9 +305,7 @@ export function Zone() {
         });
         return;
       }
-      const r = (await resp.json()) as RapportNarratif;
-      setRapport(r);
-      putCachedRapport(report, r); // on garde le rapport IA généré (coûteux)
+      setRapport((await resp.json()) as RapportNarratif);
     } catch (err) {
       // fetch() a échoué : backend injoignable, CORS, DNS…
       setRapportError({
@@ -386,6 +318,20 @@ export function Zone() {
       setRapportLoading(false);
     }
   }
+
+  /* Rapport IA en attente : si l'étape 5 a été atteinte pendant le chargement
+     des recommandations détaillées, on génère le rapport dès qu'elles sont
+     prêtes (même en cas d'échec : le rapport reste générable). L'intention
+     « force » est conservée pour la relance (Régénérer). */
+  useEffect(() => {
+    if (rapportWaiting && !detailedRecommendationsLoading && step === 5 && report) {
+      const force = rapportForceRef.current;
+      rapportForceRef.current = false;
+      setRapportWaiting(false);
+      void loadRapport(force);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rapportWaiting, detailedRecommendationsLoading, step, report]);
 
   /* Conseil actionnable selon le code d'erreur renvoyé par le backend. */
   function hintForRapportError(code: string | undefined, status: number): string | undefined {
@@ -414,8 +360,11 @@ export function Zone() {
     }
     setStepError(false);
     setStep(i);
+    /* Quitter l'étape Rapport IA avant la fin des recommandations : on retire
+       l'état « en attente » (sera redéclenché si l'on revient à l'étape 5). */
+    if (i !== 5) setRapportWaiting(false);
     if (i === 0) window.setTimeout(() => heroInputRef.current?.focus(), 80);
-    if (i === 5 && report) void loadRapport();
+    if (i === 6 && report) void loadRapport();
   }
 
   /* ── Visibilité des couches ── */
@@ -443,11 +392,8 @@ export function Zone() {
 
   function handleDeleteConversation(id: string) {
     setConversations((prev) => {
-      const victim = prev.find((c) => c.id === id);
       const next = removeConversation(prev, id);
       saveConversations(next);
-      /* L'entrée du cache suit l'historique : suppression associée. */
-      if (victim) removeCachedDiagnostic(victim.address);
       return next;
     });
   }
@@ -471,9 +417,28 @@ export function Zone() {
   );
 
   const wmsActive = !!report && report.aleas.some((a) => WMS_LAYER_MAP[a.code]);
+  /* PDF officiel Géorisques (ERRIAL) — lien secondaire conservé. */
   const pdfUrl = report
     ? `${API}/diagnostic/adresse/rapport-pdf?lat=${report.lat}&lon=${report.lon}`
     : '#';
+
+  /* ── Export PDF du rapport IA (client-side, jsPDF importé à la demande) ── */
+  async function handleExportPdf() {
+    if (!report || !rapport || exportingPdf) return;
+    setExportingPdf(true);
+    setExportPdfError(null);
+    try {
+      const { exportRapportPdf } = await import('../zone/pdf-export');
+      await exportRapportPdf(report, rapport);
+    } catch (err) {
+      console.error('Export PDF du rapport IA échoué :', err);
+      setExportPdfError(
+        "L'export PDF a échoué dans le navigateur. Réessayez — si le problème persiste, utilisez le lien « PDF officiel Géorisques »."
+      );
+    } finally {
+      setExportingPdf(false);
+    }
+  }
 
   const stripText = report
     ? `${report.adresse_normalisee} · ${report.alea_count} aléa(s) · 0 simulés`
@@ -508,11 +473,6 @@ export function Zone() {
         onPickAccent={pickAccent}
         onResetAccent={resetAccent}
         onOpenSettings={() => setSettingsOpen((o) => !o)}
-        onOpenAccount={() => {
-          setDrawerOpen(false);
-          setSettingsOpen(false);
-          navigate('/settings/account');
-        }}
         onCloseDrawer={() => setDrawerOpen(false)}
         onNewDiagnostic={() => {
           setDrawerOpen(false);
@@ -673,26 +633,7 @@ export function Zone() {
                 {report ? (
                   <section className="zone-results">
                     <div className="addr-heading">
-                      <div className="addr-title-row">
-                        <div className="norm">{report.adresse_normalisee}</div>
-                        <div className="addr-actions">
-                          {fromCache && (
-                            <span className="cache-badge" title="Résultat servi depuis le cache local — données Géorisques enregistrées lors du dernier diagnostic.">
-                              <md-icon>database</md-icon> en cache
-                            </span>
-                          )}
-                          <md-icon-button
-                            className="refresh-btn"
-                            aria-label="Rafraîchir le diagnostic"
-                            title="Rafraîchir les données (nouvel appel Géorisques)"
-                            aria-busy={loading || undefined}
-                            disabled={loading}
-                            onClick={handleRefresh}
-                          >
-                            <md-icon>refresh</md-icon>
-                          </md-icon-button>
-                        </div>
-                      </div>
+                      <div className="norm">{report.adresse_normalisee}</div>
                       <div className="meta">
                         GPS {report.lat.toFixed(5)}°N, {report.lon.toFixed(5)}°E · Code INSEE{' '}
                         {report.code_insee} · Généré le {report.date_generation}
@@ -839,20 +780,20 @@ export function Zone() {
               <ZoneAnalyse report={report} />
             </section>
 
-            {/* ÉTAPE 4 — JUMEAU BIM (viewer 3D + onglet « Vue terrain 3D » Cesium) */}
+            {/* ÉTAPE 4 — JUMEAU BIM (viewer 3D thingraph/bim-viewer en iframe) */}
             <section className="zone-bim" hidden={step !== 3}>
               <ZoneBIM
                 report={report}
                 recommendationZones={detailedRecommendationZones}
                 recommendationZonesLoading={detailedRecommendationsLoading}
                 recommendationZonesError={detailedRecommendationsError}
-                risquesPrincipaux={risquesPrincipaux}
+                risquesPrincipaux={detailedRisquesPrincipaux}
                 visibleLayerKeys={visibleLayerKeys}
                 onToggleLayer={toggleLayer}
               />
             </section>
 
-            {/* ÉTAPE 5 — RAPPORT IA (Mistral) */}
+            {/* ÉTAPE 5 — RECOMMANDATIONS */}
             <section className="zone-recommendations" hidden={step !== 4}>
               <ZoneRecommendations
                 report={report}
@@ -862,7 +803,18 @@ export function Zone() {
               />
             </section>
 
-            <section className="zone-report" hidden={step !== 5}>
+            {/* ÉTAPE 6 — ARTISANS */}
+            <section className="zone-artisans-step" hidden={step !== 5}>
+              <ZoneArtisans
+                report={report}
+                zones={detailedRecommendationZones}
+                loading={detailedRecommendationsLoading}
+                error={detailedRecommendationsError}
+              />
+            </section>
+
+            {/* ÉTAPE 7 — RAPPORT IA */}
+            <section className="zone-report" hidden={step !== 6}>
               {!report ? (
                 <div className="report-empty">
                   <md-icon>description</md-icon>
@@ -877,6 +829,16 @@ export function Zone() {
                   <md-icon>psychology</md-icon>
                   <h2>Génération du rapport IA…</h2>
                   <p>Mistral analyse les données Géorisques de {report.adresse_normalisee}.</p>
+                  <md-linear-progress indeterminate></md-linear-progress>
+                </div>
+              ) : rapportWaiting && !rapport ? (
+                <div className="report-empty">
+                  <md-icon>hourglass_top</md-icon>
+                  <h2>Analyse des recommandations en cours…</h2>
+                  <p>
+                    Le rapport IA sera généré dès la fin de l'analyse détaillée
+                    du bien.
+                  </p>
                   <md-linear-progress indeterminate></md-linear-progress>
                 </div>
               ) : rapportError ? (
@@ -928,15 +890,43 @@ export function Zone() {
                         {report.date_generation}
                       </p>
                     </div>
-                    <md-elevated-button
-                      className="pdf-btn report-export"
-                      href={pdfUrl}
-                      target="_blank"
-                      rel="noopener"
-                    >
-                      <md-icon slot="icon">picture_as_pdf</md-icon>
-                      Exporter en PDF
-                    </md-elevated-button>
+                    <div className="report-actions">
+                      <md-text-button
+                        className="report-regenerate"
+                        aria-label="Régénérer le rapport IA (nouvel appel Mistral, sans cache)"
+                        title="Régénérer avec le prompt actuel"
+                        onClick={() => void loadRapport(true)}
+                      >
+                        <md-icon slot="icon">refresh</md-icon>
+                        Régénérer
+                      </md-text-button>
+                      <md-elevated-button
+                        className="pdf-btn report-export"
+                        disabled={exportingPdf}
+                        aria-busy={exportingPdf || undefined}
+                        onClick={handleExportPdf}
+                      >
+                        <md-icon slot="icon">
+                          {exportingPdf ? 'hourglass_top' : 'picture_as_pdf'}
+                        </md-icon>
+                        {exportingPdf ? 'Génération du PDF…' : 'Exporter en PDF'}
+                      </md-elevated-button>
+                      <md-text-button
+                        className="report-official"
+                        href={pdfUrl}
+                        target="_blank"
+                        rel="noopener"
+                        title="PDF officiel Géorisques (ERRIAL) pour ces coordonnées"
+                      >
+                        PDF officiel Géorisques
+                      </md-text-button>
+                    </div>
+                    {exportPdfError && (
+                      <p className="report-export-error" role="alert">
+                        <md-icon>error</md-icon>
+                        <span>{exportPdfError}</span>
+                      </p>
+                    )}
                   </header>
 
                   <p className="report-intro">{rapport.introduction}</p>
@@ -1003,7 +993,6 @@ export function Zone() {
         aria-hidden="true"
         onClick={() => setDrawerOpen(false)}
       />
-
     </main>
   );
 }
@@ -1288,5 +1277,292 @@ function AleaCard({
   );
 }
 
-/* La sidenav (ZoneSidenav + ConversationHistory + useIsMobile) vit dans
-   ../components/ZoneSidenav — partagée entre /zone et /settings. */
+/* ── Détection mobile — 900px, même breakpoint que @media (max-width:900px)
+   dans zone.css (garder les deux synchronisés) ── */
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window !== 'undefined' && window.matchMedia('(max-width: 900px)').matches
+  );
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 900px)');
+    const onChange = () => setIsMobile(mq.matches);
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, []);
+  return isMobile;
+}
+
+/* ── Sidenav rétractable (navigation façon Gemini) ──
+   Desktop : rail pleine largeur ↔ colonne d'icônes (collapsed).
+   Mobile  : drawer hors-écran ouvert via le hamburger du stepper + scrim. */
+function ZoneSidenav({
+  sidenavRef,
+  collapsed,
+  mobile,
+  hidden,
+  theme,
+  accent,
+  settingsOpen,
+  settingsMenuRef,
+  themeSwitchRef,
+  onToggleCollapse,
+  onPickAccent,
+  onResetAccent,
+  onOpenSettings,
+  onCloseDrawer,
+  onNewDiagnostic,
+  conversations,
+  activeAddress,
+  onOpenConversation,
+  onDeleteConversation,
+}: {
+  sidenavRef: RefObject<HTMLElement | null>;
+  collapsed: boolean;
+  mobile: boolean;
+  hidden: boolean;
+  theme: 'dark' | 'light';
+  accent: string;
+  settingsOpen: boolean;
+  settingsMenuRef: RefObject<Menu | null>;
+  themeSwitchRef: RefObject<MdSwitch | null>;
+  onToggleCollapse: () => void;
+  onPickAccent: (hex: string) => void;
+  onResetAccent: () => void;
+  onOpenSettings: () => void;
+  onCloseDrawer: () => void;
+  onNewDiagnostic: () => void;
+  conversations: Conversation[];
+  activeAddress: string | null;
+  onOpenConversation: (address: string) => void;
+  onDeleteConversation: (id: string) => void;
+}) {
+  const navigate = useNavigate();
+
+  const navGo = (path: string) => {
+    onCloseDrawer();
+    navigate(path);
+  };
+
+  return (
+    <aside
+      ref={sidenavRef}
+      className="zone-sidenav"
+      aria-label="Navigation principale"
+      inert={hidden}
+      aria-hidden={hidden}
+    >
+      <header className="sidenav-header">
+        {collapsed ? (
+          /* Replié : l'icône d'expansion remplace le logo (clic → déplier) */
+          <md-icon-button
+            className="sidenav-expand"
+            aria-label="Déplier le menu"
+            title="Déplier le menu"
+            onClick={onToggleCollapse}
+          >
+            <md-icon>chevron_right</md-icon>
+          </md-icon-button>
+        ) : (
+          <>
+            <Link
+              to="/"
+              className="sidenav-brand"
+              aria-label="Typhoon — accueil"
+              onClick={onCloseDrawer}
+            >
+              {/* Wordmark teinté par l'accent : le SVG blanc sert de masque
+                  alpha, la couleur est --accent (voir zone.css). Le lien a déjà
+                  aria-label — le span est décoratif. */}
+              <span className="sidenav-wordmark-img" aria-hidden="true" />
+            </Link>
+            <md-icon-button
+              className="sidenav-collapse"
+              aria-label={mobile ? 'Fermer le menu' : 'Replier le menu'}
+              title={mobile ? 'Fermer le menu' : 'Replier le menu'}
+              onClick={onToggleCollapse}
+            >
+              <md-icon>{mobile ? 'close' : 'menu_open'}</md-icon>
+            </md-icon-button>
+          </>
+        )}
+      </header>
+
+      {collapsed ? (
+        /* ── Mode replié : colonne d'icônes ── */
+        <nav className="sidenav-rail" aria-label="Raccourcis">
+          <md-icon-button title="Nouveau diagnostic" aria-label="Nouveau diagnostic" onClick={onNewDiagnostic}>
+            <md-icon>add_circle</md-icon>
+          </md-icon-button>
+          <md-icon-button title="Accueil" aria-label="Accueil" onClick={() => navGo('/')}>
+            <md-icon>home</md-icon>
+          </md-icon-button>
+          <md-icon-button title="FAQ" aria-label="FAQ" onClick={() => navGo('/faq')}>
+            <md-icon>help</md-icon>
+          </md-icon-button>
+          <md-icon-button title="Contact" aria-label="Contact" onClick={() => navGo('/contact')}>
+            <md-icon>mail</md-icon>
+          </md-icon-button>
+        </nav>
+      ) : (
+        /* ── Mode déplié : liste M3 + historique « Récent » ── */
+        <div className="sidenav-body">
+          <md-list className="sidenav-nav">
+            <md-list-item
+              className="sidenav-new"
+              type="button"
+              onClick={onNewDiagnostic}
+            >
+              <md-icon slot="start">add_circle</md-icon>
+              <span slot="headline">Nouveau diagnostic</span>
+            </md-list-item>
+            <md-list-item type="button" onClick={() => navGo('/')}>
+              <md-icon slot="start">home</md-icon>
+              <span slot="headline">Accueil</span>
+            </md-list-item>
+            <md-list-item type="button" onClick={() => navGo('/faq')}>
+              <md-icon slot="start">help</md-icon>
+              <span slot="headline">FAQ</span>
+            </md-list-item>
+            <md-list-item type="button" onClick={() => navGo('/contact')}>
+              <md-icon slot="start">mail</md-icon>
+              <span slot="headline">Contact</span>
+            </md-list-item>
+          </md-list>
+
+          <ConversationHistory
+            conversations={conversations}
+            activeAddress={activeAddress}
+            onOpen={onOpenConversation}
+            onDelete={onDeleteConversation}
+          />
+        </div>
+      )}
+
+      <footer className="sidenav-footer">
+        <md-icon-button
+          id="settings-anchor"
+          className="sidenav-settings"
+          aria-label="Réglages"
+          title="Réglages"
+          aria-expanded={settingsOpen}
+          aria-haspopup="menu"
+          onClick={onOpenSettings}
+        >
+          <md-icon>settings</md-icon>
+        </md-icon-button>
+
+        <md-menu
+          ref={settingsMenuRef}
+          anchor="settings-anchor"
+          positioning="popover"
+          open={settingsOpen}
+          className="sidenav-menu"
+        >
+          <md-menu-item keepOpen>
+            <span slot="headline">Mode sombre</span>
+            <md-switch slot="end" ref={themeSwitchRef} selected={theme === 'dark'} icons>
+              <md-icon slot="on-icon">dark_mode</md-icon>
+              <md-icon slot="off-icon">light_mode</md-icon>
+            </md-switch>
+          </md-menu-item>
+
+          <div className="sidenav-accent-block">
+            <span className="sidenav-accent-title">Couleur d'accent</span>
+            <div className="sidenav-accent-swatches">
+              {ACCENTS.map((hex) => (
+                <button
+                  key={hex}
+                  type="button"
+                  className={`sidenav-accent-swatch${
+                    accent.toLowerCase() === hex.toLowerCase() ? ' active' : ''
+                  }`}
+                  style={{ '--swatch': hex } as CSSProperties}
+                  aria-label={`Accent ${hex}`}
+                  title={hex}
+                  onClick={() => onPickAccent(hex)}
+                />
+              ))}
+            </div>
+            <button type="button" className="sidenav-accent-reset" onClick={onResetAccent}>
+              <md-icon>restart_alt</md-icon>
+              <span>Rétablir le bleu d'origine</span>
+            </button>
+          </div>
+
+          <md-menu-item type="button" onClick={() => navGo('/')}>
+            <md-icon slot="start">home</md-icon>
+            <span slot="headline">Retour à l'accueil</span>
+          </md-menu-item>
+        </md-menu>
+      </footer>
+    </aside>
+  );
+}
+
+/* ── Historique « Récent » de la sidenav (façon Gemini) ──
+   Section repliable : liste des adresses diagnostiquées (localStorage),
+   clic → relance le diagnostic, survol → bouton de suppression. */
+function ConversationHistory({
+  conversations,
+  activeAddress,
+  onOpen,
+  onDelete,
+}: {
+  conversations: Conversation[];
+  activeAddress: string | null;
+  onOpen: (address: string) => void;
+  onDelete: (id: string) => void;
+}) {
+  const [open, setOpen] = useState(true);
+
+  if (conversations.length === 0) {
+    return (
+      <div className="sidenav-recent-empty">
+        <md-icon>history</md-icon>
+        <span>Pas encore de diagnostic</span>
+      </div>
+    );
+  }
+
+  return (
+    <details
+      className="sidenav-recent"
+      open={open}
+      onToggle={(e) => setOpen((e.currentTarget as HTMLDetailsElement).open)}
+    >
+      <summary className="sidenav-recent-header" aria-label="Historique des adresses diagnostiquées">
+        <span className="sidenav-recent-title">Récent</span>
+        <md-icon>expand_more</md-icon>
+      </summary>
+      <div className="sidenav-recent-list">
+        {conversations.map((c) => {
+          const active = activeAddress !== null && c.address === activeAddress;
+          return (
+            <div
+              className={`sidenav-recent-item${active ? ' active' : ''}`}
+              key={c.id}
+            >
+              <button
+                type="button"
+                className="sidenav-recent-btn"
+                title={c.address}
+                onClick={() => onOpen(c.address)}
+              >
+                <md-icon>history</md-icon>
+                <span className="sidenav-recent-label">{c.address}</span>
+              </button>
+              <md-icon-button
+                className="sidenav-recent-del"
+                aria-label={`Supprimer ${c.address} de l'historique`}
+                title="Supprimer de l'historique"
+                onClick={() => onDelete(c.id)}
+              >
+                <md-icon>close</md-icon>
+              </md-icon-button>
+            </div>
+          );
+        })}
+      </div>
+    </details>
+  );
+}
