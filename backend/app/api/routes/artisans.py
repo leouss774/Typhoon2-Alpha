@@ -23,7 +23,7 @@ from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import Response
 from pydantic import BaseModel, Field
 
-from app.artisans.logo import trouver_favicon
+from app.artisans.logo import trouver_favicon, trouver_favicon_par_nom
 from app.artisans.service import matcher
 from app.connectors.geocoding import geocode_address
 from app.core.config import settings
@@ -65,6 +65,25 @@ async def logo_entreprise(url: str = Query(..., min_length=8, description="URL d
         resultat = await trouver_favicon(url)
     except Exception:
         logger.exception("Erreur inattendue lors de la resolution du favicon")
+        raise HTTPException(404, "Logo indisponible") from None
+    if resultat is None:
+        raise HTTPException(404, "Logo indisponible")
+    contenu, media_type = resultat
+    return Response(content=contenu, media_type=media_type)
+
+
+@router.get("/logo-guess", response_class=Response)
+async def logo_entreprise_par_nom(
+    nom: str = Query(..., min_length=2, description="Nom de l'entreprise (aucun site_officiel connu)"),
+) -> Response:
+    """Repli logo quand aucune URL officielle n'est connue (Sirene/ADEME) :
+    devine un domaine depuis le nom et ne sert son favicon que si la page
+    d'accueil correspond bien (voir app.artisans.logo.trouver_favicon_par_nom).
+    404 si aucun domaine deviné ne correspond."""
+    try:
+        resultat = await trouver_favicon_par_nom(nom)
+    except Exception:
+        logger.exception("Erreur inattendue lors de la resolution du favicon par nom")
         raise HTTPException(404, "Logo indisponible") from None
     if resultat is None:
         raise HTTPException(404, "Logo indisponible")

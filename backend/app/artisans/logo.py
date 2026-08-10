@@ -23,7 +23,9 @@ from __future__ import annotations
 
 import base64
 import ipaddress
+import re
 import socket
+import unicodedata
 from html.parser import HTMLParser
 from urllib.parse import urljoin, urlparse
 
@@ -226,6 +228,77 @@ async def trouver_favicon(url: str, client: httpx.AsyncClient | None = None) -> 
             media = _media_type(resp)
             favicon_cache.set(cache_key, (resp.content, media))
             return resp.content, media
+
+        favicon_cache.set(cache_key, _ABSENT)
+        return None
+    finally:
+        if owns_client:
+            await client.aclose()
+
+
+# ---------------------------------------------------------------------------
+# Repli sans site_officiel connu : Sirene/ADEME ne fournissent pas toujours
+# l'URL du site d'une entreprise. On devine un domaine à partir du nom et on
+# ne l'utilise que si la page d'accueil mentionne bien ce nom — sinon on
+# risquerait d'afficher le logo d'une entreprise homonyme ou d'un
+# typosquatteur du domaine deviné (mauvaise attribution de marque).
+# ---------------------------------------------------------------------------
+
+DOMAINES_CANDIDATS_SUFFIXES = (".fr", ".com")
+_SLUG_LONGUEUR_MIN = 4
+
+
+def _slugifier_nom(nom: str) -> str | None:
+    """Racine du nom d'entreprise utilisable comme début de domaine (retire
+    accents, forme juridique et contenu entre parenthèses)."""
+    sans_accents = unicodedata.normalize("NFKD", nom).encode("ascii", "ignore").decode("ascii")
+    sans_parentheses = re.sub(r"\([^)]*\)", "", sans_accents)
+    sans_forme_juridique = re.sub(
+        r"^\s*(sarl|sas|sasu|eurl|ei|scop|sci)\b\s+", "", sans_parentheses, flags=re.IGNORECASE
+    )
+    slug = re.sub(r"[^a-zA-Z0-9]", "", sans_forme_juridique).lower()
+    return slug if len(slug) >= _SLUG_LONGUEUR_MIN else None
+
+
+def _nom_correspond(texte: str, nom: str) -> bool:
+    """Un token significatif du nom d'entreprise apparaît-il dans le texte ?"""
+    slug = _slugifier_nom(nom)
+    if not slug:
+        return False
+    texte_normalise = re.sub(r"[^a-z0-9]", "", texte.lower())
+    return slug[:8] in texte_normalise
+
+
+async def trouver_favicon_par_nom(nom_entreprise: str, client: httpx.AsyncClient | None = None) -> tuple[bytes, str] | None:
+    """Logo d'une entreprise sans site_officiel connu : (contenu, media_type)
+    ou None. Devine `{slug}.fr` puis `{slug}.com` et ne les accepte que si la
+    page d'accueil mentionne le nom recherché (garde anti-mauvaise-attribution)."""
+    slug = _slugifier_nom(nom_entreprise)
+    if not slug:
+        return None
+
+    cache_key = f"nom:{slug}"
+    cached = favicon_cache.get(cache_key)
+    if cached == _ABSENT:
+        return None
+    if cached is not None:
+        return cached  # type: ignore[return-value]
+
+    owns_client = client is None
+    if client is None:
+        client = httpx.AsyncClient()
+    try:
+        for suffixe in DOMAINES_CANDIDATS_SUFFIXES:
+            host = _hote_public(f"https://{slug}{suffixe}")
+            if not host:
+                continue
+            page = await _telecharger(client, f"https://{host}/")
+            if page is None or not _nom_correspond(page.text[:8000], nom_entreprise):
+                continue
+            resultat = await trouver_favicon(f"https://{host}/", client)
+            if resultat is not None:
+                favicon_cache.set(cache_key, resultat)
+                return resultat
 
         favicon_cache.set(cache_key, _ABSENT)
         return None
