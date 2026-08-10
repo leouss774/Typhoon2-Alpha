@@ -21,6 +21,7 @@ pour une entreprise sans site web (registres publics Sirene/ADEME).
 
 from __future__ import annotations
 
+import base64
 import ipaddress
 import socket
 from html.parser import HTMLParser
@@ -143,6 +144,29 @@ def _extraire_icones(html: str) -> list[tuple[str, tuple[int, int]]]:
     return parser.icones
 
 
+def _icone_data_uri(href: str) -> tuple[bytes, str] | None:
+    """Décode une icône inline `data:image/<type>;base64,...`.
+
+    Certains sites (ex. dhome-renovation.fr) déclarent leur favicon en
+    base64 inline au lieu d'un fichier — c'est un vrai logo, pas un lien
+    externe : aucune requête HTTP nécessaire.
+    """
+    if not href.startswith("data:image/"):
+        return None
+    try:
+        entete, _, payload = href.partition(",")
+        media = entete.removeprefix("data:").split(";")[0].strip().lower()
+        contenu = base64.b64decode(payload, validate=False)
+    except Exception:
+        return None
+    if not media.startswith("image/") or not (32 <= len(contenu) <= FAVICON_MAX_BYTES):
+        # Plancher 32 octets : certains sites déclarent un favicon data: URI
+        # tronqué (ex. dhome-renovation.fr ne contient que l'en-tête PNG) —
+        # inutilisable, mieux vaut le repli initiales.
+        return None
+    return contenu, media
+
+
 async def _telecharger(client: httpx.AsyncClient, url: str) -> httpx.Response | None:
     try:
         resp = await client.get(url, timeout=FAVICON_TIMEOUT_SECONDS, follow_redirects=True)
@@ -180,6 +204,12 @@ async def trouver_favicon(url: str, client: httpx.AsyncClient | None = None) -> 
         page = await _telecharger(client, f"{base}/")
         if page is not None:
             for href, _priorite in _extraire_icones(page.text):
+                # Favicon inline (data:image/...;base64,...) : décodé localement,
+                # aucune requête HTTP — accepté tel quel s'il est valide.
+                inline = _icone_data_uri(href)
+                if inline is not None:
+                    favicon_cache.set(cache_key, inline)
+                    return inline
                 icon_url = urljoin(f"{base}/", href)
                 if not _hote_public(icon_url):
                     continue

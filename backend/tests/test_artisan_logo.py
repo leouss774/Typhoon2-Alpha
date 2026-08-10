@@ -13,6 +13,7 @@ Couvre :
 
 from __future__ import annotations
 
+import base64
 import socket
 import unittest
 from unittest.mock import patch
@@ -186,6 +187,32 @@ class TrouverFaviconTests(unittest.IsolatedAsyncioTestCase):
             async with httpx.AsyncClient(transport=transport) as client:
                 resultat = await trouver_favicon("https://exemple.fr", client=client)
         self.assertEqual(resultat, (_PNG, "image/x-icon"))
+
+    async def test_favicon_inline_data_uri_decode_sans_requete_http(self):
+        """Un favicon déclaré en data:image/...;base64 (ex. dhome-renovation.fr)
+        est décodé localement — aucune requête HTTP pour l'icône."""
+        png_b64 = base64.b64encode(_PNG).decode()
+        requetes: list[str] = []
+
+        async def handler(request: httpx.Request) -> httpx.Response:
+            requetes.append(request.url.path)
+            if request.url.path == "/":
+                return httpx.Response(
+                    200,
+                    text=(
+                        '<html><head><link rel="icon" type="image/png" '
+                        f'href="data:image/png;base64,{png_b64}"></head></html>'
+                    ),
+                    headers={"content-type": "text/html"},
+                )
+            return httpx.Response(404)
+
+        transport = httpx.MockTransport(handler)
+        with patch("app.artisans.logo.socket.getaddrinfo", return_value=_getaddrinfo_public("exemple.fr")):
+            async with httpx.AsyncClient(transport=transport) as client:
+                resultat = await trouver_favicon("https://exemple.fr", client=client)
+        self.assertEqual(resultat, (_PNG, "image/png"))
+        self.assertEqual(requetes, ["/"])  # aucune requête pour l'icône (inline)
 
     async def test_aucun_favicon_retourne_none_et_est_memorise(self):
         async def handler(request: httpx.Request) -> httpx.Response:
