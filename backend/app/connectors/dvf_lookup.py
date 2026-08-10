@@ -38,7 +38,7 @@ import pandas as pd
 
 from app.core.config import settings
 from app.core.paca import department_code_from_citycode
-from app.scoring.zone_scoring import score_point_climat
+# zone_scoring removed — climate scores for DVF markers are no longer computed here
 
 _cache: dict[str, pd.DataFrame] = {}
 _national_cache: pd.DataFrame | None = None
@@ -395,7 +395,7 @@ def real_transactions_for_zone(
             "pieces": int(row["nombre_pieces_principales"]) if pd.notna(row.get("nombre_pieces_principales")) else None,
             "dpe": None,  # DVF ne contient pas le DPE (donnee ADEME distincte)
             "date_publication": row.get("date_mutation"),
-            "climat_score": score_point_climat(lat, lon),
+            "climat_score": None,  # zone scoring pipeline removed; use /diagnostic/adresse per address
             "source": "dvf",
             "url": None,
         })

@@ -8,10 +8,13 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import re
 from typing import Any
+from urllib.parse import urlparse
 
 import requests
 
+from app.artisans.site_finder import EXCLUDED_HOSTS
 from app.core.config import settings
 from app.matching.cache import entreprise_cache, rge_cache
 from app.matching.generate_rapport_artisans import (
@@ -27,6 +30,7 @@ from app.matching.match_artisans_rge import calculer_score_objectif, haversine_k
 logger = logging.getLogger(__name__)
 
 API_RECHERCHE_ENTREPRISES = "https://recherche-entreprises.api.gouv.fr/search"
+ANNUAIRE_HOSTS = EXCLUDED_HOSTS
 
 # ── Fallback NAF pour les catégories non-RGE ────────────────
 NAF_FALLBACKS: dict[str, list[str]] = {
@@ -121,7 +125,7 @@ def traiter_une_recommandation(
     priorite = _extraire_priorite(reco)
 
     metadonnees = {
-        k: reco[k] for k in ("zone_origine", "risques_origine", "mesure_originale", "cout_estime")
+        k: reco[k] for k in ("recommendation_id", "zone_origine", "risques_origine", "mesure_originale", "cout_estime")
         if k in reco
     }
 
@@ -183,16 +187,80 @@ async def matching_parallele(
     return list(results)
 
 
+def _site_entreprise(value: Any) -> str | None:
+    """Accepte exclusivement un domaine propre a l'entreprise, jamais un annuaire."""
+    raw = str(value or "").strip()
+    if not raw:
+        return None
+    url = raw if re.match(r"^https?://", raw, re.IGNORECASE) else f"https://{raw}"
+    host = (urlparse(url).hostname or "").lower().removeprefix("www.")
+    if not host or "." not in host or any(host == item or host.endswith(f".{item}") for item in ANNUAIRE_HOSTS):
+        return None
+    return url
+
+
+def _enrichir_simples(resultats: list[dict[str, Any]], limite: int) -> None:
+    """Expose chaque entreprise avec les données natives disponibles.
+
+    - `site_officiel` : conservé s'il existe dans les registres source (RGE / ADEME)
+      et passe le filtre `_site_entreprise` (excluant les domaines d'annuaires).
+    - `site_annuaire` : repli systématique vers la fiche officielle
+      `https://annuaire-entreprises.data.gouv.fr/entreprise/{identifiant}` si
+      aucun site officiel propre n'est disponible (bouton 'Fiche entreprise' dans le frontend).
+    - `telephone` et `email` : conservés s'ils existent dans la source native.
+    - Aucun appel web externalisé (Mistral web_search) n'est effectué, afin de
+      préserver le quota API Mistral pour les fonctionnalités d'analyse cœur.
+    - Les champs internes (score, lien de fiche, site_internet) sont nettoyés.
+    """
+    for resultat in resultats:
+        entreprises = (resultat.get("entreprises") or [])[:limite]
+        resultat["entreprises"] = entreprises  # cap réel de la réponse (Top N)
+        for entreprise in entreprises:
+            site = _site_entreprise(entreprise.get("site_officiel") or entreprise.get("site_internet"))
+            telephone = entreprise.get("telephone")
+            email = entreprise.get("email")
+
+            entreprise["site_officiel"] = site
+            entreprise["telephone"] = telephone
+            entreprise["email"] = email
+
+            # Repli : sans site propre, on pointe vers la fiche officielle de
+            # l'annuaire public (jamais un faux lien) — le bouton « Fiche entreprise »
+            # reste disponible pour chaque artisan.
+            if not site:
+                identifiant = entreprise.get("siren") or (entreprise.get("siret") or "")[:9]
+                if identifiant:
+                    entreprise["site_annuaire"] = f"https://annuaire-entreprises.data.gouv.fr/entreprise/{identifiant}"
+
+            for key in (
+                "site_internet", "lien_fiche_officielle",
+                "profil_verifie", "site_verifie", "contact_verifie",
+                "score_objectif_sur_100", "details_score",
+            ):
+                entreprise.pop(key, None)
+
+        if not resultat.get("erreur"):
+            if not entreprises:
+                resultat["notice"] = "Aucune entreprise active n'a ete trouvee pour cette recommandation."
+            elif not any(e.get("site_officiel") or e.get("telephone") or e.get("email") for e in entreprises):
+                resultat["notice"] = (
+                    "Entreprises actives identifiees dans les registres publics ; "
+                    "leurs coordonnees et leur site restent a confirmer."
+                )
+
+
 # ── Interface publique ──────────────────────────────────────
 async def run_matching(
     recommandations_input: list[dict[str, Any]],
     code_postal: str,
     lat: float | None = None,
     lon: float | None = None,
+    limite_entreprises: int = 5,
 ) -> dict[str, Any]:
     """Point d'entrée principal : traite toutes les recommandations en parallèle
     et retourne un rapport structuré avec résumé."""
     resultats = await matching_parallele(recommandations_input, code_postal, lat, lon)
+    _enrichir_simples(resultats, limite_entreprises)
 
     total_entreprises = sum(len(r.get("entreprises", [])) for r in resultats)
     compteur = {"rge": 0, "non_rge": 0, "inconnue": 0}
