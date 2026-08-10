@@ -40,7 +40,7 @@ function polarPoint(cx: number, cy: number, r: number, angle: number): [number, 
 /* Les libellés d'aléa sont du texte libre ("Retrait-gonflement des argiles") et
    peuvent dépasser largement les 4 mots courts des anciennes zones — on les
    découpe en plusieurs lignes plutôt que de laisser le SVG les tronquer. */
-function wrapLabel(label: string, maxCharsPerLine = 14, maxLines = 3): string[] {
+function wrapLabel(label: string, maxCharsPerLine = 12, maxLines = 3): string[] {
   const words = label.split(/\s+/).filter(Boolean);
   const lines: string[] = [];
   let current = '';
@@ -63,12 +63,12 @@ function wrapLabel(label: string, maxCharsPerLine = 14, maxLines = 3): string[] 
 }
 
 function RadarChart({ entries }: { entries: ZoneEntry[] }) {
-  const w = 320;
+  const w = 340;
   const h = 300;
   const cx = w / 2;
   const cy = h / 2;
-  const maxR = 62;
-  const labelR = maxR + 34;
+  const maxR = 60;
+  const labelR = maxR + 32;
   const n = entries.length;
   const lineHeight = 11;
 
