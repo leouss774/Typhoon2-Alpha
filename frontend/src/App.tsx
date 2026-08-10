@@ -5,6 +5,8 @@ import { JumeauNumerique } from './routes/JumeauNumerique';
 import { Faq } from './routes/Faq';
 import { Contact } from './routes/Contact';
 import { AccountSettings } from './routes/AccountSettings';
+import { AssistantProvider } from './assistant/AssistantContext';
+import { TyphoonMascot } from './assistant/TyphoonMascot';
 
 /**
  * Application Typhoon — toutes les pages sont autonomes (plein écran) :
@@ -16,16 +18,19 @@ import { AccountSettings } from './routes/AccountSettings';
  */
 export default function App() {
   return (
-    <Routes>
-      <Route path="/" element={<Home />} />
-      <Route path="/zone/*" element={<Zone />} />
-      <Route path="/jumeau/*" element={<JumeauNumerique />} />
-      <Route path="/faq" element={<Faq />} />
-      <Route path="/contact" element={<Contact />} />
-      <Route path="/account" element={<AccountSettings />} />
-      <Route path="/settings" element={<AccountSettings />} />
-      <Route path="/settings/*" element={<AccountSettings />} />
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+    <AssistantProvider>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/zone/*" element={<Zone />} />
+        <Route path="/jumeau/*" element={<JumeauNumerique />} />
+        <Route path="/faq" element={<Faq />} />
+        <Route path="/contact" element={<Contact />} />
+        <Route path="/account" element={<AccountSettings />} />
+        <Route path="/settings" element={<AccountSettings />} />
+        <Route path="/settings/*" element={<AccountSettings />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+      <TyphoonMascot />
+    </AssistantProvider>
   );
 }

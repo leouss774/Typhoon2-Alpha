@@ -24,6 +24,7 @@ import { ZoneBIM } from '../components/ZoneBIM';
 import { ZoneRecommendations } from '../components/ZoneRecommendations';
 import { ZoneArtisans } from '../components/ZoneArtisans';
 import { ACCENTS, useTyphoonTheme } from '../typhoon/useTyphoonTheme';
+import { useAssistantContexte } from '../assistant/AssistantContext';
 import {
   API,
   D03,
@@ -136,6 +137,29 @@ export function Zone() {
   const rapportForceRef = useRef(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [visibleLayerKeys, setVisibleLayerKeys] = useState<ReadonlySet<string>>(new Set());
+
+  /* ── Compagnon virtuel Typhoon : synchronise le contexte du diagnostic
+     affiché à l'écran (adresse, bien, zones/recommandations) pour que le
+     chat réponde à propos de CE bien. Contrat : backend/app/api/routes/chat.py. */
+  const { setContexte } = useAssistantContexte();
+  useEffect(() => {
+    if (!report) {
+      setContexte(null);
+      return;
+    }
+    const batiment = report.bdnb?.batiment;
+    setContexte({
+      adresse: report.adresse_normalisee,
+      bien: batiment
+        ? {
+            type: batiment.usage_principal_bdnb_open || batiment.usage_niveau_1_txt || null,
+            annee_construction: batiment.annee_construction ?? null,
+          }
+        : undefined,
+      zones: detailedRecommendationZones,
+    });
+  }, [report, detailedRecommendationZones, setContexte]);
+  useEffect(() => () => setContexte(null), [setContexte]);
 
   /* Champ de la topbar (étapes 2-4) et champ du hero (étape 1) : deux
      instances distinctes de md-outlined-text-field, chacune avec son ref. */
