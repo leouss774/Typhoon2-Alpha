@@ -34,28 +34,48 @@ function zoneScore(zone: RecommendationZone): number | null {
   return null;
 }
 
-/* Les 4 façades (murs_nord/sud/est/ouest) partagent le même modèle de risque
-   côté backend (risk_model.py::_score_global) — on les fusionne en une seule
-   entrée « Murs » plutôt que d'afficher 4 lignes quasi identiques. */
-const MURS_GROUP_KEY = 'murs';
-function groupKey(key: string): string {
-  return key.startsWith('murs_') ? MURS_GROUP_KEY : key;
-}
+const ALEA_INCONNU = 'Aléa non renseigné';
 
-type ZoneEntry = { key: string; label: string; score: number; band: D03Band; aleaPrincipal?: string };
+type ZoneEntry = { key: string; label: string; score: number; band: D03Band; zones: string[] };
 
 function polarPoint(cx: number, cy: number, r: number, angle: number): [number, number] {
   return [cx + r * Math.cos(angle), cy + r * Math.sin(angle)];
 }
 
+/* Les libellés d'aléa sont du texte libre ("Retrait-gonflement des argiles") et
+   peuvent dépasser largement les 4 mots courts des anciennes zones — on les
+   découpe en plusieurs lignes plutôt que de laisser le SVG les tronquer. */
+function wrapLabel(label: string, maxCharsPerLine = 12, maxLines = 3): string[] {
+  const words = label.split(/\s+/).filter(Boolean);
+  const lines: string[] = [];
+  let current = '';
+  for (const word of words) {
+    const candidate = current ? `${current} ${word}` : word;
+    if (candidate.length > maxCharsPerLine && current) {
+      lines.push(current);
+      current = word;
+    } else {
+      current = candidate;
+    }
+  }
+  if (current) lines.push(current);
+  if (lines.length > maxLines) {
+    const kept = lines.slice(0, maxLines);
+    kept[maxLines - 1] = `${kept[maxLines - 1]}…`;
+    return kept;
+  }
+  return lines;
+}
+
 function RadarChart({ entries }: { entries: ZoneEntry[] }) {
-  const w = 300;
-  const h = 240;
+  const w = 340;
+  const h = 300;
   const cx = w / 2;
   const cy = h / 2;
-  const maxR = 58;
-  const labelR = maxR + 34;
+  const maxR = 60;
+  const labelR = maxR + 32;
   const n = entries.length;
+  const lineHeight = 11;
 
   const ringPolygon = (r: number) =>
     entries
@@ -68,7 +88,7 @@ function RadarChart({ entries }: { entries: ZoneEntry[] }) {
   const dataPolygon = dataPoints.map((p) => p.join(',')).join(' ');
 
   return (
-    <svg viewBox={`0 0 ${w} ${h}`} className="risk-radar-svg" role="img" aria-label="Radar des scores de risque par zone">
+    <svg viewBox={`0 0 ${w} ${h}`} className="risk-radar-svg" role="img" aria-label="Radar des scores de risque par aléa">
       {[0.25, 0.5, 0.75, 1].map((f) => (
         <polygon key={f} points={ringPolygon(maxR * f)} className="risk-radar-ring" />
       ))}
@@ -83,9 +103,15 @@ function RadarChart({ entries }: { entries: ZoneEntry[] }) {
       {entries.map((e, i) => {
         const [x, y] = polarPoint(cx, cy, labelR, (2 * Math.PI * i) / n - Math.PI / 2);
         const anchor = Math.abs(x - cx) < 4 ? 'middle' : x > cx ? 'start' : 'end';
+        const lines = wrapLabel(e.label);
+        const startDy = -((lines.length - 1) / 2) * lineHeight;
         return (
-          <text key={i} x={x} y={y} textAnchor={anchor} dominantBaseline="middle" className="risk-radar-label">
-            {e.label}
+          <text key={i} x={x} y={y} textAnchor={anchor} className="risk-radar-label">
+            {lines.map((line, li) => (
+              <tspan key={li} x={x} dy={li === 0 ? startDy : lineHeight}>
+                {line}
+              </tspan>
+            ))}
           </text>
         );
       })}
@@ -139,28 +165,27 @@ export function ComprendreRisques({
   }, [open]);
 
   const entries = useMemo<ZoneEntry[]>(() => {
-    const groups = new Map<string, { scores: number[]; niveaux: string[]; aleaPrincipal?: string }>();
+    const groups = new Map<string, { scores: number[]; niveaux: string[]; zones: string[] }>();
     Object.entries(zones || {}).forEach(([key, zone]) => {
       const score = zoneScore(zone);
       if (score == null) return;
-      const gKey = groupKey(key);
-      const group = groups.get(gKey) || { scores: [], niveaux: [] };
+      const gKey = zone.alea_principal?.trim() || ALEA_INCONNU;
+      const group = groups.get(gKey) || { scores: [], niveaux: [], zones: [] };
       group.scores.push(score);
       if (zone.niveau) group.niveaux.push(zone.niveau);
-      if (!group.aleaPrincipal && zone.alea_principal) group.aleaPrincipal = zone.alea_principal;
+      group.zones.push(formatZoneLabel(key));
       groups.set(gKey, group);
     });
 
     return [...groups.entries()]
-      .map(([key, group]) => {
+      .map(([label, group]) => {
         const score = Math.round(group.scores.reduce((sum, s) => sum + s, 0) / group.scores.length);
         const worstNiveau = group.niveaux.reduce<string | undefined>(
           (worst, n) => (worst == null || (NIVEAU_SCORE[n] ?? 0) > (NIVEAU_SCORE[worst] ?? 0) ? n : worst),
           undefined,
         );
         const band = worstNiveau ? bandForKey(worstNiveau) || bandForScore(score) : bandForScore(score);
-        const label = key === MURS_GROUP_KEY ? 'Murs' : formatZoneLabel(key);
-        return { key, label, score, band, aleaPrincipal: group.aleaPrincipal } as ZoneEntry;
+        return { key: label, label, score, band, zones: group.zones } as ZoneEntry;
       })
       .sort((a, b) => b.score - a.score);
   }, [zones]);
@@ -195,9 +220,9 @@ export function ComprendreRisques({
                 <span className="risk-sheet-eyebrow">Tableau de bord analytique</span>
                 <h2 id="risk-sheet-title">Comprendre les risques de votre bien</h2>
                 <p>
-                  Le score global agrège l'exposition de chaque zone du bien aux différents
-                  aléas. Utilisez le radar pour visualiser en un coup d'œil l'équilibre — ou
-                  le déséquilibre — des risques entre zones.
+                  Le score global agrège l'exposition du bien à chaque aléa identifié. Utilisez
+                  le radar pour visualiser en un coup d'œil l'équilibre — ou le déséquilibre —
+                  des risques entre aléas.
                 </p>
               </div>
               <md-icon-button aria-label="Fermer" onClick={() => setOpen(false)}>
@@ -237,96 +262,44 @@ export function ComprendreRisques({
                     <h3>Équilibre des risques par aléa</h3>
                     <p className="risk-card-hint">
                       Diagramme en toile d'araignée — score de risque (0 = aucun risque, 100 =
-                      risque critique) pour chaque zone, calculé à partir de l'aléa
-                      climatique et géologique dominant (inondation, RGA, sismique…).
+                      risque critique) pour chaque aléa climatique et géologique identifié
+                      (inondation, RGA, sismique…), agrégé sur l'ensemble des zones du bien.
                     </p>
                     {entries.length >= 3 ? (
                       <RadarChart entries={entries} />
                     ) : (
-                      <p className="risk-card-hint">Pas assez de zones distinctes pour un radar.</p>
+                      <p className="risk-card-hint">
+                        Pas assez d'aléas distincts pour un radar — voir le détail ci-dessous.
+                      </p>
                     )}
                   </div>
                 </div>
 
-                {/* ── Risques principaux + facteurs aggravants (bas du dashboard) ── */}
-                {loading && !risquesPrincipaux && (
-                  <div className="risk-principaux-loading" role="status" aria-live="polite">
-                    <md-linear-progress indeterminate />
-                    <span>
-                      Croisement des données géographiques et bâtimentaires en
-                      cours…
-                    </span>
-                  </div>
-                )}
-
-                {risquesPrincipaux && risquesPrincipaux.risques.length > 0 && (
-                  <div className="risk-card risk-principaux-card">
-                    <div className="risk-principaux-head">
-                      <div>
-                        <h3>Les risques principaux de votre bien</h3>
-                        <p className="risk-card-hint">
-                          Classement calculé en croisant l'aléa géographique avec la
-                          vulnérabilité du bâtiment, puis interprété à la lumière de
-                          toutes les données disponibles (Géorisques, BDNB, climat…).
-                        </p>
-                      </div>
-                      {risquesPrincipaux.source?.includes('llm') && (
-                        <span
-                          className="risk-ai-badge"
-                          title="Explications croisées générées par IA à partir des données Géorisques et BDNB"
-                        >
-                          <md-icon>auto_awesome</md-icon>
-                          Analyse croisée IA
-                        </span>
-                      )}
-                    </div>
-                    <ol className="risk-principaux-list">
-                      {risquesPrincipaux.risques.map((r) => {
-                        const band = bandForKey(r.niveau) || bandForScore(r.score);
-                        return (
-                          <li key={r.code} className="risk-principal">
-                            <div className="risk-principal-body">
-                              <div className="risk-principal-head">
-                                <span className="risk-principal-name">{r.libelle}</span>
-                                <span
-                                  className="risk-principal-score"
-                                  style={{ color: band.color }}
-                                >
-                                  {r.score}
-                                </span>
-                                <span className={`d03-pill ${band.cls}`}>
-                                  Risque {band.label.toLowerCase()}
-                                </span>
-                              </div>
-                              {r.explication && (
-                                <p className="risk-principal-explication">
-                                  {r.explication}
-                                </p>
-                              )}
-                              {r.facteurs_aggravants && r.facteurs_aggravants.length > 0 && (
-                                <ul className="risk-aggravants">
-                                  {r.facteurs_aggravants.map((f, j) => (
-                                    <li key={j}>
-                                      <md-icon>trending_up</md-icon>
-                                      <span>{f}</span>
-                                    </li>
-                                  ))}
-                                </ul>
-                              )}
-                              {r.zone_la_plus_exposee && (
-                                <span className="risk-principal-zone">
-                                  <md-icon>pin_drop</md-icon>
-                                  Zone la plus exposée :{' '}
-                                  {formatZoneLabel(r.zone_la_plus_exposee)}
-                                </span>
-                              )}
-                            </div>
-                          </li>
-                        );
-                      })}
-                    </ol>
-                  </div>
-                )}
+                <div className="risk-card risk-detail-card">
+                  <h3>Détail du score par aléa</h3>
+                  <ul className="risk-detail-list">
+                    {entries.map((e) => (
+                      <li key={e.key} className="risk-detail-row">
+                        <div className="risk-detail-head">
+                          <span className="risk-detail-name">{e.label}</span>
+                          {e.zones.length > 0 && (
+                            <span className="risk-detail-alea">Zones concernées : {e.zones.join(', ')}</span>
+                          )}
+                        </div>
+                        <div className="risk-detail-bar-wrap">
+                          <div className="risk-detail-bar">
+                            <div
+                              className="risk-detail-bar-fill"
+                              style={{ width: `${e.score}%`, background: e.band.color }}
+                            />
+                          </div>
+                          <span className="risk-detail-score">{e.score}</span>
+                          <span className={`d03-pill ${e.band.cls}`}>{e.band.label}</span>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               </div>
             )}
           </section>
