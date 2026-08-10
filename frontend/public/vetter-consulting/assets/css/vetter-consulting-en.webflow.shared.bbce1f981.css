@@ -2333,7 +2333,7 @@ textarea.w-input, textarea.w-select {
 }
 
 .primary-btn {
-  background-color: var(--orange);
+  background-color: #4386b1;
   letter-spacing: -.03rem;
   border-radius: 12px;
   padding: .9rem 1.5rem .75rem;
@@ -2392,6 +2392,28 @@ textarea.w-input, textarea.w-select {
   width: 100%;
   height: 300vh;
   position: relative;
+}
+
+/* Le parcours Contactez-nous a été retiré de la landing page, sur tous les
+   formats d'écran. `display: none` supprime également son espace vertical. */
+._08-contact,
+._08-contact-mobile {
+  display: none !important;
+}
+
+/* Cette section conserve le même fond sombre dans les deux thèmes : ses
+   textes emploient donc des couleurs fixes, indépendantes du mode actif. */
+._01-proof .global-headline-l,
+._01-proof .global-headline-xs {
+  color: #f7f9fc;
+}
+
+._01-proof .copytext {
+  color: #dbe4ee;
+}
+
+._01-proof .copytext.is-small.is-grey {
+  color: #b9c5d1;
 }
 
 .proof-outer {
@@ -2483,6 +2505,26 @@ textarea.w-input, textarea.w-select {
   border-radius: 16px;
   width: 4rem;
   height: 4rem;
+}
+
+/* Troisième témoignage : portrait de Ralph Bèvre. Le markup source est
+   conservé pendant la résolution du conflit de la landing page. */
+.proof-3 .align-horizontally.tm-2 {
+  position: relative;
+}
+
+.proof-3 .testimonial-img-s {
+  visibility: hidden;
+}
+
+.proof-3 .align-horizontally.tm-2::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  width: 4rem;
+  height: 4rem;
+  border-radius: 16px;
+  background: center / cover no-repeat url("../img/ralph-bevre.jpg");
 }
 
 .align-vertically {

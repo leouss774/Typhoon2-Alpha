@@ -358,7 +358,7 @@
 
 .typhoon-page .color-control {
   position: relative;
-  display: inline-flex;
+  display: none !important;
   align-items: center;
   flex-shrink: 0;
 }
