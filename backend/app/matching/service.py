@@ -34,7 +34,6 @@ ANNUAIRE_HOSTS = {
     "annuaire-entreprises.data.gouv.fr", "data.ademe.fr", "france-renov.gouv.fr",
     "pagesjaunes.fr", "societe.com", "verif.com",
 }
-MAX_WEB_LOOKUPS_PER_REQUEST = 8
 WEB_LOOKUP_TIMEOUT_SECONDS = 8
 
 # ── Fallback NAF pour les catégories non-RGE ────────────────
@@ -204,84 +203,69 @@ def _site_entreprise(value: Any) -> str | None:
     return url
 
 
-async def _verifier_profils(resultats: list[dict[str, Any]], limite: int) -> None:
-    """Expose, pour chaque recommandation, le top des profils contact + site verifies.
+async def _enrichir_simples(resultats: list[dict[str, Any]], limite: int) -> None:
+    """Expose chaque entreprise avec tout ce qui est disponible — sans gating.
 
-    Le score reste interne au classement et n'est jamais retourne au client.
+    Aucune vérification : chaque entreprise manquant d'un site ou d'un contact
+    est enrichie par recherche web (sans budget ni early stop). Tout ce qui est
+    trouvé est conservé — un site seul, un contact seul, les deux, ou rien
+    (les registres Sirene ne contiennent souvent aucune coordonnée). Les
+    boutons du frontend (Appeler, E-mail, Site officiel, Itinéraire, logo
+    favicon) apparaissent dès que la donnée existe.
+
+    Seul garde-fou conservé : `_site_entreprise` filtre les domaines
+    d'annuaires (jamais de faux lien). Les champs internes (score, lien de
+    fiche) ne sont pas exposés au client.
     """
-    budget_recherches = MAX_WEB_LOOKUPS_PER_REQUEST
-    budget_lock = asyncio.Lock()
     semaphore = asyncio.Semaphore(4)
 
-    async def enrichir_sans_blocage(entreprise: dict[str, Any]) -> dict[str, Any]:
-        """Une recherche lente ou indisponible ne doit jamais bloquer le matching."""
-        nonlocal budget_recherches
-        async with budget_lock:
-            if budget_recherches <= 0:
-                return {}
-            budget_recherches -= 1
-        try:
-            async with semaphore:
-                return await asyncio.wait_for(
-                    enrichir_coordonnees(entreprise),
-                    timeout=WEB_LOOKUP_TIMEOUT_SECONDS,
+    async def enrichir(entreprise: dict[str, Any]) -> None:
+        site = _site_entreprise(entreprise.get("site_officiel") or entreprise.get("site_internet"))
+        telephone, email = entreprise.get("telephone"), entreprise.get("email")
+        if not (site and (telephone or email)):
+            try:
+                async with semaphore:
+                    enrichi = await asyncio.wait_for(
+                        enrichir_coordonnees(entreprise),
+                        timeout=WEB_LOOKUP_TIMEOUT_SECONDS,
+                    )
+            except Exception:
+                enrichi = {}
+            site = site or _site_entreprise(enrichi.get("site_officiel"))
+            telephone = telephone or enrichi.get("telephone")
+            email = email or enrichi.get("email")
+        entreprise["site_officiel"] = site
+        entreprise["telephone"] = telephone
+        entreprise["email"] = email
+        # Repli : sans site propre, on pointe vers la fiche officielle de
+        # l'annuaire public (jamais un faux lien) — le bouton « site » reste
+        # disponible pour chaque artisan. Le logo favicon, lui, ne s'affiche
+        # que pour un vrai site d'entreprise (site_officiel).
+        if not site:
+            identifiant = entreprise.get("siren") or (entreprise.get("siret") or "")[:9]
+            if identifiant:
+                entreprise["site_annuaire"] = f"https://annuaire-entreprises.data.gouv.fr/entreprise/{identifiant}"
+        for key in (
+            "site_internet", "lien_fiche_officielle",
+            "profil_verifie", "site_verifie", "contact_verifie",
+            "score_objectif_sur_100", "details_score",
+        ):
+            entreprise.pop(key, None)
+
+    async def traiter(resultat: dict[str, Any]) -> None:
+        entreprises = (resultat.get("entreprises") or [])[:limite]
+        resultat["entreprises"] = entreprises  # cap réel de la réponse (Top N)
+        await asyncio.gather(*(enrichir(e) for e in entreprises))
+        if not resultat.get("erreur"):
+            if not entreprises:
+                resultat["notice"] = "Aucune entreprise active n'a ete trouvee pour cette recommandation."
+            elif not any(e.get("site_officiel") or e.get("telephone") or e.get("email") for e in entreprises):
+                resultat["notice"] = (
+                    "Entreprises actives identifiees dans les registres publics ; "
+                    "leurs coordonnees et leur site restent a confirmer."
                 )
-        except Exception:
-            return {}
 
-    async def verifier_recommandation(resultat: dict[str, Any]) -> None:
-        # On conserve cinq entreprises issues des registres publics comme repli.
-        # Une seule est enrichie par recommandation pour maintenir une réponse rapide.
-        candidats = list(resultat.get("entreprises") or [])[:limite]
-
-        async def verifier(entreprise: dict[str, Any]) -> dict[str, Any] | None:
-            site = _site_entreprise(entreprise.get("site_officiel") or entreprise.get("site_internet"))
-            telephone, email = entreprise.get("telephone"), entreprise.get("email")
-            if not site or not (telephone or email):
-                enrichi = await enrichir_sans_blocage(entreprise)
-                site = site or _site_entreprise(enrichi.get("site_officiel"))
-                telephone = telephone or enrichi.get("telephone")
-                email = email or enrichi.get("email")
-            if not site or not (telephone or email):
-                return None
-            public = dict(entreprise)
-            public.update({
-                "site_officiel": site,
-                "telephone": telephone,
-                "email": email,
-                "site_verifie": True,
-                "contact_verifie": True,
-            })
-            for key in ("site_internet", "lien_fiche_officielle", "score_objectif_sur_100", "details_score"):
-                public.pop(key, None)
-            return public
-
-        verifies = await asyncio.gather(*(verifier(entreprise) for entreprise in candidats[:1]))
-        profils_verifies = [entreprise for entreprise in verifies if entreprise]
-        if profils_verifies:
-            resultat["entreprises"] = profils_verifies[:limite]
-            return
-
-        # Les registres publics permettent au moins d'identifier l'entreprise active.
-        # Aucun faux contact ou faux lien n'est ajouté à ces profils de repli.
-        profils_repli = []
-        for entreprise in candidats:
-            public = dict(entreprise)
-            site = _site_entreprise(public.get("site_officiel") or public.get("site_internet"))
-            public["site_officiel"] = site
-            public["profil_verifie"] = False
-            public["contact_verifie"] = False
-            public["site_verifie"] = bool(site)
-            for key in ("site_internet", "lien_fiche_officielle", "score_objectif_sur_100", "details_score"):
-                public.pop(key, None)
-            profils_repli.append(public)
-        resultat["entreprises"] = profils_repli
-        if profils_repli and not resultat.get("erreur"):
-            resultat["notice"] = "Entreprises actives identifiees dans les registres publics ; leurs coordonnees et leur site restent a confirmer."
-        elif not resultat.get("erreur"):
-            resultat["notice"] = "Aucune entreprise active n'a ete trouvee pour cette recommandation."
-
-    await asyncio.gather(*(verifier_recommandation(resultat) for resultat in resultats))
+    await asyncio.gather(*(traiter(resultat) for resultat in resultats))
 
 
 # ── Interface publique ──────────────────────────────────────
@@ -295,7 +279,7 @@ async def run_matching(
     """Point d'entrée principal : traite toutes les recommandations en parallèle
     et retourne un rapport structuré avec résumé."""
     resultats = await matching_parallele(recommandations_input, code_postal, lat, lon)
-    await _verifier_profils(resultats, limite_entreprises)
+    await _enrichir_simples(resultats, limite_entreprises)
 
     total_entreprises = sum(len(r.get("entreprises", [])) for r in resultats)
     compteur = {"rge": 0, "non_rge": 0, "inconnue": 0}
