@@ -1,0 +1,17 @@
+=== ports ===
+=== robot log ===
+
+> robot-companion@0.0.0 dev
+> vite
+
+Port 5173 is in use, trying another one...
+
+  [32m[1mVITE[22m v4.2.1[39m  [2mready in [0m[1m2890[22m[2m[0m ms[22m
+
+  [32mâžœ[39m  [1mLocal[22m:   [36mhttp://localhost:[1m5174[22m/[39m
+[2m  [32mâžœ[39m  [1mNetwork[22m[2m: use [22m[1m--host[22m[2m to expose[22m
+=== backend out ===
+12:05:40  INFO    app.recommandations.service       recommandations -- index charge (876 fiches, 0.78s)
+12:05:40  INFO    app.property_id.service           property_id.service — initialisé : compteur=19, 19 Property ID(s) chargés
+12:05:40  INFO    app.main                          Typhoon API demarree — routes : POST /diagnostic, GET /health, POST /api/v1/artisans/matching, POST /property-id/generate, GET /property-id/{id}
+DONE

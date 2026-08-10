@@ -1,0 +1,6 @@
+README.md
+draco_decoder.js
+draco_decoder.wasm
+draco_encoder.js
+draco_wasm_wrapper.js
+gltf

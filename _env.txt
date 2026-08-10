@@ -1,0 +1,22 @@
+=== technical.md ===
+## Serveurs locaux Typhoon (4 processus)
+
+1. **Backend API** — port 8765 — `cd backend && python -m uvicorn app.main:app --host 127.0.0.1 --port 8765` (route SSE : `POST /api/chat/stream`, body `{messages, context}` avec context ≤ 50 000 chars).
+2. **Frontend React** — port 5173 — `cd frontend && npm run dev` (écoute sur `[::1]` IPv6 ; utiliser `http://localhost:5173`, PAS `127.0.0.1`).
+3. **Robot compagnon 3D** (chat assistant) — port 5174 — `cd robot-companion-main && npm run dev`. Agrandi : `#chat_area` min(1080px,98vw), `#chat_message_box` max-height calc(100vh - 130px). Le × poste `{type:'typhon-robot-close'}` si embarqué en iframe, sinon navigue vers `http://localhost:5173/`.
+4. **Avatar 3D TalkingHead** (chat du Rapport IA, port 5175) — `cd TalkingHead-main && npm run dev`. Fichiers : `TalkingHead-main/src/main.js` (avatar Ready Player Me + SSE sur `${API}/api/chat/stream` avec contexte rapport, voix homme fr via speechSynthesis si dictée au 🎙), `src/style.css`, `index.html`. npm install déjà fait (vite + three).
+
+## Branchement Rapport IA → TalkingHead
+`frontend/src/components/ReportChatbot.tsx` : bulle « Aide ? » sonde le port 5175 (HEAD 4s) ; si prêt → iframe plein écran + contexte du rapport envoyé par postMessage `{type:'typhon-report-context'}` (effet + onLoad, slice 48 000) ; sinon chat classique en secours. Le × de la page TalkingHead poste `{type:'typhon-report-close'}` (origine vérifiée). URL configurée via `REPORT_TALKING_HEAD_URL` (`frontend/src/zone/config.ts`, env `VITE_TALKING_HEAD_URL` / `window.TYPHOON_TALKING_HEAD_URL`, défaut `http://localhost:5175`).
+
+**Note bac à sable** : l'avatar Ready Player Me (`models.readyplayer.me`) ne se charge pas sans accès Internet (ERR_NAME_NOT_RESOLVED) ; le fallback « discussion active » s'affiche et le chat fonctionne. Sur une machine avec Internet l'avatar apparaît.
+
+=== py versions ===
+/bin/bash: line 1: python: command not found
+/bin/bash: line 1: py: command not found
+Python 3.14.4
+=== node ===
+/bin/bash: line 1: node: command not found
+=== venv? ===
+ls: cannot access 'backend/.venv/Scripts/python.exe': No such file or directory
+ls: cannot access 'backend/venv/Scripts/python.exe': No such file or directory

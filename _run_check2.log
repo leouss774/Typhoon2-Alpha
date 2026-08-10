@@ -1,0 +1,15 @@
+=== py launcher ===
+/bin/bash: line 1: py: command not found
+/bin/bash: line 1: py: command not found
+=== where python ===
+/bin/bash: line 1: where: command not found
+/bin/bash: line 1: where: command not found
+=== npm/node where ===
+/bin/bash: line 1: where: command not found
+/bin/bash: line 1: where: command not found
+=== backend uvicorn installed? ===
+backend/requirements.txt
+WARNING: Package(s) not found: uvicorn
+=== backend app exists ===
+backend/app/main.py
+DONE

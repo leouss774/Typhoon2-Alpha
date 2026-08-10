@@ -1,0 +1,7 @@
+MESH undefined TARGETS 0 []
+MESH undefined TARGETS 0 []
+MESH undefined TARGETS 52 ["browInnerUp","browDown_L","browDown_R","browOuterUp_L","browOuterUp_R","eyeLookUp_L","eyeLookUp_R","eyeLookDown_L","eyeLookDown_R","eyeLookIn_L","eyeLookIn_R","eyeLookOut_L","eyeLookOut_R","eyeBlink_L","eyeBlink_R","eyeSquint_L","eyeSquint_R","eyeWide_L","eyeWide_R","cheekPuff","cheekSquint_L","cheekSquint_R","noseSneer_L","noseSneer_R","jawOpen","jawForward","jawLeft","jawRight","mouthFunnel","mouthPucker","mouthLeft","mouthRight","mouthRollUpper","mouthRollLower","mouthShrugUpper","mouthShrugLower","mouthClose","mouthSmile_L","mouthSmile_R","mouthFrown_L","mouthFrown_R","mouthDimple_L","mouthDimple_R","mouthUpperUp_L","mouthUpperUp_R","mouthLowerDown_L","mouthLowerDown_R","mouthPress_L","mouthPress_R","mouthStretch_L","mouthStretch_R","tongueOut"]
+MESH undefined TARGETS 0 []
+NODES: ,,,,eyeLeft,grp_eyeLeft,eyeRight,grp_eyeRight,head,teeth,grp_transform,grp_scale,Empty
+ANIMS: Key|Take 001|BaseLayer,grp_eyeLeft|Take 001|BaseLayer,grp_eyeRight|Take 001|BaseLayer,grp_transform|Take 001|BaseLayer
+SIZE: 332808

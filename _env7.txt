@@ -1,0 +1,4 @@
+=== py ver ===
+/bin/bash: line 1: : command not found
+=== deps ===
+/bin/bash: line 1: : command not found

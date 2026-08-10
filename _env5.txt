@@ -1,0 +1,9 @@
+=== uvicorn via python3 ===
+/usr/bin/python3: No module named uvicorn
+=== py launcher ===
+/bin/bash: line 1: py: command not found
+=== search venvs ===
+ls: cannot access '/mnt/c/Users/user/OneDrive/Bureau/sumer camp/Typhoon2-Alpha/backend/venv': No such file or directory
+ls: cannot access '/mnt/c/Users/user/AppData/Local/Programs/Python/': No such file or directory
+=== where uvicorn ===
+ls: cannot access '/c/Python*': No such file or directory

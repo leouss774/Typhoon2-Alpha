@@ -1,0 +1,16 @@
+=== backend/_backend.log ===
+=== backend/.env ===
+1
+=== ls AppData Python ===
+total 6960
+drwxrwxrwx 1 user user    512 Jun 12 18:48 .
+drwxrwxrwx 1 user user    512 Jun 12 18:48 ..
+-rwxrwxrwx 7 user user 591360 Jun 12 18:48 pip.exe
+-rwxrwxrwx 1 user user    470 Jun 12 18:48 pip.exe.__script__.py
+-rwxrwxrwx 1 user user     64 Jun 12 18:48 pip.exe.__target__
+-rwxrwxrwx 7 user user 591360 Jun 12 18:48 pip3.exe
+-rwxrwxrwx 1 user user    470 Jun 12 18:48 pip3.exe.__script__.py
+-rwxrwxrwx 1 user user     64 Jun 12 18:48 pip3.exe.__target__
+-rwxrwxrwx 7 user user 591360 Jun 12 18:48 python.exe
+=== python.exe check ===
+-rwxrwxrwx 7 user user 591360 Jun 12 18:48 /mnt/c/Users/user/AppData/Local/Python/bin/python.exe

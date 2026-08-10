@@ -1,0 +1,7 @@
+prix,ville,departement,surface,pieces,latitude,longitude,source,url
+740000,Paris 19e,75,110,5,48.88391,2.36658,PAP,https://www.pap.fr/annonces/maison-paris-19e-75019-r463700626
+564500,Paris 18e,75,65,3,48.88764,2.3353,PAP,https://www.pap.fr/annonces/maison-paris-18e-75018-r462502606
+---LINES---
+  103 backend/data1/annonces_maisons_france.csv
+  200 backend/data1/annonces_maisons_france_enrichi_partiel.csv
+  303 total

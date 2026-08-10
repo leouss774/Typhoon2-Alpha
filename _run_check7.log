@@ -1,0 +1,7 @@
+ls: cannot access '': No such file or directory
+/bin/bash: line 1: : command not found
+/bin/bash: line 1: : command not found
+=== deps backend ===
+=== venv existant ===
+ls: cannot access 'backend/.venv': No such file or directory
+DONE

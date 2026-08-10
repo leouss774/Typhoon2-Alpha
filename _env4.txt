@@ -1,0 +1,10 @@
+=== node wsl ===
+/mnt/c/Program Files/nodejs/node.exe
+/mnt/c/Program Files/nodejs/npm
+/mnt/c/Program Files/nodejs/npm.cmd
+=== npx ===
+/mnt/c/Program Files/nodejs/npx
+=== node ver ===
+v20.20.2
+=== run.md ===
+cat: .freebuff/run.md: No such file or directory

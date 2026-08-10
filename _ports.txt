@@ -1,0 +1,4 @@
+=== netstat 8765 ===
+/bin/bash: line 1: netstat: command not found
+=== netstat 5173 ===
+/bin/bash: line 1: netstat: command not found

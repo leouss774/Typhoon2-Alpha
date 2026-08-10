@@ -1,0 +1,10 @@
+=== where python (cmd) ===
+C:\Users\user\AppData\Local\Microsoft\WindowsApps\python.exe
+C:\Users\user\AppData\Local\Python\bin\python.exe
+=== where python3 ===
+C:\Users\user\AppData\Local\Microsoft\WindowsApps\python3.exe
+C:\Users\user\AppData\Local\Python\bin\python3.exe
+=== dirs Python ===
+ls: cannot access '/mnt/c/Users/user/AppData/Local/Programs/Python/*': No such file or directory
+ls: cannot access '/mnt/c/Python*': No such file or directory
+=== backend log head ===

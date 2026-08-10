@@ -9,6 +9,27 @@ export const API: string =
   'http://127.0.0.1:8765';
 
 // ---------------------------------------------------------------------------
+// Robot companion 3D — interface branchée sur le même backend /api/chat/stream
+// pour garder des réponses identiques au chatbot classique.
+// ---------------------------------------------------------------------------
+
+export const ROBOT_COMPANION_URL: string =
+  (import.meta as any).env?.VITE_ROBOT_URL ||
+  (window as any).TYPHOON_ROBOT_URL ||
+  'http://localhost:5174';
+
+// ---------------------------------------------------------------------------
+// Assistant Rapport IA 3D — avatar TalkingHead (port 5175) branché sur le
+// même backend /api/chat/stream. Le contexte du rapport est envoyé par
+// postMessage depuis ReportChatbot → réponses identiques au chat « Aide ? ».
+// ---------------------------------------------------------------------------
+
+export const REPORT_TALKING_HEAD_URL: string =
+  (import.meta as any).env?.VITE_TALKING_HEAD_URL ||
+  (window as any).TYPHOON_TALKING_HEAD_URL ||
+  'http://localhost:5175';
+
+// ---------------------------------------------------------------------------
 // Bandes D03 (5 niveaux — mêmes clés que le backend risque_report.py)
 // ---------------------------------------------------------------------------
 

@@ -1,0 +1,3 @@
+/bin/bash: line 1: py: command not found
+/bin/bash: line 1: python: command not found
+PY_SYNTAX_OK

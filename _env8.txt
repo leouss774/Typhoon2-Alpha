@@ -1,0 +1,8 @@
+=== P1 ===
+ls: cannot access '': No such file or directory
+/bin/bash: line 1: : command not found
+/bin/bash: line 1: : command not found
+=== P2 ===
+ls: cannot access '': No such file or directory
+/bin/bash: line 1: : command not found
+/bin/bash: line 1: : command not found

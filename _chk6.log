@@ -1,0 +1,13 @@
+=== netstat 8765 ===
+/bin/bash: line 1: netstat: command not found
+=== netstat 5173 ===
+/bin/bash: line 1: netstat: command not found
+=== netstat 5174 ===
+/bin/bash: line 1: netstat: command not found
+=== test1 ===
+000
+=== test2 ===
+000
+=== test3 ===
+000
+DONE

@@ -1,0 +1,5 @@
+'\"cd /d C:\Users\user\OneDrive\Bureau\sumer camp\Typhoon2-Alpha\backend && C:\Users\user\AppData\Local\Python\bin\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8765 > _backend.log 2>&1\"' n'est pas reconnu en tant que commande interne
+ou externe, un programme ex‚cutable ou un fichier de commandes.
+=== backend log ===
+=== port ===
+DONE

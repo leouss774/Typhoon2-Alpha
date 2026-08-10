@@ -1,0 +1,17 @@
+=== which npm ===
+/mnt/c/Program Files/nodejs//npm
+=== npm prefix ===
+C:\Users\user\AppData\Roaming\npm
+=== node bin ===
+ls: cannot access 'C:\Users\user\AppData\Roaming\npm': No such file or directory
+=== find node.exe ===
+ls: cannot access 'C:/Program Files/nodejs/node.exe': No such file or directory
+=== find python.exe (common) ===
+ls: cannot access '/Programs/Python/': No such file or directory
+ls: cannot access 'C:/Python313/python.exe': No such file or directory
+ls: cannot access 'C:/Python312/python.exe': No such file or directory
+ls: cannot access 'C:/Python311/python.exe': No such file or directory
+ls: cannot access 'C:/Users/user/AppData/Local/Programs/Python/': No such file or directory
+=== D: drive typhoon venv ===
+ls: cannot access 'D:/Talan/Typhon-2/backend/.venv/Scripts/python.exe': No such file or directory
+DONE

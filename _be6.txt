@@ -1,0 +1,6 @@
+=== health ===
+8765=000
+=== log tail ===
+INFO:     Started server process [21260]
+INFO:     Waiting for application startup.
+20:21:12  INFO    app.recommandations.service       recommandations -- index charge (876 fiches, 0.69s)

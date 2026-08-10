@@ -1,0 +1,8 @@
+prix,ville,departement,surface,pieces,latitude,longitude,source,url
+740000,Paris 19e,75,110,5,48.88391,2.36658,PAP,https://www.pap.fr/annonces/maison-paris-19e-75019-r463700626
+---SAVE---
+backend/app/api/routes/property_id.py:32:    list_property_ids,
+backend/app/api/routes/property_id.py:103:    return list_property_ids(limit)
+backend/app/property_id/models.py:65:      backend/data/property_ids/
+backend/app/property_id/service.py:23:STORAGE_DIR = BASE_DIR / "data" / "property_ids"
+backend/app/property_id/service.py:102:def list_property_ids(limit: int = 20) -> list[PropertyID]:

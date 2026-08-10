@@ -1,0 +1,8 @@
+=== listening 5173 ===
+
+LocalAddress LocalPort OwningProcess
+------------ --------- -------------
+::1               5173         24272
+127.0.0.1         5173         28232
+
+

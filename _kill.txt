@@ -1,0 +1,2 @@
+/bin/bash: line 1: taskkill: command not found
+kill_rc=0

@@ -1,0 +1,8 @@
+=== listening 5173 ===
+
+LocalAddress OwningProcess
+------------ -------------
+::1                  24272
+127.0.0.1            28232
+
+

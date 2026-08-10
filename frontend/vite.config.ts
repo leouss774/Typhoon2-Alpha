@@ -94,9 +94,62 @@ function bimViewerPlugin(): Plugin {
   };
 }
 
+function testViewerPlugin(): Plugin {
+  const TEST_DIR = path.join(ROOT, 'test');
+  return {
+    name: 'typhoon-test-static',
+    configureServer(server) {
+      server.middlewares.use('/test', (req, res, next) => {
+        if (!fs.existsSync(TEST_DIR)) {
+          next();
+          return;
+        }
+        const url = new URL(req.url || '/', 'http://localhost');
+        let rel: string;
+        try {
+          rel = decodeURIComponent(url.pathname.replace(/^\/+/, ''));
+        } catch {
+          res.statusCode = 400;
+          res.end('Bad Request');
+          return;
+        }
+        if (!rel) rel = 'GeospatialVR-master/index.html';
+        const resolved = path.resolve(TEST_DIR, rel);
+        if (!resolved.startsWith(TEST_DIR)) {
+          res.statusCode = 404;
+          res.end('Not Found');
+          return;
+        }
+        let file = resolved;
+        if (fs.existsSync(file) && fs.statSync(file).isDirectory()) {
+          file = path.join(file, 'index.html');
+        }
+        if (!fs.existsSync(file) || !fs.statSync(file).isFile()) {
+          res.statusCode = 404;
+          res.end('Not Found');
+          return;
+        }
+        const ext = path.extname(file).toLowerCase();
+        res.setHeader('Content-Type', BIM_MIME[ext] || 'application/octet-stream');
+        res.setHeader('Cache-Control', 'no-cache');
+        fs.createReadStream(file).pipe(res);
+      });
+    },
+    closeBundle() {
+      if (!fs.existsSync(TEST_DIR)) return;
+      const outDir = path.resolve(ROOT, 'dist');
+      fs.cpSync(TEST_DIR, path.join(outDir, 'test'), { recursive: true });
+    },
+  };
+}
+
 export default defineConfig({
-  plugins: [react(), cesium(), bimViewerPlugin()],
+  plugins: [react(), cesium(), bimViewerPlugin(), testViewerPlugin()],
   server: {
     port: 5173,
+    // Écoute sur toutes les interfaces (0.0.0.0 + localhost) : permet d'ouvrir
+    // l'app via http://localhost:5173 ET http://127.0.0.1:5173 (sinon vite ne
+    // se lie qu'à ::1 en IPv6 et 127.0.0.1 reste injoignable).
+    host: true,
   },
 });

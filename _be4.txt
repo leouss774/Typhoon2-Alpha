@@ -1,0 +1,4 @@
+=== health ===
+8765=000
+=== log tail ===
+tail: cannot open '../.freebuff/backend.log' for reading: No such file or directory

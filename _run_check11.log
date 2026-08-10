@@ -1,0 +1,32 @@
+=== robot deps ===
+@babel
+@esbuild
+@tweenjs
+@vitejs
+@vue
+csstype
+esbuild
+estree-walker
+function-bind
+has
+is-core-module
+magic-string
+nanoid
+path-parse
+picocolors
+postcss
+resolve
+rollup
+source-map
+source-map-js
+sourcemap-codec
+supports-preserve-symlinks-flag
+three
+vite
+vue
+=== vue/three/vite present? ===
+robot-companion-main/node_modules/@vitejs
+robot-companion-main/node_modules/three
+robot-companion-main/node_modules/vite
+robot-companion-main/node_modules/vue
+DONE

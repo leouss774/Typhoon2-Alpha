@@ -1,0 +1,12 @@
+=== node/version ===
+/bin/bash: line 1: node: command not found
+10.8.2
+=== frontend node_modules ===
+124
+=== robot node_modules ===
+0
+=== backend venv/python ===
+no venv
+/bin/bash: line 1: python: command not found
+=== ports ===
+DONE

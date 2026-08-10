@@ -1,0 +1,12 @@
+=== pid on 8765 ===
+1216
+=== all 87xx ===
+Where-Object : Le terme ®/bin/bash.LocalPort¯ n'est pas reconnu comme nom d'applet de commande, fonction, fichier de 
+script ou programme ex‚cutable. V‚rifiez l'orthographe du nom, ou si un chemin d'accŠs existe, v‚rifiez que le chemin 
+d'accŠs est correct et r‚essayez.
+Au caractŠre Ligne:1 : 68
++ ... yContinue | Where-Object {/bin/bash.LocalPort -ge 8760 -and /bin/bash ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (/bin/bash.LocalPort:String) [Where-Object], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException,Microsoft.PowerShell.Commands.WhereObjectCommand
+ 

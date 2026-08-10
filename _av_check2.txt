@@ -1,0 +1,12 @@
+JAW=1
+CLOSE=1
+BLINK=1
+VISEME=0
+total 12112
+drwxrwxrwx 1 user user     512 Aug  9 18:21 .
+drwxrwxrwx 1 user user     512 Aug  9 15:34 ..
+-rwxrwxrwx 1 user user  463988 Aug  9 15:39 RobotExpressive.glb
+-rwxrwxrwx 1 user user     275 Aug  9 16:11 _fc_list.txt
+-rwxrwxrwx 1 user user  332808 Aug  9 16:11 facecap.glb
+-rwxrwxrwx 1 user user 8306680 Aug  9 18:41 typhon-report-animations.glb
+-rwxrwxrwx 1 user user 3290928 Aug  9 18:41 typhon-report-avatar.glb

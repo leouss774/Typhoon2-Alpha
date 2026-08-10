@@ -1,0 +1,18 @@
+npm warn exec The following package was not found and will be installed: vite@8.2.1
+vite.config.js (1:441) [33m[UNRESOLVED_IMPORT] [0mCould not resolve 'vite' in vite.config.js
+ - Module not found, treating it as an external dependency in vite.config.js at 441..447
+
+[31mfailed to load config from C:\Users\user\OneDrive\Bureau\sumer camp\Typhoon2-Alpha\TalkingHead-main\vite.config.js[39m
+[31merror during build:
+Error: Cannot find package 'C:\Users\user\OneDrive\Bureau\sumer camp\Typhoon2-Alpha\TalkingHead-main\node_modules\vite\index.js' imported from C:\Users\user\OneDrive\Bureau\sumer camp\Typhoon2-Alpha\TalkingHead-main\node_modules\.vite-temp\vite.config.js.timestamp-1786295302374-8494134d2e4ff.mjs
+    at legacyMainResolve (node:internal/modules/esm/resolve:215:26)
+    at packageResolve (node:internal/modules/esm/resolve:860:14)
+    at moduleResolve (node:internal/modules/esm/resolve:946:18)
+    at defaultResolve (node:internal/modules/esm/resolve:1188:11)
+    at ModuleLoader.defaultResolve (node:internal/modules/esm/loader:708:12)
+    at #cachedDefaultResolve (node:internal/modules/esm/loader:657:25)
+    at ModuleLoader.resolve (node:internal/modules/esm/loader:640:38)
+    at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:264:38)
+    at ModuleJob._link (node:internal/modules/esm/module_job:168:49) {
+  code: 'ERR_MODULE_NOT_FOUND'
+}[39m

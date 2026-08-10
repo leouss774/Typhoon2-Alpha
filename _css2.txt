@@ -1,0 +1,102 @@
+=== robot-panel CSS (app.css) ===
+.typhon-chat__form .typhon-chat__voice { background: #e4f1ea; color: #277765; font-size: 0.8rem; }
+.typhon-chat__form .typhon-chat__voice.is-listening { background: #efb4ad; color: #8d2f26; animation: typhon-pulse 1s ease-in-out infinite; }
+@keyframes typhon-pulse { 50% { transform: scale(1.08); } }
+
+/* Interface du robot compagnon 3D (robot-companion-main) — ouverte au clic
+   sur le robot flottant. Le chat classique reste le secours si le serveur
+   du robot (port 5174) n'est pas démarré. */
+.typhon-chat__robot-panel {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  overflow: hidden;
+  background: #0e1513;
+  box-shadow: 0 30px 90px rgba(6, 20, 17, 0.55);
+}
+
+/* En-tête épuré du robot : pas de barre colorée, juste le titre + la fermeture */
+.typhon-chat__header--bare {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.6rem 0.9rem;
+  background: transparent;
+  color: #14221e;
+  pointer-events: none;
+}
+
+.typhon-chat__header--bare .typhon-chat__bare-title {
+  text-shadow: 0 1px 3px rgba(255, 255, 255, 0.8);
+  font-size: 0.95rem;
+}
+
+.typhon-chat__header--bare .typhon-chat__close {
+  margin-left: auto;
+  width: 2.1rem;
+  height: 2.1rem;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.7);
+  color: #14221e;
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+  pointer-events: auto;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+}
+
+.typhon-chat__header--bare .typhon-chat__close:hover {
+  background: #fff;
+  transform: scale(1.08);
+}
+
+.typhon-chat__robot-frame {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  display: block;
+  background: #0e1513;
+}
+
+.typhon-chat__robot-loading {
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 1rem;
+  color: #d7e8e1;
+  font-size: 0.95rem;
+  letter-spacing: 0.02em;
+  background: radial-gradient(ellipse at 50% 40%, #1c3b33 0%, #0e1513 70%);
+}
+
+.typhon-chat__robot-loader {
+  width: 3.2rem;
+  height: 3.2rem;
+  border-radius: 50%;
+  border: 3px solid rgba(82, 187, 157, 0.25);
+  border-top-color: #52bb9d;
+  animation: typhon-spin 0.9s linear infinite;
+}
+
+@keyframes typhon-spin { to { transform: rotate(360deg); } }
+
+.typhon-chat__robot-offline {
+  margin: 0;
+  padding: 0.5rem 0.9rem;
+  font-size: 0.76rem;
+  line-height: 1.4;
+  color: #6b5d2a;
+  background: #fdf6dd;
+  border-bottom: 1px solid #eadfae;
+}
+

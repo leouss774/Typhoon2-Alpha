@@ -1,0 +1,26 @@
+=== procs ===
+
+   Id ProcessName
+   -- -----------
+ 7672 node       
+23328 node       
+24272 node       
+24380 node       
+ 1216 python     
+
+
+=== ports listen ===
+Where-Object : Le terme Æ===Ø n'est pas reconnu comme nom d'applet de commande, fonction, fichier de script ou 
+programme exÇcutable. VÇrifiez l'orthographe du nom, ou si un chemin d'accäs existe, vÇrifiez que le chemin d'accäs 
+est correct et rÇessayez.
+Au caractäre Ligne:1 : 68
++ ... yContinue | Where-Object {=== ports listen ===.LocalPort -in 8765,517 ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (===:String) [Where-Object], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException,Microsoft.PowerShell.Commands.WhereObjectCommand
+ 
+=== PS web request ===
+Au caractäre Ligne:1 : 124
++ ... UseBasicParsing -TimeoutSec 5).StatusCode } catch { 'ERR: ' + === PS  ...
++                                                                  ~
+DONE

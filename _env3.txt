@@ -1,0 +1,12 @@
+=== node paths ===
+ls: cannot access '/c/Program Files/nodejs/node.exe': No such file or directory
+ls: cannot access '/c/Program Files/nodejs/npm.cmd': No such file or directory
+ls: cannot access '/c/Program Files/nodejs/npx.cmd': No such file or directory
+=== npm ver ===
+/bin/bash: line 1: /c/Program Files/nodejs/npm.cmd: No such file or directory
+=== uvicorn ===
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+    import uvicorn, fastapi, mistralai; print('DEPS OK')
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ModuleNotFoundError: No module named 'uvicorn'

@@ -1,0 +1,15 @@
+=== python candidates ===
+.
+.
+.
+.
+.
+=== py launcher full path ===
+Python 3.14.6
+=== where python cmd via cmd ===
+C:\Users\user\AppData\Local\Microsoft\WindowsApps\python.exe
+C:\Users\user\AppData\Local\Python\bin\python.exe
+C:\Windows\py.exe
+C:\Users\user\AppData\Local\Microsoft\WindowsApps\py.exe
+=== backend venv ===
+DONE

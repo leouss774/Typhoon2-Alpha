@@ -1,0 +1,13 @@
+LENGTH: 155625
+CATASTROPHE_COUNT: 133
+RECOMMANDATION_COUNT: 237
+REPORTS: 19
+---SAMPLE---
+RAPPORT TY-2026-000001 - 26 Rue Victor Hugo 37140 Bourgueil
+- CATASTROPHE zone fondations : Retrait-gonflement des argiles (niveau modere, score 37)
+- CATASTROPHE zone murs_nord : Infiltration (exposition nord) (niveau modere, score 33)
+- CATASTROPHE zone murs_sud : Stress thermique (exposition sud) (niveau faible, score 21)
+- CATASTROPHE zone murs_est : Vent (niveau faible, score 25)
+- CATASTROPHE zone murs_ouest : Intempéries (exposition ouest dominante) (niveau modere, score 37)
+- CATASTROPHE zone toiture : Canicule / stress thermique (niveau modere, score 36)
+- CATASTROPHE zone sous_sol : 

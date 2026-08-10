@@ -20,6 +20,7 @@ import { ZoneMap } from '../components/ZoneMap';
 import { ZoneAnalyse } from '../components/ZoneAnalyse';
 import { ZoneBIM } from '../components/ZoneBIM';
 import { ZoneRecommendations } from '../components/ZoneRecommendations';
+import { ReportChatbot } from '../components/ReportChatbot';
 import { ZoneSidenav, useIsMobile } from '../components/ZoneSidenav';
 import { useTyphoonTheme } from '../typhoon/useTyphoonTheme';
 import {
@@ -984,6 +985,7 @@ export function Zone() {
                 </div>
               )}
             </section>
+            {step === 5 && report && <ReportChatbot report={report} rapport={rapport} />}
           </div>
         </>
       )}

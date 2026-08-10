@@ -1,0 +1,24 @@
+=== nodejs dir (mnt) ===
+corepack
+corepack.cmd
+install_tools.bat
+node.exe
+node_modules
+nodevars.bat
+npm
+npm.cmd
+npx
+npx.cmd
+=== node version via full path ===
+v20.20.2
+=== python (mnt) ===
+ls: cannot access '/mnt/c/Python*': No such file or directory
+ls: cannot access '/mnt/c/Users/user/AppData/Local/Programs/Python/': No such file or directory
+=== D drive ===
+ls: cannot access '/mnt/d': No such file or directory
+=== npm global bin ===
+freebuff
+freebuff.cmd
+freebuff.ps1
+node_modules
+DONE

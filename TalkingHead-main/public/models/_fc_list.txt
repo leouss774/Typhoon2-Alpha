@@ -1,0 +1,6 @@
+total 784
+drwxrwxrwx 1 user user    512 Aug  9 16:11 .
+drwxrwxrwx 1 user user    512 Aug  9 15:34 ..
+-rwxrwxrwx 1 user user 463988 Aug  9 15:39 RobotExpressive.glb
+-rwxrwxrwx 1 user user      0 Aug  9 16:11 _fc_list.txt
+-rwxrwxrwx 1 user user 332808 Aug  9 16:11 facecap.glb

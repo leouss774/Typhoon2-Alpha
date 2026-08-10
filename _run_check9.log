@@ -1,0 +1,18 @@
+=== python bin path ===
+-rwxrwxrwx 7 user user 591360 Jun 12 18:48 /mnt/c/Users/user/AppData/Local/Python/bin/python.exe
+=== version ===
+Python 3.14.6
+=== pip ===
+pip 26.1.2 from C:\Users\user\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\pip (python 3.14)
+=== deps ===
+Name: fastapi
+Version: 0.139.1
+Name: uvicorn
+Version: 0.51.0
+Name: pydantic
+Version: 2.13.4
+Name: mistralai
+Version: 2.9.1
+=== WindowsApps stub? ===
+-r-xr-xr-x 1 user user 2 Jun 12 18:47 /mnt/c/Users/user/AppData/Local/Microsoft/WindowsApps/python.exe
+DONE

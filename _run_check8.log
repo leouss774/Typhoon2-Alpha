@@ -1,0 +1,7 @@
+/bin/bash: line 1: : command not found
+/bin/bash: line 1: : command not found
+=== deps backend via py ===
+=== cmd where python real path ===
+C:\Users\user\AppData\Local\Microsoft\WindowsApps\python.exe
+C:\Users\user\AppData\Local\Python\bin\python.exe
+DONE

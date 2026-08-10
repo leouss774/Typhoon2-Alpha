@@ -1,0 +1,12 @@
+=== backend.log ===
+INFO:     Started server process [5112]
+INFO:     Waiting for application startup.
+13:13:23  INFO    app.recommandations.service       recommandations -- index charge (876 fiches, 1.21s)
+13:13:23  INFO    app.property_id.service           property_id.service — initialisé : compteur=19, 19 Property ID(s) chargés
+13:13:23  INFO    app.main                          Typhoon API demarree — routes : POST /diagnostic, GET /health, POST /api/v1/artisans/matching, POST /property-id/generate, GET /property-id/{id}
+INFO:     Application startup complete.
+ERROR:    [Errno 10048] error while attempting to bind on address ('127.0.0.1', 8765): [winerror 10048] une seule utilisation de chaque adresse de socket (protocole/adresse réseau/port) est habituellement autorisée
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+=== health ===
+8765=000

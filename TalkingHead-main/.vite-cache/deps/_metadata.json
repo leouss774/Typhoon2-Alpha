@@ -1,0 +1,31 @@
+{
+  "hash": "6ae2fdd7",
+  "configHash": "0e27d786",
+  "lockfileHash": "daa76850",
+  "browserHash": "d613fa08",
+  "optimized": {
+    "three": {
+      "src": "../../node_modules/three/build/three.module.js",
+      "file": "three.js",
+      "fileHash": "047428b5",
+      "needsInterop": false
+    },
+    "three/addons/loaders/DRACOLoader.js": {
+      "src": "../../node_modules/three/examples/jsm/loaders/DRACOLoader.js",
+      "file": "three_addons_loaders_DRACOLoader__js.js",
+      "fileHash": "97f1a34b",
+      "needsInterop": false
+    },
+    "three/addons/loaders/GLTFLoader.js": {
+      "src": "../../node_modules/three/examples/jsm/loaders/GLTFLoader.js",
+      "file": "three_addons_loaders_GLTFLoader__js.js",
+      "fileHash": "1933a7c0",
+      "needsInterop": false
+    }
+  },
+  "chunks": {
+    "chunk-MCK4J7S4": {
+      "file": "chunk-MCK4J7S4.js"
+    }
+  }
+}

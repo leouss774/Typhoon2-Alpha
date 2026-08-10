@@ -1,0 +1,10 @@
+=== robot-panel CSS ===
+frontend/src/styles/app.css:1567:.typhon-chat__robot-panel {
+frontend/src/styles/app.css:1594:.typhon-chat__header--bare .typhon-chat__bare-title {
+frontend/src/styles/app.css:1621:.typhon-chat__robot-frame {
+frontend/src/styles/app.css:1640:.typhon-chat__robot-loader {
+=== report-chat CSS ===
+3913:.report-chat__bubble { position: fixed; right: 1.5rem; bottom: 1.5rem; z-index: 90; width: 5.5rem; height: 5.5rem; display: grid; place-items: center; align-content: center; gap: .1rem; border: 0; border-radius: 50%; color: #fff; background: var(--orange, #277765); box-shadow: 0 10px 28px rgba(18, 59, 51, 0.32); cursor: pointer; animation: report-help-pulse 2.4s ease-in-out infinite; }
+3914:.report-chat__bubble span { font-size: 1.2rem; line-height: 1; }
+3915:.report-chat__bubble strong { font-size: .9rem; }
+3916:.report-chat__bubble:hover { transform: scale(1.08); animation-play-state: paused; }

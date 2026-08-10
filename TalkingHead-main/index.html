@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Assistant Typhon — Rapport IA</title>
+  <link rel="stylesheet" href="/src/style.css" />
+</head>
+<body>
+  <button type="button" id="chat-back" class="chat-back" aria-label="Retour à l'accueil" title="Retour à l'accueil">×</button>
+
+  <!-- Avatar 3D TalkingHead (rendu dans ce conteneur) -->
+  <div id="avatar"></div>
+  <div id="avatar-error" class="avatar-error" hidden>Avatar 3D indisponible — la discussion reste active ci-dessous.</div>
+
+  <!-- Discussion -->
+  <div id="chat_area">
+    <div id="chat_message_box" aria-live="polite"></div>
+    <div class="input-group">
+      <button type="button" id="btn-voice" class="btn btn-voice" aria-label="Commande vocale" title="Commande vocale">🎙</button>
+      <input type="text" id="chat-input" class="form-control" placeholder="Posez votre question…" aria-label="Posez votre question" />
+      <button type="button" id="btn-send" class="btn btn-send" aria-label="Envoyer">➤</button>
+    </div>
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
