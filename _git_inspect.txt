@@ -1,7 +1,0 @@
-=== BRANCH ===
-  main                 a0354fd [origin/main] Merge pull request #25 from leouss774/develop
-* nom-de-votre-branche c5ad208 [origin/feature/restructure: ahead 1] Ajout de mes fichiers
-=== REMOTE ===
-origin	https://github.com/leouss774/Typhoon2-Alpha.git (fetch)
-origin	https://github.com/leouss774/Typhoon2-Alpha.git (push)
-=== STATUS SHORT ===
