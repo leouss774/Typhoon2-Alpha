@@ -32,6 +32,10 @@ export function bandForKey(key?: string | null): D03Band | undefined {
   return D03.find((b) => b.key === key);
 }
 
+export function bandForScore(score: number): D03Band {
+  return D03.find((b) => score <= b.max) || D03[D03.length - 1];
+}
+
 export function aleaScore(a: { niveau?: string | null }): number {
   const mapping: Record<string, number> = {
     tres_faible: 10,
