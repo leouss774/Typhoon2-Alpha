@@ -1,0 +1,1087 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Typhoon — Diagnostic géo-risque adresse</title>
+<meta name="description" content="Saisissez une adresse française pour obtenir le diagnostic géo-risque souverain Typhoon (Géorisques / BAN / D03).">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600;700&family=Google+Sans+Code:wght@400;500;600&display=swap" rel="stylesheet">
+<!-- OpenLayers 9 -->
+<script src="https://cdn.jsdelivr.net/npm/ol@9.2.4/dist/ol.js"></script>
+<link href="https://cdn.jsdelivr.net/npm/ol@9.2.4/ol.css" rel="stylesheet" />
+<script src="../api-config.js"></script>
+<style>
+/* ============================================================
+   TYPHOON — Design System Souverain Dark
+   Vocabulaire D03 EXCLUSIF · 5 niveaux · zéro simulation
+============================================================ */
+:root {
+  --ink:     #0B1410;
+  --panel:   #111B17;
+  --panel-2: #192219;
+  --panel-3: #1F2D26;
+  --line:    #263630;
+  --fog:     #7A9187;
+  --paper:   #E8E6DC;
+  --clay:    #C27040;
+  --storm:   #46A3A2;
+  --storm-dim: rgba(70,163,162,.15);
+
+  --d03-tres-faible: #3A7A6C;
+  --d03-faible:      #6E9E52;
+  --d03-modere:      #D4AC3E;
+  --d03-eleve:       #D07030;
+  --d03-critique:    #B03020;
+
+  --serif: 'Google Sans', system-ui, sans-serif;
+  --mono:  'Google Sans Code', 'Roboto Mono', monospace;
+  --sans:  'Google Sans', system-ui, sans-serif;
+  --radius: 8px;
+}
+
+/* ── Layer toggle ── */
+.layer-toggle {
+  position: absolute; top: 16px; left: 16px; z-index: 5;
+  display: flex; gap: 4px; flex-wrap: wrap; max-width: calc(100% - 32px);
+  background: rgba(17,27,23,.92); backdrop-filter: blur(6px);
+  border: 1px solid var(--line); border-radius: 8px; padding: 6px;
+}
+.layer-pill-btn {
+  background: transparent; border: none; color: var(--fog);
+  font-family: inherit; font-size: 12px; padding: 6px 11px;
+  border-radius: 6px; cursor: pointer; white-space: nowrap; transition: .15s;
+}
+.layer-pill-btn:hover { background: var(--panel-3); color: var(--paper); }
+.layer-pill-btn.active { background: var(--storm); color: var(--ink); font-weight: 600; }
+
+/* ── OpenLayers control overrides (dark theme) ── */
+.ol-zoom { bottom: 60px !important; right: 12px !important; top: auto !important; left: auto !important; }
+.ol-zoom button {
+  background: rgba(17,27,23,.92) !important; color: var(--paper) !important;
+  border: 1px solid var(--line) !important; border-radius: 4px !important;
+  width: 28px !important; height: 28px !important; font-size: 16px !important;
+  display: flex !important; align-items: center !important; justify-content: center !important;
+  margin: 2px !important; cursor: pointer !important;
+}
+.ol-zoom button:hover { background: var(--storm) !important; color: var(--ink) !important; }
+.ol-scale-line {
+  background: rgba(17,27,23,.8) !important; border: 1px solid var(--line) !important;
+  border-radius: 4px !important; bottom: 30px !important; left: 12px !important;
+  padding: 2px 6px !important;
+}
+.ol-scale-line-inner { color: var(--fog) !important; font-family: var(--mono) !important; font-size: 9px !important; border-color: var(--fog) !important; }
+.ol-attribution { display: none !important; }
+
+/* ── OpenLayers popup ── */
+#ol-popup {
+  position: absolute;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 14px 16px;
+  font-family: var(--sans);
+  box-shadow: 0 8px 30px rgba(0,0,0,.6);
+  min-width: 240px;
+  max-width: 280px;
+  transform: translate(-50%, calc(-100% - 20px));
+  display: none;
+  z-index: 10;
+}
+#ol-popup.visible { display: block; }
+#ol-popup-closer {
+  position: absolute; top: 8px; right: 10px;
+  cursor: pointer; font-size: 16px; color: var(--fog); background: none; border: none;
+  line-height: 1; padding: 0;
+}
+#ol-popup-closer:hover { color: var(--paper); }
+.pop-title { font-family: var(--serif); font-size: 15px; font-weight: 600; margin-bottom: 8px; padding-right: 18px; }
+.pop-row { display: flex; justify-content: space-between; font-size: 11.5px; margin-bottom: 4px; color: var(--fog); }
+.pop-row span:last-child { color: var(--paper); font-weight: 600; }
+.pop-links { display: flex; gap: 6px; margin-top: 10px; }
+.pop-links a { flex: 1; text-align: center; font-size: 10px; font-weight: 600; text-decoration: none; padding: 5px; border-radius: 4px; background: var(--panel-3); color: var(--storm); border: 1px solid var(--line); font-family: var(--mono); transition: .12s; }
+.pop-links a:hover { background: var(--storm); color: var(--ink); }
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; background: var(--ink); color: var(--paper); font-family: var(--sans); overflow: hidden; }
+
+/* ── Layout ── */
+.app { display: grid; grid-template-columns: 420px 1fr; height: 100vh; }
+
+/* ── Sidebar ── */
+.sidebar {
+  background: var(--panel); border-right: 1px solid var(--line);
+  display: flex; flex-direction: column; overflow-y: auto;
+  scrollbar-width: thin; scrollbar-color: var(--line) transparent;
+}
+.sidebar::-webkit-scrollbar { width: 4px; }
+.sidebar::-webkit-scrollbar-thumb { background: var(--line); border-radius: 2px; }
+
+/* Brand */
+.brand {
+  padding: 18px 22px 16px; border-bottom: 1px solid var(--line);
+  display: flex; align-items: center; gap: 10px; flex-shrink: 0;
+}
+.brand-back {
+  color: var(--storm); text-decoration: none; font-family: var(--mono);
+  font-size: 10.5px; font-weight: 600; padding: 4px 8px; border-radius: 4px;
+  background: var(--panel-3); border: 1px solid var(--line); transition: .15s;
+}
+.brand-back:hover { background: var(--storm); color: var(--ink); }
+.brand-title { display: flex; flex-direction: column; }
+.brand-title h1 { font-family: var(--serif); font-size: 18px; font-weight: 600; line-height: 1; }
+.brand-title span { font-family: var(--mono); font-size: 9.5px; color: var(--fog); text-transform: uppercase; letter-spacing: .12em; margin-top: 2px; }
+.brand-badge { margin-left: auto; font-family: var(--mono); font-size: 9px; color: var(--storm); background: var(--panel-3); border: 1px solid var(--line); border-radius: 12px; padding: 3px 8px; white-space: nowrap; }
+
+/* Searchbox */
+.searchbox { padding: 16px 22px; border-bottom: 1px solid var(--line); }
+.searchbox > label { font-family: var(--mono); font-size: 9.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--fog); display: block; margin-bottom: 8px; }
+.input-wrap { position: relative; }
+#addr-input {
+  width: 100%; background: var(--panel-2); border: 1px solid var(--line);
+  color: var(--paper); padding: 11px 14px; border-radius: var(--radius);
+  font-size: 13.5px; font-family: var(--sans); outline: none; transition: border-color .15s;
+}
+#addr-input:focus { border-color: var(--storm); box-shadow: 0 0 0 3px var(--storm-dim); }
+#addr-input::placeholder { color: var(--fog); }
+
+/* BAN suggestions dropdown */
+#addr-suggestions {
+  position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 20;
+  background: var(--panel-2); border: 1px solid var(--line); border-radius: var(--radius);
+  max-height: 230px; overflow-y: auto; box-shadow: 0 8px 24px rgba(0,0,0,.55); display: none;
+}
+#addr-suggestions.open { display: block; }
+.sug-item { padding: 10px 14px; font-size: 12.5px; cursor: pointer; border-bottom: 1px solid var(--line); color: var(--paper); }
+.sug-item:last-child { border-bottom: none; }
+.sug-item:hover, .sug-item.focused { background: var(--panel-3); color: var(--storm); }
+
+/* Buttons */
+.btn-primary {
+  width: 100%; margin-top: 10px; padding: 12px; border-radius: var(--radius);
+  background: var(--storm); color: var(--ink); border: none;
+  font-family: var(--sans); font-size: 13.5px; font-weight: 700; cursor: pointer; transition: .15s;
+}
+.btn-primary:hover { background: #58c4c3; }
+
+/* Status messages */
+.status-msg { margin-top: 10px; font-family: var(--mono); font-size: 10.5px; text-align: center; min-height: 18px; }
+.status-msg.loading { color: var(--storm); }
+.status-msg.error   { color: var(--d03-eleve); }
+.status-msg.ok      { color: var(--d03-tres-faible); }
+
+/* Progress bar */
+.progress { height: 3px; background: var(--line); border-radius: 2px; overflow: hidden; margin-top: 6px; display: none; }
+.progress.visible { display: block; }
+.progress-fill { height: 100%; width: 0%; background: var(--storm); transition: width .4s ease; }
+
+/* ── Result Panel ── */
+#results { display: none; }
+#results.visible { display: block; }
+
+/* Address heading */
+.addr-heading { padding: 16px 22px; border-bottom: 1px solid var(--line); background: var(--panel-2); }
+.addr-heading .norm { font-family: var(--serif); font-size: 17px; line-height: 1.3; margin-bottom: 6px; }
+.addr-heading .meta { font-family: var(--mono); font-size: 9.5px; color: var(--fog); }
+
+/* Global score */
+.score-block { padding: 18px 22px; border-bottom: 1px solid var(--line); }
+.score-row { display: flex; align-items: flex-end; gap: 14px; margin-bottom: 10px; }
+.score-num { font-family: var(--serif); font-size: 56px; font-weight: 600; line-height: 1; color: var(--clay); }
+.score-meta { display: flex; flex-direction: column; gap: 3px; padding-bottom: 6px; }
+.score-label { font-family: var(--mono); font-size: 9px; text-transform: uppercase; letter-spacing: .12em; color: var(--fog); }
+.d03-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 12px; border-radius: 20px;
+  font-family: var(--mono); font-size: 10.5px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: .06em; border: 1px solid;
+}
+.d03-pill::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+.d03-tres-faible { color: var(--d03-tres-faible); border-color: var(--d03-tres-faible); background: rgba(58,122,108,.12); }
+.d03-faible      { color: var(--d03-faible);      border-color: var(--d03-faible);      background: rgba(110,158,82,.12); }
+.d03-modere      { color: var(--d03-modere);      border-color: var(--d03-modere);      background: rgba(212,172,62,.12); }
+.d03-eleve       { color: var(--d03-eleve);       border-color: var(--d03-eleve);       background: rgba(208,112,48,.12); }
+.d03-critique    { color: var(--d03-critique);    border-color: var(--d03-critique);    background: rgba(176,48,32,.12); }
+
+/* Aléas list */
+.aleas-section { padding: 16px 22px; border-bottom: 1px solid var(--line); }
+.section-heading { font-family: var(--mono); font-size: 9.5px; text-transform: uppercase; letter-spacing: .12em; color: var(--fog); margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+.section-heading::after { content: ''; flex: 1; height: 1px; background: var(--line); }
+
+.alea-card {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 12px; border-radius: 6px; margin-bottom: 6px;
+  background: var(--panel-2); border: 1px solid var(--line); gap: 10px;
+}
+.alea-card:last-child { margin-bottom: 0; }
+.alea-left { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+.alea-name { font-size: 13px; color: var(--paper); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.alea-zonage { font-family: var(--mono); font-size: 9.5px; color: var(--fog); }
+.alea-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.alea-link { font-family: var(--mono); font-size: 9px; color: var(--storm); text-decoration: none; padding: 2px 6px; border: 1px solid var(--storm); border-radius: 4px; transition: .12s; }
+.alea-link:hover { background: var(--storm); color: var(--ink); }
+.alea-card.absent .alea-name { color: var(--fog); }
+.alea-card.error-partial .alea-name { color: var(--fog); font-style: italic; }
+
+.alea-eye-btn {
+  background: transparent; border: 1px solid var(--line); color: var(--storm);
+  border-radius: 4px; padding: 2px 6px; font-size: 11px; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+  transition: .15s; margin-right: 4px;
+}
+.alea-eye-btn:hover { background: var(--panel-3); border-color: var(--storm); }
+.alea-eye-btn.hidden-layer { color: var(--fog); opacity: 0.6; }
+
+/* Partial errors banner */
+.partial-banner { margin: 0 22px 14px; padding: 10px 12px; background: rgba(208,112,48,.1); border: 1px solid rgba(208,112,48,.3); border-radius: 6px; font-size: 11.5px; color: var(--paper); line-height: 1.5; }
+.partial-banner strong { color: var(--d03-eleve); }
+
+/* Avertissement */
+.avertissement { margin: 14px 22px 22px; padding: 12px 14px; background: var(--panel-2); border-radius: 6px; border-left: 3px solid var(--storm); font-size: 11.5px; color: var(--fog); line-height: 1.6; }
+.avertissement strong { color: var(--paper); }
+
+/* CatNat history */
+.catnat-section { padding: 0 22px 16px; border-bottom: 1px solid var(--line); }
+.catnat-entry { font-family: var(--mono); font-size: 10px; color: var(--fog); padding: 4px 0; border-bottom: 1px dashed var(--line); }
+.catnat-entry:last-child { border-bottom: none; }
+
+/* ── Map ── */
+.map-wrap { position: relative; background: var(--ink); }
+#map { width: 100%; height: 100%; }
+
+/* Pin marker */
+.map-pin {
+  width: 14px; height: 14px; border-radius: 50%;
+  background: var(--clay); border: 2px solid var(--paper);
+  box-shadow: 0 0 0 4px rgba(194,112,64,.35);
+  transform: translate(-50%, -50%);
+  cursor: default;
+}
+
+/* Map topbar */
+.map-topbar {
+  position: absolute; top: 14px; left: 14px; right: 14px;
+  display: flex; justify-content: flex-end; align-items: flex-start;
+  pointer-events: none; z-index: 5; gap: 10px;
+}
+.legend-box {
+  pointer-events: auto; background: rgba(11,20,16,.92); backdrop-filter: blur(8px);
+  border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px;
+  box-shadow: 0 4px 20px rgba(0,0,0,.4); min-width: 175px;
+}
+.legend-box h3 { font-family: var(--mono); font-size: 9px; text-transform: uppercase; letter-spacing: .12em; color: var(--fog); margin-bottom: 8px; }
+.legend-row { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; font-size: 11px; }
+.legend-sw { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+.legend-range { font-family: var(--mono); font-size: 9px; color: var(--fog); margin-left: auto; }
+
+/* Map bottom strip */
+.map-strip {
+  position: absolute; bottom: 0; left: 0; right: 0; padding: 7px 16px;
+  background: rgba(11,20,16,.9); border-top: 1px solid var(--line);
+  display: flex; justify-content: space-between; align-items: center;
+  font-family: var(--mono); font-size: 9.5px; color: var(--fog); z-index: 5;
+}
+.strip-dot { width: 6px; height: 6px; background: var(--storm); border-radius: 50%; display: inline-block; margin-right: 6px; animation: pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+/* WMS source badge */
+.wms-badge {
+  position: absolute; bottom: 32px; right: 12px; z-index: 5;
+  font-family: var(--mono); font-size: 8.5px; color: var(--fog);
+  background: rgba(11,20,16,.75); border: 1px solid var(--line);
+  border-radius: 4px; padding: 2px 6px; pointer-events: none;
+}
+
+/* Idle state placeholder */
+.idle-placeholder { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; gap: 16px; color: var(--fog); text-align: center; padding: 40px; }
+.idle-placeholder h2 { font-family: var(--serif); font-size: 22px; color: var(--paper); }
+.idle-placeholder p { font-size: 13px; line-height: 1.6; max-width: 320px; }
+
+@media (max-width: 820px) {
+  .app { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+  .sidebar { max-height: 55vh; }
+}
+
+/* ── Vol continu carte → jumeau 3D (clic sur le pin du bien) ──────────────
+   1. Le chrome (sidebar, légende, popup, pin, contrôles) s'efface par
+      opacité pendant le zoom : la dernière image est la carte seule.
+   2. View Transitions inter-documents : le conteneur de carte porte le même
+      view-transition-name que #scene-container de index.html — le
+      navigateur morphe l'un vers l'autre. Déclaratif uniquement : sur un
+      navigateur sans support, la navigation reste classique, sans JS. */
+@media (prefers-reduced-motion: no-preference) {
+  @view-transition { navigation: auto; }
+  #map { view-transition-name: jumeau-scene; }
+}
+#map-pin { cursor: pointer; }
+body.zone-depart .sidebar,
+body.zone-depart .map-topbar,
+body.zone-depart #ol-popup,
+body.zone-depart #map-pin,
+body.zone-depart .ol-zoom,
+body.zone-depart .ol-scale-line {
+  transition: opacity .5s ease;
+  opacity: 0;
+  pointer-events: none;
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ===== SIDEBAR ===== -->
+  <aside class="sidebar">
+
+    <div class="brand">
+      <a href="index.html" class="brand-back">← Accueil</a>
+      <div class="brand-title">
+        <h1>Typhoon</h1>
+        <span>Diagnostic géo-risque · Souverain</span>
+      </div>
+      <div class="brand-badge">🇫🇷 / UE</div>
+    </div>
+
+    <div class="searchbox">
+      <label>Adresse en France (texte libre)</label>
+      <div class="input-wrap">
+        <input id="addr-input" type="text"
+          placeholder="ex. 14 Avenue des Palmiers 06000 Nice"
+          autocomplete="off" spellcheck="false" />
+        <div id="addr-suggestions"></div>
+      </div>
+      <button class="btn-primary" id="diagnose-btn">Diagnostiquer cette adresse</button>
+      <div class="status-msg" id="status-msg"></div>
+      <div class="progress" id="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+    </div>
+
+    <div id="results">
+      <div class="addr-heading">
+        <div class="norm" id="r-adresse-norm">—</div>
+        <div class="meta" id="r-meta">—</div>
+      </div>
+
+      <div class="score-block">
+        <div class="score-row">
+          <span class="score-num" id="r-score">—</span>
+          <div class="score-meta">
+            <span class="score-label">Score de risque global /100</span>
+            <span class="d03-pill" id="r-band">—</span>
+          </div>
+        </div>
+        <a id="pdf-report-btn" class="btn-primary" style="display:inline-block; text-decoration:none; text-align:center; margin-top:8px; background:var(--panel-3); color:var(--storm); border:1px solid var(--line);" target="_blank" rel="noopener">
+          📄 Télécharger le rapport PDF officiel
+        </a>
+      </div>
+
+      <div class="aleas-section">
+        <div class="section-heading">Aléas recensés — Géorisques</div>
+        <div id="r-aleas"></div>
+      </div>
+
+      <details id="r-catnat-section" class="catnat-section" style="display:none; margin-top:12px; cursor:pointer;">
+        <summary class="section-heading" style="user-select:none; outline:none; display:flex; justify-content:space-between; align-items:center;">
+          <span>Historique arrêtés CatNat <span id="r-catnat-count" style="font-size:9px; color:var(--fog);"></span></span>
+          <span style="font-size:10px; color:var(--storm);">▼</span>
+        </summary>
+        <div id="r-catnat" style="margin-top:10px;"></div>
+      </details>
+
+      <div id="r-partial-banner" class="partial-banner" style="display:none;"></div>
+
+      <div class="avertissement">
+        <strong>⚠ Ce rapport n'est pas l'ERRIAL officiel.</strong>
+        Il agrège les données publiques Géorisques (BRGM / MTE).
+        Il ne remplace pas l'État des Risques réglementaire obligatoire à la vente/location.
+      </div>
+    </div>
+
+  </aside>
+
+  <!-- ===== MAP ===== -->
+  <main class="map-wrap">
+    <div id="layer-toggle" class="layer-toggle" style="display:none;"></div>
+    <div id="map"></div>
+
+    <!-- OpenLayers overlays -->
+    <div class="map-pin" id="map-pin" style="position:absolute; display:none;"></div>
+    <div id="ol-popup">
+      <button id="ol-popup-closer">×</button>
+      <div id="ol-popup-content"></div>
+    </div>
+
+    <div class="map-topbar">
+      <div class="legend-box">
+        <h3>Bandes D03 — Risque</h3>
+        <div class="legend-row"><span class="legend-sw" style="background:var(--d03-tres-faible)"></span>Très faible<span class="legend-range">&lt;20</span></div>
+        <div class="legend-row"><span class="legend-sw" style="background:var(--d03-faible)"></span>Faible<span class="legend-range">20–39</span></div>
+        <div class="legend-row"><span class="legend-sw" style="background:var(--d03-modere)"></span>Modéré<span class="legend-range">40–59</span></div>
+        <div class="legend-row"><span class="legend-sw" style="background:var(--d03-eleve)"></span>Élevé<span class="legend-range">60–79</span></div>
+        <div class="legend-row"><span class="legend-sw" style="background:var(--d03-critique)"></span>Critique<span class="legend-range">≥80</span></div>
+      </div>
+    </div>
+
+    <div class="idle-placeholder" id="idle-placeholder">
+      <h2>Diagnostic géo-risque</h2>
+      <p>Saisissez une adresse française pour afficher le rapport de risques Géorisques et positionner le bien sur la carte.</p>
+    </div>
+
+    <div class="map-strip">
+      <span><span class="strip-dot"></span><span id="strip-text">En attente d'une adresse</span></span>
+      <span>© CARTO · © OpenStreetMap contributors · © BRGM Géorisques</span>
+    </div>
+    <div class="wms-badge" id="wms-badge" style="display:none;">WMS BRGM actif</div>
+  </main>
+
+</div>
+
+<script>
+/* ================================================================
+   TYPHOON GÉO-RISQUE FRONTEND — OpenLayers Edition
+   Flux : adresse → GET /diagnostic/adresse → RisqueReport D03
+   Couches : WMS raster BRGM (rga, inondation, sismicite)
+             WFS vecteur Géorisques (mouvement_terrain, ppr, ssp)
+             Cercle de repli (radon, feu_foret)
+   Zéro valeur simulée · Zéro coordonnée codée en dur
+================================================================ */
+
+const API = (typeof window.TYPHOON_API !== 'undefined' ? window.TYPHOON_API : 'http://127.0.0.1:8765');
+
+/* D03 Bands */
+const D03 = [
+  { key: 'tres_faible', label: 'Très faible', color: '#3A7A6C', cls: 'd03-tres-faible', max: 20 },
+  { key: 'faible',      label: 'Faible',      color: '#6E9E52', cls: 'd03-faible',      max: 40 },
+  { key: 'modere',      label: 'Modéré',      color: '#D4AC3E', cls: 'd03-modere',      max: 60 },
+  { key: 'eleve',       label: 'Élevé',       color: '#D07030', cls: 'd03-eleve',       max: 80 },
+  { key: 'critique',    label: 'Critique',    color: '#B03020', cls: 'd03-critique',    max: Infinity },
+];
+function bandForKey(key) { return D03.find(b => b.key === key); }
+function scoreColor(score) {
+  if (score == null) return '#7A9187';
+  for (const b of D03) if (score < b.max) return b.color;
+  return D03[D03.length - 1].color;
+}
+
+function escHtml(s) {
+  if (s == null) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+/* ── DOM ── */
+const addrInput      = document.getElementById('addr-input');
+const addrSuggestions= document.getElementById('addr-suggestions');
+const diagnoseBtn    = document.getElementById('diagnose-btn');
+const statusMsg      = document.getElementById('status-msg');
+const progressBar    = document.getElementById('progress-bar');
+const progressFill   = document.getElementById('progress-fill');
+const results        = document.getElementById('results');
+const idlePlaceholder= document.getElementById('idle-placeholder');
+const stripText      = document.getElementById('strip-text');
+const wmsBadge       = document.getElementById('wms-badge');
+
+let map = null;
+let view = null;
+let markerOverlay = null;
+let popupOverlay  = null;
+let banTimeout = null;
+
+/* ── Map Init (OpenLayers) ── */
+function initMap() {
+  // Base tile layer: CARTO dark
+  const cartoLayer = new ol.layer.Tile({
+    source: new ol.source.XYZ({
+      urls: [
+        'https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png',
+        'https://b.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png',
+      ],
+      tileSize: 256,
+      maxZoom: 19,
+    }),
+  });
+
+  view = new ol.View({
+    center: ol.proj.fromLonLat([2.35, 46.8]),
+    zoom: 5,
+    minZoom: 3,
+    maxZoom: 19,
+  });
+
+  // Marker overlay (the .map-pin div)
+  markerOverlay = new ol.Overlay({
+    element: document.getElementById('map-pin'),
+    positioning: 'center-center',
+    stopEvent: false,
+  });
+
+  // Popup overlay
+  popupOverlay = new ol.Overlay({
+    element: document.getElementById('ol-popup'),
+    positioning: 'bottom-center',
+    stopEvent: true,
+    autoPan: { animation: { duration: 250 } },
+  });
+
+  map = new ol.Map({
+    target: 'map',
+    layers: [cartoLayer],
+    view,
+    overlays: [markerOverlay, popupOverlay],
+    controls: ol.control.defaults.defaults({
+      attribution: false,
+      rotate: false,
+      zoom: true,
+    }).extend([
+      new ol.control.ScaleLine({ units: 'metric' }),
+    ]),
+  });
+
+  // Popup close button
+  document.getElementById('ol-popup-closer').addEventListener('click', () => {
+    popupOverlay.setPosition(undefined);
+    document.getElementById('ol-popup').classList.remove('visible');
+  });
+}
+
+/* ALÉA ICONS */
+const ALEA_ICONS = {
+  inondation: '🌊',
+  rga: '🏗️',
+  sismicite: '🌍',
+  radon: '☢️',
+  feu_foret: '🔥',
+  mouvement_terrain: '⛰️',
+  ppr: '📜',
+  ssp: '🏭',
+  cavite: '🕳️',
+  avalanche: '🏔️',
+  icpe: '🏭',
+  canalisations: '⛽',
+  vent_cyclonique: '🌀',
+  territoires: '🗺️',
+};
+
+/* ── WMS Layer Map (confirmed layers from mapsref.brgm.fr) ── */
+const WMS_BASE = 'https://mapsref.brgm.fr/wxs/georisques/risques';
+const WMS_LAYER_MAP = {
+  rga:               'ALEARG',
+  inondation:        'LIMITETRI_FXX',
+  sismicite:         'SIS_INTENSITE_MAXCOM',
+  avalanche:         'PPRN_COMMUNE_AVALANCHE_APPROUV',
+  cavite:            'CAVITE_LOCALISEE',
+  feu_foret:         'PPRN_COMMUNE_FEU_APPROUV',
+  icpe:              'INSTALLATIONS_CLASSEES_SIMPLIFIE',
+  mouvement_terrain: 'MVT_LOCALISE',
+  radon:             'RADON',
+  canalisations:     'CANALISATIONS',
+  ppr:               'PPRN_COMMUNE_GASPAR',
+};
+
+/* ── WFS Layer Map (Géorisques GeoServer) ── */
+const WFS_BASE = 'https://www.georisques.gouv.fr/services';
+const WFS_LAYER_MAP = {
+  ssp: ['ms:SSP_CLASSIF_SIS_GE'],
+};
+
+/* ── Layer tracking & eye toggle state ── */
+let visibleLayerKeys = new Set();
+let _olLayersByKey = new Map(); // key (alea code) -> array of OL layer instances
+
+function _trackOlLayer(key, layer) {
+  map.addLayer(layer);
+  if (!_olLayersByKey.has(key)) {
+    _olLayersByKey.set(key, []);
+  }
+  _olLayersByKey.get(key).push(layer);
+}
+
+function _cleanAllLayers() {
+  for (const [key, layers] of _olLayersByKey.entries()) {
+    for (const layer of layers) {
+      map.removeLayer(layer);
+    }
+  }
+  _olLayersByKey.clear();
+  visibleLayerKeys.clear();
+  wmsBadge.style.display = 'none';
+}
+
+/* ── WMS raster layer builder ── */
+function buildWmsLayer(wmsLayerName, bandColor) {
+  return new ol.layer.Tile({
+    source: new ol.source.TileWMS({
+      url: WMS_BASE,
+      params: {
+        SERVICE: 'WMS',
+        VERSION: '1.3.0',
+        LAYERS: wmsLayerName,
+        FORMAT: 'image/png',
+        TRANSPARENT: 'true',
+        CRS: 'EPSG:3857',
+      },
+      serverType: 'geoserver',
+      crossOrigin: 'anonymous',
+      transition: 300,
+    }),
+    opacity: 0.65,
+  });
+}
+
+/* ── WFS vector layer builder ── */
+async function fetchWfsLayer(typeName, codeInsee) {
+  const url = new URL(WFS_BASE);
+  url.searchParams.set('SERVICE', 'WFS');
+  url.searchParams.set('VERSION', '2.0.0');
+  url.searchParams.set('REQUEST', 'GetFeature');
+  url.searchParams.set('TYPENAMES', typeName);
+  url.searchParams.set('OUTPUTFORMAT', 'application/json');
+  url.searchParams.set('CQL_FILTER', `code_insee='${codeInsee}'`);
+  url.searchParams.set('COUNT', '50');
+
+  const resp = await fetch(url.toString());
+  if (!resp.ok) throw new Error(`WFS ${typeName} HTTP ${resp.status}`);
+  return await resp.json();
+}
+
+function buildVectorLayer(geojson, bandColor) {
+  const format = new ol.format.GeoJSON();
+  const features = format.readFeatures(geojson, {
+    dataProjection: 'EPSG:4326',
+    featureProjection: 'EPSG:3857',
+  });
+  const source = new ol.source.Vector({ features });
+  return new ol.layer.Vector({
+    source,
+    style: new ol.style.Style({
+      fill: new ol.style.Fill({ color: bandColor + '55' }),
+      stroke: new ol.style.Stroke({ color: bandColor, width: 1.5 }),
+    }),
+  });
+}
+
+/* ── Circle fallback layer builder ── */
+function buildCircleLayer(lon, lat, bandColor) {
+  const feature = new ol.Feature({
+    geometry: new ol.geom.Point(ol.proj.fromLonLat([lon, lat])),
+  });
+  const source = new ol.source.Vector({ features: [feature] });
+  return new ol.layer.Vector({
+    source,
+    style: new ol.style.Style({
+      image: new ol.style.Circle({
+        radius: 46,
+        fill: new ol.style.Fill({ color: bandColor + '44' }),
+        stroke: new ol.style.Stroke({ color: bandColor, width: 1.5 }),
+      }),
+    }),
+  });
+}
+
+/* ── Build layer toggle UI (Eye toggle in sidebar) ── */
+function buildLayerToggle(report) {
+  const container = document.getElementById('layer-toggle');
+  if (container) container.style.display = 'none';
+
+  const aleasPresents = (report.aleas || []).filter(a => a.present === true);
+  // Initialize visible set with all present hazards
+  visibleLayerKeys = new Set(aleasPresents.map(a => a.code));
+}
+
+/* ── Main layer renderer (3-level strategy for 13 hazards) ── */
+async function renderAleaLayers(report) {
+  if (!map) return;
+  const aleasInReport = (report.aleas || []);
+  let wmsActive = false;
+
+  for (const a of aleasInReport) {
+    const band = a.niveau ? bandForKey(a.niveau) : {};
+    const color = band ? (band.color || '#7A9187') : '#7A9187';
+
+    /* Level 1: WMS raster (mapsref.brgm.fr) */
+    if (WMS_LAYER_MAP[a.code]) {
+      const layer = buildWmsLayer(WMS_LAYER_MAP[a.code], color);
+      layer.setVisible(visibleLayerKeys.has(a.code));
+      _trackOlLayer(a.code, layer);
+      wmsActive = true;
+      continue;
+    }
+
+    /* Level 2: WFS vector (georisques.gouv.fr) */
+    if (WFS_LAYER_MAP[a.code]) {
+      let wfsRendered = false;
+      for (const typeName of WFS_LAYER_MAP[a.code]) {
+        try {
+          const geojson = await fetchWfsLayer(typeName, report.code_insee);
+          if (!geojson || !geojson.features || !geojson.features.length) continue;
+          const layer = buildVectorLayer(geojson, color);
+          layer.setVisible(visibleLayerKeys.has(a.code));
+          _trackOlLayer(a.code, layer);
+          wfsRendered = true;
+        } catch (err) {
+          console.warn(`WFS indisponible pour ${typeName}:`, err);
+        }
+      }
+      if (wfsRendered) continue;
+    }
+
+    /* Level 3: Circle fallback */
+    const layer = buildCircleLayer(report.lon, report.lat, color);
+    layer.setVisible(visibleLayerKeys.has(a.code));
+    _trackOlLayer(a.code, layer);
+  }
+
+  if (wmsActive) wmsBadge.style.display = 'block';
+}
+
+/* ── Vol continu : clic sur le pin → zoom carte → jumeau 3D ──
+   Zoom OpenLayers (easing natif easeIn : l'accélération est prolongée par
+   la descente caméra de index.html), chrome effacé en parallèle, puis
+   navigation avec lat/lon en paramètres. prefers-reduced-motion: reduce →
+   navigation directe, sans zoom (cf. accessibilité). */
+let enVol = false; // vol en cours : neutralise le fly-to de placePin
+function departVersJumeau(lat, lon) {
+  if (enVol) return;
+  const url = 'index.html?lat=' + encodeURIComponent(lat) + '&lon=' + encodeURIComponent(lon);
+  const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduced || !map) { window.location.href = url; return; }
+  enVol = true;
+  document.body.classList.add('zone-depart');
+  popupOverlay.setPosition(undefined);
+  const view = map.getView();
+  // Un fly-to de placePin peut encore courir (clic pendant le vol vers
+  // l'adresse) : on l'annule, sinon il annulerait le nôtre.
+  view.cancelAnimations();
+  view.animate({
+    center: ol.proj.fromLonLat([lon, lat]),
+    zoom: Math.min(19, view.getMaxZoom()),
+    duration: 1200,
+    easing: ol.easing.easeIn,
+  });
+  // Navigation sur minuteur, pas sur le callback d'animation : une
+  // annulation externe déclencherait le callback immédiatement (complete
+  // = false) et couperait le zoom.
+  setTimeout(() => { window.location.href = url; }, 1200);
+}
+
+/* ── Place pin & popup on map ── */
+function placePin(lat, lon, report) {
+  if (!map) return;
+
+  const coord = ol.proj.fromLonLat([lon, lat]);
+
+  // Show and position the marker
+  const pinEl = document.getElementById('map-pin');
+  pinEl.style.display = 'block';
+  pinEl.title = 'Voir le jumeau numérique 3D de ce bien';
+  pinEl.onclick = () => departVersJumeau(lat, lon);
+  markerOverlay.setPosition(coord);
+
+  // Build popup content
+  const topAleas = (report.aleas || [])
+    .filter(a => a.present === true && a.niveau)
+    .map(a => {
+      const band = bandForKey(a.niveau) || {};
+      return `<div class="pop-row"><span>${escHtml(a.libelle)}</span><span style="color:${band.color || '#E8E6DC'}">${band.label || a.niveau}</span></div>`;
+    }).join('');
+
+  const ignLink = `https://www.geoportail.gouv.fr/carte?lon=${lon}&lat=${lat}&z=18`;
+  const osmLink = `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lon}&zoom=18`;
+
+  document.getElementById('ol-popup-content').innerHTML = `
+    <div class="pop-title">${escHtml(report.adresse_normalisee)}</div>
+    ${topAleas || '<div class="pop-row"><span>Aucun aléa présent</span><span>—</span></div>'}
+    <div class="pop-links">
+      <a href="${ignLink}" target="_blank" rel="noopener">IGN Géoportail</a>
+      <a href="${osmLink}" target="_blank" rel="noopener">OpenStreetMap</a>
+    </div>
+  `;
+
+  // Show popup above pin
+  const popup = document.getElementById('ol-popup');
+  popup.classList.add('visible');
+  popupOverlay.setPosition(coord);
+
+  // Fly to address (sauté si un vol vers le jumeau est déjà lancé)
+  if (!enVol) view.animate({ center: coord, zoom: 14, duration: 1200 });
+
+  // Render risk layers
+  _cleanAllLayers();
+  buildLayerToggle(report);
+  renderAleaLayers(report);
+}
+
+/* ── BAN Autocomplete ── */
+async function fetchSuggestions(q) {
+  if (q.length < 3) { hideSuggestions(); return; }
+  try {
+    const resp = await fetch(`${API}/api/geocode/search?q=${encodeURIComponent(q)}&limit=5`);
+    if (!resp.ok) return;
+    const data = await resp.json();
+    renderSuggestions(data.results || []);
+  } catch (_) { hideSuggestions(); }
+}
+
+function renderSuggestions(items) {
+  addrSuggestions.innerHTML = '';
+  if (!items.length) { hideSuggestions(); return; }
+  items.forEach(item => {
+    const div = document.createElement('div');
+    div.className = 'sug-item';
+    div.textContent = item.label || item.city;
+    div.onmousedown = e => e.preventDefault();
+    div.onclick = () => {
+      addrInput.value = item.label || item.city;
+      hideSuggestions();
+      runDiagnosis();
+    };
+    addrSuggestions.appendChild(div);
+  });
+  addrSuggestions.classList.add('open');
+}
+
+function hideSuggestions() {
+  addrSuggestions.innerHTML = '';
+  addrSuggestions.classList.remove('open');
+}
+
+/* ── Diagnosis ── */
+async function runDiagnosis() {
+  const q = addrInput.value.trim();
+  if (!q) { setStatus('Saisissez une adresse.', 'error'); return; }
+
+  hideSuggestions();
+  diagnoseBtn.disabled = true;
+  results.classList.remove('visible');
+  setStatus('Géocodage IGN Géoplateforme…', 'loading');
+  setProgress(15);
+
+  try {
+    const resp = await fetch(`${API}/diagnostic/adresse?q=${encodeURIComponent(q)}`);
+    setProgress(75);
+
+    if (!resp.ok) {
+      let detail = `Erreur ${resp.status}`;
+      try {
+        const err = await resp.json();
+        detail = err.detail?.detail || err.detail?.error || JSON.stringify(err.detail) || detail;
+      } catch (_) {}
+      setStatus(detail, 'error');
+      setProgress(0);
+      diagnoseBtn.disabled = false;
+      return;
+    }
+
+    const report = await resp.json();
+    setProgress(100);
+    setTimeout(() => { setProgress(0); progressBar.classList.remove('visible'); }, 600);
+    setStatus(`${report.alea_count} aléa(s) recensé(s) — rapport généré le ${report.date_generation}`, 'ok');
+    displayReport(report);
+  } catch (err) {
+    setStatus('Erreur réseau — backend inaccessible ?', 'error');
+    setProgress(0);
+  } finally {
+    diagnoseBtn.disabled = false;
+  }
+}
+
+/* ── Display Report ── */
+function displayReport(r) {
+  /* Address heading */
+  document.getElementById('r-adresse-norm').textContent = r.adresse_normalisee;
+  document.getElementById('r-meta').textContent =
+    `GPS ${r.lat.toFixed(5)}°N, ${r.lon.toFixed(5)}°E · Code INSEE ${r.code_insee} · Généré le ${r.date_generation}`;
+
+  /* Global score */
+  const presentAleas = r.aleas.filter(a => a.present === true);
+  const maxScore = presentAleas.length
+    ? Math.max(...presentAleas.map(a => aleaScore(a)))
+    : null;
+
+  const scoreEl = document.getElementById('r-score');
+  const bandEl  = document.getElementById('r-band');
+  if (maxScore !== null) {
+    scoreEl.textContent = maxScore;
+    const band = D03.find(b => maxScore < b.max) || D03[D03.length - 1];
+    bandEl.textContent = band.label;
+    bandEl.className = `d03-pill ${band.cls}`;
+    scoreEl.style.color = band.color;
+  } else {
+    scoreEl.textContent = '—';
+    bandEl.textContent = 'Indéterminé';
+    bandEl.className = 'd03-pill';
+  }
+
+  /* Aléas */
+  const aleaContainer = document.getElementById('r-aleas');
+  aleaContainer.innerHTML = '';
+  (r.aleas || []).forEach(a => {
+    const band = a.niveau ? bandForKey(a.niveau) : null;
+    const icon = ALEA_ICONS[a.code] || '⚠️';
+    const isError = a.present === null;
+    const isAbsent = a.present === false;
+
+    const card = document.createElement('div');
+    card.className = `alea-card${isAbsent ? ' absent' : ''}${isError ? ' error-partial' : ''}`;
+
+    let addrStatusHtml = '';
+    let communeStatusHtml = '';
+    let pillHtml = '';
+
+    if (isError) {
+      pillHtml = `<span style="font-family:var(--mono);font-size:9px;color:var(--fog);">source indisponible</span>`;
+    } else {
+      // Address status
+      const addrPresent = a.present === true;
+      addrStatusHtml = `<span style="font-family:var(--mono);font-size:8.5px;padding:2px 6px;border-radius:4px;background:var(--panel-3);color:${addrPresent ? 'var(--d03-eleve)' : 'var(--d03-tres-faible)'}">📍 Adresse: ${addrPresent ? 'CONCERNÉ' : 'PAS DE RISQUE'}</span>`;
+
+      // Commune status
+      const communePresent = a.present_commune !== false;
+      communeStatusHtml = `<span style="font-family:var(--mono);font-size:8.5px;padding:2px 6px;border-radius:4px;background:var(--panel-3);color:${communePresent ? 'var(--d03-modere)' : 'var(--fog)'}">🏛️ Commune: ${communePresent ? 'EXISTANT' : 'NON CONCERNÉ'}</span>`;
+
+      if (band && a.present === true) {
+        pillHtml = `<span class="d03-pill ${band.cls}" style="font-size:9px;padding:2px 8px;">${band.label}</span>`;
+      }
+    }
+
+    const linkHtml = a.url_detail
+      ? `<a href="${escHtml(a.url_detail)}" target="_blank" rel="noopener" class="alea-link">→ Fiche</a>`
+      : '';
+
+    const isVis = visibleLayerKeys.has(a.code);
+    const eyeBtnHtml = `<button class="alea-eye-btn ${isVis ? '' : 'hidden-layer'}" data-code="${a.code}" title="Afficher/masquer la couche sur la carte">${isVis ? '👁️' : '🚫'}</button>`;
+
+    card.innerHTML = `
+      <div class="alea-left">
+        <span class="alea-name">${icon} ${escHtml(a.libelle)}</span>
+        <div style="display:flex;gap:4px;margin-top:3px;flex-wrap:wrap;">
+          ${addrStatusHtml}
+          ${communeStatusHtml}
+        </div>
+        ${a.zonage ? `<span class="alea-zonage" style="margin-top:2px;">${escHtml(a.zonage)}</span>` : ''}
+      </div>
+      <div class="alea-right">
+        ${eyeBtnHtml}
+        ${pillHtml}
+        ${linkHtml}
+      </div>
+    `;
+
+    const eyeBtn = card.querySelector('.alea-eye-btn');
+    if (eyeBtn) {
+      eyeBtn.onclick = (e) => {
+        e.stopPropagation();
+        const currentlyVisible = visibleLayerKeys.has(a.code);
+        if (currentlyVisible) {
+          visibleLayerKeys.delete(a.code);
+          eyeBtn.textContent = '🚫';
+          eyeBtn.classList.add('hidden-layer');
+        } else {
+          visibleLayerKeys.add(a.code);
+          eyeBtn.textContent = '👁️';
+          eyeBtn.classList.remove('hidden-layer');
+        }
+        const layers = _olLayersByKey.get(a.code) || [];
+        layers.forEach(l => l.setVisible(!currentlyVisible));
+      };
+    }
+
+    aleaContainer.appendChild(card);
+  });
+
+  /* CatNat history */
+  const catnatSection = document.getElementById('r-catnat-section');
+  const catnatContainer = document.getElementById('r-catnat');
+  const catnatCount = document.getElementById('r-catnat-count');
+  const catnat = [];
+  (r.aleas || []).forEach(a => {
+    if (a.catnat_historique && a.catnat_historique.length) {
+      a.catnat_historique.forEach(ev => catnat.push({ ...ev, alea_libelle: a.libelle }));
+    }
+  });
+
+  if (catnat.length) {
+    catnatSection.style.display = 'block';
+    if (catnatCount) catnatCount.textContent = `(${catnat.length} arrêtés)`;
+    catnatContainer.innerHTML = '';
+    catnat.slice(0, 15).forEach(ev => {
+      const div = document.createElement('div');
+      div.className = 'catnat-entry';
+      div.textContent = [
+        ev.libelle_risque_jo || ev.libelle || '—',
+        ev.date_debut_evt ? (ev.date_debut_evt.length >= 10 ? ev.date_debut_evt.slice(0, 10) : ev.date_debut_evt) : null,
+      ].filter(Boolean).join(' · ');
+      catnatContainer.appendChild(div);
+    });
+    if (catnat.length > 15) {
+      const more = document.createElement('div');
+      more.className = 'catnat-entry';
+      more.style.color = 'var(--fog)';
+      more.textContent = `+ ${catnat.length - 15} autre(s)…`;
+      catnatContainer.appendChild(more);
+    }
+  } else {
+    catnatSection.style.display = 'none';
+  }
+
+  /* Partial errors */
+  const banner = document.getElementById('r-partial-banner');
+  if (r.erreurs_partielles && r.erreurs_partielles.length) {
+    banner.style.display = '';
+    banner.innerHTML = `<strong>⚠ Sources partiellement indisponibles :</strong> ${escHtml(r.erreurs_partielles.join(' · '))}. Les aléas concernés affichent « source indisponible ».`;
+  } else {
+    banner.style.display = 'none';
+  }
+
+  /* Show results */
+  results.classList.add('visible');
+  idlePlaceholder.style.display = 'none';
+  stripText.textContent = `${r.adresse_normalisee} · ${r.alea_count} aléa(s) · 0 simulés`;
+
+  /* PDF report link */
+  const pdfBtn = document.getElementById('pdf-report-btn');
+  if (pdfBtn) {
+    pdfBtn.href = `${API}/diagnostic/adresse/rapport-pdf?lat=${r.lat}&lon=${r.lon}`;
+  }
+
+  /* Map */
+  placePin(r.lat, r.lon, r);
+}
+
+function aleaScore(a) {
+  const mapping = { tres_faible: 10, faible: 30, modere: 50, eleve: 70, critique: 90 };
+  return mapping[a.niveau] || 0;
+}
+
+/* ── Status & Progress Helpers ── */
+function setStatus(msg, type = '') {
+  statusMsg.textContent = msg;
+  statusMsg.className = `status-msg ${type}`;
+}
+
+function setProgress(pct) {
+  if (pct > 0) { progressBar.classList.add('visible'); }
+  progressFill.style.width = `${pct}%`;
+}
+
+/* ── Events ── */
+addrInput.addEventListener('input', () => {
+  const q = addrInput.value.trim();
+  clearTimeout(banTimeout);
+  if (q.length < 3) { hideSuggestions(); return; }
+  banTimeout = setTimeout(() => fetchSuggestions(q), 220);
+});
+
+addrInput.addEventListener('blur', () => {
+  setTimeout(hideSuggestions, 180);
+});
+
+addrInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter') { hideSuggestions(); runDiagnosis(); }
+});
+
+diagnoseBtn.addEventListener('click', runDiagnosis);
+
+/* ── Init ── */
+initMap();
+</script>
+</body>
+</html>

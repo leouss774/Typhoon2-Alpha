@@ -20,7 +20,9 @@ import {
 import { driveFromPayload, buildingInfoFromPayload } from "./drive";
 import { FloodSimulation } from "./flood/FloodSimulation";
 import { FireSimulation } from "./fire/FireSimulation";
-import { SeismicSimulation } from "./seismic/SeismicSimulation";
+/* Typhoon : simulation sismique retirée du viewer (le cisaillement/
+   effondrement n'apportait rien au jumeau). Les fichiers
+   seismic/ restent en place pour pouvoir la réactiver. */
 
 export class SimulationManager {
   readonly state: SimulationState = defaultState();
@@ -37,7 +39,6 @@ export class SimulationManager {
   private root?: THREE.Object3D;
   private flood = new FloodSimulation();
   private fire = new FireSimulation();
-  private seismic = new SeismicSimulation();
   private payload: SimPayload | null = null;
   /** true dès que l'utilisateur touche un réglage (dat.gui) : le rapport ne
    *  doit alors plus écraser ce choix. */
@@ -79,7 +80,6 @@ export class SimulationManager {
     this.flood.bindBuilding(root);
     this.fire.setAnchors(halfExtents, height, floors);
     this.fire.bindBuilding(root);
-    this.seismic.bindModel(root);
 
     // Applique le payload s'il est arrivé avant le modèle
     this.applyPayload();
@@ -99,7 +99,9 @@ export class SimulationManager {
   private applyPayload() {
     const driven = driveFromPayload(this.payload);
     (Object.keys(driven) as HazardKind[]).forEach(kind => {
-      if (this.manual[kind]) {
+      // Séisme retiré du viewer : on n'active plus cet état, sinon il
+      // resterait « activé » alors qu'aucune simulation ne tourne.
+      if (kind === "seismic" || this.manual[kind]) {
         return;
       }
       const d = driven[kind];
@@ -137,7 +139,7 @@ export class SimulationManager {
 
   /** Réarme les simulations (nouvelle secousse, montée des eaux relancée). */
   reset(kind?: HazardKind) {
-    const kinds: HazardKind[] = kind ? [kind] : ["flood", "fire", "seismic"];
+    const kinds: HazardKind[] = kind ? [kind] : ["flood", "fire"];
     kinds.forEach(k => {
       if (this.state[k].enabled) {
         this.setEnabled(k, false);
@@ -154,16 +156,11 @@ export class SimulationManager {
     this.fire.enabled = s.fire.enabled;
     this.fire.level = s.fire.level;
     this.fire.speed = s.fire.speed;
-    this.seismic.enabled = s.seismic.enabled;
-    this.seismic.level = s.seismic.level;
-    this.seismic.speed = s.seismic.speed;
-
     if (this.scene) {
       this.flood.apply();
       this.fire.apply(this.scene);
-      this.seismic.apply();
     }
-    (["flood", "fire", "seismic"] as HazardKind[]).forEach(kind => {
+    (["flood", "fire"] as HazardKind[]).forEach(kind => {
       this.onStateChange && this.onStateChange(kind);
     });
     const active = this.isActive();
@@ -184,14 +181,11 @@ export class SimulationManager {
     if (this.state.fire.enabled) {
       this.fire.update(dt, elapsed);
     }
-    if (this.state.seismic.enabled) {
-      this.seismic.update(dt);
-    }
   }
 
   /** Une simulation est-elle active ? (permet de forcer le rendu continu.) */
   isActive(): boolean {
-    return this.state.flood.enabled || this.state.fire.enabled || this.state.seismic.enabled;
+    return this.state.flood.enabled || this.state.fire.enabled;
   }
 
   dispose() {
@@ -201,7 +195,6 @@ export class SimulationManager {
       // remette les matériaux d'origine.
       this.fire.dispose(this.scene);
       this.flood.dispose(this.scene);
-      this.seismic.dispose();
     }
     this.root = undefined;
     this.scene = undefined;

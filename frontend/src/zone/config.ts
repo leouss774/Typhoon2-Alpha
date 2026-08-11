@@ -32,6 +32,35 @@ export function bandForKey(key?: string | null): D03Band | undefined {
   return D03.find((b) => b.key === key);
 }
 
+/**
+ * SEUL point de conversion niveau → bande D03 de l'application.
+ *
+ * Le moteur de risque (`risk_model._niveau`) renvoie un libellé lisible
+ * (« tres faible », « tres eleve »), pas les clés D03 du frontend : sans
+ * normalisation, `bandForKey` échouait précisément sur les deux extrêmes.
+ * On accepte donc les deux vocabulaires, accents et espaces compris.
+ */
+export function bandForNiveau(niveau?: string | null): D03Band | undefined {
+  if (!niveau) return undefined;
+  const n = niveau
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '') // accents
+    .replace(/[\s-]+/g, '_')
+    .trim();
+  if (n === 'tres_eleve') return bandForKey('critique');
+  return bandForKey(n);
+}
+
+/**
+ * Bande d'un score 0-100. Réservé aux scores que le backend expose SANS
+ * niveau associé (score_global) : pour une zone, on utilise toujours son
+ * `niveau`, qui fait foi. Les bornes reproduisent `risk_model._niveau`.
+ */
+export function bandForScore(score: number): D03Band {
+  return D03.find((b) => score < b.max) || D03[D03.length - 1];
+}
+
 export function aleaScore(a: { niveau?: string | null }): number {
   const mapping: Record<string, number> = {
     tres_faible: 10,
