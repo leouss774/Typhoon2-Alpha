@@ -1,0 +1,14 @@
+__pycache__
+*.py[cod]
+.pytest_cache
+.venv
+venv
+.git
+.env
+*.env
+out
+typhon_risk_engine/out
+data/lookup/copernicus
+data/lookup/dvf
+data/property_ids
+
