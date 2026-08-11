@@ -32,8 +32,8 @@ import {
   ALEA_ICON_FALLBACK,
   WMS_LAYER_MAP,
   bandForKey,
+  bandForScore,
   escHtml,
-  aleaScore,
   type AleaDetail,
   type RisqueReport,
   type RapportNarratif,
@@ -122,6 +122,10 @@ export function Zone() {
   const [detailedRecommendationsLoading, setDetailedRecommendationsLoading] = useState(false);
   const [detailedRecommendationsError, setDetailedRecommendationsError] = useState<string | null>(null);
   const [detailedRisquesPrincipaux, setDetailedRisquesPrincipaux] = useState<RisquesPrincipaux | null>(null);
+  /* Score de risque global réel (moteur F×V, backend risk_model.py) — remplace
+     l'ancienne valeur statique dérivée de la bande de l'aléa le plus grave
+     (toujours 70 pour un aléa « élevé », quel que soit le bien). */
+  const [detailedScoreGlobal, setDetailedScoreGlobal] = useState<number | null>(null);
   const [conversations, setConversations] = useState<Conversation[]>(() => loadConversations());
   const [rapport, setRapport] = useState<RapportNarratif | null>(null);
   const [rapportLoading, setRapportLoading] = useState(false);
@@ -176,6 +180,7 @@ export function Zone() {
     setDetailedRecommendationsError(null);
     setDetailedRecommendationZones({});
     setDetailedRisquesPrincipaux(null);
+    setDetailedScoreGlobal(null);
     try {
       const fastResponse = await fetch(`${API}/diagnostic/fast`, {
         method: 'POST',
@@ -185,6 +190,9 @@ export function Zone() {
       if (!fastResponse.ok) throw new Error(`Diagnostic détaillé HTTP ${fastResponse.status}`);
       const fastContract = await fastResponse.json();
       if (!fastContract?._resume) throw new Error('Contexte de recommandations absent');
+      if (requestId === recommendationsRequestId.current && typeof fastContract.score_global === 'number') {
+        setDetailedScoreGlobal(fastContract.score_global);
+      }
 
       const recommendationsResponse = await fetch(`${API}/diagnostic/recommandations`, {
         method: 'POST',
@@ -253,6 +261,7 @@ export function Zone() {
     setDetailedRecommendationsLoading(false);
     setDetailedRecommendationsError(null);
     setDetailedRisquesPrincipaux(null);
+    setDetailedScoreGlobal(null);
     setRapport(null);
     setRapportError(null);
     setSidebarOpen(false);
@@ -430,8 +439,10 @@ export function Zone() {
 
   /* ── Dérivés du rapport ── */
   const presentAleas = (report?.aleas || []).filter((a) => a.present === true);
-  const maxScore = presentAleas.length ? Math.max(...presentAleas.map((a) => aleaScore(a))) : null;
-  const band = maxScore != null ? D03.find((b) => (maxScore as number) < b.max) || D03[D03.length - 1] : null;
+  /* Score de risque global réel (moteur F×V du backend, cf. score-block
+     ci-dessous) — tant qu'il n'est pas encore chargé, aucun score n'est
+     affiché plutôt qu'une valeur statique dérivée de la bande d'un aléa. */
+  const band = detailedScoreGlobal != null ? bandForScore(detailedScoreGlobal) : null;
 
   const catnat = (report?.aleas || []).flatMap((a) =>
     (a.catnat_historique || []).map((ev) => ({
@@ -681,12 +692,16 @@ export function Zone() {
                     </details>      <div className="score-block">
         <div className="score-row">
           <span className="score-num" style={{ color: band?.color }}>
-            {maxScore ?? '—'}
+            {detailedScoreGlobal ?? '—'}
           </span>
           <div className="score-meta">
             <span className="score-label">Score de risque global /100</span>
             <span className={`d03-pill ${band ? band.cls : ''}`}>
-              {band ? band.label : 'Indéterminé'}
+              {band
+                ? band.label
+                : detailedRecommendationsLoading
+                  ? 'Calcul en cours…'
+                  : 'Indéterminé'}
             </span>
           </div>
         </div>
