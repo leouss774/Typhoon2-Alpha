@@ -18,9 +18,9 @@ import { useEffect, useRef, useState, type CSSProperties, type ReactNode, type R
 import { Link, useNavigate } from 'react-router-dom';
 import type { Menu } from '@material/web/menu/menu.js';
 import type { MdSwitch } from '@material/web/switch/switch.js';
-import { ZoneMap } from '../components/ZoneMap';
+import { ZoneMap, type ZoneMapApi } from '../components/ZoneMap';
 import { ZoneAnalyse } from '../components/ZoneAnalyse';
-import { ZoneBIM } from '../components/ZoneBIM';
+import { ZoneBIM, type ZoneBIMApi } from '../components/ZoneBIM';
 import { ZoneRecommendations } from '../components/ZoneRecommendations';
 import { ZoneArtisans } from '../components/ZoneArtisans';
 import { ACCENTS, useTyphoonTheme } from '../typhoon/useTyphoonTheme';
@@ -32,6 +32,7 @@ import {
   ALEA_ICON_FALLBACK,
   WMS_LAYER_MAP,
   bandForKey,
+  bandForScore,
   escHtml,
   aleaScore,
   type AleaDetail,
@@ -113,6 +114,13 @@ export function Zone() {
 
   const [step, setStep] = useState(0);
   const [stepError, setStepError] = useState(false);
+  /* Vol d'approche carte → jumeau (clic sur le marqueur) : APIs impératives
+     des deux composants, verrou anti-double-vol, et drapeau d'effacement du
+     chrome pendant le zoom (cf. classe `zone-approche`). */
+  const mapApiRef = useRef<ZoneMapApi | null>(null);
+  const bimApiRef = useRef<ZoneBIMApi | null>(null);
+  const flyingRef = useRef(false);
+  const [approaching, setApproaching] = useState(false);
   const [suggestions, setSuggestions] = useState<GeocodeSuggestion[]>([]);
   const [suggestionsOpen, setSuggestionsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -374,6 +382,115 @@ export function Zone() {
     return undefined;
   }
 
+  /* ── Animation d'approche : carte → jumeau 3D ──────────────────────────
+     Tout vit dans le même document : c'est la View Transitions API
+     same-document qui morphe la section carte vers la section BIM. */
+
+  const BIM_STEP = 3;
+
+  function prefersReducedMotion() {
+    return typeof window.matchMedia === 'function' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  }
+
+  /* Deux images : laisse le navigateur recalculer la mise en page (l'iframe
+     du jumeau vient de retrouver ses dimensions). Plafonné, car
+     requestAnimationFrame ne se déclenche pas dans un onglet en
+     arrière-plan — sans cela la séquence resterait suspendue ici. */
+  const nextFrame = () =>
+    new Promise<void>((resolve) => {
+      const done = () => {
+        window.clearTimeout(guard);
+        resolve();
+      };
+      const guard = window.setTimeout(resolve, 200);
+      requestAnimationFrame(() => requestAnimationFrame(done));
+    });
+
+  /* Les promesses d'une View Transition (comme requestAnimationFrame) ne se
+     règlent pas si l'onglet passe en arrière-plan : sans plafond, la
+     séquence resterait suspendue et le verrou anti-double-vol bloquerait
+     définitivement le marqueur. */
+  function withTimeout(p: Promise<void>, ms: number): Promise<void> {
+    return Promise.race([p, new Promise<void>((r) => window.setTimeout(r, ms))]);
+  }
+
+  type ViewTransition = { ready: Promise<void>; finished: Promise<void> };
+
+  /**
+   * Applique `commit` dans une View Transition. Repli obligatoire : sans
+   * l'API (Firefox, Safari) ou en `prefers-reduced-motion`, la bascule se
+   * fait normalement — aucune erreur console, aucun écran figé.
+   */
+  function withViewTransition(commit: () => void): ViewTransition {
+    const start = (document as unknown as {
+      startViewTransition?: (cb: () => void) => ViewTransition;
+    }).startViewTransition;
+    if (prefersReducedMotion() || typeof start !== 'function') {
+      commit();
+      return { ready: Promise.resolve(), finished: Promise.resolve() };
+    }
+    // flushSync : le navigateur capture l'état d'arrivée dès le retour du
+    // callback — une mise à jour React différée arriverait trop tard.
+    const t = start.call(document, () => flushSync(commit));
+    return {
+      ready: t.ready.catch(() => undefined),
+      finished: t.finished.catch(() => undefined),
+    };
+  }
+
+  /**
+   * Séquence complète, déclenchée par le clic sur le marqueur du bien :
+   *   a. zoom de la carte sur le bâtiment (1,2 s, easing OpenLayers)
+   *   b. pendant ce temps, le chrome s'efface (classe `zone-approche`)
+   *   c. morphing de la section carte vers la section BIM
+   *   d. caméra posée à la verticale pendant que le contenu live est encore
+   *      masqué par les captures du morphing, puis descente ~1 s
+   */
+  async function flyToJumeau() {
+    if (!report || flyingRef.current) return;
+
+    // Accessibilité : ni zoom, ni vol de caméra — bascule directe.
+    if (prefersReducedMotion() || !mapApiRef.current) {
+      goToStep(BIM_STEP);
+      return;
+    }
+
+    flyingRef.current = true;
+    setApproaching(true);
+    try {
+      let groundWidthM = 0;
+      try {
+        groundWidthM = await mapApiRef.current.zoomToBuilding();
+      } catch {
+        groundWidthM = 0; // le vol continue : seul le cadrage d'arrivée est dégradé
+      }
+
+      const transition = withViewTransition(() => {
+        setStepError(false);
+        setStep(BIM_STEP);
+        setApproaching(false);
+      });
+
+      /* `ready` : le DOM est à jour (section BIM révélée, iframe de nouveau
+         dimensionnée) mais le contenu live est encore masqué par les captures
+         — la fenêtre exacte pour placer la caméra au zénith sans que ça se voie.
+         Les deux rAF laissent l'iframe reprendre ses dimensions (elle était en
+         display:none, donc 0×0 : son rapport d'aspect était inutilisable). */
+      await withTimeout(transition.ready, 1000);
+      await nextFrame();
+      bimApiRef.current?.arm(groundWidthM);
+
+      await withTimeout(transition.finished, 1500);
+      bimApiRef.current?.fly();
+    } finally {
+      // Quoi qu'il arrive (erreur, onglet en arrière-plan), on relâche le
+      // verrou : un marqueur définitivement inerte serait pire que tout.
+      setApproaching(false);
+      flyingRef.current = false;
+    }
+  }
+
   /* ── Navigation du stepper (linéaire : impossible de sauter l'adresse) ── */
   function goToStep(i: number) {
     if (i > 0 && !report) {
@@ -430,8 +547,12 @@ export function Zone() {
 
   /* ── Dérivés du rapport ── */
   const presentAleas = (report?.aleas || []).filter((a) => a.present === true);
-  const maxScore = presentAleas.length ? Math.max(...presentAleas.map((a) => aleaScore(a))) : null;
-  const band = maxScore != null ? D03.find((b) => (maxScore as number) < b.max) || D03[D03.length - 1] : null;
+  /* Score officiel du moteur de risque. On n'en dérive plus aucun localement :
+     l'ancien calcul (max des aléas Géorisques via aleaScore, puis seuils
+     rejoués ici) produisait un second score concurrent de celui du backend. */
+  const maxScore = scoreGlobal;
+  const band = maxScore != null ? bandForScore(maxScore) : null;
+  const scoreEnCours = report != null && scoreGlobal == null && detailedRecommendationsLoading;
 
   const catnat = (report?.aleas || []).flatMap((a) =>
     (a.catnat_historique || []).map((ev) => ({
@@ -648,7 +769,11 @@ export function Zone() {
             </div>
           </header>
 
-          <div className={`zone-stage${step === 1 ? ' workspace' : ' flat'}`}>
+          <div
+            className={`zone-stage${step === 1 ? ' workspace' : ' flat'}${
+              approaching ? ' zone-approche' : ''
+            }`}
+          >
             {/* Workspace — toujours monté pour préserver la carte OpenLayers
                 (masqué via [hidden] hors de l'étape Cartographie) */}
             <div className="zone-workspace" hidden={step !== 1}>
@@ -686,7 +811,7 @@ export function Zone() {
           <div className="score-meta">
             <span className="score-label">Score de risque global /100</span>
             <span className={`d03-pill ${band ? band.cls : ''}`}>
-              {band ? band.label : 'Indéterminé'}
+              {scoreEnCours ? 'Calcul en cours…' : band ? band.label : 'Indéterminé'}
             </span>
           </div>
         </div>
@@ -786,7 +911,12 @@ export function Zone() {
 
               {/* CARTE */}
               <section className="zone-map-wrap">
-                <ZoneMap report={report} visibleLayerKeys={visibleLayerKeys} />
+                <ZoneMap
+                  report={report}
+                  visibleLayerKeys={visibleLayerKeys}
+                  apiRef={mapApiRef}
+                  onPinActivate={() => void flyToJumeau()}
+                />
 
                 <div className="map-strip">
                   <span>
@@ -814,6 +944,7 @@ export function Zone() {
                 risquesPrincipaux={detailedRisquesPrincipaux}
                 visibleLayerKeys={visibleLayerKeys}
                 onToggleLayer={toggleLayer}
+                apiRef={bimApiRef}
               />
             </section>
 

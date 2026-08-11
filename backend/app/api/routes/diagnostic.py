@@ -431,6 +431,8 @@ async def diagnostic_adresse_gltf(
         headers={
             "Content-Disposition": f'attachment; filename="batiment_{lat_s}_{lon_s}.glb"',
             "Access-Control-Allow-Origin": "*",
-            "Cache-Control": "public, max-age=3600",
+            # no-cache (et non max-age) : le générateur évolue — un modèle mis
+            # en cache 1 h masquait toute amélioration au rechargement (F5).
+            "Cache-Control": "no-cache",
         },
     )

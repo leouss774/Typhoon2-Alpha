@@ -16,6 +16,7 @@ import VectorSource from 'ol/source/Vector';
 import GeoJSON from 'ol/format/GeoJSON';
 import { defaults as defaultControls } from 'ol/control';
 import { fromLonLat } from 'ol/proj';
+import { easeIn } from 'ol/easing';
 import Feature from 'ol/Feature';
 import Point from 'ol/geom/Point';
 import Style from 'ol/style/Style';
@@ -35,12 +36,25 @@ import {
 
 type Layer = TileLayer | VectorLayer;
 
+/** API impérative exposée au parent (Zone.tsx) pour l'animation d'approche. */
+export interface ZoneMapApi {
+  /**
+   * Zoome sur le bâtiment (vue du dessus) en 1,2 s, easing OpenLayers.
+   * @returns la largeur de sol (en mètres) couverte par la carte à
+   *   l'arrivée — le jumeau 3D s'en sert pour démarrer au même cadrage.
+   */
+  zoomToBuilding(): Promise<number>;
+}
+
 interface ZoneMapProps {
   report: RisqueReport | null;
   visibleLayerKeys: ReadonlySet<string>;
+  /** Clic (ou Entrée/Espace) sur le marqueur du bien → vol vers le jumeau. */
+  onPinActivate?: () => void;
+  apiRef?: React.MutableRefObject<ZoneMapApi | null>;
 }
 
-export function ZoneMap({ report, visibleLayerKeys }: ZoneMapProps) {
+export function ZoneMap({ report, visibleLayerKeys, onPinActivate, apiRef }: ZoneMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<OLMap | null>(null);
   const viewRef = useRef<View | null>(null);
@@ -52,6 +66,16 @@ export function ZoneMap({ report, visibleLayerKeys }: ZoneMapProps) {
   const renderSeqRef = useRef(0);
   const visibleKeysRef = useRef(visibleLayerKeys);
   visibleKeysRef.current = visibleLayerKeys;
+  /* Callback toujours à jour, lue au moment du clic : le listener DOM du pin
+     est posé une seule fois (init de la carte) et ne doit pas capturer une
+     version périmée de la prop. */
+  const onPinActivateRef = useRef(onPinActivate);
+  onPinActivateRef.current = onPinActivate;
+  const reportRef = useRef(report);
+  reportRef.current = report;
+  /* Vol d'approche en cours : neutralise le fly-to « zoom 14 » du rendu de
+     rapport, qui sinon annulerait l'animation et couperait le zoom net. */
+  const flyingRef = useRef(false);
 
   /* ── Init map (une seule fois) ── */
   useEffect(() => {
@@ -79,6 +103,23 @@ export function ZoneMap({ report, visibleLayerKeys }: ZoneMapProps) {
     const pinEl = document.createElement('div');
     pinEl.className = 'map-pin';
     pinEl.style.display = 'none';
+    /* Le marqueur est un bouton : sans affordance (curseur, survol, focus,
+       intitulé), personne ne devine qu'il ouvre le jumeau 3D. */
+    pinEl.setAttribute('role', 'button');
+    pinEl.setAttribute('tabindex', '0');
+    pinEl.setAttribute('aria-label', 'Ouvrir le jumeau numérique 3D de ce bien');
+    pinEl.title = 'Ouvrir le jumeau numérique 3D de ce bien';
+    const activate = () => onPinActivateRef.current?.();
+    pinEl.addEventListener('click', (e) => {
+      e.stopPropagation(); // ne pas déclencher aussi un clic carte
+      activate();
+    });
+    pinEl.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
+        e.preventDefault();
+        activate();
+      }
+    });
     container.appendChild(pinEl);
     pinElRef.current = pinEl;
 
@@ -133,6 +174,59 @@ export function ZoneMap({ report, visibleLayerKeys }: ZoneMapProps) {
       layersByKeyRef.current.clear();
     };
   }, []);
+
+  /* ── API impérative : zoom d'approche sur le bâtiment ──
+     Exposée au parent, qui enchaîne ensuite le morphing vers la section BIM. */
+  useEffect(() => {
+    if (!apiRef) return;
+    apiRef.current = {
+      zoomToBuilding() {
+        const view = viewRef.current;
+        const map = mapRef.current;
+        const rep = reportRef.current;
+        if (!view || !map || !rep) return Promise.resolve(0);
+
+        flyingRef.current = true;
+        const coord = fromLonLat([rep.lon, rep.lat]);
+        const zoom = Math.min(19, view.getMaxZoom());
+        /* Un fly-to du rendu de rapport peut encore courir : on l'annule,
+           sinon il annulerait le nôtre et le callback tomberait aussitôt. */
+        view.cancelAnimations();
+
+        return new Promise<number>((resolve) => {
+          let done = false;
+          const finish = () => {
+            if (done) return;
+            done = true;
+            window.clearTimeout(guard);
+            /* Largeur de sol réellement couverte, en mètres.
+               EPSG:3857 : la résolution est en mètres "Mercator", dilatés
+               d'un facteur 1/cos(latitude) — sans cette correction on se
+               tromperait de 34 % à Paris et le raccord d'échelle sauterait. */
+            const res = view.getResolution() ?? 0;
+            const widthPx = map.getSize()?.[0] ?? 0;
+            const metres = res * Math.cos((rep.lat * Math.PI) / 180) * widthPx;
+            flyingRef.current = false;
+            resolve(metres > 0 ? metres : 0);
+          };
+          /* Filet de sécurité : les animations OpenLayers avancent au rythme
+             de requestAnimationFrame, gelé si l'onglet passe en arrière-plan.
+             Sans ce garde-fou, le callback ne viendrait jamais et la séquence
+             resterait bloquée sur la carte. */
+          const guard = window.setTimeout(finish, 1200 + 600);
+          view.animate(
+            { center: coord, zoom, duration: 1200, easing: easeIn },
+            // Appelé aussi si l'animation est interrompue : on résout quand
+            // même, le vol ne doit jamais rester bloqué.
+            () => finish()
+          );
+        });
+      },
+    };
+    return () => {
+      apiRef.current = null;
+    };
+  }, [apiRef]);
 
   /* ── Appliquer la visibilité quand visibleLayerKeys change ── */
   useEffect(() => {
@@ -195,7 +289,9 @@ export function ZoneMap({ report, visibleLayerKeys }: ZoneMapProps) {
     popupEl?.classList.add('visible');
     popupOverlayRef.current?.setPosition(coord);
 
-    viewRef.current?.animate({ center: coord, zoom: 14, duration: 1200 });
+    if (!flyingRef.current) {
+      viewRef.current?.animate({ center: coord, zoom: 14, duration: 1200 });
+    }
 
     // Couches aléas (niveau 1 WMS → niveau 2 WFS → niveau 3 cercle)
     const renderLayers = async () => {

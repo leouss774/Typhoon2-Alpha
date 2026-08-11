@@ -3630,7 +3630,9 @@
   color: var(--md-sys-color-on-primary);
 }
 
-/* ── Marqueur ── */
+/* ── Marqueur ──
+   C'est un bouton : il ouvre le jumeau numérique 3D. Sans affordance
+   (curseur, halo au survol, anneau de focus), personne ne le devine. */
 .zone-map-wrap .map-pin {
   width: 14px;
   height: 14px;
@@ -3639,7 +3641,83 @@
   border: 2px solid var(--md-sys-color-on-surface);
   box-shadow: 0 0 0 4px rgba(194, 112, 64, 0.35);
   transform: translate(-50%, -50%);
-  cursor: default;
+  cursor: pointer;
+  transition: box-shadow 0.18s ease, transform 0.18s ease;
+}
+.zone-map-wrap .map-pin:hover {
+  transform: translate(-50%, -50%) scale(1.25);
+  box-shadow: 0 0 0 8px rgba(194, 112, 64, 0.45);
+}
+.zone-map-wrap .map-pin:focus-visible {
+  outline: none;
+  transform: translate(-50%, -50%) scale(1.25);
+  box-shadow: 0 0 0 4px rgba(194, 112, 64, 0.45),
+    0 0 0 7px var(--md-sys-color-primary);
+}
+/* Battement discret : signale que le point est actionnable, sans agiter la
+   carte. Supprimé si l'utilisateur a demandé moins d'animations. */
+@media (prefers-reduced-motion: no-preference) {
+  .zone-map-wrap .map-pin::after {
+    content: '';
+    position: absolute;
+    inset: -4px;
+    border-radius: 50%;
+    border: 2px solid var(--d03-eleve);
+    animation: pin-pulse 2.4s ease-out infinite;
+    pointer-events: none;
+  }
+  @keyframes pin-pulse {
+    0% { opacity: 0.55; transform: scale(1); }
+    70% { opacity: 0; transform: scale(2.1); }
+    100% { opacity: 0; transform: scale(2.1); }
+  }
+}
+
+/* ── Approche carte → jumeau 3D ──────────────────────────────────────────
+   Morphing same-document : le conteneur de carte et la section BIM portent
+   le MÊME view-transition-name, donc le navigateur anime l'un vers l'autre.
+   Ils ne sont jamais visibles en même temps (l'autre est `hidden`), ce que
+   l'API exige — un nom dupliqué sur deux éléments visibles l'annulerait. */
+@media (prefers-reduced-motion: no-preference) {
+  .zone-workspace {
+    view-transition-name: jumeau-scene;
+  }
+  .zone-bim {
+    view-transition-name: jumeau-scene;
+  }
+  /* 400 ms : laisse le temps de poser la caméra au zénith pendant que le
+     contenu live est encore masqué par les captures. */
+  ::view-transition-old(jumeau-scene),
+  ::view-transition-new(jumeau-scene) {
+    animation-duration: 400ms;
+    animation-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
+  }
+}
+
+/* Dernière image avant le morphing = la carte seule : le chrome s'efface
+   pendant le zoom (1,2 s), pour que rien ne « saute » à la bascule. */
+.zone-stage.zone-approche .zone-sidebar,
+.zone-stage.zone-approche #ol-popup,
+.zone-stage.zone-approche .map-legend,
+.zone-stage.zone-approche .map-foot,
+.zone-stage.zone-approche .wms-badge,
+.zone-stage.zone-approche .ol-zoom,
+.zone-stage.zone-approche .map-pin {
+  opacity: 0;
+  transition: opacity 0.55s ease;
+  pointer-events: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .zone-stage.zone-approche .zone-sidebar,
+  .zone-stage.zone-approche #ol-popup,
+  .zone-stage.zone-approche .map-legend,
+  .zone-stage.zone-approche .map-foot,
+  .zone-stage.zone-approche .wms-badge,
+  .zone-stage.zone-approche .ol-zoom,
+  .zone-stage.zone-approche .map-pin {
+    opacity: 1;
+    transition: none;
+  }
 }
 
 /* ── Légende D03 (sidebar, repliable) ── */

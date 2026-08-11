@@ -302,6 +302,29 @@ html, body { height: 100%; background: var(--ink); color: var(--paper); font-fam
   .app { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
   .sidebar { max-height: 55vh; }
 }
+
+/* ── Vol continu carte → jumeau 3D (clic sur le pin du bien) ──────────────
+   1. Le chrome (sidebar, légende, popup, pin, contrôles) s'efface par
+      opacité pendant le zoom : la dernière image est la carte seule.
+   2. View Transitions inter-documents : le conteneur de carte porte le même
+      view-transition-name que #scene-container de index.html — le
+      navigateur morphe l'un vers l'autre. Déclaratif uniquement : sur un
+      navigateur sans support, la navigation reste classique, sans JS. */
+@media (prefers-reduced-motion: no-preference) {
+  @view-transition { navigation: auto; }
+  #map { view-transition-name: jumeau-scene; }
+}
+#map-pin { cursor: pointer; }
+body.zone-depart .sidebar,
+body.zone-depart .map-topbar,
+body.zone-depart #ol-popup,
+body.zone-depart #map-pin,
+body.zone-depart .ol-zoom,
+body.zone-depart .ol-scale-line {
+  transition: opacity .5s ease;
+  opacity: 0;
+  pointer-events: none;
+}
 </style>
 </head>
 <body>
@@ -709,6 +732,36 @@ async function renderAleaLayers(report) {
   if (wmsActive) wmsBadge.style.display = 'block';
 }
 
+/* ── Vol continu : clic sur le pin → zoom carte → jumeau 3D ──
+   Zoom OpenLayers (easing natif easeIn : l'accélération est prolongée par
+   la descente caméra de index.html), chrome effacé en parallèle, puis
+   navigation avec lat/lon en paramètres. prefers-reduced-motion: reduce →
+   navigation directe, sans zoom (cf. accessibilité). */
+let enVol = false; // vol en cours : neutralise le fly-to de placePin
+function departVersJumeau(lat, lon) {
+  if (enVol) return;
+  const url = 'index.html?lat=' + encodeURIComponent(lat) + '&lon=' + encodeURIComponent(lon);
+  const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduced || !map) { window.location.href = url; return; }
+  enVol = true;
+  document.body.classList.add('zone-depart');
+  popupOverlay.setPosition(undefined);
+  const view = map.getView();
+  // Un fly-to de placePin peut encore courir (clic pendant le vol vers
+  // l'adresse) : on l'annule, sinon il annulerait le nôtre.
+  view.cancelAnimations();
+  view.animate({
+    center: ol.proj.fromLonLat([lon, lat]),
+    zoom: Math.min(19, view.getMaxZoom()),
+    duration: 1200,
+    easing: ol.easing.easeIn,
+  });
+  // Navigation sur minuteur, pas sur le callback d'animation : une
+  // annulation externe déclencherait le callback immédiatement (complete
+  // = false) et couperait le zoom.
+  setTimeout(() => { window.location.href = url; }, 1200);
+}
+
 /* ── Place pin & popup on map ── */
 function placePin(lat, lon, report) {
   if (!map) return;
@@ -718,6 +771,8 @@ function placePin(lat, lon, report) {
   // Show and position the marker
   const pinEl = document.getElementById('map-pin');
   pinEl.style.display = 'block';
+  pinEl.title = 'Voir le jumeau numérique 3D de ce bien';
+  pinEl.onclick = () => departVersJumeau(lat, lon);
   markerOverlay.setPosition(coord);
 
   // Build popup content
@@ -745,8 +800,8 @@ function placePin(lat, lon, report) {
   popup.classList.add('visible');
   popupOverlay.setPosition(coord);
 
-  // Fly to address
-  view.animate({ center: coord, zoom: 14, duration: 1200 });
+  // Fly to address (sauté si un vol vers le jumeau est déjà lancé)
+  if (!enVol) view.animate({ center: coord, zoom: 14, duration: 1200 });
 
   // Render risk layers
   _cleanAllLayers();
