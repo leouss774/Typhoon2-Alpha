@@ -21,6 +21,7 @@ from pydantic import BaseModel, Field
 
 from app.agents import digital_twin_agent, interpretation_agent, recommandations_agent, scoring_agent
 from app.digital_twin.gltf_builder import build_glb_from_bdnb
+from app.digital_twin.diagnostic_builder import build_diagnostic
 from app.agents.collector_agent import collect
 from app.agents.graph import diagnostic_graph
 from app.connectors.bdnb import BdnbAdresseIntrouvable, fetch_bdnb
@@ -34,6 +35,57 @@ from app.schemas.risque_report import RisqueReport
 
 logger = get_logger(__name__)
 router = APIRouter()
+
+
+def _niveau_from_score(score: int) -> str:
+    if score < 20:
+        return "tres_faible"
+    if score < 40:
+        return "faible"
+    if score < 60:
+        return "modere"
+    if score < 80:
+        return "eleve"
+    return "critique"
+
+
+def _zone_scores_from_report(report: RisqueReport) -> dict[str, dict[str, object]]:
+    def score_for(alea_code: str, fallback: int = 15) -> int:
+        for alea in report.aleas:
+            if alea.code != alea_code:
+                continue
+            if alea.present is not True:
+                continue
+            niveau = alea.niveau.value if getattr(alea.niveau, "value", None) is not None else str(alea.niveau)
+            mapping = {"tres_faible": 10, "faible": 25, "modere": 45, "eleve": 65, "critique": 85}
+            return mapping.get(niveau, fallback)
+        return fallback
+
+    zones: dict[str, dict[str, object]] = {}
+    zone_order = ["fondations", "murs_nord", "murs_sud", "murs_est", "murs_ouest", "toiture", "sous_sol"]
+    for zone_name in zone_order:
+        if zone_name == "fondations":
+            score = max(score_for("rga", 20), score_for("sismicite", 18), score_for("mouvement_terrain", 16))
+            alea_label = "RGA / séisme / mouvement de terrain"
+        elif zone_name == "sous_sol":
+            score = max(score_for("inondation", 24), score_for("radon", 16))
+            alea_label = "Inondation / radon"
+        elif zone_name == "toiture":
+            score = max(score_for("feu_foret", 18), score_for("vent_cyclonique", 16))
+            alea_label = "Feu de forêt / vent"
+        else:
+            score = score_for("sismicite", 12)
+            alea_label = "Risque structurel"
+        if score <= 0 and report.alea_count:
+            score = min(80, 10 + 5 * report.alea_count)
+        zones[zone_name] = {
+            "risque": score,
+            "niveau": _niveau_from_score(score),
+            "alea_principal": alea_label,
+            "justification": f"Score synthétique dérivé du rapport Géorisques pour la zone {zone_name}.",
+            "recommandations": [],
+        }
+    return zones
 
 
 # ---------------------------------------------------------------------------
@@ -232,6 +284,26 @@ async def diagnostic_adresse(
             # est consignée dans erreurs_partielles (jamais un 502).
             try:
                 report.bdnb = await _fetch_bdnb_avec_repli(client, q, geo.label)
+                if report.bdnb:
+                    batiment = (report.bdnb or {}).get("batiment") if isinstance(report.bdnb, dict) else None
+                    if isinstance(batiment, dict):
+                        building_data = {
+                            "adresse": {"label": geo.label, "lat": geo.lat, "lon": geo.lon},
+                            "bdnb": report.bdnb,
+                            "climat_open_meteo": {},
+                            "climat_copernicus": None,
+                            "dvf_local": None,
+                            "erreurs": [],
+                        }
+                        risk_result = {
+                            "score_global": 0,
+                            "zones": _zone_scores_from_report(report),
+                            "projection_2050": {"score_global": 0, "zones": _zone_scores_from_report(report), "risques_par_alea": {}},
+                            "risques_par_alea": {},
+                        }
+                        diagnostic = build_diagnostic(building_data, risk_result, formulaire=None, interpretations=None, risques_principaux=None)
+                        report.geometry = diagnostic.get("geometry")
+                        report.zones = diagnostic.get("zones")
             except BdnbAdresseIntrouvable:
                 report.erreurs_partielles.append(
                     "bdnb: adresse non reconnue par le géocodeur BDNB"

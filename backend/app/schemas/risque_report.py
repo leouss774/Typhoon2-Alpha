@@ -94,6 +94,8 @@ class RisqueReport(BaseModel):
     erreurs_partielles: list[str] = []  # ex: ["sismicite: timeout Géorisques"]
     bdnb: dict | None = None          # fiche BDNB (batiment_groupe_complet) — None si indisponible
                                       # (alimente l'étape 3 « Analyse » du frontend)
+    geometry: dict[str, Any] | None = None  # bloc geometry issu du builder digital_twin
+    zones: dict[str, Any] | None = None      # scores de risque par zone, même forme que le contrat digital_twin
     recommandations: RecommandationsIA | None = None  # None si Mistral absent/en erreur
     avertissement: str = (
         "Ce rapport agrège les données publiques Géorisques (BRGM / MTE). "

@@ -221,6 +221,34 @@ def test_diagnostic_end_to_end():
     print(json.dumps({k: v for k, v in contract.items() if not k.startswith("_")}, indent=2, ensure_ascii=False)[:1500], "...")
 
 
+def test_diagnostic_adresse_exposes_geometry_and_zones():
+    from app.main import app
+    from fastapi.testclient import TestClient
+
+    real_async_client = httpx.AsyncClient
+
+    def patched_client(*args, **kwargs):
+        kwargs["transport"] = httpx.MockTransport(_mock_handler)
+        return real_async_client(*args, **kwargs)
+
+    with patch("app.api.routes.diagnostic.httpx.AsyncClient", side_effect=patched_client):
+        with TestClient(app) as client:
+            resp = client.get(
+                "/diagnostic/adresse",
+                params={"q": "26 Rue Victor Hugo, 37140 Bourgueil"},
+            )
+
+    assert resp.status_code == 200, resp.text
+    payload = resp.json()
+
+    assert payload["geometry"]["largeur_m"] > 0
+    assert payload["geometry"]["floors_count"] == 2
+    assert payload["geometry"]["materiau_mur"] == "meuliere"
+    assert "fondations" in payload["zones"]
+    assert payload["zones"]["fondations"]["risque"] >= 0
+    assert payload["zones"]["fondations"]["niveau"] in {"tres_faible", "faible", "modere", "eleve", "critique"}
+
+
 def test_diagnostic_adresse_gltf():
     """GET /diagnostic/adresse/gltf : .glb valide (magic glTF) genere depuis
     l'emprise BDNB, reseau mocke (geocodeur IGN + geocodeur BDNB + fiche
