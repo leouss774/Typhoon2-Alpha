@@ -189,16 +189,15 @@
         pointer-events: none;
       }
 
-      /* ═══ Préloader : disposition du haut — logo + phrase en haut à gauche,
-             mascotte à droite, qui déborde sur la carte du compteur ═══
-         La grille _1st (2 colonnes Webflow) accueille une colonne « brand »
-         (wordmark + phrase « Le climat ne prévient pas… », texte et classes
-         d'origine conservés à l'identique) à gauche, et la mascotte
-         transparente à droite. La mascotte est volontairement plus grande que
-         sa colonne (max-width: none), ancrée en bas et tirée vers le bas par
-         une marge négative : elle « sort » de son bloc et chevauche le bord
-         supérieur de la carte du compteur (z-index supérieur), avec une ombre
-         bleue portée derrière elle (drop-shadow sur la silhouette PNG). */
+      /* ═══ Préloader — page « compteur climatique » avec entrée manuelle ═══
+         Disposition (de haut en bas) :
+         1. wordmark Typhoon en haut à gauche ;
+         2. phrase « Le climat ne prévient pas… » (texte et classes d'origine
+            conservés à l'identique), placée un peu plus bas, avec le compteur
+            « coût cumulé des sinistres climatiques » à sa droite ;
+         3. en bas : la mascotte en transparence (ombre bleue portée) et, à
+            côté d'elle, le bouton « Comment anticiper cela ? » qui révèle la
+            page d'accueil au clic (plus de transition automatique). */
       .preloader {
         /* Sécurité : si le contenu dépasse 100vh (écran peu haut), le
            préloader défile au lieu de rogner. align-items: safe center
@@ -207,123 +206,183 @@
         align-items: safe center;
         overflow-y: auto;
       }
-      /* Grilles en hauteur naturelle + centrage + espace fixe : le
-         chevauchement mascotte/carte devient déterministe (il dépend de la
-         marge négative, pas de l'espace libre du viewport). */
       .preloader-inner {
-        justify-content: center;
-        gap: 3rem;
-      }
-      .preloader-grid {
-        height: auto;
-        max-height: none;
-      }
-      .preloader-grid._1st {
-        align-items: center;
-      }
-      .preloader-brand {
         flex-flow: column;
-        justify-content: flex-start;
-        align-items: flex-start;
-        gap: 1.75rem;
-        min-width: 0;
-        align-self: flex-start;
+        justify-content: center;
+        align-items: stretch;
+        gap: 3rem;
+        width: 100%;
+        height: 100%;
         display: flex;
       }
+      .preloader-head {
+        justify-content: flex-start;
+        align-items: center;
+        width: 100%;
+        display: flex;
+      }
+      /* Rangée centrale : phrase à gauche, compteur à droite. */
+      .preloader-mid {
+        grid-column-gap: 3rem;
+        grid-row-gap: 2rem;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 34rem);
+        grid-auto-columns: 1fr;
+        align-items: center;
+        width: 100%;
+        display: grid;
+      }
+      .preloader-mid .global-headline-m.is-left-aligned.in-loader {
+        /* Le texte s'étend sur toute la largeur de sa colonne (la classe
+           partagée .in-loader impose 25rem). */
+        max-width: 100%;
+        font-size: clamp(1.8rem, 2.5vw, 2.35rem);
+        line-height: 1.2;
+      }
+      /* Rangée du bas : mascotte à gauche, CTA « Comment anticiper cela ? »
+         juste à côté d'elle. */
+      .preloader-bottom {
+        justify-content: center;
+        align-items: center;
+        gap: 2rem 3rem;
+        width: 100%;
+        display: flex;
+        flex-wrap: wrap;
+      }
       .preloader-mascot {
-        /* Grand (≈1,8–2× l'ancienne taille), déborde de sa colonne, ancré en
-           bas. margin-bottom négative = vrai chevauchement avec la carte. */
         object-fit: contain;
-        width: clamp(30rem, 44vw, 46rem);
+        width: clamp(17rem, 28vw, 26rem);
         max-width: none;
         height: auto;
-        max-height: 34rem;
-        align-self: flex-end;
-        justify-self: center;
-        margin-bottom: -5.5rem;
-        position: relative;
-        z-index: 2;
+        max-height: 18rem;
+        flex-shrink: 0;
+        /* L'ombre bleue suit la silhouette PNG (drop-shadow = stacking
+           context, inutile d'ajouter un z-index). */
         filter: drop-shadow(0 1.25rem 2.5rem rgba(67, 134, 177, .35))
-                drop-shadow(0 .4rem .9rem rgba(67, 134, 177, .28));
+                drop-shadow(0 .45rem 1rem rgba(67, 134, 177, .28));
       }
-      /* La carte passe derrière la mascotte (mais au-dessus du fond). */
-      .climate-counter {
-        position: relative;
-        z-index: 1;
+      /* Bouton d'entrée : révèle la page d'accueil au clic. */
+      .preloader-cta {
+        align-items: center;
+        gap: 1rem;
+        padding: 1.6rem 3.4rem 1.55rem;
+        border: 0;
+        border-radius: 999px;
+        /* Dégradé du bleu d'accent (gauche) vers un bleu plus foncé (droite). */
+        background: linear-gradient(90deg, var(--orange, #4386B1), #2f6f9e);
+        box-shadow: 0 14px 34px rgba(67, 134, 177, .35),
+                    inset 0 1px 0 rgba(255, 255, 255, .25);
+        color: #fff;
+        font-family: 'Google Sans', 'Neue Montreal', sans-serif;
+        font-size: 1.5rem;
+        font-weight: 600;
+        letter-spacing: -.01em;
+        cursor: pointer;
+        display: inline-flex;
+        transition: transform .2s ease, box-shadow .2s ease, filter .2s ease;
       }
-      @media (min-width: 768px) and (max-width: 900px) {
-        /* Largeurs intermédiaires : le plancher de 30rem du clamp dépasse la
-           colonne de la grille (la mascotte déborderait à droite hors de
-           l'écran). On resserre la largeur dans cette tranche. */
-        .preloader-mascot {
-          width: min(44vw, 25rem);
+      .preloader-cta:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 18px 44px rgba(67, 134, 177, .45),
+                    inset 0 1px 0 rgba(255, 255, 255, .3);
+        filter: brightness(1.08);
+      }
+      .preloader-cta:active {
+        transform: translateY(-1px) scale(.99);
+      }
+      .preloader-cta:focus-visible {
+        outline: 3px solid rgba(255, 255, 255, .6);
+        outline-offset: 3px;
+      }
+      .preloader-cta .cta-arrow {
+        width: 1.6rem;
+        height: 1.6rem;
+        flex-shrink: 0;
+        transition: transform .2s ease;
+      }
+      .preloader-cta:hover .cta-arrow {
+        transform: translateX(4px);
+      }
+      /* Entrée en douceur, en cascade, des trois zones du préloader. */
+      @keyframes preloader-rise {
+        from { opacity: 0; transform: translateY(14px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      .preloader-head {
+        animation: preloader-rise .6s ease-out both;
+      }
+      .preloader-mid {
+        animation: preloader-rise .6s .12s ease-out both;
+      }
+      .preloader-bottom {
+        animation: preloader-rise .6s .24s ease-out both;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .preloader-head,
+        .preloader-mid,
+        .preloader-bottom {
+          animation: none;
         }
       }
+      /* Écrans peu hauts : on compacte pour tenir dans 100vh sans défilement. */
       @media (max-height: 850px) {
-        /* Écrans peu hauts : on compacte le bloc gauche et la mascotte pour
-           que logo + phrase + compteur tiennent dans 100vh sans défilement
-           (chevauchement conservé : marge −4.5rem vs gap 2rem). */
         .preloader-inner {
-          gap: 2rem;
+          gap: 1.75rem;
         }
-        .preloader-brand {
-          gap: 1rem;
-        }
-        .preloader-grid._1st .logo.in-preloader {
+        .preloader-head .logo.in-preloader {
           width: 13rem;
         }
+        .preloader-mid {
+          grid-template-columns: minmax(0, 1fr) minmax(0, 32rem);
+        }
         .preloader-mascot {
-          width: min(36vw, 34rem);
-          margin-bottom: -4.5rem;
+          width: 18rem;
+          max-height: 12.5rem;
+        }
+        .preloader-cta {
+          padding: 1.3rem 2.6rem;
+          font-size: 1.25rem;
         }
       }
+      /* Mobile : la phrase passe au-dessus du compteur ; mascotte + CTA
+         restent côte à côte (et s'empilent si besoin). */
       @media (max-width: 767px) {
-        /* Sur mobile les hauteurs fixes des grilles (20%/80%) ne suffisent
-           plus avec le bloc empilé : on laisse chaque zone prendre sa hauteur
-           naturelle (le défilement est déjà géré au niveau .preloader). */
         .preloader-inner {
           justify-content: flex-start;
-          gap: 2.5rem;
+          gap: 2rem;
+          padding: 1.5rem;
         }
-        .preloader-grid._1st,
-        .preloader-grid._2nd {
-          height: auto;
-          max-height: none;
-        }
-        .preloader-brand {
-          gap: 1.25rem;
+        .preloader-mid {
+          grid-template-columns: minmax(0, 1fr);
         }
         .preloader-mascot {
-          width: min(100%, 18rem);
-          margin-bottom: -5rem;
+          width: min(46vw, 16rem);
+          max-height: 11.5rem;
+        }
+        .preloader-cta {
+          padding: 1.25rem 2.1rem;
+          font-size: 1.2rem;
         }
       }
       @media (max-width: 479px) {
-        .preloader-grid._1st {
-          flex-wrap: wrap;
-          align-content: center;
-        }
-        .preloader-brand {
-          width: 100%;
-        }
         .preloader-mascot {
-          width: min(100%, 14rem);
-          margin-left: auto;
-          margin-bottom: -4rem;
+          width: min(66vw, 14rem);
+        }
+        .preloader-cta {
+          width: 100%;
+          justify-content: center;
         }
       }
 
       /* ═══ Préloader : compteur « coût cumulé des sinistres climatiques » ═══
          Le style reprend l'ancien préloader : fond du thème (clair/blanc en
-         thème clair), police Google Sans / Neue Montreal. En haut, le bloc
-         wordmark + phrase « Le climat ne prévient pas… » avec la mascotte à
-         droite (voir disposition _1st ci-dessus) ; en bas, la zone des deux
-         horloges de compte à rebours est remplacée par le compteur
-         climatique, présenté dans une carte du même style que les anciennes
-         horloges (fond var(--dark-grey), bordure var(--standard-grey),
-         coins arrondis). */
+         thème clair), police Google Sans / Neue Montreal. Le compteur
+         climatique est présenté dans une carte du même style que les
+         anciennes horloges (fond var(--dark-grey), bordure
+         var(--standard-grey), coins arrondis) ; il occupe la colonne droite
+         de .preloader-mid, à côté de la phrase « Le climat ne prévient
+         pas… ». */
       .climate-counter {
-        grid-column: 1 / -1;
+        grid-column: auto;
         border: 1px solid var(--standard-grey);
         background-color: var(--dark-grey);
         border-radius: 36px;
@@ -690,7 +749,7 @@
   </head>
   <body data-w-id="661550636b9312315bbc1917" class="global-body">
     <script>!function(o,c){var n=c.documentElement,t=" w-mod-";n.className+=t+"js",("ontouchstart"in o||o.DocumentTouch&&c instanceof DocumentTouch)&&(n.className+=t+"touch")}(window,document);</script>
-<div data-w-id="1a765f11-e76b-dc77-f1f8-bbfc09335b89" class="preloader"><div class="preloader-inner"><div class="preloader-grid _1st"><div class="preloader-brand"><img src="vetter-consulting/assets/img/typhoon-wordmark.svg" loading="eager" alt="Typhoon" class="logo in-preloader"/><div class="global-headline-m is-left-aligned in-loader">Le climat ne pr&eacute;vient pas.<span class="is-white"> La pr&eacute;cision est cl&eacute;. </span>Chaque minute compte.<br/></div></div><img src="/mascotte_transparent.png" loading="eager" alt="" class="preloader-mascot"/></div><div class="preloader-grid _2nd"><div class="climate-counter"><div class="climate-counter-head"><div class="climate-counter-label">Coût cumulé des sinistres climatiques en France</div><div class="climate-counter-source">*Moyenne calculée sur 73,4 Md€ / 1989–2019 — France Assureurs</div></div><div class="climate-counter-row"><div class="climate-counter-value" id="climate-counter-value">0&nbsp;€</div><div class="climate-counter-since">depuis que vous lisez cette page</div></div><div class="climate-counter-footnote">Sur la base de la moyenne historique, c'est environ 78€ de sinistres climatiques indemnisés chaque seconde en France — et ce rythme ne cesse d'accélérer.</div></div></div></div></div><script>
+<div data-w-id="1a765f11-e76b-dc77-f1f8-bbfc09335b89" class="preloader"><div class="preloader-inner"><div class="preloader-head"><img src="vetter-consulting/assets/img/typhoon-wordmark.svg" loading="eager" alt="Typhoon" class="logo in-preloader"/></div><div class="preloader-mid"><div class="global-headline-m is-left-aligned in-loader">Le climat ne pr&eacute;vient pas.<span class="is-white"> La pr&eacute;cision est cl&eacute;. </span><br/>Chaque seconde compte.</div><div class="climate-counter"><div class="climate-counter-head"><div class="climate-counter-label">Coût cumulé des sinistres climatiques en France</div><div class="climate-counter-source">*Moyenne calculée sur 73,4 Md€ / 1989–2019 — France Assureurs</div></div><div class="climate-counter-row"><div class="climate-counter-value" id="climate-counter-value">0&nbsp;€</div><div class="climate-counter-since">depuis que vous lisez cette page</div></div><div class="climate-counter-footnote">Sur la base de la moyenne historique, c'est environ 78€ de sinistres climatiques indemnisés chaque seconde en France — et ce rythme ne cesse d'accélérer.</div></div></div><div class="preloader-bottom"><img src="/mascotte_transparent.png" loading="eager" alt="" class="preloader-mascot"/><button type="button" class="preloader-cta" data-preloader-cta><span>Comment anticiper cela&nbsp;?</span><svg class="cta-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></button></div></div></div><script>
 /* Compteur climatique : coût cumulé des sinistres climatiques en France.
    Moyenne historique France Assureurs : 73,4 Md€ indemnisés sur 1989–2019,
    soit 30 ans × 365,25 j × 86 400 s = 946 728 000 s → ≈ 77,55 €/s.
@@ -1440,7 +1499,6 @@ requestAnimationFrame(raf)
     </script>
     <script>
     (function () {
-      var PRELOADER_TIMEOUT_MS = 4000;
       var PRELOADER_FADE_MS = 900;
 
       function hidePreloader() {
@@ -1453,14 +1511,11 @@ requestAnimationFrame(raf)
         }, PRELOADER_FADE_MS);
       }
 
-      function scheduleHide() {
-        setTimeout(hidePreloader, PRELOADER_TIMEOUT_MS);
-      }
-
-      if (document.readyState === 'complete') {
-        scheduleHide();
-      } else {
-        window.addEventListener('load', scheduleHide, { once: true });
+      /* Plus de transition automatique : on entre sur la page d'accueil en
+         cliquant sur le bouton « Comment anticiper cela ? ». */
+      var cta = document.querySelector('[data-preloader-cta]');
+      if (cta) {
+        cta.addEventListener('click', hidePreloader);
       }
     })();
     </script>
