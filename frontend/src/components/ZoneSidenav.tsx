@@ -42,6 +42,7 @@ export type ZoneSidenavProps = {
   settingsMenuRef: RefObject<Menu | null>;
   themeSwitchRef: RefObject<MdSwitch | null>;
   onToggleCollapse: () => void;
+  onHoverChange: (hovered: boolean) => void;
   onPickAccent: (hex: string) => void;
   onResetAccent: () => void;
   onOpenSettings: () => void;
@@ -68,6 +69,7 @@ export function ZoneSidenav({
   settingsMenuRef,
   themeSwitchRef,
   onToggleCollapse,
+  onHoverChange,
   onPickAccent,
   onResetAccent,
   onOpenSettings,
@@ -93,6 +95,10 @@ export function ZoneSidenav({
       aria-label="Navigation principale"
       inert={hidden}
       aria-hidden={hidden}
+      /* Desktop replié : le survol déplie temporairement le rail (le parent
+         dérive `collapsed` de ce signal). Inactif sur mobile (drawer). */
+      onMouseEnter={() => !mobile && onHoverChange(true)}
+      onMouseLeave={() => !mobile && onHoverChange(false)}
     >
       <header className="sidenav-header">
         {collapsed ? (

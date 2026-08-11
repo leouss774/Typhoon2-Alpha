@@ -653,6 +653,30 @@
   cursor: not-allowed;
   opacity: 0.55;
 }
+/* Segment « à venir » (ex. Jumeau BIM désactivé) : on neutralise le hover. */
+.step-item.is-disabled:hover {
+  background: none;
+}
+.step-item.is-disabled:hover .step-label {
+  color: var(--md-sys-color-on-surface-variant);
+}
+.step-item.is-disabled:hover .step-dot {
+  border-color: var(--md-sys-color-outline-variant);
+}
+.step-item.is-disabled .step-dot {
+  border-style: dashed;
+}
+.step-badge {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 2px 7px;
+  border-radius: 999px;
+  border: 1px dashed var(--md-sys-color-outline);
+  color: var(--md-sys-color-on-surface-variant);
+  white-space: nowrap;
+}
 .step-item:hover {
   background: color-mix(in srgb, var(--md-sys-color-primary-container) 60%, transparent);
 }
@@ -1125,13 +1149,18 @@
   gap: 8px;
   flex-wrap: wrap;
 }
+/* Typographie Material Web (typescale label-large, Google Sans) — plus de
+   police mono/Google Sans Code sur ces indices. */
 .hero-hints span {
-  font-size: 10px;
-  font-family: var(--mono);
+  font-family: var(--md-sys-typescale-label-large-font, 'Google Sans', system-ui, sans-serif);
+  font-size: var(--md-sys-typescale-label-large-size, 0.875rem);
+  line-height: var(--md-sys-typescale-label-large-line-height, 1.25rem);
+  font-weight: var(--md-sys-typescale-label-large-weight, 500);
+  letter-spacing: var(--md-sys-typescale-label-large-tracking, 0.00625rem);
   color: var(--md-sys-color-on-surface-variant);
   border: 1px solid var(--md-sys-color-outline-variant);
   border-radius: 999px;
-  padding: 4px 10px;
+  padding: 4px 12px;
   background: var(--md-sys-color-surface-container-low);
   transition: border-color 0.18s, color 0.18s, transform 0.18s, box-shadow 0.18s;
 }
@@ -1173,7 +1202,6 @@
 }
 .zone-workspace[hidden],
 .zone-merge[hidden],
-.zone-bim[hidden],
 .zone-recommendations[hidden],
 .zone-report[hidden] {
   display: none;
@@ -1390,196 +1418,6 @@
   .zone-reco-header { align-items: flex-start; flex-direction: column; }
   .zone-reco-risk-grid, .zone-reco-action-list { grid-template-columns: 1fr; }
   .zone-reco-section-title { align-items: flex-start; flex-direction: column; }
-}
-
-/* ── Étape 4 — Jumeau BIM (viewer 3D thingraph en iframe) ── */
-.zone-bim {
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-}
-.bim-wrap {
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  padding: 18px 24px 20px;
-  max-width: 1200px;
-  width: 100%;
-  margin: 0 auto;
-}
-.bim-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-  flex-wrap: wrap;
-  padding-bottom: 12px;
-  border-bottom: 1px solid var(--md-sys-color-outline-variant);
-}
-.bim-title h2 {
-  margin: 0;
-  font-family: var(--serif);
-  font-size: 24px;
-  color: color-mix(in srgb, var(--md-sys-color-primary) 30%, var(--md-sys-color-on-surface));
-}
-.bim-meta {
-  margin: 6px 0 0;
-  font-size: 11px;
-  color: var(--md-sys-color-on-surface-variant);
-}
-.bim-actions {
-  display: flex;
-  gap: 8px;
-  flex-shrink: 0;
-}
-.bim-action {
-  --md-filled-button-label-text-size: 12px;
-  --md-elevated-button-label-text-size: 12px;
-}
-
-/* ── Chips de métadonnées du bâtiment ── */
-.bim-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-.bim-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
-  border: 1px solid var(--md-sys-color-outline-variant);
-  border-radius: 999px;
-  background: var(--md-sys-color-surface-container-low);
-  font-size: 11.5px;
-  color: var(--md-sys-color-on-surface);
-  transition: border-color 0.18s, transform 0.18s;
-}
-.bim-chip:hover {
-  border-color: var(--md-sys-color-primary);
-  transform: translateY(-1px);
-}
-.bim-chip md-icon {
-  --md-icon-size: 15px;
-  color: var(--md-sys-color-primary);
-  flex-shrink: 0;
-}
-.bim-chip-label {
-  font-size: 10px;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--md-sys-color-on-surface-variant);
-}
-.bim-chip-value {
-  font-family: var(--mono);
-  font-weight: 600;
-}
-.bim-chip.na .bim-chip-value {
-  font-weight: 400;
-  font-style: italic;
-  color: var(--md-sys-color-on-surface-variant);
-}
-
-/* ── Cadre iframe du viewer ── */
-.bim-frame-wrap {
-  position: relative;
-  flex: 1;
-  min-height: 340px;
-  border-radius: 14px;
-  overflow: hidden;
-  border: 1px solid var(--md-sys-color-outline-variant);
-  background: var(--md-sys-color-surface-container-low);
-}
-.bim-frame {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  border: none;
-  display: block;
-}
-.bim-loading {
-  position: absolute;
-  inset: 0;
-  z-index: 2;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  background: var(--md-sys-color-surface-container-low);
-  color: var(--md-sys-color-primary);
-  font-size: 13px;
-}
-.bim-loading md-icon {
-  --md-icon-size: 34px;
-}
-.bim-loading md-linear-progress {
-  width: 220px;
-}
-
-/* ── Bandeau info (BDNB indisponible → géométrie générique) ── */
-.bim-banner {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 14px;
-  border: 1px solid color-mix(in srgb, var(--md-sys-color-tertiary) 40%, var(--md-sys-color-outline-variant));
-  border-radius: 12px;
-  background: var(--md-sys-color-tertiary-container);
-  color: var(--md-sys-color-on-tertiary-container);
-  font-size: 12px;
-}
-.bim-banner md-icon {
-  --md-icon-size: 16px;
-  flex-shrink: 0;
-}
-
-.bim-footnote {
-  margin: 0;
-  font-size: 10.5px;
-  color: var(--md-sys-color-on-surface-variant);
-}
-
-/* ── Note simulations (intensités dérivées du rapport + avertissement) ── */
-.bim-sim-note {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  margin: 0 0 6px;
-  padding: 10px 14px;
-  border: 1px solid color-mix(in srgb, var(--md-sys-color-primary) 35%, var(--md-sys-color-outline-variant));
-  border-radius: 12px;
-  background: var(--md-sys-color-secondary-container);
-  color: var(--md-sys-color-on-secondary-container);
-  font-size: 12px;
-  line-height: 1.45;
-}
-.bim-sim-note md-icon {
-  --md-icon-size: 18px;
-  flex-shrink: 0;
-  margin-top: 1px;
-}
-.bim-sim-note strong {
-  font-weight: 600;
-}
-
-@media (max-width: 900px) {
-  .bim-header {
-    flex-direction: column;
-  }
-  .bim-actions {
-    width: 100%;
-  }
-  .bim-action {
-    flex: 1;
-  }
-  .bim-frame-wrap {
-    min-height: 320px;
-  }
 }
 
 /* ── « Comprendre risque » — tableau de bord analytique par zone ── */
@@ -3547,9 +3385,7 @@
   color: var(--md-sys-color-on-primary);
 }
 
-/* ── Marqueur ──
-   C'est un bouton : il ouvre le jumeau numérique 3D. Sans affordance
-   (curseur, halo au survol, anneau de focus), personne ne le devine. */
+/* ── Marqueur ── */
 .zone-map-wrap .map-pin {
   width: 14px;
   height: 14px;
@@ -3558,83 +3394,7 @@
   border: 2px solid var(--md-sys-color-on-surface);
   box-shadow: 0 0 0 4px rgba(194, 112, 64, 0.35);
   transform: translate(-50%, -50%);
-  cursor: pointer;
-  transition: box-shadow 0.18s ease, transform 0.18s ease;
-}
-.zone-map-wrap .map-pin:hover {
-  transform: translate(-50%, -50%) scale(1.25);
-  box-shadow: 0 0 0 8px rgba(194, 112, 64, 0.45);
-}
-.zone-map-wrap .map-pin:focus-visible {
-  outline: none;
-  transform: translate(-50%, -50%) scale(1.25);
-  box-shadow: 0 0 0 4px rgba(194, 112, 64, 0.45),
-    0 0 0 7px var(--md-sys-color-primary);
-}
-/* Battement discret : signale que le point est actionnable, sans agiter la
-   carte. Supprimé si l'utilisateur a demandé moins d'animations. */
-@media (prefers-reduced-motion: no-preference) {
-  .zone-map-wrap .map-pin::after {
-    content: '';
-    position: absolute;
-    inset: -4px;
-    border-radius: 50%;
-    border: 2px solid var(--d03-eleve);
-    animation: pin-pulse 2.4s ease-out infinite;
-    pointer-events: none;
-  }
-  @keyframes pin-pulse {
-    0% { opacity: 0.55; transform: scale(1); }
-    70% { opacity: 0; transform: scale(2.1); }
-    100% { opacity: 0; transform: scale(2.1); }
-  }
-}
-
-/* ── Approche carte → jumeau 3D ──────────────────────────────────────────
-   Morphing same-document : le conteneur de carte et la section BIM portent
-   le MÊME view-transition-name, donc le navigateur anime l'un vers l'autre.
-   Ils ne sont jamais visibles en même temps (l'autre est `hidden`), ce que
-   l'API exige — un nom dupliqué sur deux éléments visibles l'annulerait. */
-@media (prefers-reduced-motion: no-preference) {
-  .zone-workspace {
-    view-transition-name: jumeau-scene;
-  }
-  .zone-bim {
-    view-transition-name: jumeau-scene;
-  }
-  /* 400 ms : laisse le temps de poser la caméra au zénith pendant que le
-     contenu live est encore masqué par les captures. */
-  ::view-transition-old(jumeau-scene),
-  ::view-transition-new(jumeau-scene) {
-    animation-duration: 400ms;
-    animation-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
-  }
-}
-
-/* Dernière image avant le morphing = la carte seule : le chrome s'efface
-   pendant le zoom (1,2 s), pour que rien ne « saute » à la bascule. */
-.zone-stage.zone-approche .zone-sidebar,
-.zone-stage.zone-approche #ol-popup,
-.zone-stage.zone-approche .map-legend,
-.zone-stage.zone-approche .map-foot,
-.zone-stage.zone-approche .wms-badge,
-.zone-stage.zone-approche .ol-zoom,
-.zone-stage.zone-approche .map-pin {
-  opacity: 0;
-  transition: opacity 0.55s ease;
-  pointer-events: none;
-}
-@media (prefers-reduced-motion: reduce) {
-  .zone-stage.zone-approche .zone-sidebar,
-  .zone-stage.zone-approche #ol-popup,
-  .zone-stage.zone-approche .map-legend,
-  .zone-stage.zone-approche .map-foot,
-  .zone-stage.zone-approche .wms-badge,
-  .zone-stage.zone-approche .ol-zoom,
-  .zone-stage.zone-approche .map-pin {
-    opacity: 1;
-    transition: none;
-  }
+  cursor: default;
 }
 
 /* ── Légende D03 (sidebar, repliable) ── */

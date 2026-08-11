@@ -134,7 +134,7 @@ export function BuildingFiche({
         <EnveloppeVitreeSection b={batiment} />
         <SystemesEnergieSection b={batiment} />
         <PerformancesSection b={batiment} />
-        <RisquesSection b={batiment} report={report} risques={risques} />
+        <ConfortSection b={batiment} />
     </div>
   );
 }
@@ -294,7 +294,7 @@ function EnveloppeOpaqueSection({ b }: { b: BdnbBatiment }) {
     >
       <div className="gr-card-grid gr-card-grid--icon">
         <IconDataCard
-          icon="wall"
+          icon="house_siding"
           label="Matériaux mur extérieur"
           value={b.mat_mur_txt ? capFirst(b.mat_mur_txt) : null}
           sub={b.materiaux_structure_mur_exterieur ? capFirst(b.materiaux_structure_mur_exterieur) : undefined}
@@ -305,7 +305,7 @@ function EnveloppeOpaqueSection({ b }: { b: BdnbBatiment }) {
           value={b.mat_toit_txt ? capFirst(b.mat_toit_txt) : null}
         />
         <IconDataCard
-          icon="wall"
+          icon="house_siding"
           label="Type d'isolation du mur extérieur"
           value={b.type_isolation_mur_exterieur ? capFirst(b.type_isolation_mur_exterieur) : null}
           tone={!b.type_isolation_mur_exterieur ? 'warn' : 'normal'}
@@ -651,164 +651,37 @@ function PerformancesSection({ b }: { b: BdnbBatiment }) {
 }
 
 // =============================================================================
-//   Section : Risques & confort des occupants
+//   Section : Confort des occupants
 // =============================================================================
 
-function RisquesSection({
-  b,
-  report,
-  risques,
-}: {
-  b: BdnbBatiment;
-  report: RisqueReport;
-  risques?: BatimentRisques | null;
-}) {
-  const aleas = report.aleas || [];
-  /* Les aléas Géorisques détaillés (report) concernent l'adresse diagnostiquée :
-     ils ne s'affichent que pour le bâtiment diagnostiqué, pas pour un bâtiment
-     voisin sélectionné au clic (story D2 — niveau spécifique via la table risques). */
-  const isDiagnosed =
-    !risques && !b.batiment_groupe_id
-      ? false
-      : b.batiment_groupe_id === report.bdnb?.batiment?.batiment_groupe_id;
+function ConfortSection({ b }: { b: BdnbBatiment }) {
+  const hasComfort = Boolean(b.classe_inertie || b.traversant);
 
-  const riskRows: { label: string; value: string | null | undefined; icon: string }[] = [
-    { label: 'Risque Argiles', value: risques?.alea_argile ?? b.alea_argile, icon: 'grass' },
-    { label: 'Risque Radon', value: risques?.alea_radon ?? null, icon: 'science' },
-    { label: 'Risque Sismique', value: risques?.alea_sismique ?? null, icon: 'crisis_alert' },
-  ].filter((r) => r.value != null && r.value !== '');
+  if (!hasComfort) return null;
 
   return (
-    <GrSection
-      title="Risques & confort des occupants"
-      icon="warning"
-      source="BDNB · Géorisques · Cerema"
-    >
-      {/* Niveaux de risque bâtiment BDNB (argile / radon / sismique) */}
-      {riskRows.length > 0 && (
-        <div className="gr-risk-banners">
-          {riskRows.map((r) => (              <div className="gr-risk-banner" key={r.label}>
-                <md-icon>{r.icon}</md-icon>
-                <div>
-                  <span className="gr-risk-label">{r.label}</span>
-                  <span className="gr-risk-value">{capFirst(r.value ?? '')}</span>
-                </div>
-              </div>
-          ))}
-        </div>
-      )}
-
-      {b.alea_argile && b.alea_argile.toLowerCase() !== 'nul' && b.arrete_2021 != null && (
-        <div className={`gr-risk-elig${b.arrete_2021 ? '' : ' gr-risk-elig--no'}`}>
-          <md-icon>{b.arrete_2021 ? 'verified_user' : 'info'}</md-icon>
-          <span>
-            {b.arrete_2021
-              ? `Zone argile éligible au dispositif d'indemnisation (arrêté du 5 février 2021).`
-              : `Bâtiment concerné par l'aléa argile mais hors périmètre d'éligibilité de l'arrêté du 5 février 2021.`}
-          </span>
-        </div>
-      )}
-
-      {/* Confort thermique & dispositions (BDNB) */}
-      {(b.classe_inertie || b.traversant || b.presence_balcon != null) && (
-        <div className="gr-comfort-grid">
-          {b.classe_inertie && (
-            <div className="gr-comfort-item">
-              <md-icon>thermostat</md-icon>
-              <div>
-                <span className="gr-comfort-label">Classe d'inertie</span>
-                <span className="gr-comfort-value">{capFirst(b.classe_inertie)}</span>
-              </div>
+    <GrSection title="Confort des occupants" icon="thermostat" source="BDNB">
+      <div className="gr-comfort-grid">
+        {b.classe_inertie && (
+          <div className="gr-comfort-item">
+            <md-icon>thermostat</md-icon>
+            <div>
+              <span className="gr-comfort-label">Classe d'inertie</span>
+              <span className="gr-comfort-value">{capFirst(b.classe_inertie)}</span>
             </div>
-          )}
-          {b.traversant && (
-            <div className="gr-comfort-item">
-              <md-icon>compare_arrows</md-icon>
-              <div>
-                <span className="gr-comfort-label">Traversant</span>
-                <span className="gr-comfort-value">{capFirst(b.traversant)}</span>
-              </div>
-            </div>
-          )}
-          {b.presence_balcon != null && (
-            <div className="gr-comfort-item">
-              <md-icon>balcony</md-icon>
-              <div>
-                <span className="gr-comfort-label">Balcon</span>
-                <span className="gr-comfort-value">{boolVal(b.presence_balcon)}</span>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Aléas Géorisques détaillés — uniquement pour le bâtiment diagnostiqué */}
-      {isDiagnosed &&
-        (aleas.length > 0 ? (
-          <div className="gr-card-grid gr-card-grid--risk">
-            {aleas.slice(0, 8).map((alea) => {
-              const present = alea.present;
-              const tone = present === true ? 'warn' : present === false ? 'ok' : 'na';
-              return (
-                <div key={alea.code} className={`gr-risk-card gr-risk-card--${tone}`}>
-                  <md-icon>{getRiskIcon(alea.code)}</md-icon>
-                  <div className="gr-risk-card-body">
-                    <span className="gr-risk-card-label">{alea.libelle}</span>
-                    <span className="gr-risk-card-value">
-                      {present === true
-                        ? alea.niveau ? capFirst(alea.niveau.replace(/_/g, ' ')) : 'Présent'
-                        : present === false
-                          ? 'Non concerné'
-                          : NA}
-                    </span>
-                  </div>
-                </div>
-              );
-            })}
           </div>
-        ) : (
-          <p className="gr-na">Aucune donnée de risque disponible pour cette adresse.</p>
-        ))}
-
-      {/* Points d'attention */}
-      <AttentionPoints b={b} />
-    </GrSection>
-  );
-}
-
-// =============================================================================
-//   Points d'intérêt à vérifier (dérivé client)
-// =============================================================================
-
-function AttentionPoints({ b }: { b: BdnbBatiment }) {
-  const points: string[] = [];
-
-  if (!b.type_isolation_mur_exterieur) points.push('Isolation des murs extérieurs inconnue — à vérifier');
-  if (!b.type_isolation_plancher_haut) points.push('Isolation du plancher haut inconnue — à vérifier');
-  if (!b.type_isolation_plancher_bas) points.push('Isolation du plancher bas inconnue — à vérifier');
-  if (!b.type_vitrage) points.push('Type de vitrage non renseigné — double vitrage à vérifier');
-  if (!b.type_energie_chauffage) points.push('Énergie de chauffage non renseignée');
-  if (b.alea_argile && b.alea_argile !== 'nul' && b.alea_argile !== 'faible') {
-    points.push(`Aléa argile ${capFirst(b.alea_argile)} — impact potentiel sur les fondations`);
-  }
-  if (b.perimetre_bat_historique) {
-    points.push('Bâtiment dans un périmètre monument historique — travaux soumis à ABF');
-  }
-
-  if (points.length === 0) return null;
-
-  return (
-    <div className="gr-attention">
-      <div className="gr-attention-header">
-        <md-icon>search</md-icon>
-        <span>Points d'intérêt à vérifier</span>
+        )}
+        {b.traversant && (
+          <div className="gr-comfort-item">
+            <md-icon>compare_arrows</md-icon>
+            <div>
+              <span className="gr-comfort-label">Traversant</span>
+              <span className="gr-comfort-value">{capFirst(b.traversant)}</span>
+            </div>
+          </div>
+        )}
       </div>
-      <ul className="gr-attention-list">
-        {points.map((p, i) => (
-          <li key={i}>{p}</li>
-        ))}
-      </ul>
-    </div>
+    </GrSection>
   );
 }
 
@@ -928,22 +801,4 @@ function ArrayCard({
   );
 }
 
-/* Icônes risque par code aléa */
-function getRiskIcon(code: string): string {
-  const map: Record<string, string> = {
-    inondation: 'flood',
-    rga: 'grass',
-    sismicite: 'crisis_alert',
-    radon: 'science',
-    feu_foret: 'local_fire_department',
-    mouvement_terrain: 'landslide',
-    ppr: 'gpp_maybe',
-    ssp: 'factory',
-    cavite: 'landscape',
-    avalanche: 'terrain',
-    icpe: 'apartment',
-    canalisations: 'plumbing',
-    vent_cyclonique: 'cyclone',
-  };
-  return map[code] || 'warning';
-}
+

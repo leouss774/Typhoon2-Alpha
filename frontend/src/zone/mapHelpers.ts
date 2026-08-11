@@ -4,7 +4,7 @@
 //   dépendance cyclique après la migration vers Mapbox en moteur unique.
 // =============================================================================
 
-import { WMS_BASE, WFS_BASE } from '../zone/config';
+import { WMS_BASE, WFS_BASE, WFS_JSON_FORMAT } from '../zone/config';
 
 /* ── CRS / Laplace ── */
 
@@ -118,16 +118,20 @@ export function wmsTileUrl(layerName: string): string {
 /** Récupère une couche WFS Géorisques en GeoJSON. */
 export async function fetchWfsLayer(
   typeName: string,
-  codeInsee: string
+  codeInsee: string,
+  opts: { filterAttr?: string; count?: number } = {}
 ): Promise<{ features?: unknown[] } | null> {
+  const { filterAttr = 'code_insee', count = 100 } = opts;
   const url = new URL(WFS_BASE);
   url.searchParams.set('SERVICE', 'WFS');
   url.searchParams.set('VERSION', '2.0.0');
   url.searchParams.set('REQUEST', 'GetFeature');
   url.searchParams.set('TYPENAMES', typeName);
-  url.searchParams.set('outputFormat', 'application/json');
-  url.searchParams.set('count', '100');
-  url.searchParams.set('cql_filter', `code_insee='${codeInsee}'`);
+  // Le WFS Géorisques refuse outputFormat=application/json sur la plupart des
+  // couches — le format GeoJSON explicite est accepté par toutes.
+  url.searchParams.set('outputFormat', WFS_JSON_FORMAT);
+  url.searchParams.set('count', String(count));
+  url.searchParams.set('cql_filter', `${filterAttr}='${codeInsee}'`);
   try {
     const resp = await fetch(url.toString());
     if (!resp.ok) return null;
@@ -152,6 +156,150 @@ export function polygonCenter(
     lat += p[1];
   }
   return [lon / ring.length, lat / ring.length];
+}
+
+/** Tous les anneaux d'une géométrie Polygon/MultiPolygon GeoJSON. */
+export function geometryRings(geom: {
+  type?: string;
+  coordinates?: unknown;
+} | null | undefined): number[][][] {
+  if (!geom || !geom.type || !Array.isArray(geom.coordinates)) return [];
+  if (geom.type === 'Polygon') return geom.coordinates as number[][][];
+  if (geom.type === 'MultiPolygon') return (geom.coordinates as number[][][][]).flat();
+  return [];
+}
+
+/** Points de test d'une empreinte de bâtiment (sommets + centroïde). */
+export function buildingSamplePoints(
+  geom: { type?: string; coordinates?: unknown } | null | undefined
+): Array<[number, number]> {
+  const pts: Array<[number, number]> = [];
+  for (const ring of geometryRings(geom)) {
+    for (const p of ring) pts.push([p[0], p[1]]);
+  }
+  const c = polygonCenter(geom?.coordinates);
+  if (c) pts.push(c);
+  return pts;
+}
+
+/* ── Échantillonnage WMS pour la coloration des bâtiments par aléa ── */
+
+/** Conversion WGS84 → Web Mercator (EPSG:3857). */
+export function wgs84ToWebMercator(lon: number, lat: number): [number, number] {
+  const x = (lon * 20037508.34) / 180;
+  const y =
+    (Math.log(Math.tan(((90 + lat) * Math.PI) / 360)) / (Math.PI / 180)) *
+    (20037508.34 / 180);
+  return [x, y];
+}
+
+export interface RiskZoneImage {
+  width: number;
+  height: number;
+  xmin: number;
+  ymin: number;
+  xmax: number;
+  ymax: number;
+  /** Pixels RGBA bruts (getImageData). */
+  data: Uint8ClampedArray;
+}
+
+/** GetMap WMS (transparent, bbox 3857) → pixels RGBA décodés en canvas. */
+export async function fetchRiskZoneImage(
+  layer: string,
+  bbox3857: [number, number, number, number],
+  size = 512
+): Promise<RiskZoneImage | null> {
+  const [xmin, ymin, xmax, ymax] = bbox3857;
+  const params = new URLSearchParams({
+    service: 'WMS',
+    version: '1.3.0',
+    request: 'GetMap',
+    layers: layer,
+    format: 'image/png',
+    transparent: 'true',
+    width: String(size),
+    height: String(size),
+    crs: 'EPSG:3857',
+    bbox: `${xmin},${ymin},${xmax},${ymax}`,
+  });
+  try {
+    const resp = await fetch(`${WMS_BASE}?${params.toString()}`);
+    if (!resp.ok) return null;
+    const blob = await resp.blob();
+    const bitmap = await createImageBitmap(blob);
+    const canvas = document.createElement('canvas');
+    canvas.width = bitmap.width;
+    canvas.height = bitmap.height;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+      bitmap.close();
+      return null;
+    }
+    ctx.drawImage(bitmap, 0, 0);
+    const img = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    bitmap.close();
+    return {
+      width: canvas.width,
+      height: canvas.height,
+      xmin,
+      ymin,
+      xmax,
+      ymax,
+      data: img.data,
+    };
+  } catch {
+    return null;
+  }
+}
+
+/** Couleur dominante (hex #rrggbb) de la couche WMS à la position d'un point,
+ *  ou null si le point est hors zone (pixels transparents). Les pixels non
+ *  transparents du voisinage tolPx sont moyennés (anti-alias des bords) —
+ *  c'est « la couleur de la couche WFS/WMS » à cet endroit, utilisée pour
+ *  colorer le bâtiment comme la zone (vert/orange/rouge selon la légende de
+ *  la couche). tolPx : rayon en pixels (0-2 pour zonages, ~10 pour points). */
+export function riskPixelColor(
+  img: RiskZoneImage,
+  lon: number,
+  lat: number,
+  tolPx: number
+): string | null {
+  const [mx, my] = wgs84ToWebMercator(lon, lat);
+  const px = ((mx - img.xmin) / (img.xmax - img.xmin)) * img.width;
+  const py = ((img.ymax - my) / (img.ymax - img.ymin)) * img.height;
+  if (px < 0 || py < 0 || px >= img.width || py >= img.height) return null;
+  const r = Math.max(0, Math.min(Math.round(tolPx), 24));
+  const x0 = Math.max(0, Math.floor(px - r));
+  const x1 = Math.min(img.width - 1, Math.ceil(px + r));
+  const y0 = Math.max(0, Math.floor(py - r));
+  const y1 = Math.min(img.height - 1, Math.ceil(py + r));
+  let rr = 0, gg = 0, bb = 0, n = 0;
+  for (let y = y0; y <= y1; y++) {
+    for (let x = x0; x <= x1; x++) {
+      const i = (y * img.width + x) * 4;
+      if (img.data[i + 3] > 20) {
+        rr += img.data[i];
+        gg += img.data[i + 1];
+        bb += img.data[i + 2];
+        n++;
+      }
+    }
+  }
+  if (!n) return null;
+  const hex = (v: number) => Math.round(v / n).toString(16).padStart(2, '0');
+  return `#${hex(rr)}${hex(gg)}${hex(bb)}`;
+}
+
+/** Un point (bâtiment) tombe-t-il sur la zone de risque (pixels non transparents) ?
+ *  Déclinaison de riskPixelColor : hors zone → false. */
+export function riskPixelHits(
+  img: RiskZoneImage,
+  lon: number,
+  lat: number,
+  tolPx: number
+): boolean {
+  return riskPixelColor(img, lon, lat, tolPx) !== null;
 }
 
 /** Premier anneau externe d'un Polygon/MultiPolygon. */

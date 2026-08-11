@@ -1,13 +1,12 @@
 // =============================================================================
 //   TYPHOON — /zone : diagnostic géo-risque par adresse (Stepper Material 3)
-//   Étapes :
-//     1. Adresse      — hero centré façon Gemini (champ de recherche au centre)
-//     2. Cartographie — carte OpenLayers + panneau aléas (data viz Géorisques)
-//     3. Analyse      — fiche bâtiment BDNB (Synthèse / Construction / Énergie…)
-//     4. Jumeau BIM   — viewer 3D thingraph en iframe (glTF généré depuis l'emprise BDNB)
-//     5. Recommandations — plan d'adaptation du bien
-//     6. Artisans       — professionnels associés aux travaux
-//     7. Rapport IA     — rapport narratif Mistral + export PDF
+//     1. Adresse         — hero centré façon Gemini (champ de recherche au centre)
+//     2. Cartographie    — aléas & risques (panneau latéral rétractable) + carte unifiée
+//     3. Analyse         — fiche bâtiment BDNB (panneau latéral rétractable) + carte unifiée
+//     4. Jumeau BIM      — viewer 3D thingraph en iframe (glTF généré depuis l'emprise BDNB)
+//     5. Recommandations — recommandations détaillées (RAG Mistral)
+//     6. Artisans        — professionnels associés aux travaux
+//     7. Rapport IA      — rapport narratif Mistral + export PDF
 //
 //   Stepper linéaire : les étapes 2-4 sont bloquées tant qu'aucune adresse
 //   n'a été diagnostiquée — l'étape Adresse passe en état d'erreur (icône
@@ -15,16 +14,15 @@
 // =============================================================================
 
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode, type RefObject } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import type { Menu } from '@material/web/menu/menu.js';
 import type { MdSwitch } from '@material/web/switch/switch.js';
-import { ZoneMap, type ZoneMapApi } from '../components/ZoneMap';
-import { ZoneAnalyse } from '../components/ZoneAnalyse';
-import { ZoneBIM, type ZoneBIMApi } from '../components/ZoneBIM';
+import { MapboxFloodMap } from '../components/MapboxFloodMap';
+import { BuildingFiche } from '../components/BuildingFiche';
 import { ZoneRecommendations } from '../components/ZoneRecommendations';
 import { ZoneArtisans } from '../components/ZoneArtisans';
-import { ACCENTS, useTyphoonTheme } from '../typhoon/useTyphoonTheme';
-import { useAssistantContexte } from '../assistant/AssistantContext';
+import { ZoneSidenav, useIsMobile } from '../components/ZoneSidenav';
+import { useTyphoonTheme } from '../typhoon/useTyphoonTheme';
 import {
   API,
   D03,
@@ -32,14 +30,14 @@ import {
   ALEA_ICON_FALLBACK,
   WMS_LAYER_MAP,
   bandForKey,
-  bandForScore,
   escHtml,
   aleaScore,
   type AleaDetail,
   type RisqueReport,
   type RapportNarratif,
   type GeocodeSuggestion,
-  type RisquesPrincipaux,
+  type BdnbBatiment,
+  type BatimentRisques,
 } from '../zone/config';
 import type { RecommendationZone } from '../jumeau/recommendations';
 import {
@@ -49,6 +47,12 @@ import {
   saveConversations,
   type Conversation,
 } from '../zone/conversations';
+import {
+  getCachedDiagnostic,
+  putCachedDiagnostic,
+  putCachedRapport,
+  removeCachedDiagnostic,
+} from '../zone/diagnosticCache';
 import '../styles/zone.css';
 
 const LEGEND_RANGES = ['<20', '20–39', '40–59', '60–79', '≥80'];
@@ -63,21 +67,35 @@ interface RapportError {
   cause?: string; // détail technique (affiché dans <details>)
 }
 
-const STEPS = [
+/* Étape « Jumeau BIM » désactivée pour le moment : l'emplacement reste visible
+   dans le stepper (segment « à venir » non cliquable) pour préserver la
+   numérotation des étapes suivantes. Le viewer 3D est intact (ZoneBIM.tsx +
+   backend /diagnostic/adresse/gltf) : le réactiver revient à retirer
+   `disabled: true` et à remonter la section <ZoneBIM/> ci-dessous. */
+interface StepDef {
+  id: string;
+  label: string;
+  disabled?: boolean;
+}
+
+const STEPS: StepDef[] = [
   { id: 'adresse', label: 'Adresse' },
   { id: 'carto', label: 'Cartographie' },
   { id: 'analyse', label: 'Analyse' },
-  { id: 'bim', label: 'Jumeau BIM' },
+  { id: 'bim', label: 'Jumeau BIM', disabled: true },
   { id: 'recommandations', label: 'Recommandations' },
   { id: 'artisans', label: 'Artisans' },
   { id: 'rapport', label: 'Rapport IA' },
-] as const;
+];
 
 export function Zone() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { theme, accent, toggleTheme, pickAccent, resetAccent } = useTyphoonTheme();
   const isMobile = useIsMobile();
-  const [navCollapsed, setNavCollapsed] = useState(false);
+  /* Rétractée par défaut ; le survol déplie temporairement, le toggle épingle. */
+  const [navCollapsed, setNavCollapsed] = useState(true);
+  const [navHovered, setNavHovered] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const settingsMenuRef = useRef<Menu | null>(null);
@@ -112,15 +130,19 @@ export function Zone() {
     return () => sw.removeEventListener('change', onChange);
   }, [toggleTheme]);
 
+  /* Arrivée depuis /settings (historique « Récent ») : ?q=<adresse> lance
+     directement le diagnostic au montage. On consomme le ref pour ne pas
+     relancer sous React StrictMode (double effet en dev). */
+  const bootQuery = useRef(searchParams.get('q'));
+  useEffect(() => {
+    const q = bootQuery.current;
+    bootQuery.current = null;
+    if (q) void runDiagnosis(q);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const [step, setStep] = useState(0);
   const [stepError, setStepError] = useState(false);
-  /* Vol d'approche carte → jumeau (clic sur le marqueur) : APIs impératives
-     des deux composants, verrou anti-double-vol, et drapeau d'effacement du
-     chrome pendant le zoom (cf. classe `zone-approche`). */
-  const mapApiRef = useRef<ZoneMapApi | null>(null);
-  const bimApiRef = useRef<ZoneBIMApi | null>(null);
-  const flyingRef = useRef(false);
-  const [approaching, setApproaching] = useState(false);
   const [suggestions, setSuggestions] = useState<GeocodeSuggestion[]>([]);
   const [suggestionsOpen, setSuggestionsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -129,45 +151,26 @@ export function Zone() {
   const [detailedRecommendationZones, setDetailedRecommendationZones] = useState<Record<string, RecommendationZone>>({});
   const [detailedRecommendationsLoading, setDetailedRecommendationsLoading] = useState(false);
   const [detailedRecommendationsError, setDetailedRecommendationsError] = useState<string | null>(null);
-  const [detailedRisquesPrincipaux, setDetailedRisquesPrincipaux] = useState<RisquesPrincipaux | null>(null);
+  const [fromCache, setFromCache] = useState(false);
   const [conversations, setConversations] = useState<Conversation[]>(() => loadConversations());
   const [rapport, setRapport] = useState<RapportNarratif | null>(null);
   const [rapportLoading, setRapportLoading] = useState(false);
   const [rapportError, setRapportError] = useState<RapportError | null>(null);
-  /* true quand l'étape Rapport IA a été atteinte pendant le chargement des
-     recommandations : le rapport n'est généré qu'une fois celles-ci prêtes. */
-  const [rapportWaiting, setRapportWaiting] = useState(false);
   /* Export PDF du rapport IA (jsPDF côté client) — vrai bouton de téléchargement. */
   const [exportingPdf, setExportingPdf] = useState(false);
   const [exportPdfError, setExportPdfError] = useState<string | null>(null);
-  /* Intention « régénération forcée » mémorisée quand la relance est différée
-     par l'attente des recommandations (sinon force serait perdu). */
-  const rapportForceRef = useRef(false);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  /* Panneau latéral (aléas ou fiche) rétractable : replié → carte plein écran. */
+  const [panelCollapsed, setPanelCollapsed] = useState(false);
+  /* Moteur de carte : Mapbox GL JS (unique, pas de fallback MapLibre). */
   const [visibleLayerKeys, setVisibleLayerKeys] = useState<ReadonlySet<string>>(new Set());
 
-  /* ── Compagnon virtuel Typhoon : synchronise le contexte du diagnostic
-     affiché à l'écran (adresse, bien, zones/recommandations) pour que le
-     chat réponde à propos de CE bien. Contrat : backend/app/api/routes/chat.py. */
-  const { setContexte } = useAssistantContexte();
-  useEffect(() => {
-    if (!report) {
-      setContexte(null);
-      return;
-    }
-    const batiment = report.bdnb?.batiment;
-    setContexte({
-      adresse: report.adresse_normalisee,
-      bien: batiment
-        ? {
-            type: batiment.usage_principal_bdnb_open || batiment.usage_niveau_1_txt || null,
-            annee_construction: batiment.annee_construction ?? null,
-          }
-        : undefined,
-      zones: detailedRecommendationZones,
-    });
-  }, [report, detailedRecommendationZones, setContexte]);
-  useEffect(() => () => setContexte(null), [setContexte]);
+  /* Fiche bâtiment (étape Analyse) : la sélection au clic est désactivée —
+     on reste sur le bâtiment de l'adresse diagnostiquée (report.bdnb). */
+  const [selectedBatiment, setSelectedBatiment] = useState<BdnbBatiment | null>(null);
+  const [selectedRisques, setSelectedRisques] = useState<BatimentRisques | null>(null);
+  const [ficheLoading, setFicheLoading] = useState(false);
+  const [ficheError, setFicheError] = useState<string | null>(null);
+  const ficheRequestId = useRef(0);
 
   /* Champ de la topbar (étapes 2-4) et champ du hero (étape 1) : deux
      instances distinctes de md-outlined-text-field, chacune avec son ref. */
@@ -175,7 +178,6 @@ export function Zone() {
   const heroInputRef = useRef<HTMLInputElement>(null);
   const lastQuery = useRef('');
   const banTimeout = useRef<number | null>(null);
-  const userClosedSidebar = useRef(false);
   const recommendationsRequestId = useRef(0);
 
   async function loadDetailedRecommendations(address: string) {
@@ -183,7 +185,6 @@ export function Zone() {
     setDetailedRecommendationsLoading(true);
     setDetailedRecommendationsError(null);
     setDetailedRecommendationZones({});
-    setDetailedRisquesPrincipaux(null);
     try {
       const fastResponse = await fetch(`${API}/diagnostic/fast`, {
         method: 'POST',
@@ -203,7 +204,6 @@ export function Zone() {
       const detailedContract = await recommendationsResponse.json();
       if (requestId !== recommendationsRequestId.current) return;
       setDetailedRecommendationZones(detailedContract?.zones || {});
-      setDetailedRisquesPrincipaux(detailedContract?.risques_principaux || null);
     } catch (error) {
       if (requestId !== recommendationsRequestId.current) return;
       setDetailedRecommendationsError(error instanceof Error ? error.message : 'Recommandations détaillées indisponibles');
@@ -245,8 +245,10 @@ export function Zone() {
     void runDiagnosis(s.label);
   }
 
-  /* ── Diagnostic ── */
-  async function runDiagnosis(q: string) {
+  /* ── Diagnostic ──  Le cache local (façon « historique ChatGPT ») sert la
+     même adresse instantanément sans refetch ; un bouton « rafraîchir »
+     force un appel réseau (voir handleRefresh). */
+  async function runDiagnosis(q: string, opts: { force?: boolean } = {}) {
     const value = q.trim();
     if (!value) {
       setDiagError('Saisissez une adresse.');
@@ -254,16 +256,58 @@ export function Zone() {
     }
     hideSuggestions();
     setDiagError(null);
+
+    /* Cache local : si l'adresse a déjà été diagnostiquée (et est encore
+       fraîche), on restitue le rapport complet + le rapport Mistral sans
+       aucun appel réseau. */
+    if (!opts.force) {
+      const cached = getCachedDiagnostic(value);
+      if (cached) {
+        setReport(cached.report);
+        setRapport(cached.rapport ?? null);
+        setRapportError(null);
+        setFromCache(true);
+        setConversations((prev) => {
+          const next = addConversation(prev, cached.report.adresse_normalisee || value);
+          saveConversations(next);
+          return next;
+        });
+        setStepError(false);
+        ficheRequestId.current += 1;
+        setSelectedBatiment(null);
+        setSelectedRisques(null);
+        setFicheError(null);
+        setStep(1); // → étape Cartographie (aléas + carte unifiée)
+        setVisibleLayerKeys(
+          new Set(
+            (cached.report.aleas || [])
+              .filter((a) => a.present === true)
+              .map((a) => a.code)
+          )
+        );
+        return;
+      }
+    }
+
     setLoading(true);
-    setReport(null);
+    if (!opts.force) {
+      /* Nouveau diagnostic : on nettoie l'ancien état pendant le chargement. */
+      setReport(null);
+      setRapport(null);
+      setRapportError(null);
+      setFromCache(false);
+      setSelectedBatiment(null);
+      setSelectedRisques(null);
+      setFicheError(null);
+      ficheRequestId.current += 1;
+    }
+    /* Rafraîchissement forcé : on laisse le rapport actuel (et son badge
+       éventuel) en place pendant le chargement — il n'est remplacé qu'en
+       cas de succès, jamais effacé si le réseau échoue. */
     recommendationsRequestId.current += 1;
     setDetailedRecommendationZones({});
     setDetailedRecommendationsLoading(false);
     setDetailedRecommendationsError(null);
-    setDetailedRisquesPrincipaux(null);
-    setRapport(null);
-    setRapportError(null);
-    setSidebarOpen(false);
 
     try {
       const resp = await fetch(`${API}/diagnostic/adresse?q=${encodeURIComponent(value)}`);
@@ -283,6 +327,8 @@ export function Zone() {
       const r = (await resp.json()) as RisqueReport;
       setReport(r);
       void loadDetailedRecommendations(r.adresse_normalisee || value);
+      setFromCache(false); // données fraîches du réseau → badge « en cache » retiré
+      putCachedDiagnostic(r); // sauvegarde le résultat pour les prochains passages
       /* Historique « Récent » (localStorage) : adresse normalisée ou requête brute. */
       setConversations((prev) => {
         const next = addConversation(prev, r.adresse_normalisee || value);
@@ -290,8 +336,7 @@ export function Zone() {
         return next;
       });
       setStepError(false); // l'adresse est validée → étapes suivantes débloquées
-      setStep(1); // → étape Cartographie
-      if (!userClosedSidebar.current) setSidebarOpen(true);
+      setStep(1); // → étape Cartographie (aléas + carte unifiée)
       setVisibleLayerKeys(
         new Set((r.aleas || []).filter((a) => a.present === true).map((a) => a.code))
       );
@@ -302,9 +347,25 @@ export function Zone() {
     }
   }
 
+  /* Rafraîchissement forcé : ignore le cache et relance le diagnostic réseau,
+     puis met à jour l'entrée cachée (le rapport Mistral est conservé). */
+  function handleRefresh() {
+    if (!report) return;
+    void runDiagnosis(report.adresse_normalisee || report.adresse_saisie, { force: true });
+  }
+
   /* ── Rapport narratif IA (Mistral) — POST RisqueReport → RapportNarratif ── */
   async function loadRapport() {
     if (!report || rapport || rapportLoading) return;
+    /* Rapport Mistral déjà généré pour cette adresse (cache) → restitution
+       immédiate, aucun appel IA. */
+    if (!fromCache) {
+      const cached = getCachedDiagnostic(report.adresse_normalisee || report.adresse_saisie);
+      if (cached?.rapport) {
+        setRapport(cached.rapport);
+        return;
+      }
+    }
     setRapportLoading(true);
     setRapportError(null);
     try {
@@ -337,7 +398,9 @@ export function Zone() {
         });
         return;
       }
-      setRapport((await resp.json()) as RapportNarratif);
+      const r = (await resp.json()) as RapportNarratif;
+      setRapport(r);
+      putCachedRapport(report, r); // on garde le rapport IA généré (coûteux)
     } catch (err) {
       // fetch() a échoué : backend injoignable, CORS, DNS…
       setRapportError({
@@ -350,20 +413,6 @@ export function Zone() {
       setRapportLoading(false);
     }
   }
-
-  /* Rapport IA en attente : si l'étape 5 a été atteinte pendant le chargement
-     des recommandations détaillées, on génère le rapport dès qu'elles sont
-     prêtes (même en cas d'échec : le rapport reste générable). L'intention
-     « force » est conservée pour la relance (Régénérer). */
-  useEffect(() => {
-    if (rapportWaiting && !detailedRecommendationsLoading && step === 5 && report) {
-      const force = rapportForceRef.current;
-      rapportForceRef.current = false;
-      setRapportWaiting(false);
-      void loadRapport(force);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rapportWaiting, detailedRecommendationsLoading, step, report]);
 
   /* Conseil actionnable selon le code d'erreur renvoyé par le backend. */
   function hintForRapportError(code: string | undefined, status: number): string | undefined {
@@ -382,115 +431,6 @@ export function Zone() {
     return undefined;
   }
 
-  /* ── Animation d'approche : carte → jumeau 3D ──────────────────────────
-     Tout vit dans le même document : c'est la View Transitions API
-     same-document qui morphe la section carte vers la section BIM. */
-
-  const BIM_STEP = 3;
-
-  function prefersReducedMotion() {
-    return typeof window.matchMedia === 'function' &&
-      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  }
-
-  /* Deux images : laisse le navigateur recalculer la mise en page (l'iframe
-     du jumeau vient de retrouver ses dimensions). Plafonné, car
-     requestAnimationFrame ne se déclenche pas dans un onglet en
-     arrière-plan — sans cela la séquence resterait suspendue ici. */
-  const nextFrame = () =>
-    new Promise<void>((resolve) => {
-      const done = () => {
-        window.clearTimeout(guard);
-        resolve();
-      };
-      const guard = window.setTimeout(resolve, 200);
-      requestAnimationFrame(() => requestAnimationFrame(done));
-    });
-
-  /* Les promesses d'une View Transition (comme requestAnimationFrame) ne se
-     règlent pas si l'onglet passe en arrière-plan : sans plafond, la
-     séquence resterait suspendue et le verrou anti-double-vol bloquerait
-     définitivement le marqueur. */
-  function withTimeout(p: Promise<void>, ms: number): Promise<void> {
-    return Promise.race([p, new Promise<void>((r) => window.setTimeout(r, ms))]);
-  }
-
-  type ViewTransition = { ready: Promise<void>; finished: Promise<void> };
-
-  /**
-   * Applique `commit` dans une View Transition. Repli obligatoire : sans
-   * l'API (Firefox, Safari) ou en `prefers-reduced-motion`, la bascule se
-   * fait normalement — aucune erreur console, aucun écran figé.
-   */
-  function withViewTransition(commit: () => void): ViewTransition {
-    const start = (document as unknown as {
-      startViewTransition?: (cb: () => void) => ViewTransition;
-    }).startViewTransition;
-    if (prefersReducedMotion() || typeof start !== 'function') {
-      commit();
-      return { ready: Promise.resolve(), finished: Promise.resolve() };
-    }
-    // flushSync : le navigateur capture l'état d'arrivée dès le retour du
-    // callback — une mise à jour React différée arriverait trop tard.
-    const t = start.call(document, () => flushSync(commit));
-    return {
-      ready: t.ready.catch(() => undefined),
-      finished: t.finished.catch(() => undefined),
-    };
-  }
-
-  /**
-   * Séquence complète, déclenchée par le clic sur le marqueur du bien :
-   *   a. zoom de la carte sur le bâtiment (1,2 s, easing OpenLayers)
-   *   b. pendant ce temps, le chrome s'efface (classe `zone-approche`)
-   *   c. morphing de la section carte vers la section BIM
-   *   d. caméra posée à la verticale pendant que le contenu live est encore
-   *      masqué par les captures du morphing, puis descente ~1 s
-   */
-  async function flyToJumeau() {
-    if (!report || flyingRef.current) return;
-
-    // Accessibilité : ni zoom, ni vol de caméra — bascule directe.
-    if (prefersReducedMotion() || !mapApiRef.current) {
-      goToStep(BIM_STEP);
-      return;
-    }
-
-    flyingRef.current = true;
-    setApproaching(true);
-    try {
-      let groundWidthM = 0;
-      try {
-        groundWidthM = await mapApiRef.current.zoomToBuilding();
-      } catch {
-        groundWidthM = 0; // le vol continue : seul le cadrage d'arrivée est dégradé
-      }
-
-      const transition = withViewTransition(() => {
-        setStepError(false);
-        setStep(BIM_STEP);
-        setApproaching(false);
-      });
-
-      /* `ready` : le DOM est à jour (section BIM révélée, iframe de nouveau
-         dimensionnée) mais le contenu live est encore masqué par les captures
-         — la fenêtre exacte pour placer la caméra au zénith sans que ça se voie.
-         Les deux rAF laissent l'iframe reprendre ses dimensions (elle était en
-         display:none, donc 0×0 : son rapport d'aspect était inutilisable). */
-      await withTimeout(transition.ready, 1000);
-      await nextFrame();
-      bimApiRef.current?.arm(groundWidthM);
-
-      await withTimeout(transition.finished, 1500);
-      bimApiRef.current?.fly();
-    } finally {
-      // Quoi qu'il arrive (erreur, onglet en arrière-plan), on relâche le
-      // verrou : un marqueur définitivement inerte serait pire que tout.
-      setApproaching(false);
-      flyingRef.current = false;
-    }
-  }
-
   /* ── Navigation du stepper (linéaire : impossible de sauter l'adresse) ── */
   function goToStep(i: number) {
     if (i > 0 && !report) {
@@ -501,71 +441,9 @@ export function Zone() {
     }
     setStepError(false);
     setStep(i);
-    /* Quitter l'étape Rapport IA avant la fin des recommandations : on retire
-       l'état « en attente » (sera redéclenché si l'on revient à l'étape 5). */
-    if (i !== 5) setRapportWaiting(false);
     if (i === 0) window.setTimeout(() => heroInputRef.current?.focus(), 80);
     if (i === 6 && report) void loadRapport();
   }
-
-  /* ── Visibilité des couches ── */
-  function toggleLayer(code: string) {
-    setVisibleLayerKeys((prev) => {
-      const next = new Set(prev);
-      if (next.has(code)) next.delete(code);
-      else next.add(code);
-      return next;
-    });
-  }
-
-  function toggleSidebar() {
-    setSidebarOpen((o) => {
-      userClosedSidebar.current = o; // fermeture manuelle → true · réouverture → false
-      return !o;
-    });
-  }
-
-  /* ── Historique « Récent » (sidenav) ── */
-  function handleOpenConversation(address: string) {
-    setDrawerOpen(false);
-    void runDiagnosis(address);
-  }
-
-  function handleDeleteConversation(id: string) {
-    setConversations((prev) => {
-      const next = removeConversation(prev, id);
-      saveConversations(next);
-      return next;
-    });
-  }
-
-  function setAllVisible(visible: boolean) {
-    if (!report) return;
-    const codes = (report.aleas || []).map((a) => a.code);
-    setVisibleLayerKeys(visible ? new Set(codes) : new Set());
-  }
-
-  /* ── Dérivés du rapport ── */
-  const presentAleas = (report?.aleas || []).filter((a) => a.present === true);
-  /* Score officiel du moteur de risque. On n'en dérive plus aucun localement :
-     l'ancien calcul (max des aléas Géorisques via aleaScore, puis seuils
-     rejoués ici) produisait un second score concurrent de celui du backend. */
-  const maxScore = scoreGlobal;
-  const band = maxScore != null ? bandForScore(maxScore) : null;
-  const scoreEnCours = report != null && scoreGlobal == null && detailedRecommendationsLoading;
-
-  const catnat = (report?.aleas || []).flatMap((a) =>
-    (a.catnat_historique || []).map((ev) => ({
-      ...ev,
-      alea_libelle: a.libelle,
-    }))
-  );
-
-  const wmsActive = !!report && report.aleas.some((a) => WMS_LAYER_MAP[a.code]);
-  /* PDF officiel Géorisques (ERRIAL) — lien secondaire conservé. */
-  const pdfUrl = report
-    ? `${API}/diagnostic/adresse/rapport-pdf?lat=${report.lat}&lon=${report.lon}`
-    : '#';
 
   /* ── Export PDF du rapport IA (client-side, jsPDF importé à la demande) ── */
   async function handleExportPdf() {
@@ -585,26 +463,72 @@ export function Zone() {
     }
   }
 
-  const stripText = report
-    ? `${report.adresse_normalisee} · ${report.alea_count} aléa(s) · 0 simulés`
-    : 'En attente d’une adresse';
+  /* ── Visibilité des couches ── */
+  function toggleLayer(code: string) {
+    setVisibleLayerKeys((prev) => {
+      const next = new Set(prev);
+      if (next.has(code)) next.delete(code);
+      else next.add(code);
+      return next;
+    });
+  }
+
+  /* ── Historique « Récent » (sidenav) ── */
+  function handleOpenConversation(address: string) {
+    setDrawerOpen(false);
+    void runDiagnosis(address);
+  }
+
+  function handleDeleteConversation(id: string) {
+    setConversations((prev) => {
+      const victim = prev.find((c) => c.id === id);
+      const next = removeConversation(prev, id);
+      saveConversations(next);
+      /* L'entrée du cache suit l'historique : suppression associée. */
+      if (victim) removeCachedDiagnostic(victim.address);
+      return next;
+    });
+  }
+
+  function setAllVisible(visible: boolean) {
+    if (!report) return;
+    const codes = (report.aleas || []).map((a) => a.code);
+    setVisibleLayerKeys(visible ? new Set(codes) : new Set());
+  }
+
+  /* ── Dérivés du rapport ── */
+  const presentAleas = (report?.aleas || []).filter((a) => a.present === true);
+  const maxScore = presentAleas.length ? Math.max(...presentAleas.map((a) => aleaScore(a))) : null;
+  const band = maxScore != null ? D03.find((b) => (maxScore as number) < b.max) || D03[D03.length - 1] : null;
+
+  const catnat = (report?.aleas || []).flatMap((a) =>
+    (a.catnat_historique || []).map((ev) => ({
+      ...ev,
+      alea_libelle: a.libelle,
+    }))
+  );
 
   const allPresentVisible =
     report !== null &&
     (report.aleas || []).length > 0 &&
     (report.aleas || []).every((a) => visibleLayerKeys.has(a.code));
 
+  const wmsActive = !!report && report.aleas.some((a) => WMS_LAYER_MAP[a.code]);
+  const pdfUrl = report
+    ? `${API}/diagnostic/adresse/rapport-pdf?lat=${report.lat}&lon=${report.lon}`
+    : '#';
+
   return (
     <main
       className={`zone-app${theme === 'light' ? ' theme-light' : ''}${
-        sidebarOpen ? ' sidebar-open' : ''
-      }${navCollapsed && !isMobile ? ' nav-collapsed' : ''}${drawerOpen ? ' drawer-open' : ''}`}
+        panelCollapsed ? ' panel-collapsed' : ''
+      }${navCollapsed && !navHovered && !isMobile ? ' nav-collapsed' : ''}${drawerOpen ? ' drawer-open' : ''}`}
       style={{ '--accent': accent } as CSSProperties}
     >
       {/* ===== SIDENAV rétractable (navigation façon Gemini) ===== */}
       <ZoneSidenav
         sidenavRef={sidenavRef}
-        collapsed={navCollapsed && !isMobile}
+        collapsed={navCollapsed && !navHovered && !isMobile}
         mobile={isMobile}
         hidden={isMobile && !drawerOpen}
         theme={theme}
@@ -615,9 +539,15 @@ export function Zone() {
         onToggleCollapse={() =>
           isMobile ? setDrawerOpen(false) : setNavCollapsed((c) => !c)
         }
+        onHoverChange={setNavHovered}
         onPickAccent={pickAccent}
         onResetAccent={resetAccent}
         onOpenSettings={() => setSettingsOpen((o) => !o)}
+        onOpenAccount={() => {
+          setDrawerOpen(false);
+          setSettingsOpen(false);
+          navigate('/settings/account');
+        }}
         onCloseDrawer={() => setDrawerOpen(false)}
         onNewDiagnostic={() => {
           setDrawerOpen(false);
@@ -644,19 +574,24 @@ export function Zone() {
           const active = i === step;
           const done = i < step;
           const isError = i === 0 && stepError;
+          const disabled = s.disabled === true;
           return (
             <div className="step-segment" key={s.id}>
               <button
                 type="button"
                 className={`step-item${active ? ' active' : ''}${done ? ' done' : ''}${
                   isError ? ' error' : ''
-                }`}
+                }${disabled ? ' is-disabled' : ''}`}
                 aria-current={active ? 'step' : undefined}
                 aria-invalid={isError || undefined}
+                disabled={disabled || undefined}
+                title={disabled ? 'Jumeau BIM — à venir' : undefined}
                 onClick={() => goToStep(i)}
               >
                 <span className="step-dot">
-                  {isError ? (
+                  {disabled ? (
+                    <md-icon>schedule</md-icon>
+                  ) : isError ? (
                     <md-icon>error</md-icon>
                   ) : done ? (
                     <md-icon>check</md-icon>
@@ -665,6 +600,7 @@ export function Zone() {
                   )}
                 </span>
                 <span className="step-label">{s.label}</span>
+                {disabled && <span className="step-badge">à venir</span>}
               </button>
               {i < STEPS.length - 1 && (
                 <span className={`step-connector${done ? ' done' : ''}`} aria-hidden="true" />
@@ -752,37 +688,47 @@ export function Zone() {
                 </div>
               </div>
 
-              <div className="topbar-actions">
-                <md-icon-button
-                  toggle
-                  selected={sidebarOpen}
-                  className="panel-toggle"
-                  aria-label="Afficher / masquer le panneau des aléas"
-                  title="Panneau des aléas"
-                  aria-pressed={sidebarOpen}
-                  onClick={toggleSidebar}
-                >
-                  <md-icon>view_sidebar</md-icon>
-                  <md-icon slot="selected">view_sidebar</md-icon>
-                </md-icon-button>
-              </div>
             </div>
           </header>
 
-          <div
-            className={`zone-stage${step === 1 ? ' workspace' : ' flat'}${
-              approaching ? ' zone-approche' : ''
-            }`}
-          >
-            {/* Workspace — toujours monté pour préserver la carte OpenLayers
-                (masqué via [hidden] hors de l'étape Cartographie) */}
-            <div className="zone-workspace" hidden={step !== 1}>
-              {/* SIDEBAR (couches + résultats) */}
-              <aside className="zone-sidebar">
-                {report ? (
+          <div className={`zone-stage${step === 1 ? ' workspace' : ' flat'}`}>
+            {/* ÉTAPES 2-3 — CARTOGRAPHIE & ANALYSE : panneau latéral + carte unifiée */}
+            <div className="zone-merge" hidden={step !== 1 && step !== 2}>
+              {/* PANNEAU LATÉRAL (rétractable) — contenu selon l'étape */}
+              <aside className="zone-merge-left">
+                <md-icon-button
+                  className="panel-collapse-btn"
+                  aria-label="Réduire le panneau"
+                  title="Réduire le panneau (carte plein écran)"
+                  onClick={() => setPanelCollapsed(true)}
+                >
+                  <md-icon>chevron_left</md-icon>
+                </md-icon-button>
+                <div className="zone-panel-body">
+                  {report ? (
+                    step === 1 ? (
                   <section className="zone-results">
                     <div className="addr-heading">
-                      <div className="norm">{report.adresse_normalisee}</div>
+                      <div className="addr-title-row">
+                        <div className="norm">{report.adresse_normalisee}</div>
+                        <div className="addr-actions">
+                          {fromCache && (
+                            <span className="cache-badge" title="Résultat servi depuis le cache local — données Géorisques enregistrées lors du dernier diagnostic.">
+                              <md-icon>database</md-icon> en cache
+                            </span>
+                          )}
+                          <md-icon-button
+                            className="refresh-btn"
+                            aria-label="Rafraîchir le diagnostic"
+                            title="Rafraîchir les données (nouvel appel Géorisques)"
+                            aria-busy={loading || undefined}
+                            disabled={loading}
+                            onClick={handleRefresh}
+                          >
+                            <md-icon>refresh</md-icon>
+                          </md-icon-button>
+                        </div>
+                      </div>
                       <div className="meta">
                         GPS {report.lat.toFixed(5)}°N, {report.lon.toFixed(5)}°E · Code INSEE{' '}
                         {report.code_insee} · Généré le {report.date_generation}
@@ -811,7 +757,7 @@ export function Zone() {
           <div className="score-meta">
             <span className="score-label">Score de risque global /100</span>
             <span className={`d03-pill ${band ? band.cls : ''}`}>
-              {scoreEnCours ? 'Calcul en cours…' : band ? band.label : 'Indéterminé'}
+              {band ? band.label : 'Indéterminé'}
             </span>
           </div>
         </div>
@@ -901,54 +847,49 @@ export function Zone() {
                       </span>
                     </div>
                   </section>
-                ) : (
-                  <div className="sidebar-empty">
-                    <md-icon>gps_fixed</md-icon>
-                    <p>Recherchez une adresse pour afficher le diagnostic géo-risque.</p>
-                  </div>
+                    ) : (
+                      <BuildingFiche
+                        report={report}
+                        batiment={selectedBatiment}
+                        risques={selectedRisques}
+                        loading={ficheLoading}
+                        error={ficheError}
+                      />
+                    )
+                  ) : (
+                    <div className="sidebar-empty">
+                      <md-icon>gps_fixed</md-icon>
+                      <p>Recherchez une adresse pour afficher le diagnostic géo-risque.</p>
+                    </div>
+                  )}
+                </div>
+              </aside>                {/* CARTE UNIFIÉE — Mapbox GL JS · bâti BDNB 3D, satellite,
+                    parcelles, aléas, montée des eaux */}
+              <section className="zone-merge-map">
+                {panelCollapsed && (
+                  <md-icon-button
+                    className="panel-expand-btn"
+                    aria-label="Agrandir le panneau"
+                    title="Agrandir le panneau"
+                    onClick={() => setPanelCollapsed(false)}
+                  >
+                    <md-icon>chevron_right</md-icon>
+                  </md-icon-button>
                 )}
-              </aside>
-
-              {/* CARTE */}
-              <section className="zone-map-wrap">
-                <ZoneMap
+                <MapboxFloodMap
                   report={report}
                   visibleLayerKeys={visibleLayerKeys}
-                  apiRef={mapApiRef}
-                  onPinActivate={() => void flyToJumeau()}
+                  batiment={selectedBatiment ?? undefined}
+                  showRisks={step === 1}
+                  allowParcels={step === 2}
+                  initial3D
+                  fitZoom={16.5}
                 />
-
-                <div className="map-strip">
-                  <span>
-                    <span className="strip-dot" />
-                    <span id="strip-text">{stripText}</span>
-                  </span>
-                  <span>© CARTO · © OpenStreetMap contributors · © BRGM Géorisques</span>
-                </div>
                 {wmsActive && <div className="wms-badge">WMS BRGM actif</div>}
               </section>
             </div>
 
-            {/* ÉTAPE 3 — ANALYSE BDNB (fiche bâtiment) */}
-            <section className="zone-analyse" hidden={step !== 2}>
-              <ZoneAnalyse report={report} />
-            </section>
-
-            {/* ÉTAPE 4 — JUMEAU BIM (viewer 3D thingraph/bim-viewer en iframe) */}
-            <section className="zone-bim" hidden={step !== 3}>
-              <ZoneBIM
-                report={report}
-                recommendationZones={detailedRecommendationZones}
-                recommendationZonesLoading={detailedRecommendationsLoading}
-                recommendationZonesError={detailedRecommendationsError}
-                risquesPrincipaux={detailedRisquesPrincipaux}
-                visibleLayerKeys={visibleLayerKeys}
-                onToggleLayer={toggleLayer}
-                apiRef={bimApiRef}
-              />
-            </section>
-
-            {/* ÉTAPE 5 — RECOMMANDATIONS */}
+            {/* ÉTAPE 5 — RECOMMANDATIONS (détaillées, RAG Mistral) */}
             <section className="zone-recommendations" hidden={step !== 4}>
               <ZoneRecommendations
                 report={report}
@@ -958,7 +899,7 @@ export function Zone() {
               />
             </section>
 
-            {/* ÉTAPE 6 — ARTISANS */}
+            {/* ÉTAPE 6 — ARTISANS (associés aux travaux recommandés) */}
             <section className="zone-artisans-step" hidden={step !== 5}>
               <ZoneArtisans
                 report={report}
@@ -968,7 +909,6 @@ export function Zone() {
               />
             </section>
 
-            {/* ÉTAPE 7 — RAPPORT IA */}
             <section className="zone-report" hidden={step !== 6}>
               {!report ? (
                 <div className="report-empty">
@@ -984,16 +924,6 @@ export function Zone() {
                   <md-icon>psychology</md-icon>
                   <h2>Génération du rapport IA…</h2>
                   <p>Mistral analyse les données Géorisques de {report.adresse_normalisee}.</p>
-                  <md-linear-progress indeterminate></md-linear-progress>
-                </div>
-              ) : rapportWaiting && !rapport ? (
-                <div className="report-empty">
-                  <md-icon>hourglass_top</md-icon>
-                  <h2>Analyse des recommandations en cours…</h2>
-                  <p>
-                    Le rapport IA sera généré dès la fin de l'analyse détaillée
-                    du bien.
-                  </p>
                   <md-linear-progress indeterminate></md-linear-progress>
                 </div>
               ) : rapportError ? (
@@ -1045,43 +975,25 @@ export function Zone() {
                         {report.date_generation}
                       </p>
                     </div>
-                    <div className="report-actions">
-                      <md-text-button
-                        className="report-regenerate"
-                        aria-label="Régénérer le rapport IA (nouvel appel Mistral, sans cache)"
-                        title="Régénérer avec le prompt actuel"
-                        onClick={() => void loadRapport(true)}
-                      >
-                        <md-icon slot="icon">refresh</md-icon>
-                        Régénérer
-                      </md-text-button>
-                      <md-elevated-button
+                    <div className="report-export-group">
+                      <md-filled-button
                         className="pdf-btn report-export"
                         disabled={exportingPdf}
-                        aria-busy={exportingPdf || undefined}
-                        onClick={handleExportPdf}
+                        onClick={() => void handleExportPdf()}
                       >
-                        <md-icon slot="icon">
-                          {exportingPdf ? 'hourglass_top' : 'picture_as_pdf'}
-                        </md-icon>
-                        {exportingPdf ? 'Génération du PDF…' : 'Exporter en PDF'}
-                      </md-elevated-button>
-                      <md-text-button
-                        className="report-official"
+                        <md-icon slot="icon">picture_as_pdf</md-icon>
+                        {exportingPdf ? 'Export en cours…' : 'Exporter en PDF'}
+                      </md-filled-button>
+                      <a
+                        className="report-export-secondary"
                         href={pdfUrl}
                         target="_blank"
                         rel="noopener"
-                        title="PDF officiel Géorisques (ERRIAL) pour ces coordonnées"
                       >
-                        PDF officiel Géorisques
-                      </md-text-button>
+                        PDF officiel Géorisques (ERRIAL)
+                      </a>
+                      {exportPdfError && <p className="report-export-error">{exportPdfError}</p>}
                     </div>
-                    {exportPdfError && (
-                      <p className="report-export-error" role="alert">
-                        <md-icon>error</md-icon>
-                        <span>{exportPdfError}</span>
-                      </p>
-                    )}
                   </header>
 
                   <p className="report-intro">{rapport.introduction}</p>
@@ -1148,6 +1060,7 @@ export function Zone() {
         aria-hidden="true"
         onClick={() => setDrawerOpen(false)}
       />
+
     </main>
   );
 }
@@ -1432,292 +1345,5 @@ function AleaCard({
   );
 }
 
-/* ── Détection mobile — 900px, même breakpoint que @media (max-width:900px)
-   dans zone.css (garder les deux synchronisés) ── */
-function useIsMobile() {
-  const [isMobile, setIsMobile] = useState(() =>
-    typeof window !== 'undefined' && window.matchMedia('(max-width: 900px)').matches
-  );
-  useEffect(() => {
-    const mq = window.matchMedia('(max-width: 900px)');
-    const onChange = () => setIsMobile(mq.matches);
-    mq.addEventListener('change', onChange);
-    return () => mq.removeEventListener('change', onChange);
-  }, []);
-  return isMobile;
-}
-
-/* ── Sidenav rétractable (navigation façon Gemini) ──
-   Desktop : rail pleine largeur ↔ colonne d'icônes (collapsed).
-   Mobile  : drawer hors-écran ouvert via le hamburger du stepper + scrim. */
-function ZoneSidenav({
-  sidenavRef,
-  collapsed,
-  mobile,
-  hidden,
-  theme,
-  accent,
-  settingsOpen,
-  settingsMenuRef,
-  themeSwitchRef,
-  onToggleCollapse,
-  onPickAccent,
-  onResetAccent,
-  onOpenSettings,
-  onCloseDrawer,
-  onNewDiagnostic,
-  conversations,
-  activeAddress,
-  onOpenConversation,
-  onDeleteConversation,
-}: {
-  sidenavRef: RefObject<HTMLElement | null>;
-  collapsed: boolean;
-  mobile: boolean;
-  hidden: boolean;
-  theme: 'dark' | 'light';
-  accent: string;
-  settingsOpen: boolean;
-  settingsMenuRef: RefObject<Menu | null>;
-  themeSwitchRef: RefObject<MdSwitch | null>;
-  onToggleCollapse: () => void;
-  onPickAccent: (hex: string) => void;
-  onResetAccent: () => void;
-  onOpenSettings: () => void;
-  onCloseDrawer: () => void;
-  onNewDiagnostic: () => void;
-  conversations: Conversation[];
-  activeAddress: string | null;
-  onOpenConversation: (address: string) => void;
-  onDeleteConversation: (id: string) => void;
-}) {
-  const navigate = useNavigate();
-
-  const navGo = (path: string) => {
-    onCloseDrawer();
-    navigate(path);
-  };
-
-  return (
-    <aside
-      ref={sidenavRef}
-      className="zone-sidenav"
-      aria-label="Navigation principale"
-      inert={hidden}
-      aria-hidden={hidden}
-    >
-      <header className="sidenav-header">
-        {collapsed ? (
-          /* Replié : l'icône d'expansion remplace le logo (clic → déplier) */
-          <md-icon-button
-            className="sidenav-expand"
-            aria-label="Déplier le menu"
-            title="Déplier le menu"
-            onClick={onToggleCollapse}
-          >
-            <md-icon>chevron_right</md-icon>
-          </md-icon-button>
-        ) : (
-          <>
-            <Link
-              to="/"
-              className="sidenav-brand"
-              aria-label="Typhoon — accueil"
-              onClick={onCloseDrawer}
-            >
-              {/* Wordmark teinté par l'accent : le SVG blanc sert de masque
-                  alpha, la couleur est --accent (voir zone.css). Le lien a déjà
-                  aria-label — le span est décoratif. */}
-              <span className="sidenav-wordmark-img" aria-hidden="true" />
-            </Link>
-            <md-icon-button
-              className="sidenav-collapse"
-              aria-label={mobile ? 'Fermer le menu' : 'Replier le menu'}
-              title={mobile ? 'Fermer le menu' : 'Replier le menu'}
-              onClick={onToggleCollapse}
-            >
-              <md-icon>{mobile ? 'close' : 'menu_open'}</md-icon>
-            </md-icon-button>
-          </>
-        )}
-      </header>
-
-      {collapsed ? (
-        /* ── Mode replié : colonne d'icônes ── */
-        <nav className="sidenav-rail" aria-label="Raccourcis">
-          <md-icon-button title="Nouveau diagnostic" aria-label="Nouveau diagnostic" onClick={onNewDiagnostic}>
-            <md-icon>add_circle</md-icon>
-          </md-icon-button>
-          <md-icon-button title="Accueil" aria-label="Accueil" onClick={() => navGo('/')}>
-            <md-icon>home</md-icon>
-          </md-icon-button>
-          <md-icon-button title="FAQ" aria-label="FAQ" onClick={() => navGo('/faq')}>
-            <md-icon>help</md-icon>
-          </md-icon-button>
-          <md-icon-button title="Contact" aria-label="Contact" onClick={() => navGo('/contact')}>
-            <md-icon>mail</md-icon>
-          </md-icon-button>
-        </nav>
-      ) : (
-        /* ── Mode déplié : liste M3 + historique « Récent » ── */
-        <div className="sidenav-body">
-          <md-list className="sidenav-nav">
-            <md-list-item
-              className="sidenav-new"
-              type="button"
-              onClick={onNewDiagnostic}
-            >
-              <md-icon slot="start">add_circle</md-icon>
-              <span slot="headline">Nouveau diagnostic</span>
-            </md-list-item>
-            <md-list-item type="button" onClick={() => navGo('/')}>
-              <md-icon slot="start">home</md-icon>
-              <span slot="headline">Accueil</span>
-            </md-list-item>
-            <md-list-item type="button" onClick={() => navGo('/faq')}>
-              <md-icon slot="start">help</md-icon>
-              <span slot="headline">FAQ</span>
-            </md-list-item>
-            <md-list-item type="button" onClick={() => navGo('/contact')}>
-              <md-icon slot="start">mail</md-icon>
-              <span slot="headline">Contact</span>
-            </md-list-item>
-          </md-list>
-
-          <ConversationHistory
-            conversations={conversations}
-            activeAddress={activeAddress}
-            onOpen={onOpenConversation}
-            onDelete={onDeleteConversation}
-          />
-        </div>
-      )}
-
-      <footer className="sidenav-footer">
-        <md-icon-button
-          id="settings-anchor"
-          className="sidenav-settings"
-          aria-label="Réglages"
-          title="Réglages"
-          aria-expanded={settingsOpen}
-          aria-haspopup="menu"
-          onClick={onOpenSettings}
-        >
-          <md-icon>settings</md-icon>
-        </md-icon-button>
-
-        <md-menu
-          ref={settingsMenuRef}
-          anchor="settings-anchor"
-          positioning="popover"
-          open={settingsOpen}
-          className="sidenav-menu"
-        >
-          <md-menu-item keepOpen>
-            <span slot="headline">Mode sombre</span>
-            <md-switch slot="end" ref={themeSwitchRef} selected={theme === 'dark'} icons>
-              <md-icon slot="on-icon">dark_mode</md-icon>
-              <md-icon slot="off-icon">light_mode</md-icon>
-            </md-switch>
-          </md-menu-item>
-
-          <div className="sidenav-accent-block">
-            <span className="sidenav-accent-title">Couleur d'accent</span>
-            <div className="sidenav-accent-swatches">
-              {ACCENTS.map((hex) => (
-                <button
-                  key={hex}
-                  type="button"
-                  className={`sidenav-accent-swatch${
-                    accent.toLowerCase() === hex.toLowerCase() ? ' active' : ''
-                  }`}
-                  style={{ '--swatch': hex } as CSSProperties}
-                  aria-label={`Accent ${hex}`}
-                  title={hex}
-                  onClick={() => onPickAccent(hex)}
-                />
-              ))}
-            </div>
-            <button type="button" className="sidenav-accent-reset" onClick={onResetAccent}>
-              <md-icon>restart_alt</md-icon>
-              <span>Rétablir le bleu d'origine</span>
-            </button>
-          </div>
-
-          <md-menu-item type="button" onClick={() => navGo('/')}>
-            <md-icon slot="start">home</md-icon>
-            <span slot="headline">Retour à l'accueil</span>
-          </md-menu-item>
-        </md-menu>
-      </footer>
-    </aside>
-  );
-}
-
-/* ── Historique « Récent » de la sidenav (façon Gemini) ──
-   Section repliable : liste des adresses diagnostiquées (localStorage),
-   clic → relance le diagnostic, survol → bouton de suppression. */
-function ConversationHistory({
-  conversations,
-  activeAddress,
-  onOpen,
-  onDelete,
-}: {
-  conversations: Conversation[];
-  activeAddress: string | null;
-  onOpen: (address: string) => void;
-  onDelete: (id: string) => void;
-}) {
-  const [open, setOpen] = useState(true);
-
-  if (conversations.length === 0) {
-    return (
-      <div className="sidenav-recent-empty">
-        <md-icon>history</md-icon>
-        <span>Pas encore de diagnostic</span>
-      </div>
-    );
-  }
-
-  return (
-    <details
-      className="sidenav-recent"
-      open={open}
-      onToggle={(e) => setOpen((e.currentTarget as HTMLDetailsElement).open)}
-    >
-      <summary className="sidenav-recent-header" aria-label="Historique des adresses diagnostiquées">
-        <span className="sidenav-recent-title">Récent</span>
-        <md-icon>expand_more</md-icon>
-      </summary>
-      <div className="sidenav-recent-list">
-        {conversations.map((c) => {
-          const active = activeAddress !== null && c.address === activeAddress;
-          return (
-            <div
-              className={`sidenav-recent-item${active ? ' active' : ''}`}
-              key={c.id}
-            >
-              <button
-                type="button"
-                className="sidenav-recent-btn"
-                title={c.address}
-                onClick={() => onOpen(c.address)}
-              >
-                <md-icon>history</md-icon>
-                <span className="sidenav-recent-label">{c.address}</span>
-              </button>
-              <md-icon-button
-                className="sidenav-recent-del"
-                aria-label={`Supprimer ${c.address} de l'historique`}
-                title="Supprimer de l'historique"
-                onClick={() => onDelete(c.id)}
-              >
-                <md-icon>close</md-icon>
-              </md-icon-button>
-            </div>
-          );
-        })}
-      </div>
-    </details>
-  );
-}
+/* La sidenav (ZoneSidenav + ConversationHistory + useIsMobile) vit dans
+   ../components/ZoneSidenav — partagée entre /zone et /settings. */

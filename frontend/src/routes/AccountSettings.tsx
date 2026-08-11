@@ -41,7 +41,9 @@ export function AccountSettings() {
   const { theme, accent, toggleTheme, pickAccent, resetAccent } = useTyphoonTheme();
   const isMobile = useIsMobile();
 
-  const [navCollapsed, setNavCollapsed] = useState(false);
+  /* Rétractée par défaut ; le survol déplie temporairement, le toggle épingle. */
+  const [navCollapsed, setNavCollapsed] = useState(true);
+  const [navHovered, setNavHovered] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const settingsMenuRef = useRef<Menu | null>(null);
@@ -84,15 +86,13 @@ export function AccountSettings() {
 
   return (
     <main
-      className={`zone-app account-settings-page${theme === 'light' ? ' theme-light' : ''}${
-        navCollapsed && !isMobile ? ' nav-collapsed' : ''
-      }${drawerOpen ? ' drawer-open' : ''}`}
+      className={`zone-app account-settings-page${theme === 'light' ? ' theme-light' : ''      }${navCollapsed && !navHovered && !isMobile ? ' nav-collapsed' : ''}${drawerOpen ? ' drawer-open' : ''}`}
       style={{ '--accent': accent } as CSSProperties}
     >
       {/* ===== SIDENAV — même composant que /zone ===== */}
       <ZoneSidenav
         sidenavRef={sidenavRef}
-        collapsed={navCollapsed && !isMobile}
+        collapsed={navCollapsed && !navHovered && !isMobile}
         mobile={isMobile}
         hidden={isMobile && !drawerOpen}
         theme={theme}
@@ -103,6 +103,7 @@ export function AccountSettings() {
         onToggleCollapse={() =>
           isMobile ? setDrawerOpen(false) : setNavCollapsed((c) => !c)
         }
+        onHoverChange={setNavHovered}
         onPickAccent={pickAccent}
         onResetAccent={resetAccent}
         onOpenSettings={() => setSettingsOpen((o) => !o)}

@@ -3,7 +3,7 @@
 //   Fond de carte : Mapbox (style personnalisé sombre) ; en vue 2D, le fond
 //   sombre CARTO d'origine MapLibre est réutilisé (tuiles identiques à
 //   l'ancienne carte).
-//   · Bâtiments 3D (BDNB, extrusion par hauteur réelle)
+//   · Bâtiments 3D natifs Mapbox (source composite/building — pas d'extrusion BDNB)
 //   · Couches de risque BRGM (WMS) + WFS Géorisques (step Cartographie)
 //   · Parcelles cadastrales IGN (toggle, step Analyse uniquement)
 //   · Popup de l'adresse avec les aléas présents (step Cartographie)
@@ -22,6 +22,7 @@ import {
   WMS_LAYER_MAP,
   WFS_LAYER_MAP,
   D03,
+  RISK_WMS_POLYGON,
   bandForKey,
   escHtml,
 } from '../zone/config';
@@ -31,24 +32,24 @@ import {
   fetchWfsLayer,
   geomToWgs84,
   polygonCenter,
+  buildingSamplePoints,
   wmsTileUrl,
+  wgs84ToWebMercator,
+  fetchRiskZoneImage,
+  riskPixelColor,
 } from '../zone/mapHelpers';
 
 // Token + style en variable d'environnement (jamais en dur dans le code).
 const MAPBOX_TOKEN: string = (import.meta as any).env?.VITE_MAPBOX_TOKEN || '';
 const MAPBOX_STYLE: string =
-  (import.meta as any).env?.VITE_MAPBOX_STYLE || 'mapbox://styles/mapbox/dark-v11';
+  (import.meta as any).env?.VITE_MAPBOX_STYLE || 'mapbox://styles/mapbox/standard';
 if (MAPBOX_TOKEN) {
   mapboxgl.accessToken = MAPBOX_TOKEN;
 }
 
 /* ── IDs de couches ── */
-const BUILDINGS_LAYER = 'mb-buildings-3d';
-const BUILDINGS_SOURCE = 'mb-bdnb-buildings';
-const BUILDINGS_OUTLINE_LAYER = 'mb-buildings-outline';
-/* Bâtiments 3D natifs Mapbox (source composite/building — tout le bâti OSM,
- * « vibe ville numérique »). Ajoutés sous la couche BDNB. */
-const NATIVE_BUILDINGS_LAYER = 'mb-native-buildings';
+/* Bâtiments 3D : rendus nativement par le style Mapbox Standard
+   (couche « 3d-building » + modèles détaillés) — plus d'extrusion custom. */
 
 /* Fond sombre 2D — tuiles CARTO dark de l'ancienne carte MapLibre. */
 const CARTO_DARK_LAYER = 'mb-carto-dark';
@@ -58,6 +59,14 @@ const CARTO_DARK_TILES = 'https://basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.
 /* Parcelles cadastrales IGN (WMS data.geopf.fr) — toggle Analyse. */
 const CADASTRE_LAYER = 'mb-cadastre';
 const CADASTRE_SOURCE = 'mb-cadastre-src';
+
+/** Hex #RRGGBB → rgba() (Mapbox refuse le hex 8 chiffres dans fill-color). */
+function hexToRgba(hex: string, alpha: number): string {
+  const m = /^#?([0-9a-fA-F]{6})$/.exec(hex.trim());
+  if (!m) return hex;
+  const n = parseInt(m[1], 16);
+  return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${alpha})`;
+}
 
 /** Accent courant (--accent sur .zone-app). */
 function currentAccent(): string {
@@ -76,19 +85,12 @@ function currentAccent(): string {
 interface MapboxFloodMapProps {
   report: RisqueReport | null;
   visibleLayerKeys?: ReadonlySet<string>;
-  /** Bâtiment cible (diagnostiqué ou sélectionné) — surligné en priorité. */
+  /** Bâtiment cible (diagnostiqué) — surligné en priorité. */
   batiment?: BdnbBatiment | null;
-  /** Bâtiment sélectionné au clic — surligné en priorité. */
-  selectedId?: string | null;
-  /** Clic bâtiment → id BDNB ; null si clic dans le vide. */
-  onSelect?: (id: string | null) => void;
   /** Afficher le popup aléas + couches WMS/WFS (étape Cartographie uniquement). */
   showRisks?: boolean;
   /** Afficher le toggle « Parcelles cadastrales » (étape Analyse uniquement). */
   allowParcels?: boolean;
-  /** Nombre max de bâtiments chargés par bbox (0 = tous, jusqu'à épuisement).
-   *  Cartographie : tous. Analyse : 200 (la carte y est secondaire). */
-  buildingsLimit?: number;
   /** 3D au démarrage. */
   initial3D?: boolean;
   fitZoom?: number;
@@ -100,33 +102,35 @@ export function MapboxFloodMap({
   report,
   visibleLayerKeys = new Set<string>(),
   batiment,
-  selectedId,
-  onSelect,
   showRisks = false,
   allowParcels = false,
-  buildingsLimit = 200,
   initial3D = true,
   fitZoom = 16.5,
 }: MapboxFloodMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const mapReadyRef = useRef(false);
-  const buildingsSeqRef = useRef(0);
-  const buildingsTimerRef = useRef<number | null>(null);
   const resizeTimerRef = useRef<number | null>(null);
   const renderSeqRef = useRef(0);
   const is3dRef = useRef(initial3D);
-  const selectedIdRef = useRef<string | null | undefined>(null);
-  const onSelectRef = useRef(onSelect);
-  onSelectRef.current = onSelect;
+  /* Coloration des bâtiments par zone de risque : quand elle est activée, les
+     couches WMS/WFS sont masquées et seuls les bâtiments colorés s'affichent. */
+  const [coloringMode, setColoringMode] = useState(false);
+  const coloringModeRef = useRef(false);
+  /* Mode « Sunset » : éclairage natif Standard (lightPreset dusk). */
+  const [sunsetMode, setSunsetMode] = useState(false);
+  const sunsetModeRef = useRef(false);
   const latestReportRef = useRef(report);
   latestReportRef.current = report;
   const batimentRef = useRef(batiment);
   batimentRef.current = batiment;
   const visibleKeysRef = useRef(visibleLayerKeys);
   visibleKeysRef.current = visibleLayerKeys;
-  const buildingsLimitRef = useRef(buildingsLimit);
-  buildingsLimitRef.current = buildingsLimit;
+  const showRisksRef = useRef(showRisks);
+  showRisksRef.current = showRisks;
+  /* Séquence + timer des colorations 3D par risque (jointure spatiale). */
+  const riskSeqRef = useRef(0);
+  const riskTimerRef = useRef<number | null>(null);
   const layerIdsByKeyRef = useRef<Map<string, string[]>>(new Map());
   const markerRef = useRef<mapboxgl.Marker | null>(null);
   const popupRef = useRef<mapboxgl.Popup | null>(null);
@@ -141,10 +145,6 @@ export function MapboxFloodMap({
 
   function currentBatiment(): BdnbBatiment | null {
     return batimentRef.current ?? latestReportRef.current?.bdnb?.batiment ?? null;
-  }
-
-  function highlightId(): string | null | undefined {
-    return selectedIdRef.current ?? currentBatiment()?.batiment_groupe_id ?? null;
   }
 
   /* ── Init carte (une fois) ── */
@@ -176,11 +176,12 @@ export function MapboxFloodMap({
 
     map.on('error', (e) => {
       // Erreurs de tuiles/sources (WMS BRGM, cadastre…) : non bloquantes.
-      if (e?.sourceId || e?.tile || e?.data) {
-        console.warn('[mapbox] tuile/source:', e?.error?.message ?? e);
+      const evt = e as unknown as { sourceId?: string; tile?: unknown; data?: unknown; error?: Error; message?: string };
+      if (evt?.sourceId || evt?.tile || evt?.data) {
+        console.warn('[mapbox] tuile/source:', evt?.error?.message ?? e);
         return;
       }
-      const msg = String(e?.error?.message ?? e?.message ?? '');
+      const msg = String(evt?.error?.message ?? evt?.message ?? '');
       // « The layer X does not exist in the map's style » : erreur transitoire
       // (race pendant un remount / swap de style) — jamais fatale, sinon le
       // bandeau d'erreur démonte une carte parfaitement fonctionnelle.
@@ -202,48 +203,20 @@ export function MapboxFloodMap({
       // Si le style a fini par se charger (retry HMR/dev), on lève le bandeau.
       setMapError(null);
       ensureBaseLayers(map);
-      ensureNativeBuildings(map);
-      ensureBuildingsLayer(map);
-      updateBuildingsTarget(map);
       placeBuildingPin(map);
-      void loadBuildings(map);
       if (showRisks) renderReport(map, latestReportRef.current);
+      /* Mode sunset persistant (ex. remount) : on réapplique la palette. */
+      if (sunsetModeRef.current) applySunsetMode(map, true);
     });
 
     map.on('moveend', () => {
-      if (!is3dRef.current) return;
-      if (buildingsTimerRef.current) window.clearTimeout(buildingsTimerRef.current);
-      buildingsTimerRef.current = window.setTimeout(() => void loadBuildings(map), 500);
+      /* Bâtiments 3D : entièrement gérés par Mapbox (composite/building).
+         Seule la coloration par aléa recharge les bâtiments du viewport. */
+      if (showRisksRef.current && is3dRef.current) scheduleRiskColoring(map);
     });
 
-    /* Clic bâtiment / vide */
-    const queryBuildings = (point: mapboxgl.PointLike) => {
-      const ids: string[] = [];
-      if (map.getLayer(BUILDINGS_LAYER)) ids.push(BUILDINGS_LAYER);
-      if (map.getLayer(NATIVE_BUILDINGS_LAYER)) ids.push(NATIVE_BUILDINGS_LAYER);
-      if (map.getLayer('building')) ids.push('building');
-      return ids.length ? map.queryRenderedFeatures(point, { layers: ids }) : [];
-    };
-    map.on('click', (e) => {
-      const features = queryBuildings(e.point);
-      let id = (features[0]?.properties?.batiment_groupe_id as string | undefined) ?? null;
-      // Clic sur un bâtiment Mapbox générique (pas d'id BDNB) : on résout le
-      // bâtiment BDNB le plus proche du point via une mini-bbox.
-      if (!id) void resolveBuildingAt(e.lngLat).then((resolved) => {
-        selectedIdRef.current = resolved;
-        updateBuildingsTarget(map);
-        onSelectRef.current?.(resolved);
-      });
-      else {
-        selectedIdRef.current = id;
-        updateBuildingsTarget(map);
-        onSelectRef.current?.(id);
-      }
-    });
-    map.on('mousemove', (e) => {
-      const features = queryBuildings(e.point);
-      map.getCanvas().style.cursor = features.length ? 'pointer' : '';
-    });
+    /* Sélection de bâtiments au clic : désactivée — on reste sur le bâtiment
+       de l'adresse saisie (pas de navigation/fiche d'autres bâtiments). */
 
     /* Resize différé (panneau latéral) */
     let firstPaint = true;
@@ -259,7 +232,6 @@ export function MapboxFloodMap({
         const m = mapRef.current;
         if (!m) return;
         m.resize();
-        if (first) void loadBuildings(m);
       }, first ? 60 : 350);
     });
     ro.observe(container);
@@ -268,8 +240,8 @@ export function MapboxFloodMap({
       ro.disconnect();
       if (resizeTimerRef.current) window.clearTimeout(resizeTimerRef.current);
       resizeTimerRef.current = null;
-      if (buildingsTimerRef.current) window.clearTimeout(buildingsTimerRef.current);
-      buildingsTimerRef.current = null;
+      if (riskTimerRef.current) window.clearTimeout(riskTimerRef.current);
+      riskTimerRef.current = null;
       mapReadyRef.current = false;
       mapRef.current = null;
       markerRef.current?.remove();
@@ -289,7 +261,6 @@ export function MapboxFloodMap({
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !mapReadyRef.current) return;
-    updateBuildingsTarget(map);
     placeBuildingPin(map);
     const b = currentBatiment();
     if (b?.geom_groupe) {
@@ -299,7 +270,6 @@ export function MapboxFloodMap({
         if (c) map.easeTo({ center: c, zoom: fitZoom, pitch: is3dRef.current ? 55 : 0, duration: 900 });
       } catch { /* */ }
     }
-    if (is3dRef.current) void loadBuildings(map);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [batiment, report]);
 
@@ -309,65 +279,20 @@ export function MapboxFloodMap({
     if (!map || !mapReadyRef.current) return;
     if (showRisks) renderReport(map, report);
     else if (report) placeMarker(map, report);
+    void refreshRiskColoring(map);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showRisks, report]);
 
-  /* ── visibleLayerKeys → masquer/afficher les couches WMS/WFS ── */
+  /* ── visibleLayerKeys / coloringMode → masquer/afficher les couches WMS/WFS
+        + coloration 3D (en mode coloration, les couches restent masquées). ── */
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !mapReadyRef.current) return;
-    for (const [key, ids] of layerIdsByKeyRef.current) {
-      const visible = visibleLayerKeys.has(key);
-      for (const id of ids) {
-        if (map.getLayer(id)) {
-          map.setLayoutProperty(id, 'visibility', visible ? 'visible' : 'none');
-        }
-      }
-    }
-  }, [visibleLayerKeys]);
-
-  /* ── Sélection clic → surlignage ── */
-  useEffect(() => {
-    selectedIdRef.current = selectedId ?? null;
-    const map = mapRef.current;
-    if (map && mapReadyRef.current) updateBuildingsTarget(map);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedId]);
+    applyLayerVisibility(map);
+    void refreshRiskColoring(map);
+  }, [visibleLayerKeys, coloringMode]);
 
   /* ═══════════ Couches sources et rendu ═══════════ */
-
-  /** Bâtiments 3D natifs Mapbox : tout le bâti OSM extrudé (hauteurs réelles
-   *  OSM, approx.) — remplace le chargement BDNB par viewport pour l'effet
-   *  « ville numérique » en vue 3D. */
-  function ensureNativeBuildings(map: mapboxgl.Map) {
-    if (map.getLayer(NATIVE_BUILDINGS_LAYER)) return;
-    map.addLayer({
-      id: NATIVE_BUILDINGS_LAYER,
-      type: 'fill-extrusion',
-      source: 'composite',
-      'source-layer': 'building',
-      minzoom: 14,
-      layout: { visibility: is3dRef.current ? 'visible' : 'none' },
-      paint: {
-        'fill-extrusion-height': [
-          'interpolate', ['linear'], ['zoom'],
-          14, 0,
-          15.2, ['coalesce', ['get', 'height'], 8],
-        ],
-        'fill-extrusion-base': [
-          'interpolate', ['linear'], ['zoom'],
-          14, 0,
-          15.2, ['coalesce', ['get', 'min_height'], 0],
-        ],
-        'fill-extrusion-color': [
-          'interpolate', ['linear'], ['coalesce', ['get', 'height'], 8],
-          0, '#4a5568', 10, '#6b7c93', 25, '#93a7bf', 45, '#c3d2e2',
-        ],
-        'fill-extrusion-opacity': 0.9,
-        'fill-extrusion-vertical-gradient': true,
-      },
-    });
-  }
 
   /** Fond sombre CARTO (vue 2D) + parcelles cadastrales IGN (toggle). */
   function ensureBaseLayers(map: mapboxgl.Map) {
@@ -400,52 +325,6 @@ export function MapboxFloodMap({
       layout: { visibility: 'none' },
       paint: { 'raster-opacity': 1 },
     });
-  }
-
-  function ensureBuildingsLayer(map: mapboxgl.Map) {
-    if (map.getLayer(BUILDINGS_LAYER)) return;
-    map.addSource(BUILDINGS_SOURCE, {
-      type: 'geojson',
-      data: { type: 'FeatureCollection', features: [] },
-    });
-    map.addLayer({
-      id: BUILDINGS_LAYER,
-      type: 'fill-extrusion',
-      source: BUILDINGS_SOURCE,
-      layout: { visibility: is3dRef.current ? 'visible' : 'none' },
-      paint: {
-        'fill-extrusion-height': ['case', ['>', ['coalesce', ['get', 'hauteur_mean'], 0], 0], ['get', 'hauteur_mean'], 9],
-        'fill-extrusion-base': 0,
-        'fill-extrusion-color': buildingColorExpr(highlightId(), currentAccent()),
-        'fill-extrusion-opacity': 0.95,
-        'fill-extrusion-vertical-gradient': true,
-      },
-    });
-    const targetId = highlightId() ?? null;
-    map.addLayer({
-      id: BUILDINGS_OUTLINE_LAYER,
-      type: 'line',
-      source: BUILDINGS_SOURCE,
-      filter: targetId ? ['==', ['get', 'batiment_groupe_id'], targetId] : ['==', ['get', 'batiment_groupe_id'], ''],
-      layout: { visibility: is3dRef.current ? 'visible' : 'none' },
-      paint: { 'line-color': currentAccent(), 'line-width': 2.5, 'line-opacity': 0.95 },
-    });
-  }
-
-  function updateBuildingsTarget(map: mapboxgl.Map) {
-    const targetId = highlightId() ?? null;
-    const accent = currentAccent();
-    if (map.getLayer(BUILDINGS_LAYER)) {
-      map.setPaintProperty(BUILDINGS_LAYER, 'fill-extrusion-color', buildingColorExpr(targetId, accent));
-      // En 3D, la ville est rendue par les bâtiments natifs Mapbox : la couche
-      // BDNB ne garde que le bâtiment cible (surligné en accent) pour éviter
-      // la double extrusion sur les mêmes empreintes.
-      map.setFilter(BUILDINGS_LAYER, targetId ? ['==', ['get', 'batiment_groupe_id'], targetId] : ['==', ['get', 'batiment_groupe_id'], '']);
-    }
-    if (map.getLayer(BUILDINGS_OUTLINE_LAYER)) {
-      map.setFilter(BUILDINGS_OUTLINE_LAYER, targetId ? ['==', ['get', 'batiment_groupe_id'], targetId] : ['==', ['get', 'batiment_groupe_id'], '']);
-      map.setPaintProperty(BUILDINGS_OUTLINE_LAYER, 'line-color', accent);
-    }
   }
 
   /* ── Rendu Cartographie : marqueur + popup + calques aléas WMS/WFS ── */
@@ -491,12 +370,6 @@ export function MapboxFloodMap({
 
     map.easeTo({ center: [rep.lon, rep.lat], zoom: fitZoom, duration: 1200 });
 
-    /* Surbrillance du bâtiment diagnostiqué */
-    const targetId = rep.bdnb?.batiment?.batiment_groupe_id ?? null;
-    const oldTarget = highlightId();
-    selectedIdRef.current = selectedId ?? null;
-    updateBuildingsTarget(map);
-
     /* Couches WMS + WFS */
     const renderLayers = async () => {
       for (const a of rep.aleas || []) {
@@ -529,7 +402,7 @@ export function MapboxFloodMap({
               map.addLayer({
                 id: layerId, type: 'fill', source: sourceId,
                 layout: { visibility: visible ? 'visible' : 'none' },
-                paint: { 'fill-color': color + '55', 'fill-opacity': 1, 'fill-outline-color': color },
+                paint: { 'fill-color': hexToRgba(color, 0.33), 'fill-opacity': 1, 'fill-outline-color': color },
               });
               track(layerId);
               wfsRendered = true;
@@ -590,70 +463,231 @@ export function MapboxFloodMap({
     } catch { /* */ }
   }
 
-  async function loadBuildings(map: mapboxgl.Map) {
-    let west = 0, south = 0, east = 0, north = 0;
-    try {
-      const b = map.getBounds();
-      west = b.getWest(); south = b.getSouth(); east = b.getEast(); north = b.getNorth();
-      if (!isFinite(west) || !isFinite(east)) return;
-    } catch { return; }
-    const seq = ++buildingsSeqRef.current;
-    const url = `${API}/diagnostic/zone/buildings?west=${west}&south=${south}&east=${east}&north=${north}&limit=${buildingsLimitRef.current}`;
-    try {
-      const resp = await fetch(url);
-      if (seq !== buildingsSeqRef.current || !mapRef.current) return;
-      if (!resp.ok) return;
-      const fc = (await resp.json()) as GeoJSON.FeatureCollection;
-      if (seq !== buildingsSeqRef.current) return;
-      ensureBuildingsLayer(map);
-      const b = currentBatiment();
-      if (b?.batiment_groupe_id) {
-        const targetInFc = fc.features.some((f) => f.properties?.batiment_groupe_id === b.batiment_groupe_id);
-        if (!targetInFc && b.geom_groupe) {
-          const wgsGeom = geomToWgs84(b.geom_groupe as Record<string, unknown>);
-          if (wgsGeom) fc.features.push({ type: 'Feature', geometry: wgsGeom as unknown as GeoJSON.Geometry, properties: { batiment_groupe_id: b.batiment_groupe_id, hauteur_mean: b.hauteur_mean || 10 } });
+  /** Applique la visibilité des couches WMS/WFS selon les yeux cochés — et les
+   *  masque toutes quand la coloration des bâtiments est activée. */
+  function applyLayerVisibility(map: mapboxgl.Map) {
+    for (const [key, ids] of layerIdsByKeyRef.current) {
+      const visible = !coloringModeRef.current && visibleLayerKeys.has(key);
+      for (const id of ids) {
+        if (map.getLayer(id)) {
+          map.setLayoutProperty(id, 'visibility', visible ? 'visible' : 'none');
         }
       }
-      (map.getSource(BUILDINGS_SOURCE) as mapboxgl.GeoJSONSource)?.setData(fc);
-    } catch { /* */ }
+    }
+  }
+
+  /** Toggle « Coloration » : ON → couches masquées + bâtiments colorés selon
+   *  la couleur de la couche WMS à leur position ; OFF → couches normales. */
+  function toggleColoring(enabled: boolean) {
+    const map = mapRef.current;
+    if (!map) return;
+    coloringModeRef.current = enabled;
+    setColoringMode(enabled);
+    applyLayerVisibility(map);
+    if (enabled) void refreshRiskColoring(map);
+    else clearRiskLayers(map);
   }
 
   function toggle3D(enabled: boolean) {
     const map = mapRef.current;
     if (!map) return;
     is3dRef.current = enabled; setIs3d(enabled);
-    for (const id of [BUILDINGS_LAYER, BUILDINGS_OUTLINE_LAYER, NATIVE_BUILDINGS_LAYER]) {
-      if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', enabled ? 'visible' : 'none');
-    }
-    if (enabled) updateBuildingsTarget(map); // filtre BDNB → bâtiment cible
-    /* Vue 2D → fond sombre CARTO (celui de l'ancienne carte MapLibre). */
+    /* Les bâtiments 3D sont rendus nativement par le style Standard. */
+    /* Vue 2D → fond sombre CARTO (sauf en mode sunset : on garde le fond
+       Mapbox en éclairage crépusculaire, le raster CARTO le masquerait). */
     if (map.getLayer(CARTO_DARK_LAYER)) {
-      map.setLayoutProperty(CARTO_DARK_LAYER, 'visibility', enabled ? 'none' : 'visible');
+      map.setLayoutProperty(CARTO_DARK_LAYER, 'visibility', enabled || sunsetModeRef.current ? 'none' : 'visible');
     }
     map.easeTo({ pitch: enabled ? 55 : 0, duration: 800 });
-    if (enabled) void loadBuildings(map);
+    void refreshRiskColoring(map);
   }
 
-  /** Résout le bâtiment BDNB le plus proche d'un point de clic (mini-bbox). */
-  async function resolveBuildingAt(lngLat: mapboxgl.LngLat): Promise<string | null> {
-    const d = 0.0012; // ~130 m — couvre le bâtiment même si le clic est en bordure
-    const url =
-      `${API}/diagnostic/zone/buildings?west=${lngLat.lng - d}&south=${lngLat.lat - d}` +
-      `&east=${lngLat.lng + d}&north=${lngLat.lat + d}&limit=10`;
+  /** Mode « Sunset » : éclairage natif du style Mapbox Standard
+   *  (lightPreset dusk — vraie lumière de crépuscule, ombres longues).
+   *  Désactivé → retour au preset day. En 2D, on masque le raster CARTO
+   *  sombre qui couvrirait l'éclairage. */
+  function applySunsetMode(map: mapboxgl.Map, enabled: boolean) {
+    sunsetModeRef.current = enabled;
+    setSunsetMode(enabled);
     try {
-      const resp = await fetch(url);
-      if (!resp.ok) return null;
-      const fc = (await resp.json()) as GeoJSON.FeatureCollection;
-      let best: string | null = null;
-      let bestD = Infinity;
-      for (const f of fc.features || []) {
-        const c = polygonCenter((f.geometry as { coordinates?: unknown } | null)?.coordinates);
-        if (!c) continue;
-        const dd = (c[0] - lngLat.lng) ** 2 + (c[1] - lngLat.lat) ** 2;
-        if (dd < bestD) { bestD = dd; best = (f.properties?.batiment_groupe_id as string | undefined) ?? null; }
+      map.setConfigProperty('basemap', 'lightPreset', enabled ? 'dusk' : 'day');
+    } catch {
+      /* Style non-Standard (env VITE_MAPBOX_STYLE) : pas d'import basemap. */
+    }
+    if (map.getLayer(CARTO_DARK_LAYER)) {
+      map.setLayoutProperty(CARTO_DARK_LAYER, 'visibility', enabled ? 'none' : (is3dRef.current ? 'none' : 'visible'));
+    }
+  }
+
+  /* ═══════════ Coloration des bâtiments par aléa (2D et 3D) ═══════════
+     Mode « Coloration » (toggle sur la carte, 2D comme 3D) : les couches
+     WMS/WFS sont masquées et chaque bâtiment est teinté de la COULEUR de la
+     couche WMS à sa position (échantillonnage GetMap transparent, bbox du
+     viewport, jointure sur les bâtiments BDNB) — vert/orange/rouge selon la
+     légende de la couche, comme le rendu WFS. En 3D : coquilles extrudées ;
+     en 2D : empreintes aplaties. Les couches sont re-créées à chaque
+     rafraîchissement, triées par sévérité (le risque le plus fort passe
+     dessus) ; les aléas décochés sont supprimés (pas de coloration périmée). */
+
+  /** Zoom minimum pour échantillonner : plus bas, la bbox couvre tout un
+   *  territoire et l'échantillonnage WMS grossier colore n'importe quoi
+   *  (ex. les argiles à l'échelle de la France). On ne colore qu'en vue
+   *  rapprochée bâtiment. */
+  const MIN_RISK_ZOOM = 15;
+
+  /** Rang de sévérité d'un aléa (bande D03 du rapport, sinon repli). */
+  function riskSeverityRank(code: string): number {
+    const rep = latestReportRef.current;
+    const alea = rep?.aleas?.find((a) => a.code === code);
+    const band = alea?.niveau ? bandForKey(alea.niveau) : undefined;
+    if (band) return Math.max(0, D03.findIndex((b) => b.key === band.key));
+    return 2; // Modéré par défaut
+  }
+
+  function clearRiskLayers(map: mapboxgl.Map) {
+    for (const code of Object.keys(WMS_LAYER_MAP)) {
+      const layerId = `bldg-risk-${code}`;
+      const srcId = `bldg-risk-src-${code}`;
+      if (map.getLayer(layerId)) map.removeLayer(layerId);
+      if (map.getSource(srcId)) map.removeSource(srcId);
+    }
+  }
+
+  /** Ajoute (ou remplace) la coloration d'un aléa : seule la liste des
+   *  bâtiments réellement dans la zone est envoyée (Mapbox ne gère pas les
+   *  data-expressions sur fill-extrusion-opacity, l'opacité est constante). */
+  function upsertRiskLayer(map: mapboxgl.Map, code: string, features: GeoJSON.Feature[]) {
+    const srcId = `bldg-risk-src-${code}`;
+    const layerId = `bldg-risk-${code}`;
+    const inRisk = features.filter((f) => f.properties?.in_risk === 1);
+    const fc: GeoJSON.FeatureCollection = { type: 'FeatureCollection', features: inRisk };
+    if (map.getLayer(layerId)) map.removeLayer(layerId);
+    if (map.getSource(srcId)) map.removeSource(srcId);
+    map.addSource(srcId, { type: 'geojson', data: fc });
+    /* Même coloration en 2D et 3D : en 2D une simple couche fill (empreinte
+       aplatie, couleur de la couche WMS à sa position) ; en 3D la coquille
+       extrudée (hauteur BDNB + marge) qui dépasse du bâtiment natif Mapbox. */
+    const is3d = is3dRef.current;
+    map.addLayer(
+      is3d
+        ? {
+            id: layerId,
+            type: 'fill-extrusion',
+            source: srcId,
+            layout: { visibility: 'visible' },
+            paint: {
+              'fill-extrusion-height': ['+', ['coalesce', ['get', 'hauteur_mean'], 8], 3],
+              'fill-extrusion-base': 0,
+              'fill-extrusion-color': ['coalesce', ['get', 'fill_color'], '#888888'],
+              'fill-extrusion-opacity': 0.8,
+              'fill-extrusion-vertical-gradient': false,
+            },
+          }
+        : {
+            id: layerId,
+            type: 'fill',
+            source: srcId,
+            layout: { visibility: 'visible' },
+            paint: {
+              'fill-color': ['coalesce', ['get', 'fill_color'], '#888888'],
+              'fill-opacity': 0.8,
+            },
+          }
+    );
+  }
+
+  /** Recalcule la coloration des bâtiments pour les aléas cochés (2D et 3D). */
+  async function refreshRiskColoring(map: mapboxgl.Map) {
+    // Uniquement étape Cartographie + mode coloration + zoom rapproché.
+    if (!showRisksRef.current || !coloringModeRef.current) {
+      clearRiskLayers(map);
+      if (!coloringModeRef.current) applyLayerVisibility(map);
+      return;
+    }
+    let zoom = 0;
+    try { zoom = map.getZoom(); } catch { return; }
+    if (!isFinite(zoom) || zoom < MIN_RISK_ZOOM) {
+      clearRiskLayers(map);
+      return;
+    }
+    const rep = latestReportRef.current;
+    if (!rep) return;
+    const active = [...(visibleKeysRef.current || [])].filter((k) => WMS_LAYER_MAP[k]);
+    if (!active.length) {
+      clearRiskLayers(map);
+      return;
+    }
+    const seq = ++riskSeqRef.current;
+    const ordered = [...active].sort((a, b) => riskSeverityRank(a) - riskSeverityRank(b));
+
+    /* 1. Bâtiments BDNB du viewport (empreinte + hauteur). On ne touche pas
+          aux couches avant d'avoir des données : si le fetch échoue (BDNB
+          souvent rate-limité), la coloration précédente reste en place. */
+    let west = 0, south = 0, east = 0, north = 0;
+    try {
+      const b = map.getBounds();
+      if (!b) return;
+      west = b.getWest(); south = b.getSouth(); east = b.getEast(); north = b.getNorth();
+      if (!isFinite(west) || !isFinite(east)) return;
+    } catch { return; }
+    let buildings: GeoJSON.Feature[] = [];
+    try {
+      const resp = await fetch(
+        `${API}/diagnostic/zone/buildings?west=${west}&south=${south}&east=${east}&north=${north}&limit=2000`
+      );
+      if (seq !== riskSeqRef.current) return;
+      if (resp.ok) {
+        const fc = (await resp.json()) as GeoJSON.FeatureCollection;
+        buildings = fc?.features || [];
       }
-      return best;
-    } catch { return null; }
+    } catch { /* BDNB indisponible → on garde la coloration précédente */ }
+    if (!buildings.length || seq !== riskSeqRef.current) return;
+
+    /* 2. Purge (aléas décochés + ordre précédent) puis reconstruction dans
+          l'ordre de sévérité — le risque le plus fort passe au-dessus. */
+    clearRiskLayers(map);
+
+    /* 3. Pour chaque aléa actif : couche WMS GetMap (bbox du viewport) →
+          échantillonnage des pixels à l'empreinte de chaque bâtiment. */
+    const b = map.getBounds();
+    if (!b) return;
+    const [xmin, ymin] = wgs84ToWebMercator(b.getWest(), b.getSouth());
+    const [xmax, ymax] = wgs84ToWebMercator(b.getEast(), b.getNorth());
+    for (const code of ordered) {
+      if (seq !== riskSeqRef.current) return;
+      const layerName = WMS_LAYER_MAP[code];
+      if (!layerName) continue;
+      const img = await fetchRiskZoneImage(layerName, [xmin, ymin, xmax, ymax], 512);
+      if (!img || seq !== riskSeqRef.current) continue;
+      // Zonages : tolérance fine (bords anti-aliasés). Points/lignes : voisinage.
+      const tolPx = RISK_WMS_POLYGON.has(code) ? 2 : 10;
+      const colored = buildings.map((f) => {
+        // Couleur de la couche WMS à la position du bâtiment (moyenne des
+        // pixels du voisinage) — le bâtiment prend la couleur de sa zone.
+        let color: string | null = null;
+        for (const [lon, lat] of buildingSamplePoints(f.geometry as GeoJSON.Geometry)) {
+          color = riskPixelColor(img, lon, lat, tolPx);
+          if (color) break;
+        }
+        return {
+          ...f,
+          properties: {
+            ...(f.properties || {}),
+            in_risk: color ? 1 : 0,
+            fill_color: color ?? undefined,
+          },
+        } as GeoJSON.Feature;
+      });
+      upsertRiskLayer(map, code, colored);
+    }
+  }
+
+  function scheduleRiskColoring(map: mapboxgl.Map) {
+    if (riskTimerRef.current) window.clearTimeout(riskTimerRef.current);
+    riskTimerRef.current = window.setTimeout(() => {
+      riskTimerRef.current = null;
+      void refreshRiskColoring(map);
+    }, 450);
   }
 
   function toggleParcels(enabled: boolean) {
@@ -687,10 +721,37 @@ export function MapboxFloodMap({
           <button type="button"
             className={`map-3d-toggle analyse${is3d ? ' active' : ''}`}
             onClick={() => toggle3D(!is3d)} aria-pressed={is3d}
-            title={is3d ? 'Revenir à la vue 2D' : 'Passer en vue 3D (bâtiments extrudés BDNB)'}
+            title={is3d ? 'Revenir à la vue 2D' : 'Passer en vue 3D (bâtiments Mapbox)'}
             aria-label={is3d ? 'Revenir à la vue 2D' : 'Passer en vue 3D'}>
             <md-icon>view_in_ar</md-icon>
             <span>{is3d ? '2D' : '3D'}</span>
+          </button>
+          <button type="button"
+            className={`map-3d-toggle analyse${coloringMode ? ' active' : ''}`}
+            onClick={() => toggleColoring(!coloringMode)} aria-pressed={coloringMode}
+            title={coloringMode
+              ? 'Afficher les couches de risque normalement (bâtiments non colorés)'
+              : 'Colorer les bâtiments selon les zones de risque (masque les couches)'}
+            aria-label={coloringMode
+              ? 'Désactiver la coloration des bâtiments'
+              : 'Colorer les bâtiments selon les zones de risque'}>
+            <md-icon>palette</md-icon>
+            <span>Coloration</span>
+          </button>
+          <button type="button"
+            className={`map-3d-toggle analyse${sunsetMode ? ' active' : ''}`}
+            onClick={() => {
+              const m = mapRef.current;
+              if (m) applySunsetMode(m, !sunsetMode);
+            }} aria-pressed={sunsetMode}
+            title={sunsetMode
+              ? 'Désactiver le mode crépuscule (retour à la palette sombre)'
+              : 'Mode crépuscule — palette chaude (coucher de soleil)'}
+            aria-label={sunsetMode
+              ? 'Désactiver le mode crépuscule'
+              : 'Activer le mode crépuscule (coucher de soleil)'}>
+            <md-icon>wb_twilight</md-icon>
+            <span>Sunset</span>
           </button>
         </div>
       )}
@@ -698,9 +759,3 @@ export function MapboxFloodMap({
   );
 }
 
-/* ── Couleur des volumes extrudés ── */
-function buildingColorExpr(targetId: string | null | undefined, accent: string): any {
-  const ramp: any = ['interpolate', ['linear'], ['coalesce', ['get', 'hauteur_mean'], 0],
-    0, '#4f607a', 6, '#778ca8', 12, '#a3b7cc', 20, '#c7d8e6', 32, '#eef4fa'];
-  return targetId ? ['case', ['==', ['get', 'batiment_groupe_id'], targetId], accent, ramp] : ramp;
-}

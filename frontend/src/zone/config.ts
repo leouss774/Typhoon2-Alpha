@@ -32,35 +32,6 @@ export function bandForKey(key?: string | null): D03Band | undefined {
   return D03.find((b) => b.key === key);
 }
 
-/**
- * SEUL point de conversion niveau → bande D03 de l'application.
- *
- * Le moteur de risque (`risk_model._niveau`) renvoie un libellé lisible
- * (« tres faible », « tres eleve »), pas les clés D03 du frontend : sans
- * normalisation, `bandForKey` échouait précisément sur les deux extrêmes.
- * On accepte donc les deux vocabulaires, accents et espaces compris.
- */
-export function bandForNiveau(niveau?: string | null): D03Band | undefined {
-  if (!niveau) return undefined;
-  const n = niveau
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '') // accents
-    .replace(/[\s-]+/g, '_')
-    .trim();
-  if (n === 'tres_eleve') return bandForKey('critique');
-  return bandForKey(n);
-}
-
-/**
- * Bande d'un score 0-100. Réservé aux scores que le backend expose SANS
- * niveau associé (score_global) : pour une zone, on utilise toujours son
- * `niveau`, qui fait foi. Les bornes reproduisent `risk_model._niveau`.
- */
-export function bandForScore(score: number): D03Band {
-  return D03.find((b) => score < b.max) || D03[D03.length - 1];
-}
-
 export function aleaScore(a: { niveau?: string | null }): number {
   const mapping: Record<string, number> = {
     tres_faible: 10,
@@ -107,7 +78,10 @@ export const ALEA_ICON_FALLBACK = 'warning';
 // Couches cartographiques (WMS BRGM confirmé + WFS Géorisques)
 // ---------------------------------------------------------------------------
 
-export const WMS_BASE = 'https://mapsref.brgm.fr/wxs/georisques/risques';
+/* Serveur WMS officiel Géorisques (toutes les couches de risque — le serveur
+ * mapsref.brgm.fr ne sert que 3 couches et fait échouer silencieusement le
+ * reste). */
+export const WMS_BASE = 'https://www.georisques.gouv.fr/services';
 
 export const WMS_LAYER_MAP: Record<string, string> = {
   rga: 'ALEARG',
@@ -125,8 +99,36 @@ export const WMS_LAYER_MAP: Record<string, string> = {
 
 export const WFS_BASE = 'https://www.georisques.gouv.fr/services';
 
+/* Format JSON accepté par le WFS Géorisques (application/json brut est
+ * refusé par la plupart des couches). */
+export const WFS_JSON_FORMAT = 'application/json; subtype=geojson; charset=utf-8';
+
 export const WFS_LAYER_MAP: Record<string, string[]> = {
   ssp: ['ms:SSP_CLASSIF_SIS_GE'],
+};
+
+/* ── Coloration 3D des bâtiments par aléa (échantillonnage WMS) ──
+   Le WFS Géorisques ignore tout filtre (CQL/bbox) : on ne peut pas y joindre
+   les bâtiments. À la place, on récupère la couche WMS de l'aléa (GetMap,
+   transparent, bbox du viewport) et on échantillonne les pixels à l'emprise
+   de chaque bâtiment : zone remplie → bâtiment concerné. Les couches
+   « point/linéaire » (cavités, ICPE, MVT, canalisations) sont détectées par
+   voisinage de pixels (~40-60 m). */
+export const RISK_WMS_POLYGON = new Set([
+  'rga', 'inondation', 'sismicite', 'radon', 'ppr', 'feu_foret', 'avalanche',
+]);
+
+/* Couleur par défaut par code d'aléa (si le niveau du rapport ne donne pas
+ * de bande D03). */
+export const RISK_COLOR_FALLBACK: Record<string, string> = {
+  rga: '#e0a13c',
+  inondation: '#e5533d',
+  sismicite: '#e58a3c',
+  cavite: '#b07bd9',
+  mouvement_terrain: '#e5533d',
+  icpe: '#7d8fae',
+  canalisations: '#3c9ee5',
+  ssp: '#8a7b5c',
 };
 
 // ---------------------------------------------------------------------------
