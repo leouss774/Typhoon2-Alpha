@@ -22,10 +22,11 @@ export function TyphoonMascot() {
   const [error, setError] = useState<string | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
-  /* Sur la page d'accueil (préloader), la mascotte flotte AU-DESSUS de la
-     bande presse défilante en bas d'écran. Quand l'iframe du préloader
-     signale que le préloader est masqué (clic sur « Comment anticiper cela
-     ? »), elle redescend à sa position normale (bas droit). */
+  /* Sur la page d'accueil, le préloader (compteur climatique) occupe tout
+     l'écran : la mascotte et le chat sont COMPLÈTEMENT masqués pendant cette
+     phase. Dès que l'iframe signale que le préloader est masqué (clic sur
+     « Comment anticiper cela ? »), la mascotte réapparaît à sa position
+     normale (bas droit). */
   const location = useLocation();
   const isHome = location.pathname === '/';
   const [preloaderDone, setPreloaderDone] = useState(false);
@@ -42,13 +43,11 @@ export function TyphoonMascot() {
   }, []);
 
   /* Retour sur la page d'accueil : le préloader est réaffiché (nouveau
-     chargement de l'iframe), on remonte donc la mascotte au-dessus de la
-     bande presse jusqu'au prochain clic. */
+     chargement de l'iframe), on remasque donc la mascotte jusqu'au prochain
+     clic. */
   useEffect(() => {
     if (isHome) setPreloaderDone(false);
   }, [isHome]);
-
-  const overPress = isHome && !preloaderDone;
 
   useEffect(() => {
     if (listRef.current) listRef.current.scrollTop = listRef.current.scrollHeight;
@@ -82,8 +81,11 @@ export function TyphoonMascot() {
     }
   }
 
+  /* Pendant le préloader de la page d'accueil : aucun chatbot ni mascotte. */
+  if (isHome && !preloaderDone) return null;
+
   return (
-    <div className={overPress ? 'mascot-root mascot-over-press' : 'mascot-root'}>
+    <div className="mascot-root">
       {open && (
         <div className="mascot-panel" role="dialog" aria-label="Compagnon virtuel Typhoon">
           <div className="mascot-panel-header">
