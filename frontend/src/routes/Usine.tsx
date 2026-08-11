@@ -334,6 +334,8 @@ export function Usine() {
                   loading={analyseLoading}
                   error={analyseError}
                   onRelance={() => void launchAnalyse()}
+                  onGoBim={() => setStep(3)}
+                  planImage={planImage}
                 />
               </section>
 
@@ -344,6 +346,7 @@ export function Usine() {
                   equipements={analyse?.equipements || []}
                   nomUsine={analyse?.nom_usine || plan?.nom_usine}
                   scoreGlobal={analyse?.score_global ?? null}
+                  planImage={planImage}
                 />
               </section>
 

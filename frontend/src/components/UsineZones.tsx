@@ -1,11 +1,10 @@
 // =============================================================================
 //   TYPHOON — /usine : étape 2 « Zones & équipements » — revue et édition du
-//   plan détecté avant le calcul de risque. Vue plan 2D (UsineJumeau) + listes
-//   éditables (nom, type, surface, valeur, attributs métiers).
+//   plan détecté avant le calcul de risque. Listes éditables (nom, type,
+//   surface, valeur, attributs métiers).
 // =============================================================================
 
 import { useMemo, useState } from 'react';
-import { UsineJumeau } from './UsineJumeau';
 import {
   EQUIP_TYPES,
   TYPE_EQUIP_LABELS,
@@ -94,25 +93,6 @@ export function UsineZones({ plan, onChange }: Props) {
           </span>
         </div>
       </header>
-
-      <div className="usine-jumeau-2d">
-        <UsineJumeau
-          zones={plan.zones.map((z) => ({
-            id: z.id,
-            nom: z.nom,
-            type: TYPE_ZONE_LABELS[z.type] || z.type,
-            surface_m2: z.surface_m2 ?? undefined,
-          }))}
-          equipements={plan.equipements.map((e) => ({
-            id: e.id,
-            nom: e.nom,
-            type: TYPE_EQUIP_LABELS[e.type] || e.type,
-            zone: e.zone || '',
-            matieres_dangereuses: e.matieres_dangereuses,
-            critique_production: e.critique_production,
-          }))}
-        />
-      </div>
 
       <div className="usine-edit-tabs" role="tablist" aria-label="Éditer les zones ou les équipements">
         <button

@@ -1,13 +1,14 @@
 // =============================================================================
 //   TYPHOON — /usine : étape 3 « Analyse » — résultats du risk engine
-//   Score global + risque par zone et par équipement (F × V géométrique).
+//   Score global + détail du risque par zone et par équipement (R = √(F × V)),
+//   contexte d'aléa du site, aperçu du plan analysé, puis bascule vers le
+//   jumeau BIM qui porte la visualisation 3D.
 // =============================================================================
 
 import { useMemo } from 'react';
 import {
   bandForScore,
   bandForKey,
-  normalizeNiveau,
   TYPE_EQUIP_LABELS,
   TYPE_ZONE_LABELS,
   type AnalyseUsine,
@@ -20,18 +21,11 @@ type Props = {
   loading: boolean;
   error: string | null;
   onRelance: () => void;
+  onGoBim: () => void;
+  planImage?: string | null;
 };
 
-export function UsineAnalyse({ analyse, loading, error, onRelance }: Props) {
-  const sortedZones = useMemo(
-    () => [...(analyse?.zones || [])].sort((a, b) => (b.risque ?? 0) - (a.risque ?? 0)),
-    [analyse]
-  );
-  const sortedEquipements = useMemo(
-    () => [...(analyse?.equipements || [])].sort((a, b) => (b.risque ?? 0) - (a.risque ?? 0)),
-    [analyse]
-  );
-
+export function UsineAnalyse({ analyse, loading, error, onRelance, onGoBim, planImage }: Props) {
   if (loading) {
     return (
       <div className="analyse-empty usine-analyse-loading">
@@ -76,6 +70,15 @@ export function UsineAnalyse({ analyse, loading, error, onRelance }: Props) {
   const band = bandForScore(analyse.score_global);
   const conf = analyse.confiance || { score: 0, niveau: 'faible' };
 
+  const sortedZones = useMemo(
+    () => [...(analyse.zones || [])].sort((a, b) => (b.risque ?? 0) - (a.risque ?? 0)),
+    [analyse]
+  );
+  const sortedEquipements = useMemo(
+    () => [...(analyse.equipements || [])].sort((a, b) => (b.risque ?? 0) - (a.risque ?? 0)),
+    [analyse]
+  );
+
   return (
     <div className="usine-analyse">
       <header className="usine-analyse-header">
@@ -93,43 +96,43 @@ export function UsineAnalyse({ analyse, loading, error, onRelance }: Props) {
         </span>
       </header>
 
-        <div className="usine-analyse-score">
-          <div className="usine-score-big" style={{ color: band.color }}>
-            {analyse.score_global}
-            <span className="usine-score-max">/100</span>
-          </div>
-          <div className="usine-score-meta">
-            <span className="usine-score-label">Score de risque global</span>
-            <span className="usine-score-band" style={{ background: band.soft, color: band.color }}>
-              {band.label}
+      <div className="usine-analyse-score">
+        <div className="usine-score-big" style={{ color: band.color }}>
+          {analyse.score_global}
+          <span className="usine-score-max">/100</span>
+        </div>
+        <div className="usine-score-meta">
+          <span className="usine-score-label">Score de risque global</span>
+          <span className="usine-score-band" style={{ background: band.soft, color: band.color }}>
+            {band.label}
+          </span>
+        </div>
+        <div className="usine-confiance">
+          <md-icon>verified_user</md-icon>
+          <span>
+            Confiance : <strong>{conf.niveau}</strong> ({conf.score}/100)
+            {conf.message ? ` — ${conf.message}` : ''}
+          </span>
+        </div>
+      </div>
+
+      {analyse.aleas_site && (
+        <div className="usine-aleas-site">
+          <span className="usine-aleas-site-icon">
+            <md-icon>layers</md-icon>
+          </span>
+          <div className="usine-aleas-site-body">
+            <strong>Contexte Géorisques du site</strong>
+            <span className="usine-aleas-site-score" style={{ color: bandForScore(analyse.aleas_site.score).color }}>
+              Aléa {analyse.aleas_site.libelle || 'présent'} · {analyse.aleas_site.score}/100
             </span>
-          </div>
-          <div className="usine-confiance">
-            <md-icon>verified_user</md-icon>
-            <span>
-              Confiance : <strong>{conf.niveau}</strong> ({conf.score}/100)
-              {conf.message ? ` — ${conf.message}` : ''}
-            </span>
+            <p>
+              L'aléa du site entre dans chaque calcul R = √(F × V) à la place du neutre
+              (F = 50). Adresse renseignée via l'import du plan.
+            </p>
           </div>
         </div>
-
-        {analyse.aleas_site && (
-          <div className="usine-aleas-site">
-            <span className="usine-aleas-site-icon">
-              <md-icon>layers</md-icon>
-            </span>
-            <div className="usine-aleas-site-body">
-              <strong>Contexte Géorisques du site</strong>
-              <span className="usine-aleas-site-score" style={{ color: bandForScore(analyse.aleas_site.score).color }}>
-                Aléa {analyse.aleas_site.libelle || 'présent'} · {analyse.aleas_site.score}/100
-              </span>
-              <p>
-                L'aléa du site entre dans chaque calcul R = √(F × V) à la place du neutre
-                (F = 50). Adresse renseignée via l'import du plan.
-              </p>
-            </div>
-          </div>
-        )}
+      )}
 
       <div className="usine-risk-legend">
         {['tres_faible', 'faible', 'modere', 'eleve', 'critique'].map((k) => (
@@ -170,13 +173,29 @@ export function UsineAnalyse({ analyse, loading, error, onRelance }: Props) {
         </div>
       </section>
 
+      {planImage && (
+        <div className="usine-analyse-plan">
+          <h4>
+            <md-icon>image</md-icon> Plan analysé
+          </h4>
+          <div className="usine-analyse-plan-img">
+            <img src={planImage} alt="Plan d'usine analysé" />
+          </div>
+        </div>
+      )}
+
+      <div className="usine-analyse-cta">
+        <md-filled-button onClick={onGoBim}>
+          <md-icon slot="icon">view_in_ar</md-icon> Ouvrir le jumeau BIM
+        </md-filled-button>
+      </div>
+
       <p className="usine-analyse-note" role="note">
         <md-icon>science</md-icon>
         <span>
-          Méthodologie identique au diagnostic /zone : R = 100 × (F/100)^0.5 × (V/100)^0.5 où F
-          est l'aléa du site (Géorisques si une adresse est renseignée, neutre sinon) et V la
-          vulnérabilité de la zone / la sensibilité de l'équipement. Le plan affine la confiance
-          (+15 pts) — plus les données sont complètes, plus la confiance est élevée.
+          R = 100 × (F/100)^0.5 × (V/100)^0.5 où F est l'aléa du site (Géorisques si une adresse est
+          renseignée, neutre sinon) et V la vulnérabilité de la zone / la sensibilité de l'équipement.
+          Le plan affine la confiance (+15 pts). La visualisation complète est portée par le jumeau BIM.
         </span>
       </p>
     </div>
@@ -187,7 +206,6 @@ export function UsineAnalyse({ analyse, loading, error, onRelance }: Props) {
 
 function ZoneCard({ zone, equipements }: { zone: ZonePlan; equipements: Equipement[] }) {
   const band = bandForScore(zone.risque);
-  const niveau = normalizeNiveau(zone.niveau);
   const eqs = (zone.equipements || [])
     .map((id) => equipements.find((e) => e.id === id))
     .filter((e): e is Equipement => Boolean(e));

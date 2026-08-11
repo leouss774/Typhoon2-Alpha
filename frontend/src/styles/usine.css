@@ -495,34 +495,6 @@
 }
 
 /* ============================================================================
-   JUMEAU 2D (SVG isométrique)
-============================================================================ */
-
-.usine-jumeau-wrap {
-  display: flex;
-  flex-direction: column;
-  background: #0b1220;
-}
-.usine-jumeau-toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 10px 16px;
-}
-.usine-jumeau-toolbar strong {
-  font-size: 14px;
-  color: #e5e7eb;
-}
-.usine-jumeau-hint {
-  font-size: 12px;
-  color: #94a3b8;
-}
-.usine-jumeau-svg {
-  display: block;
-}
-
-/* ============================================================================
    ÉTAPE 3 — ANALYSE (résultats du risk engine)
 ============================================================================ */
 
@@ -885,6 +857,41 @@
 .usine-analyse-loading {
   align-items: center;
   text-align: center;
+}
+
+/* ── Aperçu du plan analysé + bascule vers le jumeau BIM ── */
+.usine-analyse-plan {
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: 18px;
+  padding: 14px;
+  background: var(--md-sys-color-surface-container-low);
+}
+.usine-analyse-plan h4 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 10px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--md-sys-color-on-surface);
+}
+.usine-analyse-plan h4 md-icon {
+  color: var(--md-sys-color-primary);
+}
+.usine-analyse-plan-img {
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--md-sys-color-surface);
+}
+.usine-analyse-plan-img img {
+  display: block;
+  width: 100%;
+  max-height: 420px;
+  object-fit: contain;
+}
+.usine-analyse-cta {
+  display: flex;
+  justify-content: center;
 }
 
 /* ============================================================================
@@ -1334,6 +1341,100 @@
   font-size: 12.5px;
   color: var(--md-sys-color-on-surface-variant);
   font-style: italic;
+}
+
+/* ── Analyse économique du rapport ── */
+.usine-report-eco {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.usine-report-eco h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.usine-report-eco h3 md-icon {
+  color: var(--md-sys-color-primary);
+}
+.usine-report-eco-intro {
+  margin: 0 !important;
+}
+.usine-eco-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+}
+.usine-eco-kpi {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--md-sys-color-surface-container);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  transition: border-color 0.18s, transform 0.18s;
+}
+.usine-eco-kpi:hover {
+  border-color: var(--md-sys-color-primary);
+  transform: translateY(-1px);
+}
+.usine-eco-kpi-icon {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--md-sys-color-primary-container) 60%, transparent);
+  color: var(--md-sys-color-primary);
+}
+.usine-eco-kpi.accent .usine-eco-kpi-icon {
+  background: color-mix(in srgb, var(--d03-modere) 18%, transparent);
+  color: var(--d03-modere);
+}
+.usine-eco-kpi-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.usine-eco-kpi-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--md-sys-color-on-surface-variant);
+}
+.usine-eco-kpi-value {
+  font-family: var(--mono);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--md-sys-color-on-surface);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.usine-eco-kpi.accent .usine-eco-kpi-value {
+  color: var(--d03-modere);
+}
+.usine-eco-kpi-sub {
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--md-sys-color-on-surface-variant);
+}
+.usine-report-eco-hyp {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin: 2px 0 0;
+  padding: 12px 14px 12px 30px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--md-sys-color-secondary-container) 42%, transparent);
+  font-size: 11.5px;
+  line-height: 1.55;
+  color: var(--md-sys-color-on-surface-variant);
 }
 
 /* ============================================================================

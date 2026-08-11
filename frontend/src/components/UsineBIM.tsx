@@ -14,12 +14,9 @@
 import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { UsineJumeau } from './UsineJumeau';
 import {
   bandForScore,
   bandForKey,
-  normalizeNiveau,
-  TYPE_EQUIP_LABELS,
   TYPE_ZONE_LABELS,
   type Equipement,
   type ZonePlan,
@@ -30,6 +27,7 @@ type Props = {
   equipements: Equipement[];
   nomUsine?: string;
   scoreGlobal?: number | null;
+  planImage?: string | null;
 };
 
 const ZONE_HEIGHTS: Record<string, number> = {
@@ -66,15 +64,14 @@ function tintColor(hex: string, towardWhite: number): THREE.Color {
   );
 }
 
-export function UsineBIM({ zones, equipements, nomUsine, scoreGlobal }: Props) {
+export function UsineBIM({ zones, equipements, nomUsine, scoreGlobal, planImage }: Props) {
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const [view, setView] = useState<'3d' | '2d'>('3d');
   const [webglFailed, setWebglFailed] = useState(false);
   const [selected, setSelected] = useState<ZonePlan | null>(null);
 
   useEffect(() => {
     const container = containerRef.current;
-    if (!container || view !== '3d' || zones.length === 0) return;
+    if (!container || zones.length === 0) return;
 
     let renderer: THREE.WebGLRenderer;
     try {
@@ -140,6 +137,34 @@ export function UsineBIM({ zones, equipements, nomUsine, scoreGlobal }: Props) {
     scene.add(ground);
     const grid = new THREE.GridHelper(170, 34, 0x2b3b52, 0x1b2737);
     scene.add(grid);
+
+    /* ── Plan importé en arrière-plan (texture au sol) ── */
+    let planPlane: THREE.Mesh | null = null;
+    if (planImage) {
+      const img = new Image();
+      img.onload = () => {
+        if (!planImage || img.naturalWidth === 0) return;
+        const canvas = document.createElement('canvas');
+        canvas.width = 2048;
+        canvas.height = 2048;
+        const ctx = canvas.getContext('2d')!;
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        const tex = new THREE.CanvasTexture(canvas);
+        tex.colorSpace = THREE.SRGBColorSpace;
+        textures.push(tex);
+        /* Emprise = zone étendue sous les bâtiments (avec marge). */
+        const extent = Math.max(totalW, totalD) * 1.5 + 12;
+        planPlane = new THREE.Mesh(
+          new THREE.PlaneGeometry(extent, extent),
+          new THREE.MeshBasicMaterial({ map: tex, transparent: true, opacity: 0.42, depthWrite: false })
+        );
+        planPlane.rotation.x = -Math.PI / 2;
+        planPlane.position.y = 0.02;
+        scene.add(planPlane);
+        pickable.push(planPlane);
+      };
+      img.src = planImage;
+    }
 
     /* ── Disposition des zones sur une grille ── */
     const n = Math.max(zones.length, 1);
@@ -443,7 +468,7 @@ export function UsineBIM({ zones, equipements, nomUsine, scoreGlobal }: Props) {
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [view, zones, equipements]);
+  }, [zones, equipements, planImage]);
 
   const totalSurface = zones.reduce((a, z) => a + (typeof z.surface_m2 === 'number' ? z.surface_m2 : 0), 0);
   const globalBand = bandForScore(scoreGlobal ?? 0);
@@ -459,115 +484,68 @@ export function UsineBIM({ zones, equipements, nomUsine, scoreGlobal }: Props) {
             {scoreGlobal != null ? ` · score ${scoreGlobal}/100 (${globalBand.label})` : ''}
           </p>
         </div>
-        <div className="bim-view-tabs usine-bim-tabs" role="tablist" aria-label="Mode de visualisation">
-          <button
-            type="button"
-            role="tab"
-            aria-selected={view === '3d'}
-            className={`bim-view-tab${view === '3d' ? ' active' : ''}`}
-            onClick={() => setView('3d')}
-          >
-            <md-icon>view_in_ar</md-icon>
-            <span>Jumeau 3D</span>
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={view === '2d'}
-            className={`bim-view-tab${view === '2d' ? ' active' : ''}`}
-            onClick={() => setView('2d')}
-          >
-            <md-icon>map</md-icon>
-            <span>Plan 2D</span>
-          </button>
-        </div>
       </header>
 
-      {view === '3d' ? (
-        webglFailed ? (
-          <div className="analyse-empty">
-            <md-icon>view_in_ar</md-icon>
-            <h2>WebGL indisponible</h2>
-            <p>Votre navigateur ne prend pas en charge le rendu 3D — basculez sur la vue Plan 2D.</p>
-            <md-filled-button onClick={() => setView('2d')}>
-              <md-icon slot="icon">map</md-icon> Voir le plan 2D
-            </md-filled-button>
-          </div>
-        ) : (
-          <div className="usine-bim-stage">
-            <div ref={containerRef} className="usine-bim-canvas" />
-
-            {/* Légende */}
-            <div className="usine-bim-legend">
-              <span className="usine-legend-item" key="legend-title">
-                <span className="usine-legend-dot" style={{ background: 'linear-gradient(135deg,#e5e7eb,#6b7280)' }} />
-                Bâtiment coloré par son niveau de risque (enveloppe · toiture · arêtes)
-              </span>
-              {['tres_faible', 'faible', 'modere', 'eleve', 'critique'].map((k) => (
-                <span className="usine-legend-item" key={k}>
-                  <span className="usine-legend-dot" style={{ background: bandForKey(k).color }} />
-                  {bandForKey(k).label}
-                </span>
-              ))}
-            </div>
-
-            {/* Fiche zone sélectionnée */}
-            {selected && (
-              <aside className="usine-bim-info">
-                <header>
-                  <strong>{selected.nom}</strong>
-                  <button type="button" aria-label="Fermer" onClick={() => setSelected(null)}>
-                    <md-icon>close</md-icon>
-                  </button>
-                </header>
-                <span className="usine-bim-info-band" style={{ color: bandForScore(selected.risque).color }}>
-                  Risque {selected.risque ?? '—'}/100 · {bandForScore(selected.risque).label}
-                </span>
-                <div className="usine-bim-info-kv">
-                  <span>Type</span>
-                  <strong>{TYPE_ZONE_LABELS[selected.type] || selected.type}</strong>
-                  <span>Surface</span>
-                  <strong>
-                    {typeof selected.surface_m2 === 'number'
-                      ? `${selected.surface_m2.toLocaleString('fr-FR')} m²`
-                      : '—'}
-                  </strong>
-                  <span>Vulnérabilité</span>
-                  <strong>{selected.vulnerabilite ?? '—'}/100</strong>
-                </div>
-                {selected.description ? <p>{selected.description}</p> : null}
-                <footer>
-                  {equipements.filter((e) => e.zone_id === selected.id).length} équipement(s) dans cette zone
-                </footer>
-              </aside>
-            )}
-
-            {/* Hint */}
-            <div className="usine-bim-hint">
-              <md-icon>pan_tool_alt</md-icon>
-              <span>Glisser = orbiter · Molette = zoom · Clic sur un bâtiment = fiche de zone</span>
-            </div>
-          </div>
-        )
+      {webglFailed ? (
+        <div className="analyse-empty">
+          <md-icon>view_in_ar</md-icon>
+          <h2>WebGL indisponible</h2>
+          <p>Votre navigateur ne prend pas en charge le rendu 3D du jumeau BIM.</p>
+        </div>
       ) : (
-        <div className="usine-jumeau-2d usine-jumeau-2d-bim">
-          <UsineJumeau
-            zones={zones.map((z) => ({
-              id: z.id,
-              nom: z.nom,
-              type: TYPE_ZONE_LABELS[z.type] || z.type,
-              surface_m2: z.surface_m2 ?? undefined,
-              score_risque: z.risque,
-              niveau: normalizeNiveau(z.niveau) as any,
-            }))}
-            equipements={equipements.map((e) => ({
-              id: e.id,
-              nom: e.nom,
-              type: TYPE_EQUIP_LABELS[e.type] || e.type,
-              zone: e.zone || '',
-              score_risque: e.risque,
-            }))}
-          />
+        <div className="usine-bim-stage">
+          <div ref={containerRef} className="usine-bim-canvas" />
+
+          {/* Légende */}
+          <div className="usine-bim-legend">
+            <span className="usine-legend-item" key="legend-title">
+              <span className="usine-legend-dot" style={{ background: 'linear-gradient(135deg,#e5e7eb,#6b7280)' }} />
+              Bâtiment coloré par son niveau de risque (enveloppe · toiture · arêtes)
+            </span>
+            {['tres_faible', 'faible', 'modere', 'eleve', 'critique'].map((k) => (
+              <span className="usine-legend-item" key={k}>
+                <span className="usine-legend-dot" style={{ background: bandForKey(k).color }} />
+                {bandForKey(k).label}
+              </span>
+            ))}
+          </div>
+
+          {/* Fiche zone sélectionnée */}
+          {selected && (
+            <aside className="usine-bim-info">
+              <header>
+                <strong>{selected.nom}</strong>
+                <button type="button" aria-label="Fermer" onClick={() => setSelected(null)}>
+                  <md-icon>close</md-icon>
+                </button>
+              </header>
+              <span className="usine-bim-info-band" style={{ color: bandForScore(selected.risque).color }}>
+                Risque {selected.risque ?? '—'}/100 · {bandForScore(selected.risque).label}
+              </span>
+              <div className="usine-bim-info-kv">
+                <span>Type</span>
+                <strong>{TYPE_ZONE_LABELS[selected.type] || selected.type}</strong>
+                <span>Surface</span>
+                <strong>
+                  {typeof selected.surface_m2 === 'number'
+                    ? `${selected.surface_m2.toLocaleString('fr-FR')} m²`
+                    : '—'}
+                </strong>
+                <span>Vulnérabilité</span>
+                <strong>{selected.vulnerabilite ?? '—'}/100</strong>
+              </div>
+              {selected.description ? <p>{selected.description}</p> : null}
+              <footer>
+                {equipements.filter((e) => e.zone_id === selected.id).length} équipement(s) dans cette zone
+              </footer>
+            </aside>
+          )}
+
+          {/* Hint */}
+          <div className="usine-bim-hint">
+            <md-icon>pan_tool_alt</md-icon>
+            <span>Glisser = orbiter · Molette = zoom · Clic sur un bâtiment = fiche de zone</span>
+          </div>
         </div>
       )}
 

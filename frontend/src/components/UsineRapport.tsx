@@ -1,20 +1,21 @@
 // =============================================================================
 //   TYPHOON — /usine : étape 6 « Rapport » — rapport d'analyse narratif
 //   Généré côté client à partir du risk engine (déterministe, aucun LLM
-//   requis) + export PDF via jsPDF (importé à la demande).
+//   requis) + synthèse économique (actifs, enveloppe travaux, gain de
+//   résilience, sinistres évités, temps de retour) + export PDF (jsPDF,
+//   importé à la demande).
 // =============================================================================
 
 import { useMemo, useState } from 'react';
 import {
   bandForScore,
-  bandForKey,
-  normalizeNiveau,
   TYPE_EQUIP_LABELS,
   TYPE_ZONE_LABELS,
   type AnalyseUsine,
   type Equipement,
   type ZonePlan,
 } from '../usine/types';
+import { computeUsineEconomie, formatRange } from '../usine/economie';
 
 type Props = {
   analyse: AnalyseUsine | null;
@@ -32,6 +33,7 @@ export function UsineRapport({ analyse }: Props) {
     () => [...(analyse?.equipements || [])].sort((a, b) => (b.risque ?? 0) - (a.risque ?? 0)),
     [analyse]
   );
+  const economie = useMemo(() => (analyse ? computeUsineEconomie(analyse) : null), [analyse]);
 
   if (!analyse) {
     return (
@@ -149,6 +151,10 @@ export function UsineRapport({ analyse }: Props) {
             </ul>
           </article>
         )}
+
+        {economie && (
+          <ReportEconomieSection economie={economie} />
+        )}
       </div>
 
       <aside className="report-synthese">
@@ -205,6 +211,80 @@ function ReportEquipRow({ eq }: { eq: Equipement }) {
       <span className="usine-report-eq-score" style={{ color: band.color }}>
         {eq.risque ?? '—'}
       </span>
+    </div>
+  );
+}
+
+/* ─────────── Analyse économique du rapport ─────────── */
+
+function ReportEconomieSection({ economie }: { economie: ReturnType<typeof computeUsineEconomie> }) {
+  const fmtEur = (n: number | null) => (n == null ? '—' : `${Math.round(n).toLocaleString('fr-FR')} €`);
+  const gainTotal = Math.max(0, economie.scoreAvant - economie.scoreApresEstime);
+
+  return (
+    <article className="report-section usine-report-eco">
+      <h3>
+        <md-icon>savings</md-icon> Analyse économique
+      </h3>
+      <p className="usine-report-eco-intro">
+        Synthèse déterministe construite à partir des actifs du plan et du catalogue de
+        recommandations — montants indicatifs, hypothèses documentées ci-dessous.
+      </p>
+
+      <div className="usine-eco-grid">
+        <EcoKpi
+          icon="account_balance_wallet"
+          label="Valeur des actifs"
+          value={fmtEur(economie.valeurActifsEur)}
+          sub={`${economie.nbEquipementsValeur} équipement(s) valorisé(s) · ${economie.nbCritiques} critique(s) · ${economie.nbDangereux} dangereux`}
+        />
+        <EcoKpi
+          icon="build"
+          label="Enveloppe travaux"
+          value={formatRange(economie.enveloppeMin, economie.enveloppeMax)}
+          sub="recommandations du plan d'adaptation"
+        />
+        <EcoKpi
+          icon="trending_down"
+          label="Score de risque"
+          value={`${economie.scoreAvant} → ${economie.scoreApresEstime}`}
+          sub={`− ${gainTotal} pts de résilience estimés`}
+          accent
+        />
+        <EcoKpi
+          icon="shield"
+          label="Sinistres évités / an"
+          value={fmtEur(economie.perteAnnuelleEviteeEur)}
+          sub="estimation indicative (F × Δscore)"
+        />
+        <EcoKpi
+          icon="schedule"
+          label="Temps de retour"
+          value={economie.tempsRetourAns != null ? `${economie.tempsRetourAns.toLocaleString('fr-FR')} ans` : '—'}
+          sub="enveloppe moyenne ÷ bénéfice annuel"
+        />
+      </div>
+
+      <ul className="usine-report-eco-hyp">
+        {economie.hypotheses.map((h, i) => (
+          <li key={i}>{h}</li>
+        ))}
+      </ul>
+    </article>
+  );
+}
+
+function EcoKpi({ icon, label, value, sub, accent }: { icon: string; label: string; value: string; sub: string; accent?: boolean }) {
+  return (
+    <div className={`usine-eco-kpi${accent ? ' accent' : ''}`}>
+      <span className="usine-eco-kpi-icon">
+        <md-icon>{icon}</md-icon>
+      </span>
+      <div className="usine-eco-kpi-body">
+        <span className="usine-eco-kpi-label">{label}</span>
+        <strong className="usine-eco-kpi-value">{value}</strong>
+        <span className="usine-eco-kpi-sub">{sub}</span>
+      </div>
     </div>
   );
 }

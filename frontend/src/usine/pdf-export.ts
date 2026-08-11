@@ -12,6 +12,7 @@
 
 import { jsPDF } from 'jspdf';
 import { bandForScore, type AnalyseUsine, type Equipement, type ZonePlan } from './types';
+import { computeUsineEconomie, formatRange } from './economie';
 
 /* ── Palette PDF (alignée sur la marque Typhoon) ── */
 const NAVY = '#0C2233';
@@ -302,6 +303,51 @@ export async function exportRapportUsinePdf(analyse: AnalyseUsine): Promise<void
     });
     y += 2;
   }
+
+  /* ══ Analyse économique (actifs, enveloppe travaux, gain, ROI indicatif) ══ */
+  const eco = computeUsineEconomie(analyse);
+  sectionTitle('Analyse économique');
+  const ecoRows: [string, string][] = [
+    ['Valeur des actifs (équipements)', eco.valeurActifsEur != null ? `${Math.round(eco.valeurActifsEur).toLocaleString('fr-FR')} €` : 'Non renseignée'],
+    ['Enveloppe travaux (recommandations)', formatRange(eco.enveloppeMin, eco.enveloppeMax)],
+    ['Score de risque avant → après', `${eco.scoreAvant} → ${eco.scoreApresEstime} pts (− ${Math.max(0, eco.scoreAvant - eco.scoreApresEstime)} pts)`],
+    ['Sinistres annuels évités (estimation)', eco.perteAnnuelleEviteeEur != null ? `${Math.round(eco.perteAnnuelleEviteeEur).toLocaleString('fr-FR')} €` : 'Non calculé'],
+    ['Temps de retour indicatif', eco.tempsRetourAns != null ? `${eco.tempsRetourAns.toLocaleString('fr-FR')} ans` : 'Non calculé'],
+  ];
+  ensureSpace(ecoRows.length * 6.4 + 5);
+  doc.setFillColor(TINT);
+  doc.roundedRect(M, y - 1, CW, ecoRows.length * 6.4 + 5, 2.5, 2.5, 'F');
+  ecoRows.forEach(([label, value], i) => {
+    const ry = y + i * 6.4;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(MUTED);
+    doc.text(sanitizePdfText(label), M + 4, ry + 3.4);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9.2);
+    doc.setTextColor(NAVY);
+    doc.text(sanitizePdfText(value), PAGE_W - M - 4, ry + 3.4, { align: 'right' });
+  });
+  y += ecoRows.length * 6.4 + 9;
+
+  /* Hypothèses du calcul économique */
+  const hypLines: string[] = [];
+  for (const h of eco.hypotheses) {
+    hypLines.push(...doc.splitTextToSize(`• ${sanitizePdfText(h)}`, CW - 8));
+  }
+  const hypH = hypLines.length * 3.6 + 7;
+  ensureSpace(hypH);
+  doc.setFillColor(WARN_TINT);
+  doc.roundedRect(M, y - 1, CW, hypH, 2, 2, 'F');
+  doc.setFont('helvetica', 'italic');
+  doc.setFontSize(8);
+  doc.setTextColor(MUTED);
+  let hy = y + 3.2;
+  for (const ln of hypLines) {
+    doc.text(ln, M + 4, hy);
+    hy += 3.6;
+  }
+  y = hy + 4;
 
   /* ══ Avertissement ══ */
   const avert =
