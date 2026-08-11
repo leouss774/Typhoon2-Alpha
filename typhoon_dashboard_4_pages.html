@@ -1399,7 +1399,7 @@
 
 <!-- Uniquement le coeur de Three.js. Pas de THREE.OrbitControls (peu fiable
      sur les CDN) : on utilise notre propre petit contrôle caméra plus bas. -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" integrity="sha384-OLBgp1GsljhM2TJ+sbHjaiH9txEUvgdDTAzHv2P24donTt6/529l+9Ua0vFImLlb" crossorigin="anonymous"></script>
 <script>
 if (typeof THREE === 'undefined') {
   document.body.innerHTML = '<div style="color:#1E2A33;background:#FFF5F3;padding:30px;font-family:sans-serif;max-width:600px;margin:60px auto;border-radius:10px;border:1px solid #F3D9D2;">' +
@@ -1988,7 +1988,7 @@ requestAnimationFrame(animate);
     zoneOverlay.setAttribute('aria-hidden', 'false');
     zoneInput.value = zoneInput.value || 'Île-de-France';
     zoneResults.classList.remove('show');
-    zoneMapSearch.innerHTML = '<span class="zm-dot"></span>' + zoneInput.value + ' — recherche par secteur';
+    updateZoneMapSearch(zoneInput.value);
     setTimeout(() => zoneInput.focus(), 0);
   }
 
@@ -2008,6 +2008,14 @@ requestAnimationFrame(animate);
   const exploreZoneBtn = document.getElementById('home-cta-mode-b');
   if (exploreZoneBtn) exploreZoneBtn.addEventListener('click', openZoneExplorer);
 
+  function updateZoneMapSearch(value) {
+    zoneMapSearch.textContent = '';
+    const dot = document.createElement('span');
+    dot.className = 'zm-dot';
+    zoneMapSearch.appendChild(dot);
+    zoneMapSearch.appendChild(document.createTextNode(value + ' — recherche par secteur'));
+  }
+
   zoneCloseBtn.addEventListener('click', closeZoneExplorer);
   zoneOverlay.addEventListener('click', function (e) {
     if (e.target === zoneOverlay) closeZoneExplorer();
@@ -2020,7 +2028,7 @@ requestAnimationFrame(animate);
     e.preventDefault();
     const value = (zoneInput.value || '').trim() || 'Île-de-France';
     zoneResults.classList.add('show');
-    zoneMapSearch.innerHTML = '<span class="zm-dot"></span>' + value + ' — recherche par secteur';
+    updateZoneMapSearch(value);
     zoneResults.scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
 

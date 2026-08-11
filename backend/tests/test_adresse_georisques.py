@@ -315,7 +315,8 @@ def test_catnat_filtering_and_ppr_ssp():
 # ---------------------------------------------------------------------------
 
 def test_rapport_narratif_mistral_fail_soft():
-    """Vérifie que generer_rapport_narratif retourne None en cas d'échec Mistral."""
+    """Vérifie que generer_rapport_narratif retourne (None, cause) en cas
+    d'échec Mistral — fail-soft sans exception, cause transmise."""
     from app.recommandations.rapport_narratif import generer_rapport_narratif
 
     async def _run():
@@ -328,11 +329,12 @@ def test_rapport_narratif_mistral_fail_soft():
                 lat=43.7102, lon=7.2620, code_insee="06088",
             )
             with patch("app.recommandations.rapport_narratif._appeler_mistral_narratif_sync", side_effect=RuntimeError("Mistral API error")):
-                res = await generer_rapport_narratif(report)
-                return res
+                res, cause = await generer_rapport_narratif(report)
+                return res, cause
 
-    res = asyncio.run(_run())
+    res, cause = asyncio.run(_run())
     assert res is None
+    assert cause and "Mistral" in cause
 
 
 

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import unittest
-from unittest.mock import AsyncMock, patch
+from unittest.mock import patch
 
 import httpx
 
@@ -62,36 +62,32 @@ class ArtisansServiceTests(unittest.IsolatedAsyncioTestCase):
         )
 
     async def test_matching_rge_et_non_rge(self):
-        with patch(
-            "app.artisans.service.enrichir_coordonnees",
-            new=AsyncMock(return_value={
-                "site_officiel": "https://geotechnique-test.fr",
-                "telephone": "05 56 00 00 00",
-                "email": "contact@geotechnique-test.fr",
-            }),
-        ):
-            result = await matcher(
-                "12 rue des Lilas, 33000 Bordeaux",
-                [
-                    {"zone": "toiture", "risques": [], "recommandations": [{"mesure": "Isolation des combles"}]},
-                    {
-                        "zone": "fondations",
-                        "risques": ["retrait_gonflement_argiles"],
-                        "recommandations": [{"mesure": "Faire réaliser un diagnostic"}],
-                    },
-                ],
-                client=FakeClient(),
-            )
+        result = await matcher(
+            "12 rue des Lilas, 33000 Bordeaux",
+            [
+                {"zone": "toiture", "risques": [], "recommandations": [{"mesure": "Isolation des combles"}]},
+                {
+                    "zone": "fondations",
+                    "risques": ["retrait_gonflement_argiles"],
+                    "recommandations": [{"mesure": "Faire réaliser un diagnostic"}],
+                },
+            ],
+            client=FakeClient(),
+        )
         self.assertEqual(result["code_postal"], "33000")
         self.assertEqual(len(result["recommandations_traitees"]), 2)
         for groupe in result["recommandations_traitees"]:
             self.assertEqual(groupe["entreprises"][0]["score_objectif_sur_100"], 100)
         rge, non_rge = result["recommandations_traitees"]
+        # Site natif ADEME/RGE conservé tel quel.
         self.assertEqual(rge["entreprises"][0]["site_officiel"], "https://isolation-test.fr/contact")
-        self.assertEqual(non_rge["entreprises"][0]["site_officiel"], "https://geotechnique-test.fr")
-        self.assertEqual(non_rge["entreprises"][0]["telephone"], "05 56 00 00 00")
-        self.assertEqual(non_rge["entreprises"][0]["email"], "contact@geotechnique-test.fr")
-        self.assertEqual(non_rge["entreprises"][0]["type_lien"], "site_entreprise_mistral_web_search")
+        # Sans recherche web (Mistral web_search supprimé) : le candidat non-RGE
+        # (Sirene) n'a aucune coordonnée native — pas de site, pas de contact.
+        self.assertIsNone(non_rge["entreprises"][0].get("site_officiel"))
+        self.assertFalse(non_rge["entreprises"][0].get("telephone"))
+        self.assertFalse(non_rge["entreprises"][0].get("email"))
+        # type_lien existe mais reste None : plus jamais taggé "web_search".
+        self.assertIsNone(non_rge["entreprises"][0].get("type_lien"))
         self.assertNotIn("lien_fiche_officielle", non_rge["entreprises"][0])
 
     async def test_source_indisponible_ne_fait_pas_echouer_le_rapport(self):

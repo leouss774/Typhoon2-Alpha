@@ -19,9 +19,11 @@ from pathlib import Path
 from typing import Any
 
 import httpx
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
+from fastapi.responses import Response
 from pydantic import BaseModel, Field
 
+from app.artisans.logo import trouver_favicon
 from app.artisans.service import matcher
 from app.connectors.geocoding import geocode_address
 from app.core.config import settings
@@ -55,7 +57,23 @@ async def match_artisans(payload: ArtisanMatchRequest) -> dict[str, Any]:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
+@router.get("/logo", response_class=Response)
+async def logo_entreprise(url: str = Query(..., min_length=8, description="URL du site officiel de l'entreprise (site_officiel)")) -> Response:
+    """Logo d'entreprise via favicon — SSRF guard, cache par hôte, garde-fous
+    (content-type image/*, taille max, timeout). 404 si aucun favicon."""
+    try:
+        resultat = await trouver_favicon(url)
+    except Exception:
+        logger.exception("Erreur inattendue lors de la resolution du favicon")
+        raise HTTPException(404, "Logo indisponible") from None
+    if resultat is None:
+        raise HTTPException(404, "Logo indisponible")
+    contenu, media_type = resultat
+    return Response(content=contenu, media_type=media_type)
+
+
 class RecommandationInput(BaseModel):
+    id: str | None = Field(default=None, description="Identifiant stable de la recommandation du diagnostic")
     """Une recommandation de travaux, au format structuré ou texte libre."""
 
     cle: str | None = Field(
@@ -194,12 +212,12 @@ async def matching_artisans(payload: ArtisanMatchingRequest) -> ArtisanMatchingR
     if payload.recommandations:
         for r in payload.recommandations:
             if r.cle:
-                recos.append({"cle": r.cle, "priorite": r.priorite, "zone_origine": r.zone,
+                recos.append({"recommendation_id": r.id, "cle": r.cle, "priorite": r.priorite, "zone_origine": r.zone,
                              "risques_origine": r.risques or [], "mesure_originale": r.mesure or ""})
             elif r.mesure:
                 c = _classifier_recommandation(r.zone or "", r.risques or [], r.mesure)
                 if c:
-                    recos.append({"cle": c, "priorite": r.priorite, "zone_origine": r.zone or "",
+                    recos.append({"recommendation_id": r.id, "cle": c, "priorite": r.priorite, "zone_origine": r.zone or "",
                                  "risques_origine": r.risques or [], "mesure_originale": r.mesure})
                 else:
                     non_class += 1
@@ -211,7 +229,7 @@ async def matching_artisans(payload: ArtisanMatchingRequest) -> ArtisanMatchingR
 
     # Exécution parallélisée via le service optimisé
     from app.matching.service import run_matching
-    rapport = await run_matching(recos, code_postal, lat, lon)
+    rapport = await run_matching(recos, code_postal, lat, lon, payload.limite_entreprises)
 
     return ArtisanMatchingResponse(
         adresse=payload.adresse,

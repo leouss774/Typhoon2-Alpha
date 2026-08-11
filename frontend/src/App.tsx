@@ -1,13 +1,10 @@
-import { Navigate, Route, Routes, Link, useLocation } from 'react-router-dom';
+import { Navigate, Route, Routes } from 'react-router-dom';
 import { Home } from './routes/Home';
 import { Zone } from './routes/Zone';
 import { JumeauNumerique } from './routes/JumeauNumerique';
-import { Promoteurs } from './routes/Promoteurs';
-import { Artisans } from './routes/Artisans';
-import { PropertyId } from './routes/PropertyId';
-import { Site } from './routes/Site';
 import { Faq } from './routes/Faq';
 import { Contact } from './routes/Contact';
+<<<<<<< HEAD
 import Economie from './routes/Economie';
 
 const nav = [
@@ -43,19 +40,26 @@ function TopNav() {
   );
 }
 
+=======
+import { AccountSettings } from './routes/AccountSettings';
+import { AssistantProvider } from './assistant/AssistantContext';
+import { TyphoonMascot } from './assistant/TyphoonMascot';
+
+/**
+ * Application Typhoon — toutes les pages sont autonomes (plein écran) :
+ *   /                  → landing page
+ *   /zone              → diagnostic géo-risque (stepper + carte + jumeau BIM)
+ *   /jumeau            → viewer 3D
+ *   /faq, /contact     → pages typhoon
+ *   /account, /settings → page « Paramètres du compte » (même chrome que /zone)
+ */
+>>>>>>> origin/develop
 export default function App() {
-  const location = useLocation();
-  const fullscreen =
-    location.pathname === '/' ||
-    location.pathname === '/faq' ||
-    location.pathname === '/contact' ||
-    location.pathname === '/zone' ||
-    location.pathname === '/jumeau';
   return (
-    <div>
-      {!fullscreen && <TopNav />}
+    <AssistantProvider>
       <Routes>
         <Route path="/" element={<Home />} />
+<<<<<<< HEAD
         <Route path="/zone" element={<Zone />} />
         <Route path="/jumeau" element={<JumeauNumerique />} />
         <Route path="/promoteurs" element={<Promoteurs />} />
@@ -63,10 +67,18 @@ export default function App() {
         <Route path="/economie" element={<Economie />} />
         <Route path="/property-id" element={<PropertyId />} />
         <Route path="/site" element={<Site />} />
+=======
+        <Route path="/zone/*" element={<Zone />} />
+        <Route path="/jumeau/*" element={<JumeauNumerique />} />
+>>>>>>> origin/develop
         <Route path="/faq" element={<Faq />} />
         <Route path="/contact" element={<Contact />} />
+        <Route path="/account" element={<AccountSettings />} />
+        <Route path="/settings" element={<AccountSettings />} />
+        <Route path="/settings/*" element={<AccountSettings />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-    </div>
+      <TyphoonMascot />
+    </AssistantProvider>
   );
 }

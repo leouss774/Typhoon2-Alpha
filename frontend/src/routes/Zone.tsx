@@ -3,8 +3,16 @@
 //   Étapes :
 //     1. Adresse      — hero centré façon Gemini (champ de recherche au centre)
 //     2. Cartographie — carte OpenLayers + panneau aléas (data viz Géorisques)
+<<<<<<< HEAD
 //     3. Analyse      — risques industriels & technologiques
 //     4. Rapport IA   — rapport narratif Mistral + module économie
+=======
+//     3. Analyse      — fiche bâtiment BDNB (Synthèse / Construction / Énergie…)
+//     4. Jumeau BIM   — viewer 3D thingraph en iframe (glTF généré depuis l'emprise BDNB)
+//     5. Recommandations — plan d'adaptation du bien
+//     6. Artisans       — professionnels associés aux travaux
+//     7. Rapport IA     — rapport narratif Mistral + export PDF
+>>>>>>> origin/develop
 //
 //   Stepper linéaire : les étapes 2-4 sont bloquées tant qu'aucune adresse
 //   n'a été diagnostiquée — l'étape Adresse passe en état d'erreur (icône
@@ -16,7 +24,12 @@ import { Link, useNavigate } from 'react-router-dom';
 import type { Menu } from '@material/web/menu/menu.js';
 import type { MdSwitch } from '@material/web/switch/switch.js';
 import { ZoneMap } from '../components/ZoneMap';
+import { ZoneAnalyse } from '../components/ZoneAnalyse';
+import { ZoneBIM } from '../components/ZoneBIM';
+import { ZoneRecommendations } from '../components/ZoneRecommendations';
+import { ZoneArtisans } from '../components/ZoneArtisans';
 import { ACCENTS, useTyphoonTheme } from '../typhoon/useTyphoonTheme';
+import { useAssistantContexte } from '../assistant/AssistantContext';
 import {
   API,
   D03,
@@ -30,18 +43,43 @@ import {
   type RisqueReport,
   type RapportNarratif,
   type GeocodeSuggestion,
+  type RisquesPrincipaux,
 } from '../zone/config';
+<<<<<<< HEAD
 import { runEconomiePipeline } from './economie/api';
 import type { ResultatEconomie } from './economie/types';
 import { PlanUsinePanel, TYPES_ZONE_LABELS, type PlanUsine } from './PlanUsine';
+=======
+import type { RecommendationZone } from '../jumeau/recommendations';
+import {
+  addConversation,
+  loadConversations,
+  removeConversation,
+  saveConversations,
+  type Conversation,
+} from '../zone/conversations';
+>>>>>>> origin/develop
 import '../styles/zone.css';
 
 const LEGEND_RANGES = ['<20', '20–39', '40–59', '60–79', '≥80'];
+
+/* Erreur structurée du rapport IA — contrat backend /diagnostic/adresse/rapport :
+   { error: <code>, detail: <message utilisateur>, cause: <cause technique> } */
+interface RapportError {
+  code: string; // mistral_api_key_manquante | mistral_indisponible | reseau | http_*
+  status?: number;
+  message: string; // message lisible
+  hint?: string; // conseil actionnable (facultatif)
+  cause?: string; // détail technique (affiché dans <details>)
+}
 
 const STEPS = [
   { id: 'adresse', label: 'Adresse' },
   { id: 'carto', label: 'Cartographie' },
   { id: 'analyse', label: 'Analyse' },
+  { id: 'bim', label: 'Jumeau BIM' },
+  { id: 'recommandations', label: 'Recommandations' },
+  { id: 'artisans', label: 'Artisans' },
   { id: 'rapport', label: 'Rapport IA' },
 ] as const;
 
@@ -91,8 +129,14 @@ export function Zone() {
   const [loading, setLoading] = useState(false);
   const [diagError, setDiagError] = useState<string | null>(null);
   const [report, setReport] = useState<RisqueReport | null>(null);
+  const [detailedRecommendationZones, setDetailedRecommendationZones] = useState<Record<string, RecommendationZone>>({});
+  const [detailedRecommendationsLoading, setDetailedRecommendationsLoading] = useState(false);
+  const [detailedRecommendationsError, setDetailedRecommendationsError] = useState<string | null>(null);
+  const [detailedRisquesPrincipaux, setDetailedRisquesPrincipaux] = useState<RisquesPrincipaux | null>(null);
+  const [conversations, setConversations] = useState<Conversation[]>(() => loadConversations());
   const [rapport, setRapport] = useState<RapportNarratif | null>(null);
   const [rapportLoading, setRapportLoading] = useState(false);
+<<<<<<< HEAD
   const [rapportError, setRapportError] = useState<string | null>(null);
   const [economie, setEconomie] = useState<ResultatEconomie | null>(null);
   const [economieLoading, setEconomieLoading] = useState(false);
@@ -101,8 +145,43 @@ export function Zone() {
   const [planUsineResult, setPlanUsineResult] = useState<any>(null);
   const [planUsineLoading, setPlanUsineLoading] = useState(false);
   const [planUsineError, setPlanUsineError] = useState<string | null>(null);
+=======
+  const [rapportError, setRapportError] = useState<RapportError | null>(null);
+  /* true quand l'étape Rapport IA a été atteinte pendant le chargement des
+     recommandations : le rapport n'est généré qu'une fois celles-ci prêtes. */
+  const [rapportWaiting, setRapportWaiting] = useState(false);
+  /* Export PDF du rapport IA (jsPDF côté client) — vrai bouton de téléchargement. */
+  const [exportingPdf, setExportingPdf] = useState(false);
+  const [exportPdfError, setExportPdfError] = useState<string | null>(null);
+  /* Intention « régénération forcée » mémorisée quand la relance est différée
+     par l'attente des recommandations (sinon force serait perdu). */
+  const rapportForceRef = useRef(false);
+>>>>>>> origin/develop
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [visibleLayerKeys, setVisibleLayerKeys] = useState<ReadonlySet<string>>(new Set());
+
+  /* ── Compagnon virtuel Typhoon : synchronise le contexte du diagnostic
+     affiché à l'écran (adresse, bien, zones/recommandations) pour que le
+     chat réponde à propos de CE bien. Contrat : backend/app/api/routes/chat.py. */
+  const { setContexte } = useAssistantContexte();
+  useEffect(() => {
+    if (!report) {
+      setContexte(null);
+      return;
+    }
+    const batiment = report.bdnb?.batiment;
+    setContexte({
+      adresse: report.adresse_normalisee,
+      bien: batiment
+        ? {
+            type: batiment.usage_principal_bdnb_open || batiment.usage_niveau_1_txt || null,
+            annee_construction: batiment.annee_construction ?? null,
+          }
+        : undefined,
+      zones: detailedRecommendationZones,
+    });
+  }, [report, detailedRecommendationZones, setContexte]);
+  useEffect(() => () => setContexte(null), [setContexte]);
 
   /* Champ de la topbar (étapes 2-4) et champ du hero (étape 1) : deux
      instances distinctes de md-outlined-text-field, chacune avec son ref. */
@@ -111,6 +190,41 @@ export function Zone() {
   const lastQuery = useRef('');
   const banTimeout = useRef<number | null>(null);
   const userClosedSidebar = useRef(false);
+  const recommendationsRequestId = useRef(0);
+
+  async function loadDetailedRecommendations(address: string) {
+    const requestId = ++recommendationsRequestId.current;
+    setDetailedRecommendationsLoading(true);
+    setDetailedRecommendationsError(null);
+    setDetailedRecommendationZones({});
+    setDetailedRisquesPrincipaux(null);
+    try {
+      const fastResponse = await fetch(`${API}/diagnostic/fast`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ adresse: address, copernicus: false }),
+      });
+      if (!fastResponse.ok) throw new Error(`Diagnostic détaillé HTTP ${fastResponse.status}`);
+      const fastContract = await fastResponse.json();
+      if (!fastContract?._resume) throw new Error('Contexte de recommandations absent');
+
+      const recommendationsResponse = await fetch(`${API}/diagnostic/recommandations`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(fastContract._resume),
+      });
+      if (!recommendationsResponse.ok) throw new Error(`Recommandations HTTP ${recommendationsResponse.status}`);
+      const detailedContract = await recommendationsResponse.json();
+      if (requestId !== recommendationsRequestId.current) return;
+      setDetailedRecommendationZones(detailedContract?.zones || {});
+      setDetailedRisquesPrincipaux(detailedContract?.risques_principaux || null);
+    } catch (error) {
+      if (requestId !== recommendationsRequestId.current) return;
+      setDetailedRecommendationsError(error instanceof Error ? error.message : 'Recommandations détaillées indisponibles');
+    } finally {
+      if (requestId === recommendationsRequestId.current) setDetailedRecommendationsLoading(false);
+    }
+  }
 
   /* ── BAN autocomplétion ── */
   function fetchSuggestions(q: string) {
@@ -156,6 +270,11 @@ export function Zone() {
     setDiagError(null);
     setLoading(true);
     setReport(null);
+    recommendationsRequestId.current += 1;
+    setDetailedRecommendationZones({});
+    setDetailedRecommendationsLoading(false);
+    setDetailedRecommendationsError(null);
+    setDetailedRisquesPrincipaux(null);
     setRapport(null);
     setRapportError(null);
     setEconomie(null);
@@ -179,6 +298,13 @@ export function Zone() {
 
       const r = (await resp.json()) as RisqueReport;
       setReport(r);
+      void loadDetailedRecommendations(r.adresse_normalisee || value);
+      /* Historique « Récent » (localStorage) : adresse normalisée ou requête brute. */
+      setConversations((prev) => {
+        const next = addConversation(prev, r.adresse_normalisee || value);
+        saveConversations(next);
+        return next;
+      });
       setStepError(false); // l'adresse est validée → étapes suivantes débloquées
       setStep(1); // → étape Cartographie
       if (!userClosedSidebar.current) setSidebarOpen(true);
@@ -204,23 +330,44 @@ export function Zone() {
         body: JSON.stringify(report),
       });
       if (!resp.ok) {
-        let detail = `Erreur ${resp.status}`;
-        try {
-          const err = await resp.json();
-          detail = err.detail?.detail || err.detail?.error || JSON.stringify(err.detail) || detail;
-        } catch {
-          /* corps non-JSON */
-        }
-        throw new Error(detail);
+        // Contrat backend : detail = { error, detail, cause }. On gère aussi
+        // le cas FastAPI où detail est une simple chaîne ({"detail": "..."}).
+        const err = await resp.json().catch(() => null);
+        const rawDetail = err?.detail;
+        const d =
+          rawDetail && typeof rawDetail === 'object'
+            ? rawDetail
+            : rawDetail && typeof rawDetail === 'string'
+              ? { detail: rawDetail }
+              : err ?? {};
+        setRapportError({
+          code: d.error || `http_${resp.status}`,
+          status: resp.status,
+          message:
+            d.detail ||
+            (resp.status === 503
+              ? 'Le rapport IA nécessite une clé Mistral côté serveur.'
+              : `Le service n'a pas pu générer le rapport (HTTP ${resp.status}).`),
+          hint: hintForRapportError(d.error, resp.status),
+          cause: d.cause || undefined,
+        });
+        return;
       }
       setRapport((await resp.json()) as RapportNarratif);
     } catch (err) {
-      setRapportError(err instanceof Error ? err.message : String(err));
+      // fetch() a échoué : backend injoignable, CORS, DNS…
+      setRapportError({
+        code: 'reseau',
+        message: 'Impossible de joindre le serveur pour générer le rapport IA.',
+        hint: 'Vérifiez que le backend Typhoon est démarré (port 8765) puis réessayez.',
+        cause: err instanceof Error ? err.message : String(err),
+      });
     } finally {
       setRapportLoading(false);
     }
   }
 
+<<<<<<< HEAD
   /* ── Module économie — utilise la MÊME adresse analysée (workflow fluide) ── */
   async function loadEconomie() {
     if (!lastQuery.current.trim() || economie || economieLoading) return;
@@ -286,6 +433,37 @@ export function Zone() {
     } finally {
       setPlanUsineLoading(false);
     }
+=======
+  /* Rapport IA en attente : si l'étape 5 a été atteinte pendant le chargement
+     des recommandations détaillées, on génère le rapport dès qu'elles sont
+     prêtes (même en cas d'échec : le rapport reste générable). L'intention
+     « force » est conservée pour la relance (Régénérer). */
+  useEffect(() => {
+    if (rapportWaiting && !detailedRecommendationsLoading && step === 5 && report) {
+      const force = rapportForceRef.current;
+      rapportForceRef.current = false;
+      setRapportWaiting(false);
+      void loadRapport(force);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rapportWaiting, detailedRecommendationsLoading, step, report]);
+
+  /* Conseil actionnable selon le code d'erreur renvoyé par le backend. */
+  function hintForRapportError(code: string | undefined, status: number): string | undefined {
+    if (code === 'mistral_api_key_manquante') {
+      return "Ajoutez MISTRAL_API_KEY au fichier .env du backend puis redémarrez l'API.";
+    }
+    if (code === 'mistral_indisponible' || status === 502) {
+      return 'Le service Mistral est momentanément indisponible ou a expiré — réessayez dans quelques instants.';
+    }
+    if (status === 503) {
+      return 'Le service de génération IA n\'est pas configuré côté serveur.';
+    }
+    if (status >= 500) {
+      return 'Le serveur a rencontré une erreur interne — réessayez, ou relancez le backend si cela persiste.';
+    }
+    return undefined;
+>>>>>>> origin/develop
   }
 
   /* ── Navigation du stepper (linéaire : impossible de sauter l'adresse) ── */
@@ -298,11 +476,18 @@ export function Zone() {
     }
     setStepError(false);
     setStep(i);
+    /* Quitter l'étape Rapport IA avant la fin des recommandations : on retire
+       l'état « en attente » (sera redéclenché si l'on revient à l'étape 5). */
+    if (i !== 5) setRapportWaiting(false);
     if (i === 0) window.setTimeout(() => heroInputRef.current?.focus(), 80);
+<<<<<<< HEAD
     if (i === 3 && report) {
       void loadRapport();
       void loadEconomie();
     }
+=======
+    if (i === 6 && report) void loadRapport();
+>>>>>>> origin/develop
   }
 
   /* ── Visibilité des couches ── */
@@ -319,6 +504,20 @@ export function Zone() {
     setSidebarOpen((o) => {
       userClosedSidebar.current = o; // fermeture manuelle → true · réouverture → false
       return !o;
+    });
+  }
+
+  /* ── Historique « Récent » (sidenav) ── */
+  function handleOpenConversation(address: string) {
+    setDrawerOpen(false);
+    void runDiagnosis(address);
+  }
+
+  function handleDeleteConversation(id: string) {
+    setConversations((prev) => {
+      const next = removeConversation(prev, id);
+      saveConversations(next);
+      return next;
     });
   }
 
@@ -341,9 +540,28 @@ export function Zone() {
   );
 
   const wmsActive = !!report && report.aleas.some((a) => WMS_LAYER_MAP[a.code]);
+  /* PDF officiel Géorisques (ERRIAL) — lien secondaire conservé. */
   const pdfUrl = report
     ? `${API}/diagnostic/adresse/rapport-pdf?lat=${report.lat}&lon=${report.lon}`
     : '#';
+
+  /* ── Export PDF du rapport IA (client-side, jsPDF importé à la demande) ── */
+  async function handleExportPdf() {
+    if (!report || !rapport || exportingPdf) return;
+    setExportingPdf(true);
+    setExportPdfError(null);
+    try {
+      const { exportRapportPdf } = await import('../zone/pdf-export');
+      await exportRapportPdf(report, rapport);
+    } catch (err) {
+      console.error('Export PDF du rapport IA échoué :', err);
+      setExportPdfError(
+        "L'export PDF a échoué dans le navigateur. Réessayez — si le problème persiste, utilisez le lien « PDF officiel Géorisques »."
+      );
+    } finally {
+      setExportingPdf(false);
+    }
+  }
 
   const stripText = report
     ? `${report.adresse_normalisee} · ${report.alea_count} aléa(s) · 0 simulés`
@@ -383,6 +601,10 @@ export function Zone() {
           setDrawerOpen(false);
           goToStep(0);
         }}
+        conversations={conversations}
+        activeAddress={report?.adresse_normalisee ?? null}
+        onOpenConversation={handleOpenConversation}
+        onDeleteConversation={handleDeleteConversation}
       />
 
       {/* ===== COLONNE PRINCIPALE ===== */}
@@ -485,7 +707,7 @@ export function Zone() {
         </section>
       )}
 
-      {/* ===== ÉTAPES 2–4 : topbar + scène ===== */}
+      {/* ===== ÉTAPES 2–5 : topbar + scène ===== */}
       {step >= 1 && (
         <>
           <header className="zone-topbar">
@@ -677,6 +899,7 @@ export function Zone() {
               </section>
             </div>
 
+<<<<<<< HEAD
             {/* ÉTAPE 3 — ANALYSE (risques industriels & technologiques) */}
             <section className="zone-analysis" hidden={step !== 2}>
               {!report ? (
@@ -981,6 +1204,48 @@ export function Zone() {
 
       {/* ÉTAPE 4 — RAPPORT IA (Mistral) + Module économie */}
       <section className="zone-report" hidden={step !== 3}>
+=======
+            {/* ÉTAPE 3 — ANALYSE BDNB (fiche bâtiment) */}
+            <section className="zone-analyse" hidden={step !== 2}>
+              <ZoneAnalyse report={report} />
+            </section>
+
+            {/* ÉTAPE 4 — JUMEAU BIM (viewer 3D thingraph/bim-viewer en iframe) */}
+            <section className="zone-bim" hidden={step !== 3}>
+              <ZoneBIM
+                report={report}
+                recommendationZones={detailedRecommendationZones}
+                recommendationZonesLoading={detailedRecommendationsLoading}
+                recommendationZonesError={detailedRecommendationsError}
+                risquesPrincipaux={detailedRisquesPrincipaux}
+                visibleLayerKeys={visibleLayerKeys}
+                onToggleLayer={toggleLayer}
+              />
+            </section>
+
+            {/* ÉTAPE 5 — RECOMMANDATIONS */}
+            <section className="zone-recommendations" hidden={step !== 4}>
+              <ZoneRecommendations
+                report={report}
+                zones={detailedRecommendationZones}
+                loading={detailedRecommendationsLoading}
+                error={detailedRecommendationsError}
+              />
+            </section>
+
+            {/* ÉTAPE 6 — ARTISANS */}
+            <section className="zone-artisans-step" hidden={step !== 5}>
+              <ZoneArtisans
+                report={report}
+                zones={detailedRecommendationZones}
+                loading={detailedRecommendationsLoading}
+                error={detailedRecommendationsError}
+              />
+            </section>
+
+            {/* ÉTAPE 7 — RAPPORT IA */}
+            <section className="zone-report" hidden={step !== 6}>
+>>>>>>> origin/develop
               {!report ? (
                 <div className="report-empty">
                   <md-icon>description</md-icon>
@@ -990,6 +1255,153 @@ export function Zone() {
                     <md-icon slot="icon">search</md-icon> Chercher une adresse
                   </md-filled-button>
                 </div>
+<<<<<<< HEAD
+=======
+              ) : rapportLoading ? (
+                <div className="report-empty">
+                  <md-icon>psychology</md-icon>
+                  <h2>Génération du rapport IA…</h2>
+                  <p>Mistral analyse les données Géorisques de {report.adresse_normalisee}.</p>
+                  <md-linear-progress indeterminate></md-linear-progress>
+                </div>
+              ) : rapportWaiting && !rapport ? (
+                <div className="report-empty">
+                  <md-icon>hourglass_top</md-icon>
+                  <h2>Analyse des recommandations en cours…</h2>
+                  <p>
+                    Le rapport IA sera généré dès la fin de l'analyse détaillée
+                    du bien.
+                  </p>
+                  <md-linear-progress indeterminate></md-linear-progress>
+                </div>
+              ) : rapportError ? (
+                <div className="report-error" role="alert">
+                  <div className="report-error-icon">
+                    <md-icon>
+                      {rapportError.code === 'mistral_api_key_manquante'
+                        ? 'vpn_key'
+                        : rapportError.code === 'reseau'
+                          ? 'wifi_off'
+                          : 'cloud_off'}
+                    </md-icon>
+                  </div>
+                  <h2>Rapport indisponible</h2>
+                  <p className="report-error-msg">{rapportError.message}</p>
+                  {rapportError.hint ? (
+                    <p className="report-error-hint">
+                      <md-icon>lightbulb</md-icon>
+                      <span>{rapportError.hint}</span>
+                    </p>
+                  ) : null}
+                  {rapportError.cause ? (
+                    <details className="report-error-details">
+                      <summary>
+                        <md-icon>bug_report</md-icon> Détail technique
+                      </summary>
+                      <code>
+                        [{rapportError.code}
+                        {rapportError.status ? ` · HTTP ${rapportError.status}` : ''}] {rapportError.cause}
+                      </code>
+                    </details>
+                  ) : null}
+                  <div className="report-error-actions">
+                    <md-filled-button onClick={() => void loadRapport()}>
+                      <md-icon slot="icon">refresh</md-icon> Réessayer
+                    </md-filled-button>
+                    <md-text-button onClick={() => goToStep(0)}>
+                      <md-icon slot="icon">search</md-icon> Nouvelle adresse
+                    </md-text-button>
+                  </div>
+                </div>
+              ) : rapport ? (
+                <>
+                  <header className="report-header">
+                    <div className="report-title">
+                      <h2>Rapport d'analyse IA</h2>
+                      <p className="report-meta">
+                        {report.adresse_normalisee} · Code INSEE {report.code_insee} ·{' '}
+                        {report.date_generation}
+                      </p>
+                    </div>
+                    <div className="report-actions">
+                      <md-text-button
+                        className="report-regenerate"
+                        aria-label="Régénérer le rapport IA (nouvel appel Mistral, sans cache)"
+                        title="Régénérer avec le prompt actuel"
+                        onClick={() => void loadRapport(true)}
+                      >
+                        <md-icon slot="icon">refresh</md-icon>
+                        Régénérer
+                      </md-text-button>
+                      <md-elevated-button
+                        className="pdf-btn report-export"
+                        disabled={exportingPdf}
+                        aria-busy={exportingPdf || undefined}
+                        onClick={handleExportPdf}
+                      >
+                        <md-icon slot="icon">
+                          {exportingPdf ? 'hourglass_top' : 'picture_as_pdf'}
+                        </md-icon>
+                        {exportingPdf ? 'Génération du PDF…' : 'Exporter en PDF'}
+                      </md-elevated-button>
+                      <md-text-button
+                        className="report-official"
+                        href={pdfUrl}
+                        target="_blank"
+                        rel="noopener"
+                        title="PDF officiel Géorisques (ERRIAL) pour ces coordonnées"
+                      >
+                        PDF officiel Géorisques
+                      </md-text-button>
+                    </div>
+                    {exportPdfError && (
+                      <p className="report-export-error" role="alert">
+                        <md-icon>error</md-icon>
+                        <span>{exportPdfError}</span>
+                      </p>
+                    )}
+                  </header>
+
+                  <p className="report-intro">{rapport.introduction}</p>
+
+                  <div className="report-sections">
+                    {rapport.sections.map((s, i) => (
+                      <article className="report-section" key={i}>
+                        <h3>{s.titre}</h3>
+                        <p>{s.contenu}</p>
+                      </article>
+                    ))}
+                  </div>
+
+                  <aside className="report-synthese">
+                    <md-icon>summarize</md-icon>
+                    <div>
+                      <h3>Synthèse finale</h3>
+                      <p>{rapport.synthese_finale}</p>
+                    </div>
+                  </aside>
+
+                  {rapport.obligations_reglementaires &&
+                    rapport.obligations_reglementaires.length > 0 && (
+                      <section className="report-obligations">
+                        <h3>Obligations réglementaires</h3>
+                        <ul>
+                          {rapport.obligations_reglementaires.map((o, i) => (
+                            <li key={i}>{o}</li>
+                          ))}
+                        </ul>
+                      </section>
+                    )}
+
+                  <p className="report-avertissement">
+                    <md-icon>info</md-icon>
+                    <span>
+                      {rapport.avertissement_ia ||
+                        "Ce rapport est généré automatiquement par IA à partir des données publiques Géorisques normalisées. Il ne remplace pas l'ERRIAL ni l'avis d'un expert."}
+                    </span>
+                  </p>
+                </>
+>>>>>>> origin/develop
               ) : (
                 <>
                   {/* ── Rapport IA : état selon Mistral ── */}
@@ -1488,6 +1900,10 @@ function ZoneSidenav({
   onOpenSettings,
   onCloseDrawer,
   onNewDiagnostic,
+  conversations,
+  activeAddress,
+  onOpenConversation,
+  onDeleteConversation,
 }: {
   sidenavRef: RefObject<HTMLElement | null>;
   collapsed: boolean;
@@ -1504,6 +1920,10 @@ function ZoneSidenav({
   onOpenSettings: () => void;
   onCloseDrawer: () => void;
   onNewDiagnostic: () => void;
+  conversations: Conversation[];
+  activeAddress: string | null;
+  onOpenConversation: (address: string) => void;
+  onDeleteConversation: (id: string) => void;
 }) {
   const navigate = useNavigate();
 
@@ -1573,29 +1993,38 @@ function ZoneSidenav({
           </md-icon-button>
         </nav>
       ) : (
-        /* ── Mode déplié : liste M3 ── */
-        <md-list className="sidenav-nav">
-          <md-list-item
-            className="sidenav-new"
-            type="button"
-            onClick={onNewDiagnostic}
-          >
-            <md-icon slot="start">add_circle</md-icon>
-            <span slot="headline">Nouveau diagnostic</span>
-          </md-list-item>
-          <md-list-item type="button" onClick={() => navGo('/')}>
-            <md-icon slot="start">home</md-icon>
-            <span slot="headline">Accueil</span>
-          </md-list-item>
-          <md-list-item type="button" onClick={() => navGo('/faq')}>
-            <md-icon slot="start">help</md-icon>
-            <span slot="headline">FAQ</span>
-          </md-list-item>
-          <md-list-item type="button" onClick={() => navGo('/contact')}>
-            <md-icon slot="start">mail</md-icon>
-            <span slot="headline">Contact</span>
-          </md-list-item>
-        </md-list>
+        /* ── Mode déplié : liste M3 + historique « Récent » ── */
+        <div className="sidenav-body">
+          <md-list className="sidenav-nav">
+            <md-list-item
+              className="sidenav-new"
+              type="button"
+              onClick={onNewDiagnostic}
+            >
+              <md-icon slot="start">add_circle</md-icon>
+              <span slot="headline">Nouveau diagnostic</span>
+            </md-list-item>
+            <md-list-item type="button" onClick={() => navGo('/')}>
+              <md-icon slot="start">home</md-icon>
+              <span slot="headline">Accueil</span>
+            </md-list-item>
+            <md-list-item type="button" onClick={() => navGo('/faq')}>
+              <md-icon slot="start">help</md-icon>
+              <span slot="headline">FAQ</span>
+            </md-list-item>
+            <md-list-item type="button" onClick={() => navGo('/contact')}>
+              <md-icon slot="start">mail</md-icon>
+              <span slot="headline">Contact</span>
+            </md-list-item>
+          </md-list>
+
+          <ConversationHistory
+            conversations={conversations}
+            activeAddress={activeAddress}
+            onOpen={onOpenConversation}
+            onDelete={onDeleteConversation}
+          />
+        </div>
       )}
 
       <footer className="sidenav-footer">
@@ -1657,4 +2086,75 @@ function ZoneSidenav({
       </footer>
     </aside>
   );
+<<<<<<< HEAD
+=======
+}
+
+/* ── Historique « Récent » de la sidenav (façon Gemini) ──
+   Section repliable : liste des adresses diagnostiquées (localStorage),
+   clic → relance le diagnostic, survol → bouton de suppression. */
+function ConversationHistory({
+  conversations,
+  activeAddress,
+  onOpen,
+  onDelete,
+}: {
+  conversations: Conversation[];
+  activeAddress: string | null;
+  onOpen: (address: string) => void;
+  onDelete: (id: string) => void;
+}) {
+  const [open, setOpen] = useState(true);
+
+  if (conversations.length === 0) {
+    return (
+      <div className="sidenav-recent-empty">
+        <md-icon>history</md-icon>
+        <span>Pas encore de diagnostic</span>
+      </div>
+    );
+  }
+
+  return (
+    <details
+      className="sidenav-recent"
+      open={open}
+      onToggle={(e) => setOpen((e.currentTarget as HTMLDetailsElement).open)}
+    >
+      <summary className="sidenav-recent-header" aria-label="Historique des adresses diagnostiquées">
+        <span className="sidenav-recent-title">Récent</span>
+        <md-icon>expand_more</md-icon>
+      </summary>
+      <div className="sidenav-recent-list">
+        {conversations.map((c) => {
+          const active = activeAddress !== null && c.address === activeAddress;
+          return (
+            <div
+              className={`sidenav-recent-item${active ? ' active' : ''}`}
+              key={c.id}
+            >
+              <button
+                type="button"
+                className="sidenav-recent-btn"
+                title={c.address}
+                onClick={() => onOpen(c.address)}
+              >
+                <md-icon>history</md-icon>
+                <span className="sidenav-recent-label">{c.address}</span>
+              </button>
+              <md-icon-button
+                className="sidenav-recent-del"
+                aria-label={`Supprimer ${c.address} de l'historique`}
+                title="Supprimer de l'historique"
+                onClick={() => onDelete(c.id)}
+              >
+                <md-icon>close</md-icon>
+              </md-icon-button>
+            </div>
+          );
+        })}
+      </div>
+    </details>
+  );
+>>>>>>> origin/develop
 }
