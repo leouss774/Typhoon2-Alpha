@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="fr" data-wf-domain="vetter-consulting-en.webflow.io" data-wf-page="66a20363e5bbc5dbaa1b5945" data-wf-site="66a20363e5bbc5dbaa1b5951">
   <head>
     <meta charset="UTF-8" />
@@ -72,12 +72,34 @@
          (em → suit les breakpoints), interlignes resserrés façon app Gemini.
          Corps : 400, tracking 0, interligne aéré. Les font-sizes ne sont pas
          touchés : les breakpoints Webflow restent maîtres des tailles. */
+      /* Hero : hiérarchie alignée sur l'échelle typographique des autres
+         sections (global-headline-xl ≈ 60px, l ≈ 50px, m ≈ 28px, copytext)
+         au lieu du 90px Webflow — cohérent avec « À propos », « Comment ça
+         marche »… Le hero garde son fond vidéo sombre et ses textes blancs. */
       .hero-headline {
-        font-weight: 600;
-        letter-spacing: -0.035em;
-        line-height: 0.98;
-        font-size: clamp(2.35rem, 4.2vw, 4.1rem);
-        text-wrap: balance;
+        font-weight: 500;
+        letter-spacing: -0.025em;
+        line-height: 1.08;
+      }
+      .hero-layer-3 .hero-headline {
+        /* « Typhoon. » — même échelle que global-headline-xl */
+        font-size: clamp(2.6rem, 5.4vw, 3.75rem);
+        max-width: 56rem;
+      }
+      .hero-layer-3 .hero-headline--tagline {
+        /* « Précis. Rapide. Décidé. » — même échelle que global-headline-l */
+        font-size: clamp(1.85rem, 3.6vw, 2.5rem);
+        line-height: 1.12;
+        margin-top: .35rem;
+      }
+      .hero-layer-3 .hero-headline--lead {
+        /* « Anticipez… » — ligne d'appui du hero, taille lisible */
+        margin-top: 1.1rem;
+        font-size: clamp(1.5rem, 2.9vw, 2.25rem);
+        font-weight: 400;
+        letter-spacing: 0;
+        line-height: 1.4;
+        max-width: 48rem;
       }
       .hero-headline-line {
         display: block;
@@ -88,6 +110,24 @@
       .hero-headline-line--accent {
         color: #87c8ea;
       }
+      /* Entrée du hero : les éléments ont des états initiaux IX2 (opacity:0,
+         translateY) dont l'animation ne se déclenche plus — on les révèle en
+         cascade (transition) quand le préloader se ferme (classe
+         .hero-reveal ajoutée par le script). Les valeurs !important
+         écrasent les styles inline IX2. */
+      .hero-layer-3.hero-reveal .hero-headline,
+      .hero-layer-3.hero-reveal .hero-headline--tagline,
+      .hero-layer-3.hero-reveal .hero-headline--lead,
+      .hero-layer-3.hero-reveal .global-subline,
+      .hero-layer-3.hero-reveal .global-button-div {
+        opacity: 1 !important;
+        transform: translateY(0) !important;
+      }
+      .hero-layer-3.hero-reveal .hero-headline { transition: opacity .9s cubic-bezier(.22, 1, .36, 1) .05s, transform .9s cubic-bezier(.22, 1, .36, 1) .05s; }
+      .hero-layer-3.hero-reveal .hero-headline--tagline { transition: opacity .9s cubic-bezier(.22, 1, .36, 1) .28s, transform .9s cubic-bezier(.22, 1, .36, 1) .28s; }
+      .hero-layer-3.hero-reveal .hero-headline--lead { transition: opacity .9s cubic-bezier(.22, 1, .36, 1) .5s, transform .9s cubic-bezier(.22, 1, .36, 1) .5s; }
+      .hero-layer-3.hero-reveal .global-subline { transition: opacity .9s cubic-bezier(.22, 1, .36, 1) .72s, transform .9s cubic-bezier(.22, 1, .36, 1) .72s; }
+      .hero-layer-3.hero-reveal .global-button-div { transition: opacity .9s cubic-bezier(.22, 1, .36, 1) .94s, transform .9s cubic-bezier(.22, 1, .36, 1) .94s; }
       .global-headline-xl,
       /* Le sélecteur .is-center-aligned (même spécificité 0,2,0 que la règle
          .global-headline-xl.is-center-aligned { font-weight: 400 } du CSS Webflow)
@@ -179,335 +219,6 @@
           width: 10rem;
         }
       }
-      .preloader {
-        transition: opacity .85s ease, transform .85s ease;
-        will-change: opacity, transform;
-      }
-      .preloader.is-hidden {
-        opacity: 0;
-        transform: translateY(-10px) scale(.99);
-        pointer-events: none;
-      }
-
-      /* ═══ Préloader — page « compteur climatique » avec entrée manuelle ═══
-         Disposition (de haut en bas) :
-         1. wordmark Typhoon en haut à gauche ;
-         2. phrase « Le climat ne prévient pas… » (texte et classes d'origine
-            conservés à l'identique), placée un peu plus bas, avec le compteur
-            « coût cumulé des sinistres climatiques » à sa droite ;
-         3. en bas : la mascotte en transparence (ombre bleue portée) et, à
-            côté d'elle, le bouton « Comment anticiper cela ? » qui révèle la
-            page d'accueil au clic (plus de transition automatique). */
-      .preloader {
-        /* Sécurité : si le contenu dépasse 100vh (écran peu haut), le
-           préloader défile au lieu de rogner. align-items: safe center
-           évite le bug de centrage flex (haut inaccessible au scroll) ;
-           les navigateurs sans « safe » ignorent la déclaration. */
-        align-items: safe center;
-        overflow-y: auto;
-      }
-      /* Fond ambiant non uni : halos bleus diffus qui brisent le fond uni,
-         avec une respiration très lente, et qui s'intensifient quand on
-         survole (ou focus-clavier) le bouton « Comment anticiper cela ? ».
-         La couche ::before passe derrière le contenu (z-index -1), au-dessus
-         du fond de .preloader. */
-      .preloader::before {
-        content: '';
-        position: absolute;
-        inset: 0;
-        z-index: -1;
-        pointer-events: none;
-        background:
-          radial-gradient(640px 460px at 16% 10%, rgba(67, 134, 177, .18), transparent 62%),
-          radial-gradient(760px 560px at 84% 88%, rgba(67, 134, 177, .22), transparent 62%),
-          radial-gradient(520px 400px at 70% 24%, rgba(67, 134, 177, .12), transparent 60%);
-        opacity: .75;
-        transition: opacity .5s ease;
-        animation: preloader-glow-breathe 7s ease-in-out infinite;
-      }
-      @keyframes preloader-glow-breathe {
-        0%, 100% { transform: scale(1); }
-        50% { transform: scale(1.04); }
-      }
-      .preloader.glow::before {
-        opacity: 1;
-      }
-      @media (prefers-reduced-motion: reduce) {
-        .preloader::before {
-          animation: none;
-        }
-      }
-      .preloader-inner {
-        flex-flow: column;
-        justify-content: center;
-        align-items: stretch;
-        gap: 3rem;
-        width: 100%;
-        height: 100%;
-        display: flex;
-      }
-      .preloader-head {
-        justify-content: flex-start;
-        align-items: center;
-        width: 100%;
-        display: flex;
-      }
-      /* Rangée centrale : phrase à gauche, compteur à droite. */
-      .preloader-mid {
-        grid-column-gap: 3rem;
-        grid-row-gap: 2rem;
-        grid-template-columns: minmax(0, 1fr) minmax(0, 34rem);
-        grid-auto-columns: 1fr;
-        align-items: center;
-        width: 100%;
-        display: grid;
-      }
-      .preloader-mid .global-headline-m.is-left-aligned.in-loader {
-        /* Le texte s'étend sur toute la largeur de sa colonne (la classe
-           partagée .in-loader impose 25rem). */
-        max-width: 100%;
-        font-size: clamp(1.8rem, 2.5vw, 2.35rem);
-        line-height: 1.2;
-      }
-      /* Rangée du bas : mascotte à gauche, CTA « Comment anticiper cela ? »
-         juste à côté d'elle. */
-      .preloader-bottom {
-        justify-content: center;
-        align-items: center;
-        gap: 2rem 3rem;
-        width: 100%;
-        display: flex;
-        flex-wrap: wrap;
-      }
-      .preloader-mascot {
-        object-fit: contain;
-        width: clamp(18rem, 30vw, 28rem);
-        max-width: none;
-        height: auto;
-        max-height: 19rem;
-        flex-shrink: 0;
-        /* L'ombre bleue suit la silhouette PNG (drop-shadow = stacking
-           context, inutile d'ajouter un z-index). */
-        filter: drop-shadow(0 1.25rem 2.5rem rgba(67, 134, 177, .35))
-                drop-shadow(0 .45rem 1rem rgba(67, 134, 177, .28));
-      }
-      /* Bouton d'entrée : révèle la page d'accueil au clic. */
-      .preloader-cta {
-        align-items: center;
-        gap: 1rem;
-        padding: 1.6rem 3.4rem 1.55rem;
-        border: 0;
-        border-radius: 999px;
-        /* Dégradé du bleu d'accent (gauche) vers un bleu plus foncé (droite). */
-        background: linear-gradient(90deg, var(--orange, #4386B1), #2f6f9e);
-        box-shadow: 0 14px 34px rgba(67, 134, 177, .35),
-                    inset 0 1px 0 rgba(255, 255, 255, .25);
-        color: #fff;
-        font-family: 'Google Sans', 'Neue Montreal', sans-serif;
-        font-size: 1.5rem;
-        font-weight: 600;
-        letter-spacing: -.01em;
-        cursor: pointer;
-        display: inline-flex;
-        transition: transform .2s ease, box-shadow .2s ease, filter .2s ease;
-      }
-      .preloader-cta:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 18px 44px rgba(67, 134, 177, .45),
-                    inset 0 1px 0 rgba(255, 255, 255, .3);
-        filter: brightness(1.08);
-      }
-      .preloader-cta:active {
-        transform: translateY(-1px) scale(.99);
-      }
-      .preloader-cta:focus-visible {
-        outline: 3px solid rgba(255, 255, 255, .6);
-        outline-offset: 3px;
-      }
-      .preloader-cta .cta-arrow {
-        width: 1.6rem;
-        height: 1.6rem;
-        flex-shrink: 0;
-        transition: transform .2s ease;
-      }
-      .preloader-cta:hover .cta-arrow {
-        transform: translateX(4px);
-      }
-      /* Entrée en douceur, en cascade, des trois zones du préloader. */
-      @keyframes preloader-rise {
-        from { opacity: 0; transform: translateY(14px); }
-        to { opacity: 1; transform: translateY(0); }
-      }
-      .preloader-head {
-        animation: preloader-rise .6s ease-out both;
-      }
-      .preloader-mid {
-        animation: preloader-rise .6s .12s ease-out both;
-      }
-      .preloader-bottom {
-        animation: preloader-rise .6s .24s ease-out both;
-      }
-      @media (prefers-reduced-motion: reduce) {
-        .preloader-head,
-        .preloader-mid,
-        .preloader-bottom {
-          animation: none;
-        }
-      }
-      /* Écrans peu hauts : on compacte pour tenir dans 100vh sans défilement. */
-      @media (max-height: 850px) {
-        .preloader-inner {
-          gap: 1.75rem;
-        }
-        .preloader-head .logo.in-preloader {
-          width: 13rem;
-        }
-        .preloader-mid {
-          grid-template-columns: minmax(0, 1fr) minmax(0, 32rem);
-        }
-        .preloader-mascot {
-          width: 19rem;
-          max-height: 13rem;
-        }
-        .preloader-cta {
-          padding: 1.3rem 2.6rem;
-          font-size: 1.25rem;
-        }
-      }
-      /* Mobile : la phrase passe au-dessus du compteur ; mascotte + CTA
-         restent côte à côte (et s'empilent si besoin). */
-      @media (max-width: 767px) {
-        .preloader-inner {
-          justify-content: flex-start;
-          gap: 2rem;
-          padding: 1.5rem;
-        }
-        .preloader-mid {
-          grid-template-columns: minmax(0, 1fr);
-        }
-        .preloader-mascot {
-          width: min(48vw, 17rem);
-          max-height: 12rem;
-        }
-        .preloader-cta {
-          padding: 1.25rem 2.1rem;
-          font-size: 1.2rem;
-        }
-      }
-      @media (max-width: 479px) {
-        .preloader-mascot {
-          width: min(68vw, 15rem);
-        }
-        .preloader-cta {
-          width: 100%;
-          justify-content: center;
-        }
-      }
-
-      /* ═══ Préloader : compteur « coût cumulé des sinistres climatiques » ═══
-         Le style reprend l'ancien préloader : fond du thème (clair/blanc en
-         thème clair), police Google Sans / Neue Montreal. Le compteur
-         climatique est présenté dans une carte du même style que les
-         anciennes horloges (fond var(--dark-grey), bordure
-         var(--standard-grey), coins arrondis) ; il occupe la colonne droite
-         de .preloader-mid, à côté de la phrase « Le climat ne prévient
-         pas… ». */
-      .climate-counter {
-        grid-column: auto;
-        border: 1px solid var(--standard-grey);
-        background-color: var(--dark-grey);
-        border-radius: 36px;
-        flex-flow: column;
-        justify-content: center;
-        align-items: flex-start;
-        width: 100%;
-        padding: 2.5rem 2.5rem 2.25rem;
-        display: flex;
-        font-family: 'Google Sans', 'Neue Montreal', sans-serif;
-      }
-      .climate-counter-head {
-        justify-content: space-between;
-        align-items: baseline;
-        gap: 1rem 2rem;
-        width: 100%;
-        display: flex;
-        flex-wrap: wrap;
-      }
-      .climate-counter-label {
-        color: var(--white);
-        font-size: 1.05rem;
-        font-weight: 500;
-        letter-spacing: .01em;
-      }
-      .climate-counter-source {
-        color: var(--light-grey);
-        font-size: .7rem;
-        font-weight: 400;
-        letter-spacing: .02em;
-      }
-      .climate-counter-row {
-        justify-content: flex-start;
-        align-items: baseline;
-        gap: 1.75rem;
-        width: 100%;
-        margin-top: 1.75rem;
-        display: flex;
-        flex-wrap: wrap;
-      }
-      .climate-counter-value {
-        color: var(--white);
-        font-size: clamp(3.25rem, 8vw, 6.5rem);
-        font-weight: 600;
-        line-height: 1;
-        letter-spacing: -.03em;
-        font-variant-numeric: tabular-nums;
-        transform-origin: left center;
-      }
-      /* Effet de sensibilisation : à chaque palier de 1 000 € franchi par le
-         compteur, la valeur grossit et passe en rouge (la classe est
-         re-ajoutée par le script à chaque nouveau palier). */
-      .climate-counter-value.is-milestone {
-        animation: counter-milestone 1.1s ease-out;
-      }
-      @keyframes counter-milestone {
-        0%   { color: var(--white); transform: scale(1); text-shadow: none; }
-        25%  { color: #ff4d4f; transform: scale(1.16); text-shadow: 0 0 26px rgba(255, 77, 79, .55); }
-        55%  { color: #ff4d4f; transform: scale(1.1); text-shadow: 0 0 20px rgba(255, 77, 79, .4); }
-        100% { color: var(--white); transform: scale(1); text-shadow: none; }
-      }
-      @media (prefers-reduced-motion: reduce) {
-        .climate-counter-value.is-milestone {
-          animation-duration: .3s;
-        }
-      }
-      .climate-counter-since {
-        color: var(--light-grey);
-        font-size: 1rem;
-        font-weight: 400;
-        line-height: 1.45;
-        max-width: 13rem;
-      }
-      .climate-counter-footnote {
-        width: 100%;
-        margin-top: 2rem;
-        padding-top: 1.25rem;
-        border-top: 1px solid var(--standard-grey);
-        color: var(--light-grey);
-        font-size: .95rem;
-        line-height: 1.55;
-      }
-      @media (max-width: 767px) {
-        .climate-counter {
-          border-radius: 24px;
-          padding: 1.5rem;
-        }
-        .climate-counter-since {
-          max-width: none;
-        }
-        .climate-counter-footnote {
-          margin-top: 1.5rem;
-        }
-      }
     </style>
     <style>
       @font-face { font-family: 'Neue Montreal'; src: url('vetter-consulting/assets/fonts/66a20363e5bbc5dbaa1b595a_PPNeueMontreal-Light.otf') format('opentype'); font-weight: 200; font-style: normal; font-display: swap; }
@@ -517,7 +228,395 @@
       @font-face { font-family: 'Neue Montreal'; src: url('vetter-consulting/assets/fonts/66a20363e5bbc5dbaa1b5959_PPNeueMontreal-SemiBold.otf') format('opentype'); font-weight: 600; font-style: normal; font-display: swap; }
       @font-face { font-family: 'Neue Montreal'; src: url('vetter-consulting/assets/fonts/66a20363e5bbc5dbaa1b595e_PPNeueMontreal-Bold.otf') format('opentype'); font-weight: 700; font-style: normal; font-display: swap; }
       .w-webflow-badge { display: none !important; }
+      /* Préloader : comportement d'origine restauré (odomètre IX2 déclenché à
+         la fin du chargement). Sécurité : .is-hidden masque l'écran si IX2 ne
+         se déclenche pas (la page ne doit jamais rester bloquée). */
+      .preloader.is-hidden {
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+        transition: opacity .7s ease, visibility .7s ease;
+      }
+
+      /* ═══ Préloader — carrousel des articles « Le climat dans la presse » ═══
+         Le préloader EST le carrousel d'articles (assurance & climat) : il
+         occupe TOUT l'écran (100dvh), image en fond (object-fit: cover), texte
+         superposé en bas à gauche, carte compteur « argent perdu » suspendue en
+         haut à droite, boutons de progression collés en bas. Entrée de la page :
+         bouton « Entrer sur le site » ou touche Échap (pas de minuterie). */
+      .preloader {
+        width: 100vw;
+        height: 100vh;
+        height: 100dvh;
+        overflow: hidden;
+        background-color: var(--black);
+      }
+      .blog-carousel-stage {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        min-height: 0;
+        overflow: hidden;
+      }
+      .blog-slides {
+        position: absolute;
+        inset: 0;
+      }
+      .blog-slide {
+        position: absolute;
+        inset: 0;
+        display: none;
+        text-decoration: none;
+      }
+      .blog-slide.is-active {
+        display: block;
+        animation: blog-fade .7s ease-out both;
+      }
+      @keyframes blog-fade {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+      .blog-slide-img {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+      }
+      /* Voile dégradé : lisibilité du texte sur n'importe quelle image. */
+      .blog-slide-shade {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(180deg, rgba(5, 8, 12, .5) 0%, rgba(5, 8, 12, .18) 45%, rgba(5, 8, 12, .88) 100%);
+      }
+      .blog-slide-body {
+        position: absolute;
+        left: clamp(1.5rem, 6vw, 5rem);
+        right: clamp(1.5rem, 6vw, 5rem);
+        bottom: clamp(7.5rem, 15vh, 9rem);
+        max-width: 47rem;
+        flex-flow: column;
+        align-items: flex-start;
+        gap: .8rem;
+        display: flex;
+      }
+      @keyframes blog-body-in {
+        from { opacity: 0; transform: translateY(18px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      .blog-slide-title {
+        color: #ffffff;
+        font-size: clamp(1.7rem, 3.9vw, 3.1rem);
+        font-weight: 600;
+        line-height: 1.08;
+        letter-spacing: -.02em;
+        margin: 0;
+        text-shadow: 0 2px 20px rgba(0, 0, 0, .55);
+      }
+      .blog-slide-desc {
+        color: rgba(255, 255, 255, .88);
+        font-size: clamp(1rem, 1.5vw, 1.15rem);
+        line-height: 1.5;
+        max-width: 36rem;
+        margin: 0;
+        text-shadow: 0 1px 14px rgba(0, 0, 0, .6);
+      }
+      .blog-slide-src {
+        color: rgba(255, 255, 255, .72);
+        font-family: 'Google Sans', 'Neue Montreal', sans-serif;
+        font-size: .78rem;
+        font-weight: 500;
+        letter-spacing: .1em;
+        text-transform: uppercase;
+        margin-top: .35rem;
+      }
+      /* ── Chiffre clé « argent perdu » : plein écran, au centre, sans boîte ── */
+      .loss-counter {
+        position: absolute;
+        top: 47%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 6;
+        width: min(94vw, 64rem);
+        display: flex;
+        flex-flow: column;
+        align-items: center;
+        gap: clamp(.7rem, 1.6vh, 1.1rem);
+        text-align: center;
+        pointer-events: none;
+      }
+      .loss-counter-title {
+        color: #ffffff;
+        font-family: 'Google Sans', 'Neue Montreal', sans-serif;
+        font-size: clamp(.78rem, 1.5vw, 1rem);
+        font-weight: 600;
+        letter-spacing: .3em;
+        text-transform: uppercase;
+        opacity: .92;
+        text-shadow: 0 2px 22px rgba(0, 0, 0, .7);
+      }
+      .loss-counter-value {
+        display: flex;
+        align-items: baseline;
+        justify-content: center;
+        gap: .5rem;
+        line-height: 1;
+        text-shadow: 0 12px 70px rgba(0, 0, 0, .55);
+      }
+      /* Odomètre : les chiffres défilent vers le bas (rouleau mécanique)
+         jusqu'à la cible — ici « 6 » Mds €. */
+      .loss-odometer {
+        display: inline-flex;
+        align-items: flex-start;
+        height: 1em;
+        overflow: visible;
+        line-height: 1;
+        vertical-align: baseline;
+        font-family: 'Google Sans', 'Neue Montreal', sans-serif;
+        font-weight: 600;
+        font-size: clamp(2.2rem, 12vw, 13rem);
+        letter-spacing: -.01em;
+        color: var(--orange, #4386B1);
+        font-variant-numeric: tabular-nums;
+        text-shadow: 0 0 44px var(--orange-tint, rgba(67, 134, 177, .5)), 0 14px 90px rgba(0, 0, 0, .5);
+      }
+      .loss-odometer-wheel {
+        display: inline-block;
+        height: 1em;
+        overflow: hidden;
+        text-align: center;
+        width: .6em;
+      }
+      .loss-odometer-strip {
+        display: flex;
+        flex-direction: column;
+        transform: translateY(0);
+        will-change: transform;
+      }
+      .loss-odometer-digit {
+        display: block;
+        height: 1em;
+        line-height: 1;
+        text-align: center;
+        font-variant-numeric: tabular-nums;
+      }
+      .loss-odometer-gap {
+        display: inline-block;
+        width: .35em;
+      }
+      .loss-counter-unit {
+        font-family: 'Neue Montreal', system-ui, sans-serif;
+        font-weight: 500;
+        font-size: clamp(1.5rem, 3.4vw, 2.7rem);
+        color: #ffffff;
+        letter-spacing: .02em;
+      }
+      .loss-counter-per {
+        font-family: 'Neue Montreal', system-ui, sans-serif;
+        font-weight: 300;
+        font-size: clamp(1rem, 2.2vw, 1.6rem);
+        color: rgba(255, 255, 255, .72);
+      }
+      /* Ligne « en direct » : dommages qui s'accumulent chaque seconde. */
+      .loss-per-second {
+        display: block;
+        color: var(--orange, #4386B1);
+        font-family: 'Google Sans', 'Neue Montreal', sans-serif;
+        font-size: clamp(.92rem, 1.8vw, 1.15rem);
+        font-weight: 600;
+        letter-spacing: .02em;
+        font-variant-numeric: tabular-nums;
+        text-shadow: 0 2px 20px rgba(0, 0, 0, .65);
+      }
+      .loss-counter-sub {
+        max-width: 34rem;
+        color: rgba(255, 255, 255, .85);
+        font-family: 'Google Sans', 'Neue Montreal', sans-serif;
+        font-size: clamp(.92rem, 1.7vw, 1.08rem);
+        line-height: 1.5;
+        margin: 0;
+        text-shadow: 0 2px 18px rgba(0, 0, 0, .7);
+      }
+      .loss-counter-src {
+        color: rgba(255, 255, 255, .55);
+        font-family: 'Neue Montreal', system-ui, sans-serif;
+        font-size: .74rem;
+        letter-spacing: .12em;
+        text-transform: uppercase;
+        margin-top: .2rem;
+        text-shadow: 0 1px 12px rgba(0, 0, 0, .7);
+      }
+      /* Déroulé relié au scroll (piloté par le script) : écran 1 → rouleau du
+         chiffre ; écran 2 → bloc d'impact ; écran 3 → le carrousel des
+         articles défile en place et l'autoplay démarre. */
+      .preloader .blog-slides { opacity: 0; }
+      .preloader .blog-btns { opacity: 0; }
+      .loss-counter-title, .loss-counter-unit, .loss-counter-per,
+      .loss-counter-sub, .loss-per-second, .loss-counter-src { opacity: 0; }
+      /* ── Barre des 7 sources : bandeau pleine largeur docké en bas ──
+         Étire la page de bord à bord : fond en dégradé qui s'estompe depuis
+         l'image, étiquettes centrées en capitales (comme les autres labels de
+         la landing), barre de progression en accent sous le tab actif. */
+      .blog-btns {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        width: 100%;
+        padding: clamp(.7rem, 1.8vh, 1.15rem) clamp(1rem, 3vw, 3.5rem);
+        border-top: 1px solid rgba(255, 255, 255, .09);
+        background: linear-gradient(180deg, rgba(5, 8, 12, 0) 0%, rgba(5, 8, 12, .72) 50%, rgba(5, 8, 12, .94) 100%);
+        display: grid;
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+        gap: clamp(.35rem, .9vw, .8rem);
+      }
+      .blog-btn {
+        position: relative;
+        border: 0;
+        border-radius: 12px;
+        background: transparent;
+        padding: .55rem .7rem .65rem;
+        text-align: center;
+        cursor: pointer;
+        font-family: 'Google Sans', 'Neue Montreal', sans-serif;
+        transition: background-color .25s ease;
+      }
+      .blog-btn:hover {
+        background: rgba(255, 255, 255, .06);
+      }
+      .blog-btn.is-active {
+        background: var(--orange-tint, rgba(67, 134, 177, .22));
+        box-shadow: inset 0 0 0 1px rgba(67, 134, 177, .38);
+      }
+      .blog-btn-title {
+        display: block;
+        color: rgba(255, 255, 255, .62);
+        font-size: .78rem;
+        font-weight: 600;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+        line-height: 1.3;
+        margin-bottom: .6rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        transition: color .25s ease;
+      }
+      .blog-btn:hover .blog-btn-title,
+      .blog-btn.is-active .blog-btn-title {
+        color: #ffffff;
+      }
+      .blog-btn-bar {
+        display: block;
+        height: 3px;
+        border-radius: 2px;
+        background: rgba(255, 255, 255, .18);
+        overflow: hidden;
+      }
+      .blog-btn-fill {
+        display: block;
+        height: 100%;
+        width: 0%;
+        border-radius: 2px;
+        background: var(--orange, #4386B1);
+        box-shadow: 0 0 10px var(--orange-tint, rgba(67, 134, 177, .7));
+      }
+      /* ── Bouton « Entrer sur le site » : entrée manuelle, sans minuterie ── */
+      .preloader-enter {
+        position: absolute;
+        top: clamp(1.25rem, 4vw, 3rem);
+        left: clamp(1.25rem, 5vw, 4rem);
+        z-index: 8;
+        display: inline-flex;
+        align-items: center;
+        gap: .55rem;
+        padding: .7rem 1.1rem;
+        border-radius: 999px;
+        background: #151515b3;
+        border: 1px solid #ffffff1a;
+        -webkit-backdrop-filter: blur(30px);
+        backdrop-filter: blur(30px);
+        color: #ffffff;
+        font-family: 'Google Sans', 'Neue Montreal', sans-serif;
+        font-size: .78rem;
+        font-weight: 600;
+        letter-spacing: .1em;
+        text-transform: uppercase;
+        cursor: pointer;
+        transition: background-color .2s ease, border-color .2s ease;
+      }
+      .preloader-enter:hover {
+        background-color: #ffffff2b;
+        border-color: #ffffff38;
+      }
+      .preloader-enter svg {
+        width: .95rem;
+        height: .95rem;
+        pointer-events: none;
+      }
+      @media (max-width: 767px) {
+        .preloader-enter {
+          top: 1.25rem;
+          right: 1.25rem;
+          left: auto;
+          padding: .6rem .9rem;
+          font-size: .7rem;
+        }
+      }
+      /* Entre 600 et 900 px, les 10 rouleaux (6 000 000 000) sont resserrés
+         pour ne pas déborder de l'écran. */
+      @media (max-width: 900px) {
+        .loss-odometer { font-size: clamp(1.9rem, 10vw, 4rem); }
+      }
+      @media (max-width: 767px) {
+        .blog-btns {
+          grid-template-columns: repeat(7, minmax(88px, 1fr));
+          overflow-x: auto;
+          scrollbar-width: none;
+        }
+        .blog-btns::-webkit-scrollbar { display: none; }
+        .blog-btn { padding: .5rem .5rem .6rem; }
+        .blog-btn-title { font-size: .7rem; letter-spacing: .06em; }
+        .blog-slide-body { bottom: 9rem; left: 1.25rem; right: 1.25rem; }
+        .blog-slide-title { font-size: clamp(1.6rem, 7vw, 2.2rem); }
+        .loss-counter { top: 36%; gap: .6rem; }
+        .loss-counter-sub { max-width: 25rem; }
+        .preloader .loss-counter-src { display: none; }
+      }
+      @media (max-width: 600px) {
+        .blog-slide-body { bottom: 8.5rem; }
+        .loss-odometer { font-size: clamp(1.9rem, 9.5vw, 3.8rem); }
+        .loss-counter { gap: .5rem; }
+        .loss-counter-title { letter-spacing: .2em; }
+      }
+      /* Écrans peu hauts : le chiffre central et le texte de l'article doivent
+         cohabiter sans se chevaucher — on compacte et remonte le compteur. */
+      @media (max-height: 700px) {
+        .loss-counter { top: 39%; gap: .45rem; }
+        .loss-odometer { font-size: clamp(1.5rem, 6.5vh, 3.2rem); }
+        .loss-counter-title { font-size: .68rem; letter-spacing: .22em; }
+        .loss-counter-unit { font-size: 1.2rem; }
+        .loss-counter-per { font-size: .9rem; }
+        .loss-counter-sub { font-size: .78rem; line-height: 1.35; }
+        .loss-per-second { font-size: .76rem; }
+        .blog-slide-body { bottom: 7.5rem; }
+      }
+      @media (max-height: 600px) {
+        .preloader .loss-counter-sub,
+        .preloader .loss-counter-src { display: none; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .blog-slide.is-active { animation: none; }
+      }
       html, body { margin: 0; padding: 0; } .hero-wrapper.v2 { isolation: isolate; } .hero-layer-video { position: absolute; inset: 0; z-index: 2; overflow: hidden; pointer-events: none; opacity: 0.6; background: #000; } .hero-layer-video iframe, .hero-layer-video video { width: 100%; height: 100%; border: 0; transform: scale(1.18); transform-origin: center; object-fit: cover; display: block; }       .hero-layer-1 { z-index: 0; }
+      /* Hero : contenu centré verticalement (au lieu d'être collé en bas) pour
+         que le titre, la ligne d'appui et le bouton restent dans le viewport. */
+      .hero-layer-3 {
+        justify-content: center;
+        padding-bottom: 2.5rem;
+      }
     </style>
     <style>
       /* ---- Boutons bascule clair / sombre + couleur d'accent (à côté du timer) ---- */
@@ -569,12 +668,6 @@
         pointer-events: none;
       }
       /* ---- Palette stylisée : panneau déroulant de couleurs + reset ---- */
-      /* Contrôles décoratifs retirés de l'interface publique. */
-      .color-control,
-      .clock {
-        display: none !important;
-      }
-
       .color-control {
         position: relative;
         display: inline-flex;
@@ -599,6 +692,33 @@
       .color-control.open .accent-panel {
         display: block;
         animation: accent-pop .18s ease-out;
+      }
+
+      /* Navbar : bascules thème / couleur intégrées au flex du
+         .navbar (juste à côté du pilulier logo + liens + CTA), centrées
+         ensemble quelle que soit la largeur d'écran. L'ancien positionnement
+         absolu desktop les détachait du pilulier à droite ; on le supprime. */
+      .navbar {
+        gap: .75rem;
+      }
+      .navbar-outer {
+        width: auto;
+      }
+      /* Le CSS partagé impose au pilulier order:1 + width:75% sous 992px,
+         ce qui le pousse après les boutons thème / palette. On rétablit
+         l’ordre naturel et une largeur contenue pour tout écran. */
+      .webflow-native-navbar {
+        order: 0;
+        width: auto;
+      }
+      .navbar-inner {
+        justify-content: center;
+      }
+      /* Une fois entré (préloader masqué), le contenu de la page est
+         révélé quoi qu'il arrive — IX2 peut réappliquer son display:none
+         inline après coup ; la règle !important gagne sur l'inline. */
+      body:has(.preloader.is-hidden) .load-hide {
+        display: block !important;
       }
       @keyframes accent-pop {
         from { opacity: 0; transform: translateY(-6px); }
@@ -762,14 +882,21 @@
       html.theme-light .hero-layer-3 .hero-headline { color: #ffffff; }
       html.theme-light .hero-layer-3 .copytext { color: rgba(255, 255, 255, .85); }
 
-      /* Mots-clés is-white : plus de surlignage sombre en mode clair,
-         remplacé par une graisse de police plus forte */
+      /* Mots-clés is-white : graisse identique au mode sombre (plus de bold
+         en mode clair). Seule la couleur change entre les thèmes : blanc sur
+         fond sombre, texte sombre sur fond clair. */
       html.theme-light .is-white {
         background-color: transparent;
         color: var(--white);
-        font-weight: 700;
       }
       html.theme-light .hero-layer-3 .is-white { color: #ffffff; }
+
+      /* Textes superposés aux photos des acteurs (chess-grid-img-txt-layer) :
+         les photos restent sombres dans les deux thèmes, on garde donc le
+         blanc même en mode clair (sinon texte sombre sur photo illisible). */
+      html.theme-light ._06-testimonials .chess-grid-img-txt-layer .is-white {
+        color: #ffffff;
+      }
       html.theme-light .btn-txt.is-white { color: #f4f4f4; }
 
       /* Hamburger mobile (lignes blanches) -> sombres */
@@ -782,60 +909,313 @@
         background-image: linear-gradient(0deg, var(--black), rgba(255, 255, 255, 0));
       }
 
-      /* Corrige la barre de progression du timeline (« Comment ça marche ») :
-         en position fixed elle restait affichée par-dessus les sections
-         suivantes (bande ROI « 1€ = 8€ ») au lieu de s'arrêter avec le
-         dernier point. En position sticky, elle reste bornée à son
-         conteneur .timeline-progress (qui se termine avec le dernier point)
-         au lieu du viewport entier. */
-      .timeline-bar {
-        position: sticky;
-        top: 0;
-        bottom: auto;
+      /* Bloc témoignages (_01-proof) : fond volontairement sombre (#0e0e0e) dans
+         les deux thèmes. En mode clair les variables --white/--light-grey
+         s'inversent -> titres et textes sombres sur fond sombre, illisibles.
+         On restaure les valeurs du thème sombre à l'intérieur du bloc. */
+      html.theme-light ._01-proof {
+        --white: #f4f4f4;
+        --light-grey: #888;
       }
     </style>
     <script src="vetter-consulting/assets/js/lenis.min.js"></script>
   </head>
   <body data-w-id="661550636b9312315bbc1917" class="global-body">
     <script>!function(o,c){var n=c.documentElement,t=" w-mod-";n.className+=t+"js",("ontouchstart"in o||o.DocumentTouch&&c instanceof DocumentTouch)&&(n.className+=t+"touch")}(window,document);</script>
-<div data-w-id="1a765f11-e76b-dc77-f1f8-bbfc09335b89" class="preloader"><div class="preloader-inner"><div class="preloader-head"><img src="vetter-consulting/assets/img/typhoon-wordmark.svg" loading="eager" alt="Typhoon" class="logo in-preloader"/></div><div class="preloader-mid"><div class="global-headline-m is-left-aligned in-loader">Le climat ne pr&eacute;vient pas.<span class="is-white"> La pr&eacute;cision est cl&eacute;. </span><br/>Chaque seconde compte.</div><div class="climate-counter"><div class="climate-counter-head"><div class="climate-counter-label">Coût cumulé des sinistres climatiques en France</div><div class="climate-counter-source">*Moyenne calculée sur 73,4 Md€ / 1989–2019 — France Assureurs</div></div><div class="climate-counter-row"><div class="climate-counter-value" id="climate-counter-value">0&nbsp;€</div><div class="climate-counter-since">depuis que vous lisez cette page</div></div><div class="climate-counter-footnote">Sur la base de la moyenne historique, c'est environ 78€ de sinistres climatiques indemnisés chaque seconde en France — et ce rythme ne cesse d'accélérer.</div></div></div><div class="preloader-bottom"><img src="/mascotte_transparent.png" loading="eager" alt="" class="preloader-mascot"/><button type="button" class="preloader-cta" data-preloader-cta><span>Comment anticiper cela&nbsp;?</span><svg class="cta-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></button></div></div></div><script>
-/* Compteur climatique : coût cumulé des sinistres climatiques en France.
-   Moyenne historique France Assureurs : 73,4 Md€ indemnisés sur 1989–2019,
-   soit 30 ans × 365,25 j × 86 400 s = 946 728 000 s → ≈ 77,55 €/s.
-   Mise à jour toutes les 50 ms (rendu fluide), formatage Intl fr-FR.
-   Le compteur démarre à 0 au chargement et ne redémarre jamais en cours
-   de session : la valeur est recalculée depuis l'horodatage de chargement
-   (aucun reset au scroll, seulement au rechargement complet de la page). */
+<div data-w-id="1a765f11-e76b-dc77-f1f8-bbfc09335b89" class="preloader"><div class="blog-carousel-stage"><div class="blog-slides" data-blog-carousel><a class="blog-slide is-active" data-slide="seloger" href="https://edito.seloger.com/conseils-d-experts/assurance-habitation/assurer-bien-devenu-plus-difficile-article-18408.html" target="_blank" rel="noopener noreferrer" aria-label="Lire l'article SeLoger"><img class="blog-slide-img" src="https://edito.seloger.com/sites/default/files/styles/735x412/public/images/web/2024-04/GettyImages-1462663989%20%281%29.jpg?itok=rG0ZepGZ" alt="Maison assurée face aux catastrophes naturelles" loading="eager" referrerpolicy="no-referrer"/><div class="blog-slide-shade"></div><div class="blog-slide-body"><h3 class="blog-slide-title">Assurer son bien est-il devenu plus difficile&nbsp;?</h3><p class="blog-slide-desc">Face à l&rsquo;explosion du coût des sinistres liés aux catastrophes naturelles, certains assureurs seraient plus réticents à couvrir les biens les plus exposés au changement climatique.</p><span class="blog-slide-src">L&rsquo;immobilier par SeLoger</span></div></a><a class="blog-slide" data-slide="lesechos" href="https://solutions.lesechos.fr/ils-en-parlent/c/l-assurance-habitation-face-aux-risques-climatiques-croissants-enjeux-pour-les-assureurs/" target="_blank" rel="noopener noreferrer" aria-label="Lire l'article Les Échos Solutions"><img class="blog-slide-img" src="https://edito-img.annonces-legales.fr/2024/12/gettyimages-1497390729-1-67657ef271430221374275.jpg?w=430&amp;h=250&amp;q=90&amp;s=e37c165da09a92f21aba68fcdeb51549" alt="Assurance habitation face aux risques climatiques" loading="lazy" referrerpolicy="no-referrer"/><div class="blog-slide-shade"></div><div class="blog-slide-body"><h3 class="blog-slide-title">L&rsquo;assurance habitation face aux risques climatiques croissants</h3><p class="blog-slide-desc">Inondations, tempêtes, sécheresses, incendies&nbsp;: les événements extrêmes exposent les assureurs à des défis économiques et stratégiques majeurs.</p><span class="blog-slide-src">Les Échos Solutions</span></div></a><a class="blog-slide" data-slide="france24" href="https://www.france24.com/fr/%C3%A9missions/%C3%A9l%C3%A9ment-terre-le-reportage/20260327-bient%C3%B4t-une-maison-sur-deux-fissur%C3%A9e-%C3%A0-cause-du-changement-climatique" target="_blank" rel="noopener noreferrer" aria-label="Lire l'article France 24"><img class="blog-slide-img" src="https://images.unsplash.com/photo-1615729947596-a598e5de0ab3?q=80&amp;w=1920&amp;auto=format&amp;fit=crop" alt="Sécheresse et fissures des maisons" loading="lazy" referrerpolicy="no-referrer"/><div class="blog-slide-shade"></div><div class="blog-slide-body"><h3 class="blog-slide-title">Bientôt une maison sur deux fissurée à cause du changement climatique</h3><p class="blog-slide-desc">Plus d&rsquo;une maison sur deux est désormais menacée par des fissures liées aux épisodes climatiques, et 20&nbsp;millions de Français sont concernés.</p><span class="blog-slide-src">France 24 &ndash; Élément Terre</span></div></a><a class="blog-slide" data-slide="lexpress" href="https://www.lexpress.fr/economie/incendies-en-europe-la-facture-economique-du-rechauffement-climatique-senvole-XZBIEQ37B5H6HEQHL4XKFEI26U/" target="_blank" rel="noopener noreferrer" aria-label="Lire l'article L'Express"><img class="blog-slide-img" src="https://www.lexpress.fr/resizer/v2/3YMX52UKQNEE7IWRQVA3JYVGNQ.JPG?auth=9fab5a970fc5380875a819c06bf29857a49a85a516b197ef1fa7d8c94b367713&amp;width=1200&amp;height=630&amp;quality=85&amp;focal=2814%2C2268" alt="Incendies de forêt en Europe" loading="lazy" referrerpolicy="no-referrer"/><div class="blog-slide-shade"></div><div class="blog-slide-body"><h3 class="blog-slide-title">Incendies en Europe&nbsp;: la facture du réchauffement climatique s&rsquo;envole</h3><p class="blog-slide-desc">Au-delà de la reconstruction des forêts, les feux frappent l&rsquo;agriculture et le tourisme, tandis que la sécheresse alourdit encore le coût économique du dérèglement climatique.</p><span class="blog-slide-src">L&rsquo;Express</span></div></a><a class="blog-slide" data-slide="leparisien" href="https://www.leparisien.fr/environnement/climat/maisons-fissurees-stations-sans-neige-chaleur-mortelle-comment-le-changement-climatique-chamboule-deja-nos-vies-10-12-2025-GUM64RHCIFEB7HLDJFGIAB2SE4.php" target="_blank" rel="noopener noreferrer" aria-label="Lire l'article Le Parisien"><img class="blog-slide-img" src="https://images.unsplash.com/photo-1580587771525-78b9dba3b914?q=80&amp;w=1920&amp;auto=format&amp;fit=crop" alt="Maison individuelle face au changement climatique" loading="lazy" referrerpolicy="no-referrer"/><div class="blog-slide-shade"></div><div class="blog-slide-body"><h3 class="blog-slide-title">Maisons fissurées, stations sans neige, chaleur mortelle&hellip;</h3><p class="blog-slide-desc">Le dérèglement climatique chamboule déjà nos vies&nbsp;: bâtiments endommagés, tourisme menacé, canicules de plus en plus meurtrières.</p><span class="blog-slide-src">Le Parisien</span></div></a><a class="blog-slide" data-slide="franceinfo" href="https://www.franceinfo.fr/replay-jt/france-2/20-heures/apres-les-inondations-et-les-secheresses-12-millions-de-maisons-individuelles-concernees-par-des-fissures_7868216.html" target="_blank" rel="noopener noreferrer" aria-label="Lire l'article France Info"><img class="blog-slide-img" src="https://www.franceinfo.fr/pictures/DQXTIiEbLsPIubOjSNOXxvT5UKo/0x0:1920x1080/1500x843/2026/03/14/20h-maisons-fissurees-1-69b5c310a8534715440720.jpg" alt="Maisons fissurées après sécheresses et inondations" loading="lazy" referrerpolicy="no-referrer"/><div class="blog-slide-shade"></div><div class="blog-slide-body"><h3 class="blog-slide-title">12&nbsp;millions de maisons individuelles concernées par des fissures</h3><p class="blog-slide-desc">Après des épisodes d&rsquo;intenses sécheresses et des inondations à répétition, 12&nbsp;millions de maisons individuelles sont concernées par des fissures.</p><span class="blog-slide-src">France Info</span></div></a>
+        <a class="blog-slide" data-slide="francetransactions" href="https://www.francetransactions.com/actus/assurances/tarifs-2026-assurance-habitation.html" target="_blank" rel="noopener noreferrer" aria-label="Lire l'article FranceTransactions"><img class="blog-slide-img" src="https://www.francetransactions.com/IMG/arton107267.jpg" alt="Primes d'assurance habitation en hausse" loading="lazy" referrerpolicy="no-referrer"/><div class="blog-slide-shade"></div><div class="blog-slide-body"><h3 class="blog-slide-title">Assurance habitation&nbsp;: explosion des tarifs en 2026</h3><p class="blog-slide-desc">Mauvaise surprise&nbsp;! Les primes d&rsquo;assurance habitation sont en forte hausse, bien au-delà des 7&nbsp;% à 8&nbsp;% annoncés fin 2025.</p><span class="blog-slide-src">FranceTransactions &ndash; Guide Épargne</span></div></a></div><div class="loss-counter" data-loss-counter><span class="loss-counter-title">Le coût du changement climatique</span><div class="loss-counter-value"><span class="loss-odometer" data-odometer data-target="6000000000" aria-label="6 000 000 000 euros par an"></span><span class="loss-counter-unit">&euro;</span><span class="loss-counter-per">/ an</span></div><p class="loss-counter-sub">C&rsquo;est le coût annuel moyen des sinistres climatiques en France depuis 2020&nbsp;&mdash; un montant qui pourrait doubler d&rsquo;ici 2050.</p><span class="loss-per-second">≈ <span data-per-second-value>190,26</span>&nbsp;€ de dommages chaque seconde&nbsp;&mdash; <span data-live-total>0</span>&nbsp;€ depuis votre arrivée</span><span class="loss-counter-src">Source&nbsp;: France Assureurs</span></div><button type="button" class="preloader-enter" data-preloader-enter aria-label="Entrer sur le site" title="Entrer sur le site"><span>Entrer sur le site</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></button><div class="blog-btns" role="tablist" aria-label="Articles de presse"><button type="button" class="blog-btn is-active" data-slide-btn="seloger"><span class="blog-btn-title">SeLoger</span><span class="blog-btn-bar"><span class="blog-btn-fill" data-fill="seloger"></span></span></button><button type="button" class="blog-btn" data-slide-btn="lesechos"><span class="blog-btn-title">Les Échos</span><span class="blog-btn-bar"><span class="blog-btn-fill" data-fill="lesechos"></span></span></button><button type="button" class="blog-btn" data-slide-btn="france24"><span class="blog-btn-title">France 24</span><span class="blog-btn-bar"><span class="blog-btn-fill" data-fill="france24"></span></span></button><button type="button" class="blog-btn" data-slide-btn="lexpress"><span class="blog-btn-title">L&rsquo;Express</span><span class="blog-btn-bar"><span class="blog-btn-fill" data-fill="lexpress"></span></span></button><button type="button" class="blog-btn" data-slide-btn="leparisien"><span class="blog-btn-title">Le Parisien</span><span class="blog-btn-bar"><span class="blog-btn-fill" data-fill="leparisien"></span></span></button><button type="button" class="blog-btn" data-slide-btn="franceinfo"><span class="blog-btn-title">France Info</span><span class="blog-btn-bar"><span class="blog-btn-fill" data-fill="franceinfo"></span></span></button>
+        <button type="button" class="blog-btn" data-slide-btn="francetransactions"><span class="blog-btn-title">FranceTransactions</span><span class="blog-btn-bar"><span class="blog-btn-fill" data-fill="francetransactions"></span></span></button></div></div></div><script>
+/* Carrousel du préloader : 7 articles « Le climat dans la presse ».
+   Port vanilla du composant React « progressive-carousel » :
+   - une carte active avance seule (durée 6,5 s), barre de progression animée
+     sous chaque bouton ;
+   - cliquer un bouton accélère (400 ms) jusqu'à l'article demandé ;
+   - le carrousel boucle à l'infini, indépendamment de l'entrée dans la page. */
 (function () {
-  var T0 = Date.now();
-  var RATE = 73400000000 / 946728000; /* ≈ 77,55 €/s */
-  var TICK_MS = 50;
-  var format = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 });
-  var el = document.getElementById('climate-counter-value');
-  if (!el) return;
-  /* Nettoie la classe de palier une fois l'animation terminée. */
-  el.addEventListener('animationend', function () {
-    el.classList.remove('is-milestone');
-  });
-  var lastMilestone = 0;
-  function render() {
-    var seconds = (Date.now() - T0) / 1000;
-    var value = Math.floor(seconds * RATE);
-    el.textContent = format.format(value) + ' €';
-    /* Sensibilisation : à chaque palier de 1 000 € franchi, la valeur
-       grossit et passe en rouge (reflow forcé pour relancer l'animation). */
-    var milestone = Math.floor(value / 1000);
-    if (milestone > lastMilestone) {
-      lastMilestone = milestone;
-      el.classList.remove('is-milestone');
-      void el.offsetWidth; /* force un reflow pour relancer l'animation */
-      el.classList.add('is-milestone');
+  var carousel = document.querySelector('[data-blog-carousel]');
+  if (!carousel) return;
+  var stage = document.querySelector('.preloader .blog-carousel-stage');
+  var slides = [].slice.call(carousel.querySelectorAll('[data-slide]'));
+  var btns = stage ? [].slice.call(stage.querySelectorAll('[data-slide-btn]')) : [];
+  var fills = stage ? [].slice.call(stage.querySelectorAll('[data-fill]')) : [];
+  if (!slides.length) return;
+
+  var DURATION = 6500;   /* ms par carte */
+  var FAST = 400;        /* ms pour rejoindre la carte cliquée */
+  var active = slides[0].getAttribute('data-slide');
+  var progress = 0;
+  var fast = false;
+  var target = null;
+  var firstFrame = performance.now();
+  var frame = 0;
+
+  function setActive(value) {
+    active = value;
+    for (var i = 0; i < slides.length; i++) {
+      slides[i].classList.toggle('is-active', slides[i].getAttribute('data-slide') === value);
+    }
+    for (var j = 0; j < btns.length; j++) {
+      btns[j].classList.toggle('is-active', btns[j].getAttribute('data-slide-btn') === value);
     }
   }
-  render();
-  setInterval(render, TICK_MS);
-})();
-</script><div class="navbar landingpage"><div data-animation="default" data-collapse="medium" data-duration="400" data-easing="ease" data-easing2="ease" role="banner" class="webflow-native-navbar w-nav"><div class="navbar-outer"><div class="navbar-inner"><a href="/" aria-current="page" target="_top" class="navbar-logo-div visible-on-desktop w-nav-brand w--current"><img src="vetter-consulting/assets/img/typhoon-logo.svg" loading="eager" alt="Typhoon" class="logo"/></a><div class="nav-static-item"><div class="nav-arrow-div"><img src="vetter-consulting/assets/img/typhoon-logo.svg" loading="lazy" alt="Typhoon" class="nav-arrow"/></div><div class="nav-link-static">Menü</div></div><nav role="navigation" class="nav-menu-wrapper w-nav-menu"><ul role="list" class="nav-menu-right w-list-unstyled"><li class="nav-item"><a href="/" aria-current="page" target="_top" class="nav-link w--current">Home</a></li><li class="nav-item"><a href="/faq" target="_top" class="nav-link">FAQ</a></li><li class="nav-item"><a href="/contact" target="_top" class="nav-link">Contact</a></li><li class="nav-item"><a data-w-id="e8b68c38-7920-70a0-3c4d-94c7ad18ef1c" href="/zone" target="_top" class="primary-btn w-inline-block"><div class="btn-txt-container"><div class="btn-txt">Commen&ccedil;ons</div><div class="btn-txt">Commen&ccedil;ons</div></div></a></li><li class="mobile-margin-top-10"></li></ul></nav><div id="w-node-e8b68c38-7920-70a0-3c4d-94c7ad18ef24-ad18ef05" class="nav-area-left mobile"><div class="menu-button w-nav-button"><div data-is-ix2-target="1" class="hamburger-menu-dark" data-w-id="e8b68c38-7920-70a0-3c4d-94c7ad18ef26" data-animation-type="lottie" data-src="vetter-consulting/assets/img/66a20363e5bbc5dbaa1b59bb_656e40dffb81768885f3d9a9_menu_white.json" data-loop="0" data-direction="1" data-autoplay="0" data-renderer="svg" data-default-duration="2.3333333333333335" data-duration="0" data-loading="eager" data-ix2-initial-state="0"></div></div></div></div></div></div><button type="button" class="theme-toggle" data-theme-toggle aria-label="Basculer le mode clair / sombre" title="Mode clair / sombre"><svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg><svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></button><div class="color-control"><button type="button" class="color-toggle" data-accent-toggle title="Changer la couleur d'accent" aria-label="Changer la couleur d'accent" aria-expanded="false"><svg class="icon-palette" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22a10 10 0 1 1 10-10c0 1.7-1.3 3-3 3h-2a2 2 0 0 0-2 2c0 .6.2 1 .6 1.4.4.4.6.8.6 1.4 0 1.7-1.3 3-3 3z"/><circle cx="7.5" cy="11.5" r=".5" fill="currentColor"/><circle cx="11" cy="7.5" r=".5" fill="currentColor"/><circle cx="15.5" cy="7.5" r=".5" fill="currentColor"/></svg><span class="accent-dot"></span></button><div class="accent-panel" data-accent-panel role="dialog" aria-label="Couleur d'accent"><div class="accent-panel-title">Couleur d'accent</div><div class="accent-swatches"><button type="button" class="accent-swatch" data-accent-swatch="#4386B1" style="--swatch:#4386B1" aria-label="Bleu de marque" title="Bleu de marque"></button><button type="button" class="accent-swatch" data-accent-swatch="#7b2cbf" style="--swatch:#7b2cbf" aria-label="Violet" title="Violet"></button><button type="button" class="accent-swatch" data-accent-swatch="#e63946" style="--swatch:#e63946" aria-label="Rouge" title="Rouge"></button><button type="button" class="accent-swatch" data-accent-swatch="#f97316" style="--swatch:#f97316" aria-label="Orange" title="Orange"></button><button type="button" class="accent-swatch" data-accent-swatch="#22c55e" style="--swatch:#22c55e" aria-label="Vert" title="Vert"></button><button type="button" class="accent-swatch" data-accent-swatch="#06b6d4" style="--swatch:#06b6d4" aria-label="Cyan" title="Cyan"></button><button type="button" class="accent-swatch" data-accent-swatch="#ec4899" style="--swatch:#ec4899" aria-label="Rose" title="Rose"></button><button type="button" class="accent-swatch" data-accent-swatch="#eab308" style="--swatch:#eab308" aria-label="Jaune" title="Jaune"></button><button type="button" class="accent-swatch" data-accent-swatch="#64748b" style="--swatch:#64748b" aria-label="Ardoise" title="Ardoise"></button><button type="button" class="accent-swatch" data-accent-swatch="#10b981" style="--swatch:#10b981" aria-label="&Eacute;meraude" title="&Eacute;meraude"></button></div><button type="button" class="accent-reset" data-accent-reset aria-label="R&eacute;tablir le bleu d'origine" title="R&eacute;tablir le bleu d'origine"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg><span>R&eacute;tablir le bleu d'origine</span></button></div></div><div class="clock"><div class="clock-overflow-div small"><div class="clock-number-column-1 small"><div class="clock-txt small">0</div></div><div data-w-id="e8b68c38-7920-70a0-3c4d-94c7ad18ef2c" class="clock-number-column-2 small"><div class="clock-txt small">4<br/></div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1<br/></div><div class="clock-txt small">0</div></div><div class="clock-number-column-3 small"><div class="clock-txt small">:</div></div><div data-w-id="e8b68c38-7920-70a0-3c4d-94c7ad18ef3c" class="clock-number-column-4 small"><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0<br/></div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div data-w-id="e8b68c38-7920-70a0-3c4d-94c7ad18ef6e" class="clock-number-column-5"><div class="_1min"><div class="_10sec"><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div></div><div class="_1min"><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div></div><div class="_1min"><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div></div><div class="_1min"><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div></div></div></div></div></div><section data-w-id="933bc9ea-8f0f-40e8-a12e-39b1718e2ca5" class="main-content"><div class="hero"><div class="hero-wrapper v2"><div class="hero-layer-video" aria-hidden="true"><video id="hero-video" class="hero-video" src="vetter-consulting/assets/videos/hero-typhoon-house.mp4" muted loop playsinline preload="auto" poster="vetter-consulting/assets/img/66a20363e5bbc5dbaa1b59ac_VC%20GmbH%20-%20Shooting%20-%20022024-272.webp" tabindex="-1"></video></div><script>
+
+  function indexOfValue(value) {
+    for (var i = 0; i < slides.length; i++) {
+      if (slides[i].getAttribute('data-slide') === value) return i;
+    }
+    return -1;
+  }
+
+  function draw(now) {
+    var dur = fast ? FAST : DURATION;
+    var t = Math.min((now - firstFrame) / dur, 1);
+    progress = fast ? progress + (100 - progress) * t : t * 100;
+    for (var i = 0; i < fills.length; i++) {
+      fills[i].style.width = (fills[i].getAttribute('data-fill') === active ? progress : 0) + '%';
+    }
+    if (t < 1) {
+      frame = requestAnimationFrame(draw);
+      return;
+    }
+    if (fast) {
+      fast = false;
+      if (target) { setActive(target); target = null; }
+    } else {
+      var idx = indexOfValue(active);
+      var next = (idx + 1) % slides.length;
+      setActive(slides[next].getAttribute('data-slide'));
+    }
+    progress = 0;
+    firstFrame = performance.now();
+    frame = requestAnimationFrame(draw);
+  }
+
+  for (var b = 0; b < btns.length; b++) {
+    btns[b].addEventListener('click', function () {
+      var value = this.getAttribute('data-slide-btn');
+      if (value !== active) {
+        progress = Math.min(((performance.now() - firstFrame) / DURATION) * 100, 100);
+        target = value;
+        fast = true;
+        firstFrame = performance.now();
+      }
+    });
+  }
+
+  setActive(active);
+
+  /* L'autoplay ne démarre qu'au moment où le carrousel « défile » en place
+     (phase 3 du préloader : après le rouleau du chiffre et le bloc impact). */
+  window.__startBlogCarousel = function () {
+    if (window.__blogCarouselStarted) return;
+    window.__blogCarouselStarted = true;
+    firstFrame = performance.now();
+    frame = requestAnimationFrame(draw);
+  };
+})();    /* Compteur « argent perdu » : rouleau relié au scroll + ligne « en direct ».
+       - Le chiffre 6 000 000 000 € est un odomètre de 10 rouleaux : chaque
+         roue part d'un chiffre aléatoire et avance chiffre par chiffre vers
+         sa cible (1er → « 6 », les autres → « 0 »). Au fil du scroll on voit
+         des chiffres mélangés, puis 6 000 000 000 — pas de saut d'un
+         milliard à l'autre.
+       - Le déroulé du préloader est relié au scroll : écran 1 → rouleau ;
+         écran 2 → bloc d'impact ; écran 3 → le carrousel d'articles défile en
+         place et l'autoplay démarre. Le préloader se ferme au 3e écran.
+       - La ligne « en direct » : 6 Md€ / an ≈ 190,26 € de dommages par
+         seconde, qui s'accumulent depuis l'arrivée du visiteur. */
+    (function () {
+      var preloader = document.querySelector('.preloader');
+      var card = document.querySelector('[data-loss-counter]');
+      if (!preloader || !card) return;
+      var odometer = card.querySelector('[data-odometer]');
+      var liveTotal = card.querySelector('[data-live-total]');
+      var slides = preloader.querySelector('.blog-slides');
+      var btns = preloader.querySelector('.blog-btns');
+      var statEls = [].slice.call(card.querySelectorAll(
+        '.loss-counter-title, .loss-counter-unit, .loss-counter-per, ' +
+        '.loss-per-second, .loss-counter-sub, .loss-counter-src'));
+      var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      var PER_SECOND = 190.26;   /* 6 000 000 000 € / 31 536 000 s ≈ 190,26 €/s */
+      var wheels = [];
+      var startTime = null;
+
+      function fmt(n) { return Math.floor(n).toLocaleString('fr-FR'); }
+
+      /* Construit les rouleaux (0-9 + un « 0 » de report pour le tour complet). */
+      function buildWheels() {
+        if (!odometer) return;
+        var targets = String(odometer.getAttribute('data-target') || '0')
+          .replace(/[^0-9]/g, '').split('');
+        odometer.innerHTML = '';
+        for (var j = 0; j < targets.length; j++) {
+          if (j === 1 || j === 4 || j === 7) {   /* séparateurs « 6 000 000 000 » */
+            var gap = document.createElement('span');
+            gap.className = 'loss-odometer-gap';
+            gap.setAttribute('aria-hidden', 'true');
+            odometer.appendChild(gap);
+          }
+          var wheel = document.createElement('span');
+          wheel.className = 'loss-odometer-wheel';
+          var strip = document.createElement('span');
+          strip.className = 'loss-odometer-strip';
+          for (var k = 0; k <= 9; k++) {
+            var d = document.createElement('span');
+            d.className = 'loss-odometer-digit';
+            d.textContent = k;
+            strip.appendChild(d);
+          }
+          var z = document.createElement('span');
+          z.className = 'loss-odometer-digit';
+          z.textContent = '0';
+          strip.appendChild(z);
+          wheel.appendChild(strip);
+          odometer.appendChild(wheel);
+          var t = parseInt(targets[j], 10);
+          /* Chaque rouleau part d'un chiffre aléatoire (jamais sa cible) :
+             au début on voit des chiffres mélangés, puis chaque rouleau
+             avance chiffre par chiffre vers sa cible (1er → « 6 », les
+             autres → « 0 »). */
+          var start = (t + 1 + Math.floor(Math.random() * 9)) % 10;
+          var dist = (t - start + 10) % 10;
+          strip.style.transform = 'translateY(' + (-start) + 'em)';
+          wheels.push({ strip: strip, target: t, start: start, dist: dist });
+        }
+      }
+
+      function ease(t) { return 1 - Math.pow(1 - t, 3); }
+
+      function setWheels(p) {
+        /* Incrément chiffre par chiffre, indépendamment sur chaque rouleau :
+           chaque roue avance d'un cran entier à la fois (pas de saut de
+           100 000 000) — au fil du scroll le nombre montre des chiffres
+           mélangés (« 3 154 812 121 ») avant de se résoudre en
+           6 000 000 000. */
+        for (var i = 0; i < wheels.length; i++) {
+          var w = wheels[i];
+          var pos = reduce ? w.target
+            : Math.min(Math.round(w.start + w.dist * p), w.start + w.dist);
+          w.strip.style.transform = 'translateY(' + (-pos) + 'em)';
+        }
+      }
+
+      function tickLive() {
+        if (!liveTotal) return;
+        if (reduce) { liveTotal.textContent = fmt(PER_SECOND * 10); return; }
+        (function loop() {
+          liveTotal.textContent = fmt((performance.now() - startTime) / 1000 * PER_SECOND);
+          requestAnimationFrame(loop);
+        })();
+      }
+
+      /* Le déroulé est relié à la molette / au toucher / au clavier :
+         1 écran de scroll ≈ un rouleau complet (p1), le bloc d'impact apparaît
+         sur l'écran 2 (p2), le carrousel défile en place sur l'écran 3 (p3)
+         et y reste — on n'entre dans le site qu'avec « Entrer sur le site »
+         (ou Échap). La page derrière ne fait qu'un écran avant l'entrée, on
+         pilote donc une progression directement. */
+      var target = 0;   /* progression demandée (0 → 3) */
+      var cur = 0;      /* progression animée (lissage) */
+      var touchY = null;
+
+      function apply(cur) {
+        var p1 = Math.min(Math.max(cur, 0), 1);
+        var p2 = Math.min(Math.max(cur - 1, 0), 1);
+        var p3 = Math.min(Math.max(cur - 2, 0), 1);
+        var i;
+        if (reduce) {
+          setWheels(1);
+          for (i = 0; i < statEls.length; i++) {
+            statEls[i].style.opacity = 1;
+            statEls[i].style.transform = 'none';
+          }
+          slides.style.opacity = 1;
+          slides.style.transform = 'none';
+          btns.style.opacity = 1;
+          btns.style.transform = 'none';
+          card.style.opacity = 0;
+          if (window.__startBlogCarousel) window.__startBlogCarousel();
+        } else {
+          setWheels(p1);
+          var e2 = ease(p2);
+          for (i = 0; i < statEls.length; i++) {
+            statEls[i].style.opacity = e2;
+            statEls[i].style.transform = 'translateY(' + (10 * (1 - e2)) + 'px)';
+          }
+          /* Écran 3 : le bloc impact s'efface doucement pour laisser la
+             photo et le texte de l'article respirer (fini l'effet
+             « encombré »). On garde le centrage translate(-50%, -50%). */
+          card.style.opacity = 1 - p3;
+          card.style.transform = 'translate(-50%, calc(-50% + ' + (-16 * p3) + 'px))';
+          slides.style.opacity = p3;
+          slides.style.transform = 'translateY(' + (6 * (1 - p3)) + 'vh)';
+          btns.style.opacity = p3;
+          btns.style.transform = 'translateY(' + (12 * (1 - p3)) + 'px)';
+          if (p3 > 0.9 && window.__startBlogCarousel) window.__startBlogCarousel();
+        }
+      }
+
+      var lastFrame = 0;
+      function step() {
+        if (!visible()) return;
+        cur += (target - cur) * (reduce ? 1 : 0.16);
+        if (Math.abs(target - cur) < 0.001) cur = target;
+        apply(cur);
+        lastFrame = performance.now();
+        requestAnimationFrame(step);
+      }
+      /* Filet de sécurité : si requestAnimationFrame est ralenti (onglet en
+         arrière-plan), un minuteur reprend la main pour ne pas figer le
+         rouleau en pleine course. */
+      setInterval(function () {
+        if (!visible()) return;
+        if (performance.now() - lastFrame > 120) step();
+      }, 60);
+
+      function visible() { return !preloader.classList.contains('is-hidden'); }
+
+      preloader.addEventListener('wheel', function (e) {
+        if (!visible()) return;
+        target = Math.min(Math.max(target + e.deltaY / (window.innerHeight || 1), 0), 3);
+        e.preventDefault();
+      }, { passive: false });
+
+      preloader.addEventListener('touchstart', function (e) {
+        if (!visible()) return;
+        touchY = e.touches[0].clientY;
+      }, { passive: true });
+
+      preloader.addEventListener('touchmove', function (e) {
+        if (touchY === null || !visible()) return;
+        var dy = touchY - e.touches[0].clientY;
+        touchY = e.touches[0].clientY;
+        target = Math.min(Math.max(target + dy / (window.innerHeight || 1), 0), 3);
+        e.preventDefault();
+      }, { passive: false });
+
+      preloader.addEventListener('touchend', function () { touchY = null; }, { passive: true });
+
+      document.addEventListener('keydown', function (e) {
+        if (!visible()) return;
+        if (e.key === 'ArrowDown' || e.key === 'PageDown' || e.key === ' ' || e.key === 'ArrowRight') {
+          target = Math.min(target + 0.4, 3);
+          e.preventDefault();
+        } else if (e.key === 'ArrowUp' || e.key === 'PageUp' || e.key === 'ArrowLeft') {
+          target = Math.max(target - 0.4, 0);
+          e.preventDefault();
+        }
+      });
+
+      buildWheels();
+      apply(0);
+      requestAnimationFrame(step);
+
+      if (!reduce) {
+        startTime = performance.now();
+        tickLive();
+      }
+    })();
+</script>
+<div class="navbar landingpage"><div data-animation="default" data-collapse="medium" data-duration="400" data-easing="ease" data-easing2="ease" role="banner" class="webflow-native-navbar w-nav"><div class="navbar-outer"><div class="navbar-inner"><a href="/" aria-current="page" target="_top" class="navbar-logo-div visible-on-desktop w-nav-brand w--current"><img src="vetter-consulting/assets/img/typhoon-logo.svg" loading="eager" alt="Typhoon" class="logo"/></a><div class="nav-static-item"><div class="nav-arrow-div"><img src="vetter-consulting/assets/img/typhoon-logo.svg" loading="lazy" alt="Typhoon" class="nav-arrow"/></div><div class="nav-link-static">Menü</div></div><nav role="navigation" class="nav-menu-wrapper w-nav-menu"><ul role="list" class="nav-menu-right w-list-unstyled"><li class="nav-item"><a href="/" aria-current="page" target="_top" class="nav-link w--current">Home</a></li><li class="nav-item"><a href="/faq" target="_top" class="nav-link">FAQ</a></li><li class="nav-item"><a href="/contact" target="_top" class="nav-link">Contact</a></li><li class="nav-item"><a data-w-id="e8b68c38-7920-70a0-3c4d-94c7ad18ef1c" href="/zone" target="_top" class="primary-btn w-inline-block"><div class="btn-txt-container"><div class="btn-txt">Commen&ccedil;ons</div><div class="btn-txt">Commen&ccedil;ons</div></div></a></li><li class="mobile-margin-top-10"></li></ul></nav><div id="w-node-e8b68c38-7920-70a0-3c4d-94c7ad18ef24-ad18ef05" class="nav-area-left mobile"><div class="menu-button w-nav-button"><div data-is-ix2-target="1" class="hamburger-menu-dark" data-w-id="e8b68c38-7920-70a0-3c4d-94c7ad18ef26" data-animation-type="lottie" data-src="vetter-consulting/assets/img/66a20363e5bbc5dbaa1b59bb_656e40dffb81768885f3d9a9_menu_white.json" data-loop="0" data-direction="1" data-autoplay="0" data-renderer="svg" data-default-duration="2.3333333333333335" data-duration="0" data-loading="eager" data-ix2-initial-state="0"></div></div></div></div></div></div><button type="button" class="theme-toggle" data-theme-toggle aria-label="Basculer le mode clair / sombre" title="Mode clair / sombre"><svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg><svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></button><div class="color-control"><button type="button" class="color-toggle" data-accent-toggle title="Changer la couleur d'accent" aria-label="Changer la couleur d'accent" aria-expanded="false"><svg class="icon-palette" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22a10 10 0 1 1 10-10c0 1.7-1.3 3-3 3h-2a2 2 0 0 0-2 2c0 .6.2 1 .6 1.4.4.4.6.8.6 1.4 0 1.7-1.3 3-3 3z"/><circle cx="7.5" cy="11.5" r=".5" fill="currentColor"/><circle cx="11" cy="7.5" r=".5" fill="currentColor"/><circle cx="15.5" cy="7.5" r=".5" fill="currentColor"/></svg><span class="accent-dot"></span></button><div class="accent-panel" data-accent-panel role="dialog" aria-label="Couleur d'accent"><div class="accent-panel-title">Couleur d'accent</div><div class="accent-swatches"><button type="button" class="accent-swatch" data-accent-swatch="#4386B1" style="--swatch:#4386B1" aria-label="Bleu de marque" title="Bleu de marque"></button><button type="button" class="accent-swatch" data-accent-swatch="#7b2cbf" style="--swatch:#7b2cbf" aria-label="Violet" title="Violet"></button><button type="button" class="accent-swatch" data-accent-swatch="#e63946" style="--swatch:#e63946" aria-label="Rouge" title="Rouge"></button><button type="button" class="accent-swatch" data-accent-swatch="#f97316" style="--swatch:#f97316" aria-label="Orange" title="Orange"></button><button type="button" class="accent-swatch" data-accent-swatch="#22c55e" style="--swatch:#22c55e" aria-label="Vert" title="Vert"></button><button type="button" class="accent-swatch" data-accent-swatch="#06b6d4" style="--swatch:#06b6d4" aria-label="Cyan" title="Cyan"></button><button type="button" class="accent-swatch" data-accent-swatch="#ec4899" style="--swatch:#ec4899" aria-label="Rose" title="Rose"></button><button type="button" class="accent-swatch" data-accent-swatch="#eab308" style="--swatch:#eab308" aria-label="Jaune" title="Jaune"></button><button type="button" class="accent-swatch" data-accent-swatch="#64748b" style="--swatch:#64748b" aria-label="Ardoise" title="Ardoise"></button><button type="button" class="accent-swatch" data-accent-swatch="#10b981" style="--swatch:#10b981" aria-label="&Eacute;meraude" title="&Eacute;meraude"></button></div><button type="button" class="accent-reset" data-accent-reset aria-label="R&eacute;tablir le bleu d'origine" title="R&eacute;tablir le bleu d'origine"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg><span>R&eacute;tablir le bleu d'origine</span></button></div></div></div><section data-w-id="933bc9ea-8f0f-40e8-a12e-39b1718e2ca5" class="main-content"><div class="hero"><div class="hero-wrapper v2"><div class="hero-layer-video" aria-hidden="true"><video id="hero-video" class="hero-video" src="vetter-consulting/assets/videos/hero-typhoon-house.mp4" muted loop playsinline preload="auto" poster="vetter-consulting/assets/img/66a20363e5bbc5dbaa1b59ac_VC%20GmbH%20-%20Shooting%20-%20022024-272.webp" tabindex="-1"></video></div><script>
 /* Typhoon — hero background video. Native <video> replaces the Mux iframe.
    Autoplay per mux.com/docs/guides/autoplay: call play() (not the autoplay
    attribute) so we can detect a blocked autoplay and fall back to the
@@ -871,7 +1251,7 @@
     window.addEventListener(ev, tryPlay, { once: true, passive: true });
   });
 })();
-</script><div class="hero-layer-3"><div class="hero-layer-3-layer-1"><h1 data-w-id="70d4b8f6-9912-2b6d-2e36-9b43857ffa7c" class="hero-headline"><span class="hero-headline-line hero-headline-line--white">Anticipez le risque climatique d'un bien</span><span class="hero-headline-line hero-headline-line--accent">avant qu'il ne devienne</span><span class="hero-headline-line hero-headline-line--accent">un sinistre</span></h1><div data-w-id="6645b6e1-52be-d72f-dd29-46085e3d6b58" class="hero-headline"></div><div data-w-id="d46783fb-4e74-c874-08a9-32fe9f8538d0" class="global-subline tm-2 width-dynamic"><p class="copytext is-center-aligned">Typhoon croise donn&eacute;es officielles et <span class="is-white">IA g&eacute;n&eacute;rative</span> pour &eacute;valuer le risque climatique de chaque bien, en quelques minutes.</p></div><div data-w-id="5b2ad29e-44df-e704-bc7a-17ce19477ef9" class="global-button-div tm-3 p-1-5"><a data-w-id="5b2ad29e-44df-e704-bc7a-17ce19477efa" href="/zone" target="_top" class="primary-btn w-inline-block"><div class="btn-txt-container"><div style="-webkit-transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);-moz-transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);-ms-transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0)" class="btn-txt">Commen&ccedil;ons</div><div style="-webkit-transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);-moz-transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);-ms-transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0)" class="btn-txt">Commen&ccedil;ons</div></div></a></div></div></div><div class="hero-layer-2"></div><div class="hero-layer-1"><img src="vetter-consulting/assets/img/66a20363e5bbc5dbaa1b59ac_VC%20GmbH%20-%20Shooting%20-%20022024-272.webp" loading="eager" data-w-id="6da37b9c-1b72-7944-4438-aea5753bbd5b" alt="Gruppenbild des Vetter Consulting Teams" class="hero-img v2"/></div></div></div><div data-w-id="6797961e-774b-a0ed-7de4-0f5fe393aa6a" class="load-hide"><div id="kundenstimmen" data-w-id="2efff7a8-f8af-2666-9474-e8de3469ac29" class="_01-proof"><div class="proof-outer"><div class="proof-inner"><div class="proof-layer-2"><div class="proof-1"><div class="proof-txt-div"><div class="align-vertically _100 is-top-aligned"><h2 class="global-headline-l custom-width-2">Ce que les assureurs disent de nous</h2><div data-w-id="9c99347e-c6ea-19e5-3c1b-1c1593c8f4af" class="global-subline tm-2 width-dynamic-2"><p class="copytext">“Before Typhoon, evaluating climate risk meant juggling scattered data sources and weeks of manual work. With the Typhoon platform, our actuaries get a precise, auditable score for every asset in minutes. Perfect!”</p></div><div data-w-id="8b322dcf-0f38-9949-91f8-1cdd20d584ad" class="align-horizontally tm-2"><img src="vetter-consulting/assets/img/najed-ksouri.jpg" loading="lazy" alt="Najed Ksouri" class="testimonial-img-s"/><div class="align-vertically g-02"><div class="global-headline-xs">Najed Ksouri</div><div class="copytext is-small is-grey">CEO at ERM Partners (GLOBACS member)</div></div></div></div></div></div><div class="proof-2"><div class="proof-txt-div"><div class="align-vertically _100 is-top-aligned"><h2 class="global-headline-l custom-width-1 _0">Ce que les assureurs disent de nous</h2><div data-w-id="05832f8e-aa57-e49e-a76a-492c53c9568f" class="global-subline tm-2 width-dynamic-2"><p class="copytext">&quot;With Typhoon, our underwriting decisions are grounded in rigorous, transparent climate models. I can focus fully on my business, safe in the knowledge that our whole portfolio is well assessed.&quot;</p></div><div data-w-id="05832f8e-aa57-e49e-a76a-492c53c95692" class="align-horizontally tm-2"><img src="vetter-consulting/assets/img/rassem-ktata.jpg" loading="lazy" alt="Rassem KTATA" class="testimonial-img-s"/><div class="align-vertically g-02"><div class="global-headline-xs">Rassem KTATA</div><div class="copytext is-small is-grey">Managing Director Tunisia chez NEXtCARE</div></div></div></div></div></div><div class="proof-3"><div class="proof-txt-div"><div class="align-vertically _100 is-top-aligned"><h2 class="global-headline-l custom-width-1 _0">Ce que les assureurs disent de nous</h2><div data-w-id="ba32d952-1490-a603-a22c-1d3903d90f16" class="global-subline tm-2 width-dynamic-2"><p class="copytext">“A promising solution that combines artificial intelligence, geospatial data, and business expertise to create a new decision-support tool for professionals  ”</p></div><div data-w-id="ba32d952-1490-a603-a22c-1d3903d90f19" class="align-horizontally tm-2"><img src="vetter-consulting/assets/img/66a20363e5bbc5dbaa1b59ab_1600946521394.jpeg" loading="lazy" sizes="(max-width: 613px) 100vw, 613px" srcset="vetter-consulting/assets/img/66a20363e5bbc5dbaa1b59ab_1600946521394-p-500.jpeg 500w, vetter-consulting/assets/img/66a20363e5bbc5dbaa1b59ab_1600946521394.jpeg 613w" alt="Marc Lef&egrave;vre" class="testimonial-img-s"/><div class="align-vertically g-02"><div class="global-headline-xs">Ralph B&egrave;vre<br/></div><div class="copytext is-small is-grey">Actuarial Consultant at Finactys</div></div></div></div></div></div></div><div class="proof-layer-1"><div class="chess-piece-div"><img src="vetter-consulting/assets/img/66a20363e5bbc5dbaa1b59d4_rotation.png" loading="lazy" sizes="(max-width: 6525px) 100vw, 6525px" srcset="vetter-consulting/assets/img/66a20363e5bbc5dbaa1b59d4_rotation-p-500.png 500w, vetter-consulting/assets/img/66a20363e5bbc5dbaa1b59d4_rotation.png 6525w" alt="" class="chess-piece-img"/></div></div></div></div></div><div class="grey-spacer"></div><div data-w-id="e9b06c27-f5fa-0209-4a15-2807886ae6fa" class="_03-mission"><div class="mission-wrap"><div data-w-id="e9b06c27-f5fa-0209-4a15-2807886ae6fc" class="mission-layer-1"><div class="mission-layer-1-inner"><div data-w-id="e9b06c27-f5fa-0209-4a15-2807886ae6fd" class="align-vertically is-center-aligned"><div class="global-subline"></div><div class="mission-txt">Mission</div></div></div></div><div class="mission-layer-2"><div class="chess-grid _2cx1r"><div class="chess-field-black _100vh"><img src="vetter-consulting/assets/img/66a20363e5bbc5dbaa1b5984_king.svg" loading="lazy" data-w-id="2c0fadaf-c3af-ab8b-1cf8-c08999c96ee6" alt="" class="chess-grid-img"/><div class="chess-field-tag"><div class="global-headline-s is-tag">5000+<br/><span class="is-small">Consultations</span></div></div></div><div class="chess-field-grey _100vh"><div class="chess-field-inner"><h3 class="global-headline-m is-left-aligned">Chaque assureur arrive au point o&ugrave; <span class="is-white">une &eacute;valuation sommaire des risques ne suffit plus</span>. Face aux d&eacute;fis du changement climatique, vous avez besoin d'un outil strat&eacute;gique pour piloter votre exposition aux al&eacute;as naturels.</h3></div></div><div class="chess-field-grey _100vh"><div class="chess-field-inner"><h3 class="global-headline-m is-left-aligned">Et oui, nous le savons : <span class="is-white">le climat est un sujet complexe pour la plupart des assureurs. </span>Mais c'est justement pour cela que nous existons.</h3></div></div><div class="chess-field-black _100vh overflow-active"><img src="vetter-consulting/assets/img/66a20363e5bbc5dbaa1b5977_springer.svg" loading="lazy" alt="" class="chess-grid-img hidden"/><div data-w-id="b9cab148-1f45-eb1e-c6ac-f8b9a44449ae" class="chess-field-tag"><div class="global-headline-s is-tag">700+<br/><span class="is-small">clients satisfaits</span></div></div></div><div class="chess-field-black _100vh"><div data-w-id="b95a2c39-ef5b-bcd3-bdcd-66fc32d6c4c2" class="chess-field-tag"><div class="global-headline-s is-tag">100%<br/><span class="is-small">digital</span></div></div></div><div class="chess-field-grey _100vh"><div class="chess-field-inner"><h3 class="global-headline-m is-left-aligned">Ce que nous faisons : <span class="is-white">Transformer la complexit&eacute; en d&eacute;cisions claires. </span>Pour que vous puissiez &ecirc;tre 100% s&ucirc;r que votre portefeuille est &eacute;valu&eacute; avec la meilleure technologie disponible.</h3><div class="global-button-div tm-2 is-left-aligned"></div></div></div></div></div></div></div><div class="_04-requirements"><div class="requirements-layer-1"><div class="align-vertically is-center-aligned"><div class="global-subline"></div><div class="requirements-txt">Nos fonctionnalit&eacute;s</div></div></div><div data-w-id="64bc2744-b442-8848-f3c8-7550923bbfe3" class="requirements-layer-2"><div class="chess-grid _4c1r" style="grid-template-columns:1fr 1fr 1fr 1fr"><div class="chess-field-grey _50vh a1"><div class="chess-field-inner a1"><div class="grid-icon-div"><img src="vetter-consulting/assets/img/66a20363e5bbc5dbaa1b597b_building-shield-solid.svg" loading="lazy" alt="" class="icon"/></div><h3 class="global-headline-s">Jumeau num&eacute;rique du bien</h3><div class="global-subline tm-05"><p class="copytext">Une reconstitution 3D de chaque bien qui visualise, <span class="is-white">zone par zone, son exposition aux risques climatiques</span> actuels et futurs.</p></div></div></div><div class="chess-field-grey _50vh a2"><div class="chess-field-inner a1"><div class="grid-icon-div"><img src="vetter-consulting/assets/img/66a20363e5bbc5dbaa1b5981_circle-check-solid.svg" loading="lazy" alt="" class="icon"/></div><h3 class="global-headline-s">Recommandations de travaux</h3><div class="global-subline tm-05"><p class="copytext">Des pr&eacute;conisations concr&egrave;tes et chiffr&eacute;es pour renforcer <span class="is-white">les zones les plus vuln&eacute;rables</span> de votre bien, class&eacute;es par impact.</p></div></div></div><div class="chess-field-grey _50vh a3"><div class="chess-field-inner a1"><div class="grid-icon-div"><img src="vetter-consulting/assets/img/66a20363e5bbc5dbaa1b597e_money-bill-trend-up-solid.svg" loading="lazy" alt="" class="icon"/></div><h3 class="global-headline-s">Certification &amp; prime r&eacute;duite</h3><div class="global-subline tm-05"><p class="copytext">Engagez les travaux recommand&eacute;s et obtenez la <span class="is-white">certification Climato-R&eacute;silient Typhoon</span>, ouvrant droit &agrave; une prime sur votre cotisation.</p></div></div></div><div class="chess-field-grey _50vh a4"><div class="chess-field-inner a1"><div class="grid-icon-div"><img src="vetter-consulting/assets/img/66a20363e5bbc5dbaa1b597f_handshake-angle-solid.svg" loading="lazy" alt="" class="icon"/></div><h3 class="global-headline-s">Matching artisans</h3><div class="global-subline tm-05"><p class="copytext">Matching entre <span class="is-white">recommandations et artisans disponibles</span>.</p></div></div></div></div></div></div><div data-w-id="8a49cc21-a136-b165-330b-cb7db03ace64" class="_03-mission-mobile"><div class="global-headline-div-mobile"><div class="align-vertically is-center-aligned"><div class="mission-txt">Mission</div></div></div><div class="global-content-div"><div class="chess-grid"><div class="chess-field-grey _50vh b2"><h3 class="global-headline-m is-left-aligned">Chaque assureur arrive au point o&ugrave; <span class="is-white">une &eacute;valuation sommaire des risques ne suffit plus. </span>Face aux d&eacute;fis du changement climatique, vous avez besoin d'un outil strat&eacute;gique pour piloter votre exposition aux al&eacute;as naturels.</h3></div><div class="chess-field-black _50vh b1"><img src="vetter-consulting/assets/img/66a20363e5bbc5dbaa1b5984_king.svg" loading="lazy" data-w-id="3d3407e2-227b-3376-e068-6947e2de91cd" alt="" class="chess-grid-img mobile"/><div data-w-id="4db646db-4344-fab6-54ff-d0d1d83c4cb0" class="chess-field-tag"><div class="global-headline-s is-tag">5000+<br/><span class="is-small">consultations</span></div></div></div><div class="chess-field-grey _50vh b1"><div data-w-id="72e37a04-378c-e912-77fb-6852692c977c" class="chess-field-tag"><div class="global-headline-s is-tag">700+<br/><span class="is-small v2">clients<br/>satisfaits</span></div></div></div><div class="chess-field-black _50vh b2"><h3 class="global-headline-m is-left-aligned">Et oui, nous le savons : <span class="is-white">le climat est un sujet complexe pour la plupart des assureurs</span>. Mais c'est justement pour cela que nous existons.</h3></div><div class="chess-field-grey _50vh b1"><img src="vetter-consulting/assets/img/66a384cff1edb8296855daa6_bauer.png" loading="lazy" data-w-id="981fff48-03ec-1974-2074-6d5d6d3861f8" sizes="(max-width: 800px) 100vw, 800px" alt="" srcset="vetter-consulting/assets/img/66a384cff1edb8296855daa6_bauer-p-500.png 500w, vetter-consulting/assets/img/66a384cff1edb8296855daa6_bauer.png 800w" class="chess-grid-img mobile"/><div data-w-id="ad464571-17b9-9d62-bb00-0ab14c2e706a" class="chess-field-tag"><div class="global-headline-s is-tag">44%<br/><span class="is-small v2">d'administration <br/>en moins</span></div></div></div><div class="chess-field-black _50vh b1"><div data-w-id="7a4b0b54-6963-6da8-6fcd-d0492ae67ec6" class="chess-field-tag"><div class="global-headline-s is-tag">100%<br/><span class="is-small v2">digital</span></div></div></div><div class="chess-field-grey _50vh b2"><div class="global-button-div tm-2 is-left-aligned"></div><h3 class="global-headline-m is-left-aligned">Ce que nous faisons : <span class="is-white">Transformer la complexit&eacute; en d&eacute;cisions claires. </span>Pour que vous puissiez &ecirc;tre 100% s&ucirc;r que votre portefeuille est &eacute;valu&eacute; avec la meilleure technologie disponible.</h3></div></div></div></div><div class="_04-requirements-mobile"><div class="global-headline-div-mobile"><div class="align-vertically is-center-aligned"><div class="global-subline max-width-25rem"></div><div class="requirements-txt">Nos fonctionnalit&eacute;s</div></div></div><div class="global-content-div"><div class="chess-grid"><div class="chess-field-grey slide-in"><div class="grid-icon-div"><img src="vetter-consulting/assets/img/66a20363e5bbc5dbaa1b597b_building-shield-solid.svg" loading="lazy" alt="" class="icon"/></div><h3 class="global-headline-s">Jumeau num&eacute;rique du bien<br/></h3><div class="global-subline tm-1"><p class="copytext">Une reconstitution 3D de chaque bien qui visualise, <span class="is-white">zone par zone, son exposition aux risques climatiques</span> actuels et futurs.</p></div></div><div class="chess-field-black slide-in"><div class="grid-icon-div"><img src="vetter-consulting/assets/img/66a20363e5bbc5dbaa1b5981_circle-check-solid.svg" loading="lazy" alt="" class="icon"/></div><h3 class="global-headline-s">Recommandations de travaux<br/></h3><div class="global-subline tm-1"><p class="copytext">Des pr&eacute;conisations concr&egrave;tes et chiffr&eacute;es pour renforcer <span class="is-white">les zones les plus vuln&eacute;rables</span> de votre bien, class&eacute;es par impact.</p></div></div><div class="chess-field-grey slide-in"><div class="grid-icon-div"><img src="vetter-consulting/assets/img/66a20363e5bbc5dbaa1b597e_money-bill-trend-up-solid.svg" loading="lazy" alt="" class="icon"/></div><h3 class="global-headline-s">Certification &amp; prime r&eacute;duite<br/></h3><div class="global-subline tm-1"><p class="copytext">Engagez les travaux recommand&eacute;s et obtenez la <span class="is-white">certification Climato-R&eacute;silient Typhoon</span>, ouvrant droit &agrave; une prime sur votre cotisation.</p></div></div><div class="chess-field-black slide-in"><div class="grid-icon-div"><img src="vetter-consulting/assets/img/66a20363e5bbc5dbaa1b597f_handshake-angle-solid.svg" loading="lazy" alt="" class="icon"/></div><h3 class="global-headline-s">Matching artisans<br/></h3><div class="global-subline tm-1"><p class="copytext">Matching entre <span class="is-white">recommandations et artisans disponibles</span>.</p></div></div></div></div></div><div class="_05-timeline"><div class="timeline-headline"><div class="align-vertically is-center-aligned"><div class="global-subline max-width-45"><div data-w-id="b6691a5e-9b4d-42b9-e114-2bf0b6955859" class="micro-interaction"><img src="vetter-consulting/assets/img/location-pin-solid.svg" loading="lazy" alt="" class="list-icon a1"/></div><h2 class="global-headline-xl is-center-aligned">Comment &ccedil;a marche</h2></div></div></div><div class="timeline-grid"><div class="timeline-progress"><div class="timeline-bar"></div><div class="timeline-fade-top"></div><div class="timeline-fade-bottom"></div></div><div data-w-id="d9f2b799-1085-22f9-7dcf-434738d1a848" class="timeline-item"><div id="w-node-d9f2b799-1085-22f9-7dcf-434738d1a849-aa1b5945" class="timeline-div-spacer"></div><div id="w-node-d9f2b799-1085-22f9-7dcf-434738d1a84c-aa1b5945" class="timeline-center"><div class="timeline-dot"></div></div><div id="w-node-d9f2b799-1085-22f9-7dcf-434738d1a84e-aa1b5945" class="timeline-div"><div id="w-node-d9f2b799-1085-22f9-7dcf-434738d1a84f-aa1b5945" class="align-vertically"><div class="global-tag"><div class="tag-txt">&Eacute;tape 1</div></div><h3 class="global-headline-m is-left-aligned is-white">Nous analysons votre bien</h3><div class="global-subline tm-1"><p class="copytext">Pour que notre collaboration soit vraiment efficace, <span class="is-white">nos experts analysent l'&eacute;tat actuel de votre bien</span> de mani&egrave;re pr&eacute;cise et individualis&eacute;e.</p></div></div></div></div><div data-w-id="6715b942-98da-08b3-5541-42a9944f077a" class="timeline-item"><div id="w-node-_6715b942-98da-08b3-5541-42a9944f077e-aa1b5945" class="timeline-div"><div id="w-node-_6715b942-98da-08b3-5541-42a9944f077f-aa1b5945" class="align-vertically"><div class="global-tag"><div class="tag-txt">&Eacute;tape 2</div></div><h3 class="global-headline-m is-left-aligned is-white">Une cartographie des risques sur mesure</h3><div class="global-subline tm-1"><p class="copytext">Dans un second temps, <span class="is-white">nous concevons une cartographie des risques vraiment adapt&eacute;e et optimis&eacute;e pour vous</span> et votre portefeuille.</p></div></div></div><div id="w-node-_6715b942-98da-08b3-5541-42a9944f077c-aa1b5945" class="timeline-center"><div class="timeline-dot"></div></div><div id="w-node-_6715b942-98da-08b3-5541-42a9944f077b-aa1b5945" class="timeline-div-spacer"></div></div><div data-w-id="3abc594d-2d13-ec65-32fd-8695ce676f47" class="timeline-item"><div id="w-node-_3abc594d-2d13-ec65-32fd-8695ce676f48-aa1b5945" class="timeline-div-spacer"></div><div id="w-node-_3abc594d-2d13-ec65-32fd-8695ce676f49-aa1b5945" class="timeline-center"><div class="timeline-dot"></div></div><div id="w-node-_3abc594d-2d13-ec65-32fd-8695ce676f4b-aa1b5945" class="timeline-div"><div id="w-node-_3abc594d-2d13-ec65-32fd-8695ce676f4c-aa1b5945" class="align-vertically"><div class="global-tag"><div class="tag-txt">&Eacute;tape 3</div></div><h3 class="global-headline-m is-left-aligned is-white">100% digital &amp; analyse instantan&eacute;e</h3><div class="global-subline tm-1"><p class="copytext"><span class="is-white">Notre collaboration est une promesse : vous n'avez rien &agrave; g&eacute;rer.</span> Plus de piles de documents papier, tout le processus est 100% digital et automatis&eacute;.</p></div></div></div></div><div data-w-id="0f27d886-e6da-213b-330e-4f3c19abcbcd" class="timeline-item"><div id="w-node-_0f27d886-e6da-213b-330e-4f3c19abcbd1-aa1b5945" class="timeline-div"><div id="w-node-_0f27d886-e6da-213b-330e-4f3c19abcbd2-aa1b5945" class="align-vertically"><h3 class="global-headline-m is-left-aligned is-white"></h3></p></div></div></div><div id="w-node-_0f27d886-e6da-213b-330e-4f3c19abcbcf-aa1b5945" class="timeline-center"><div class="timeline-dot"></div></div><div id="w-node-_0f27d886-e6da-213b-330e-4f3c19abcbce-aa1b5945" class="timeline-div-spacer"></div></div></div></div><div class="roi-band" id="roi-band">
+</script><div class="hero-layer-3"><div class="hero-layer-3-layer-1"><h1 data-w-id="70d4b8f6-9912-2b6d-2e36-9b43857ffa7c" class="hero-headline"><span class="hero-headline-line hero-headline-line--white">Typhoon.</span></h1><div data-w-id="6645b6e1-52be-d72f-dd29-46085e3d6b58" class="hero-headline hero-headline--tagline"><span class="hero-headline-line hero-headline-line--accent">Précis. Rapide. Décidé.</span></div><div class="hero-headline hero-headline--lead"><span class="hero-headline-line hero-headline-line--white">Anticipez le risque climatique d’un bien</span><span class="hero-headline-line hero-headline-line--accent">avant qu’il ne devienne</span><span class="hero-headline-line hero-headline-line--accent">un sinistre</span></div><div data-w-id="d46783fb-4e74-c874-08a9-32fe9f8538d0" class="global-subline tm-2 width-dynamic"><p class="copytext is-center-aligned">Typhoon croise donn&eacute;es officielles et <span class="is-white">IA g&eacute;n&eacute;rative</span> pour &eacute;valuer le risque climatique de chaque bien, en quelques minutes.</p></div><div data-w-id="5b2ad29e-44df-e704-bc7a-17ce19477ef9" class="global-button-div tm-3 p-1-5"><a data-w-id="5b2ad29e-44df-e704-bc7a-17ce19477efa" href="/zone" target="_top" class="primary-btn w-inline-block"><div class="btn-txt-container"><div style="-webkit-transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);-moz-transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);-ms-transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0)" class="btn-txt">Commen&ccedil;ons</div><div style="-webkit-transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);-moz-transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);-ms-transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0)" class="btn-txt">Commen&ccedil;ons</div></div></a></div></div></div><div class="hero-layer-2"></div><div class="hero-layer-1"></div></div></div><div data-w-id="6797961e-774b-a0ed-7de4-0f5fe393aa6a" class="load-hide"><div id="kundenstimmen" data-w-id="2efff7a8-f8af-2666-9474-e8de3469ac29" class="_01-proof"><div class="proof-outer"><div class="proof-inner"><div class="proof-layer-2"><div class="proof-1"><div class="proof-txt-div"><div class="align-vertically _100 is-top-aligned"><h2 class="global-headline-l custom-width-2">Ce que les assureurs disent de nous</h2><div data-w-id="9c99347e-c6ea-19e5-3c1b-1c1593c8f4af" class="global-subline tm-2 width-dynamic-2"><p class="copytext">“Before Typhoon, evaluating climate risk meant juggling scattered data sources and weeks of manual work. With the Typhoon platform, our actuaries get a precise, auditable score for every asset in minutes. Perfect!”</p></div><div data-w-id="8b322dcf-0f38-9949-91f8-1cdd20d584ad" class="align-horizontally tm-2"><img src="vetter-consulting/assets/img/najed-ksouri.jpg" loading="lazy" alt="Najed Ksouri" class="testimonial-img-s"/><div class="align-vertically g-02"><div class="global-headline-xs">Najed Ksouri</div><div class="copytext is-small is-grey">CEO at ERM Partners (GLOBACS member)</div></div></div></div></div></div><div class="proof-2"><div class="proof-txt-div"><div class="align-vertically _100 is-top-aligned"><h2 class="global-headline-l custom-width-1 _0">Ce que les assureurs disent de nous</h2><div data-w-id="05832f8e-aa57-e49e-a76a-492c53c9568f" class="global-subline tm-2 width-dynamic-2"><p class="copytext">&quot;With Typhoon, our underwriting decisions are grounded in rigorous, transparent climate models. I can focus fully on my business, safe in the knowledge that our whole portfolio is well assessed.&quot;</p></div><div data-w-id="05832f8e-aa57-e49e-a76a-492c53c95692" class="align-horizontally tm-2"><img src="vetter-consulting/assets/img/rassem-ktata.jpg" loading="lazy" alt="Rassem KTATA" class="testimonial-img-s"/><div class="align-vertically g-02"><div class="global-headline-xs">Rassem KTATA</div><div class="copytext is-small is-grey">Managing Director Tunisia chez NEXtCARE</div></div></div></div></div></div><div class="proof-3"><div class="proof-txt-div"><div class="align-vertically _100 is-top-aligned"><h2 class="global-headline-l custom-width-1 _0">Ce que les assureurs disent de nous</h2><div data-w-id="ba32d952-1490-a603-a22c-1d3903d90f16" class="global-subline tm-2 width-dynamic-2"><p class="copytext">“Before, I had to rely on standard reports that never reflected my portfolio. With Typhoon, I have the feeling the platform knows our climate exposure better than I do!”</p></div><div data-w-id="ba32d952-1490-a603-a22c-1d3903d90f19" class="align-horizontally tm-2"><img src="vetter-consulting/assets/img/66a20363e5bbc5dbaa1b59ab_1600946521394.jpeg" loading="lazy" sizes="(max-width: 613px) 100vw, 613px" srcset="vetter-consulting/assets/img/66a20363e5bbc5dbaa1b59ab_1600946521394-p-500.jpeg 500w, vetter-consulting/assets/img/66a20363e5bbc5dbaa1b59ab_1600946521394.jpeg 613w" alt="Marc Lef&egrave;vre" class="testimonial-img-s"/><div class="align-vertically g-02"><div class="global-headline-xs">Marc Lef&egrave;vre<br/></div><div class="copytext is-small is-grey">Directeur Technique, MAIF</div></div></div></div></div></div></div><div class="proof-layer-1"><div class="chess-piece-div"><img src="vetter-consulting/assets/img/66a20363e5bbc5dbaa1b59d4_rotation.png" loading="lazy" sizes="(max-width: 6525px) 100vw, 6525px" srcset="vetter-consulting/assets/img/66a20363e5bbc5dbaa1b59d4_rotation-p-500.png 500w, vetter-consulting/assets/img/66a20363e5bbc5dbaa1b59d4_rotation.png 6525w" alt="" class="chess-piece-img"/></div></div></div></div></div><div class="grey-spacer"></div><div data-w-id="ba050526-31cb-7ac6-fa92-47b806ece0c1" class="_02-services"><div class="services-wrap"><div class="services-layer-1"><div class="align-vertically is-center-aligned"><div class="question-mark-txt">6</div><div class="global-subline max-width-20rem"><p class="global-headline-m"><span class="is-white">Nous vous accompagnons</span> in <br/>sur ces 6 domaines</p></div></div></div><div class="services-layer-2"><div class="chess-grid"><div class="chess-field-black _50vh"><div class="chess-field-inner a1 layer-1"><div class="grid-icon-div"><img src="vetter-consulting/assets/img/66a20363e5bbc5dbaa1b5980_user-tie-solid.svg" loading="lazy" alt="" class="icon"/></div><h3 class="global-headline-s">&Eacute;valuation des risques inondation</h3><div class="global-subline tm-1"><p class="copytext">Tout ce qu'il faut pour <span class="is-white">&eacute;valuer pr&eacute;cis&eacute;ment le risque inondation de chaque bien. </span>Notre mod&egrave;le multi-crit&egrave;res int&egrave;gre la topographie, les pr&eacute;cipitations et les ant&eacute;c&eacute;dents de sinistres pour une fiabilit&eacute; optimale.</p></div></div><div class="chess-field-inner a1 layer-2"><div class="grid-icon-div"><img src="vetter-consulting/assets/img/66a20363e5bbc5dbaa1b597e_money-bill-trend-up-solid.svg" loading="lazy" alt="" class="icon"/></div><h3 class="global-headline-s">Analyse du risque Retrait-Gonflement d'Argile<br/></h3><div class="global-subline tm-1"><p class="copytext"><span class="is-white">Analyser pr&eacute;cis&eacute;ment le risque RGA</span> gr&acirc;ce &agrave; notre base de donn&eacute;es g&eacute;ologiques. Cartographiez les zones de retrait-gonflement et obtenez une &eacute;valuation fiable de l'exposition de chaque bien immobilier. <span class="is-white">Anticipez les sinistres</span> li&eacute;s aux mouvements de sol.</p></div></div></div><div class="chess-field-grey _50vh"></div><div class="chess-field-black _50vh"><div class="chess-field-inner _3 layer-1"><div class="grid-icon-div"><img src="vetter-consulting/assets/img/66a20363e5bbc5dbaa1b597c_right-left-solid.svg" loading="lazy" alt="" class="icon"/></div><h3 class="global-headline-s">Scoring multi-p&eacute;rils (temp&ecirc;te, gr&ecirc;le, neige)</h3><div class="global-subline tm-1"><p class="copytext"><span class="is-white">Un scoring unique</span> pour chaque bien face aux al&eacute;as climatiques. Temp&ecirc;te, gr&ecirc;le, neige : notre algorithme agr&egrave;ge les donn&eacute;es historiques et les projections pour <span class="is-white">vous offrir une vision globale</span> des risques.<br/></p></div></div><div class="chess-field-inner _3 layer-2"><div class="grid-icon-div"><img src="vetter-consulting/assets/img/66a20363e5bbc5dbaa1b5981_circle-check-solid.svg" loading="lazy" alt="" class="icon"/></div><h3 class="global-headline-s">Mod&eacute;lisation climatique 2050<br/></h3><div class="global-subline tm-1"><p class="copytext">Des projections climatiques &agrave; l'horizon 2050 : <span class="is-white">anticipez l'&eacute;volution des risques</span> gr&acirc;ce &agrave; nos mod&egrave;les climatiques avanc&eacute;s. Int&eacute;grez les sc&eacute;narios GIEC dans <span class="is-white">votre strat&eacute;gie de gestion des risques</span> d&egrave;s aujourd'hui.</p></div><div class="global-button-div tm-2 is-left-aligned"><a data-w-id="b269cf24-08cd-da5a-2e31-2670a7a31e01" href="/zone" target="_top" class="primary-btn w-inline-block"><div class="btn-txt-container"><div style="-webkit-transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);-moz-transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);-ms-transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0)" class="btn-txt">Commen&ccedil;ons</div><div style="-webkit-transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);-moz-transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);-ms-transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0)" class="btn-txt">Commen&ccedil;ons</div></div></a></div></div></div><div class="chess-field-grey _50vh"></div><div class="chess-field-black _50vh"><div class="chess-field-inner _5 layer-1"><div class="grid-icon-div"><img src="vetter-consulting/assets/img/66a20363e5bbc5dbaa1b597d_person-shelter-solid.svg" loading="lazy" alt="" class="icon"/></div><h3 class="global-headline-s">Conformit&eacute; r&eacute;glementaire &amp; reporting<br/></h3><div class="global-subline tm-1"><p class="copytext">R&eacute;pondez aux <span class="is-white">exigences r&eacute;glementaires</span> gr&acirc;ce &agrave; nos rapports automatis&eacute;s. Conformit&eacute; aux normes Solvabilit&eacute; II, reporting ESG et <span class="is-white">documentation compl&egrave;te</span> de votre analyse des risques climatiques.</p></div></div><div class="chess-field-inner _5 layer-2"><div class="grid-icon-div"><img src="vetter-consulting/assets/img/66a20363e5bbc5dbaa1b597b_building-shield-solid.svg" loading="lazy" alt="" class="icon custom"/></div><h3 class="global-headline-s">Protection du patrimoine assurantiel</h3><div class="global-subline tm-1"><p class="copytext"><span class="is-white">Prot&eacute;gez votre portefeuille</span> gr&acirc;ce &agrave; une &eacute;valuation syst&eacute;matique des risques climatiques. Identifiez les biens vuln&eacute;rables, priorisez les actions de mitigation et <span class="is-white">optimisez votre couverture assurantielle</span>.</p></div></div></div><div class="chess-field-grey _50vh"></div></div></div></div></div><div data-w-id="e9b06c27-f5fa-0209-4a15-2807886ae6fa" class="_03-mission"><div class="mission-wrap"><div data-w-id="e9b06c27-f5fa-0209-4a15-2807886ae6fc" class="mission-layer-1"><div class="mission-layer-1-inner"><div data-w-id="e9b06c27-f5fa-0209-4a15-2807886ae6fd" class="align-vertically is-center-aligned"><div class="global-subline"></div><div class="mission-txt">Mission</div></div></div></div><div class="mission-layer-2"><div class="chess-grid _2cx1r"><div class="chess-field-black _100vh"><img src="vetter-consulting/assets/img/66a20363e5bbc5dbaa1b5984_king.svg" loading="lazy" data-w-id="2c0fadaf-c3af-ab8b-1cf8-c08999c96ee6" alt="" class="chess-grid-img"/><div class="chess-field-tag"><div class="global-headline-s is-tag">5000+<br/><span class="is-small">Consultations</span></div></div></div><div class="chess-field-grey _100vh"><div class="chess-field-inner"><h3 class="global-headline-m is-left-aligned">Chaque assureur arrive au point o&ugrave; <span class="is-white">une &eacute;valuation sommaire des risques ne suffit plus</span>. Face aux d&eacute;fis du changement climatique, vous avez besoin d'un outil strat&eacute;gique pour piloter votre exposition aux al&eacute;as naturels.</h3></div></div><div class="chess-field-grey _100vh"><div class="chess-field-inner"><h3 class="global-headline-m is-left-aligned">Et oui, nous le savons : <span class="is-white">le climat est un sujet complexe pour la plupart des assureurs. </span>Mais c'est justement pour cela que nous existons.</h3></div></div><div class="chess-field-black _100vh overflow-active"><img src="vetter-consulting/assets/img/66a20363e5bbc5dbaa1b5977_springer.svg" loading="lazy" alt="" class="chess-grid-img hidden"/><div data-w-id="b9cab148-1f45-eb1e-c6ac-f8b9a44449ae" class="chess-field-tag"><div class="global-headline-s is-tag">700+<br/><span class="is-small">clients satisfaits</span></div></div></div><div class="chess-field-black _100vh"><div data-w-id="b95a2c39-ef5b-bcd3-bdcd-66fc32d6c4c2" class="chess-field-tag"><div class="global-headline-s is-tag">100%<br/><span class="is-small">digital</span></div></div></div><div class="chess-field-grey _100vh"><div class="chess-field-inner"><h3 class="global-headline-m is-left-aligned">Ce que nous faisons : <span class="is-white">Transformer la complexit&eacute; en d&eacute;cisions claires. </span>Pour que vous puissiez &ecirc;tre 100% s&ucirc;r que votre portefeuille est &eacute;valu&eacute; avec la meilleure technologie disponible.</h3><div class="global-button-div tm-2 is-left-aligned"></div></div></div></div></div></div></div><div class="_04-requirements"><div class="requirements-layer-1"><div class="align-vertically is-center-aligned"><div class="global-subline"></div><div class="requirements-txt">Nos fonctionnalit&eacute;s</div></div></div><div data-w-id="64bc2744-b442-8848-f3c8-7550923bbfe3" class="requirements-layer-2"><div class="chess-grid _4c1r" style="grid-template-columns:1fr 1fr 1fr"><div class="chess-field-grey _50vh a1"><div class="chess-field-inner a1"><div class="grid-icon-div"><img src="vetter-consulting/assets/img/66a20363e5bbc5dbaa1b597b_building-shield-solid.svg" loading="lazy" alt="" class="icon"/></div><h3 class="global-headline-s">Jumeau num&eacute;rique du bien</h3><div class="global-subline tm-05"><p class="copytext">Une reconstitution 3D de chaque bien qui visualise, <span class="is-white">zone par zone, son exposition aux risques climatiques</span> actuels et futurs.</p></div></div></div><div class="chess-field-grey _50vh a2"><div class="chess-field-inner a1"><div class="grid-icon-div"><img src="vetter-consulting/assets/img/66a20363e5bbc5dbaa1b5981_circle-check-solid.svg" loading="lazy" alt="" class="icon"/></div><h3 class="global-headline-s">Recommandations de travaux</h3><div class="global-subline tm-05"><p class="copytext">Des pr&eacute;conisations concr&egrave;tes et chiffr&eacute;es pour renforcer <span class="is-white">les zones les plus vuln&eacute;rables</span> de votre bien, class&eacute;es par impact.</p></div></div></div><div class="chess-field-grey _50vh a3"><div class="chess-field-inner a1"><div class="grid-icon-div"><img src="vetter-consulting/assets/img/66a20363e5bbc5dbaa1b597e_money-bill-trend-up-solid.svg" loading="lazy" alt="" class="icon"/></div><h3 class="global-headline-s">Certification &amp; prime r&eacute;duite</h3><div class="global-subline tm-05"><p class="copytext">Engagez les travaux recommand&eacute;s et obtenez la <span class="is-white">certification Climato-R&eacute;silient Typhoon</span>, ouvrant droit &agrave; une prime sur votre cotisation.</p></div></div></div></div></div></div><div class="_02-services-mobile"><div data-w-id="4a9a75af-7bdf-99ad-b16a-6512c388e191" class="global-headline-div-mobile scaled"><div class="align-vertically is-center-aligned"><div class="question-mark-txt">6</div><div class="global-subline max-width-25rem"><p class="global-headline-m"><span class="is-white">Nous vous accompagnons</span> <br/>sur ces 6 domaines</p></div></div></div><div class="global-content-div"><div class="chess-grid"><div data-w-id="1e1ef529-808a-915c-c783-75c54a85f9a4" class="chess-field-grey slide-in"><div class="grid-icon-div"><img src="vetter-consulting/assets/img/66a20363e5bbc5dbaa1b5980_user-tie-solid.svg" loading="lazy" alt="" class="icon"/></div><h3 class="global-headline-s">&Eacute;valuation des risques inondation</h3><div class="global-subline tm-1"><p class="copytext">Tout ce qu'il faut pour<span class="is-white"> &eacute;valuer pr&eacute;cis&eacute;ment le risque inondation de chaque bien.</span> Notre mod&egrave;le multi-crit&egrave;res int&egrave;gre la topographie, les pr&eacute;cipitations et les ant&eacute;c&eacute;dents de sinistres pour une fiabilit&eacute; optimale.</p></div></div><div class="chess-field-black slide-in"><div class="grid-icon-div"><img src="vetter-consulting/assets/img/66a20363e5bbc5dbaa1b597d_person-shelter-solid.svg" loading="lazy" alt="" class="icon"/></div><h3 class="global-headline-s">Conformit&eacute; r&eacute;glementaire &amp; reporting<br/></h3><div class="global-subline tm-1"><p class="copytext">R&eacute;pondez aux <span class="is-white">exigences r&eacute;glementaires</span> gr&acirc;ce &agrave; nos rapports automatis&eacute;s. Conformit&eacute; aux normes Solvabilit&eacute; II, reporting ESG et <span class="is-white">documentation compl&egrave;te</span> de votre analyse des risques climatiques.</p></div></div><div class="chess-field-grey slide-in"><div class="grid-icon-div"><img src="vetter-consulting/assets/img/66a20363e5bbc5dbaa1b597c_right-left-solid.svg" loading="lazy" alt="" class="icon"/></div><h3 class="global-headline-s">Scoring multi-p&eacute;rils (temp&ecirc;te, gr&ecirc;le, neige)<br/></h3><div class="global-subline tm-1"><p class="copytext"><span class="is-white">Un scoring unique</span> pour chaque bien face aux al&eacute;as climatiques. Temp&ecirc;te, gr&ecirc;le, neige : notre algorithme agr&egrave;ge les donn&eacute;es historiques et les projections pour <span class="is-white">vous offrir une vision globale</span> des risques.</p></div></div><div class="chess-field-black slide-in"><div class="grid-icon-div"><img src="vetter-consulting/assets/img/66a20363e5bbc5dbaa1b597e_money-bill-trend-up-solid.svg" loading="lazy" alt="" class="icon"/></div><h3 class="global-headline-s">Analyse du risque Retrait-Gonflement d'Argile<br/></h3><div class="global-subline tm-1"><p class="copytext"><span class="is-white">Analyser pr&eacute;cis&eacute;ment le risque RGA</span> gr&acirc;ce &agrave; notre base de donn&eacute;es g&eacute;ologiques. Cartographiez les zones de retrait-gonflement et obtenez une &eacute;valuation fiable de l'exposition de chaque bien immobilier.<span class="is-white"> Anticipez les sinistres</span> li&eacute;s aux mouvements de sol.</p></div></div><div class="chess-field-grey slide-in"><div class="grid-icon-div"><img src="vetter-consulting/assets/img/66a20363e5bbc5dbaa1b597b_building-shield-solid.svg" loading="lazy" alt="" class="icon"/></div><h3 class="global-headline-s">Protection du patrimoine assurantiel<br/></h3><div class="global-subline tm-1"><p class="copytext"><span class="is-white">Prot&eacute;gez votre portefeuille</span> gr&acirc;ce &agrave; une &eacute;valuation syst&eacute;matique des risques climatiques. Identifiez les biens vuln&eacute;rables, priorisez les actions de mitigation et <span class="is-white">optimisez votre couverture assurantielle</span>.</p></div></div><div class="chess-field-black slide-in"><div class="grid-icon-div"><img src="vetter-consulting/assets/img/66a20363e5bbc5dbaa1b5981_circle-check-solid.svg" loading="lazy" alt="" class="icon"/></div><h3 class="global-headline-s">Mod&eacute;lisation climatique 2050<br/></h3><div class="global-subline tm-1"><p class="copytext">Des projections climatiques &agrave; l'horizon 2050 : <span class="is-white">anticipez l'&eacute;volution des risques</span> gr&acirc;ce &agrave; nos mod&egrave;les climatiques avanc&eacute;s. Int&eacute;grez les sc&eacute;narios GIEC dans <span class="is-white">votre strat&eacute;gie de gestion des risques</span> d&egrave;s aujourd'hui.</p></div><div class="global-button-div tm-2 is-left-aligned"><a data-w-id="1a3166ef-2153-6a2a-c537-ee8e56bc6a16" href="/zone" target="_top" class="primary-btn w-inline-block"><div class="btn-txt-container"><div style="-webkit-transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);-moz-transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);-ms-transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0)" class="btn-txt">Commen&ccedil;ons</div><div style="-webkit-transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);-moz-transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);-ms-transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0)" class="btn-txt">Commen&ccedil;ons</div></div></a></div></div></div></div></div><div data-w-id="8a49cc21-a136-b165-330b-cb7db03ace64" class="_03-mission-mobile"><div class="global-headline-div-mobile"><div class="align-vertically is-center-aligned"><div class="mission-txt">Mission</div></div></div><div class="global-content-div"><div class="chess-grid"><div class="chess-field-grey _50vh b2"><h3 class="global-headline-m is-left-aligned">Chaque assureur arrive au point o&ugrave; <span class="is-white">une &eacute;valuation sommaire des risques ne suffit plus. </span>Face aux d&eacute;fis du changement climatique, vous avez besoin d'un outil strat&eacute;gique pour piloter votre exposition aux al&eacute;as naturels.</h3></div><div class="chess-field-black _50vh b1"><img src="vetter-consulting/assets/img/66a20363e5bbc5dbaa1b5984_king.svg" loading="lazy" data-w-id="3d3407e2-227b-3376-e068-6947e2de91cd" alt="" class="chess-grid-img mobile"/><div data-w-id="4db646db-4344-fab6-54ff-d0d1d83c4cb0" class="chess-field-tag"><div class="global-headline-s is-tag">5000+<br/><span class="is-small">consultations</span></div></div></div><div class="chess-field-grey _50vh b1"><div data-w-id="72e37a04-378c-e912-77fb-6852692c977c" class="chess-field-tag"><div class="global-headline-s is-tag">700+<br/><span class="is-small v2">clients<br/>satisfaits</span></div></div></div><div class="chess-field-black _50vh b2"><h3 class="global-headline-m is-left-aligned">Et oui, nous le savons : <span class="is-white">le climat est un sujet complexe pour la plupart des assureurs</span>. Mais c'est justement pour cela que nous existons.</h3></div><div class="chess-field-grey _50vh b1"><img src="vetter-consulting/assets/img/66a384cff1edb8296855daa6_bauer.png" loading="lazy" data-w-id="981fff48-03ec-1974-2074-6d5d6d3861f8" sizes="(max-width: 800px) 100vw, 800px" alt="" srcset="vetter-consulting/assets/img/66a384cff1edb8296855daa6_bauer-p-500.png 500w, vetter-consulting/assets/img/66a384cff1edb8296855daa6_bauer.png 800w" class="chess-grid-img mobile"/><div data-w-id="ad464571-17b9-9d62-bb00-0ab14c2e706a" class="chess-field-tag"><div class="global-headline-s is-tag">44%<br/><span class="is-small v2">d'administration <br/>en moins</span></div></div></div><div class="chess-field-black _50vh b1"><div data-w-id="7a4b0b54-6963-6da8-6fcd-d0492ae67ec6" class="chess-field-tag"><div class="global-headline-s is-tag">100%<br/><span class="is-small v2">digital</span></div></div></div><div class="chess-field-grey _50vh b2"><div class="global-button-div tm-2 is-left-aligned"></div><h3 class="global-headline-m is-left-aligned">Ce que nous faisons : <span class="is-white">Transformer la complexit&eacute; en d&eacute;cisions claires. </span>Pour que vous puissiez &ecirc;tre 100% s&ucirc;r que votre portefeuille est &eacute;valu&eacute; avec la meilleure technologie disponible.</h3></div></div></div></div><div class="_04-requirements-mobile"><div class="global-headline-div-mobile"><div class="align-vertically is-center-aligned"><div class="global-subline max-width-25rem"></div><div class="requirements-txt">Nos fonctionnalit&eacute;s</div></div></div><div class="global-content-div"><div class="chess-grid"><div class="chess-field-grey slide-in"><div class="grid-icon-div"><img src="vetter-consulting/assets/img/66a20363e5bbc5dbaa1b597b_building-shield-solid.svg" loading="lazy" alt="" class="icon"/></div><h3 class="global-headline-s">Jumeau num&eacute;rique du bien<br/></h3><div class="global-subline tm-1"><p class="copytext">Une reconstitution 3D de chaque bien qui visualise, <span class="is-white">zone par zone, son exposition aux risques climatiques</span> actuels et futurs.</p></div></div><div class="chess-field-black slide-in"><div class="grid-icon-div"><img src="vetter-consulting/assets/img/66a20363e5bbc5dbaa1b5981_circle-check-solid.svg" loading="lazy" alt="" class="icon"/></div><h3 class="global-headline-s">Recommandations de travaux<br/></h3><div class="global-subline tm-1"><p class="copytext">Des pr&eacute;conisations concr&egrave;tes et chiffr&eacute;es pour renforcer <span class="is-white">les zones les plus vuln&eacute;rables</span> de votre bien, class&eacute;es par impact.</p></div></div><div class="chess-field-grey slide-in"><div class="grid-icon-div"><img src="vetter-consulting/assets/img/66a20363e5bbc5dbaa1b597e_money-bill-trend-up-solid.svg" loading="lazy" alt="" class="icon"/></div><h3 class="global-headline-s">Certification &amp; prime r&eacute;duite<br/></h3><div class="global-subline tm-1"><p class="copytext">Engagez les travaux recommand&eacute;s et obtenez la <span class="is-white">certification Climato-R&eacute;silient Typhoon</span>, ouvrant droit &agrave; une prime sur votre cotisation.</p></div></div></div></div></div><div class="_05-timeline"><div class="timeline-headline"><div class="align-vertically is-center-aligned"><div class="global-subline max-width-45"><div data-w-id="b6691a5e-9b4d-42b9-e114-2bf0b6955859" class="micro-interaction"><img src="vetter-consulting/assets/img/location-pin-solid.svg" loading="lazy" alt="" class="list-icon a1"/></div><h2 class="global-headline-xl is-center-aligned">Comment &ccedil;a marche</h2></div></div></div><div class="timeline-grid"><div class="timeline-progress"><div class="timeline-bar"></div><div class="timeline-fade-top"></div><div class="timeline-fade-bottom"></div></div><div data-w-id="d9f2b799-1085-22f9-7dcf-434738d1a848" class="timeline-item"><div id="w-node-d9f2b799-1085-22f9-7dcf-434738d1a849-aa1b5945" class="timeline-div-spacer"></div><div id="w-node-d9f2b799-1085-22f9-7dcf-434738d1a84c-aa1b5945" class="timeline-center"><div class="timeline-dot"></div></div><div id="w-node-d9f2b799-1085-22f9-7dcf-434738d1a84e-aa1b5945" class="timeline-div"><div id="w-node-d9f2b799-1085-22f9-7dcf-434738d1a84f-aa1b5945" class="align-vertically"><div class="global-tag"><div class="tag-txt">&Eacute;tape 1</div></div><h3 class="global-headline-m is-left-aligned is-white">Nous analysons votre bien</h3><div class="global-subline tm-1"><p class="copytext">Pour que notre collaboration soit vraiment efficace, <span class="is-white">nos experts analysent l'&eacute;tat actuel de votre bien</span> de mani&egrave;re pr&eacute;cise et individualis&eacute;e.</p></div></div></div></div><div data-w-id="6715b942-98da-08b3-5541-42a9944f077a" class="timeline-item"><div id="w-node-_6715b942-98da-08b3-5541-42a9944f077e-aa1b5945" class="timeline-div"><div id="w-node-_6715b942-98da-08b3-5541-42a9944f077f-aa1b5945" class="align-vertically"><div class="global-tag"><div class="tag-txt">&Eacute;tape 2</div></div><h3 class="global-headline-m is-left-aligned is-white">Une cartographie des risques sur mesure</h3><div class="global-subline tm-1"><p class="copytext">Dans un second temps, <span class="is-white">nous concevons une cartographie des risques vraiment adapt&eacute;e et optimis&eacute;e pour vous</span> et votre portefeuille.</p></div></div></div><div id="w-node-_6715b942-98da-08b3-5541-42a9944f077c-aa1b5945" class="timeline-center"><div class="timeline-dot"></div></div><div id="w-node-_6715b942-98da-08b3-5541-42a9944f077b-aa1b5945" class="timeline-div-spacer"></div></div><div data-w-id="3abc594d-2d13-ec65-32fd-8695ce676f47" class="timeline-item"><div id="w-node-_3abc594d-2d13-ec65-32fd-8695ce676f48-aa1b5945" class="timeline-div-spacer"></div><div id="w-node-_3abc594d-2d13-ec65-32fd-8695ce676f49-aa1b5945" class="timeline-center"><div class="timeline-dot"></div></div><div id="w-node-_3abc594d-2d13-ec65-32fd-8695ce676f4b-aa1b5945" class="timeline-div"><div id="w-node-_3abc594d-2d13-ec65-32fd-8695ce676f4c-aa1b5945" class="align-vertically"><div class="global-tag"><div class="tag-txt">&Eacute;tape 3</div></div><h3 class="global-headline-m is-left-aligned is-white">100% digital &amp; analyse instantan&eacute;e</h3><div class="global-subline tm-1"><p class="copytext"><span class="is-white">Notre collaboration est une promesse : vous n'avez rien &agrave; g&eacute;rer.</span> Plus de piles de documents papier, tout le processus est 100% digital et automatis&eacute;.</p></div></div></div></div><div data-w-id="0f27d886-e6da-213b-330e-4f3c19abcbcd" class="timeline-item"><div id="w-node-_0f27d886-e6da-213b-330e-4f3c19abcbd1-aa1b5945" class="timeline-div"><div id="w-node-_0f27d886-e6da-213b-330e-4f3c19abcbd2-aa1b5945" class="align-vertically"><div class="global-tag"><div class="tag-txt">&Eacute;tape 4</div></div><h3 class="global-headline-m is-left-aligned is-white">Un suivi continu &amp; des alertes en temps r&eacute;el</h3><div class="global-subline tm-1"><p class="copytext">Une fois votre strat&eacute;gie d'&eacute;valuation des risques d&eacute;ploy&eacute;e,<span class="is-white"> nous surveillons l'&eacute;volution de votre portefeuille</span> et vous tenons inform&eacute; en permanence.</p></div></div></div><div id="w-node-_0f27d886-e6da-213b-330e-4f3c19abcbcf-aa1b5945" class="timeline-center"><div class="timeline-dot"></div></div><div id="w-node-_0f27d886-e6da-213b-330e-4f3c19abcbce-aa1b5945" class="timeline-div-spacer"></div></div></div></div><div class="roi-band" id="roi-band">
     <style>
       /* ── Bande ROI « 1 € investi = 8 € de dommages évités » ──
          Accent : suit var(--orange) (palette navbar). Surfaces : var(--black)
@@ -882,13 +1262,19 @@
         --roi-line: rgba(255, 255, 255, .14);
         --roi-card: rgba(255, 255, 255, .04);
         position: relative;
-        overflow: hidden;
-        padding: clamp(80px, 10vw, 130px) 24px;
+        /* La bande passe au-dessus de la ligne verticale fixe de la timeline
+           (timeline-bar) : celle-ci ne doit pas traverser la section ROI.
+           Pas d'overflow:hidden ici : il casserait le title sticky de la
+           structure mission-wrap (comme « Nos Acteurs »). */
+        z-index: 1;
         border-top: 1px solid var(--roi-line);
         border-bottom: 1px solid var(--roi-line);
         background:
           radial-gradient(1100px 460px at 50% -12%, var(--orange-tint, rgba(67, 134, 177, .16)), transparent 62%),
           linear-gradient(180deg, rgba(255, 255, 255, .025), rgba(255, 255, 255, 0) 38%, rgba(255, 255, 255, .025));
+        /* Fond opaque (couleur de page) pour masquer la timeline-bar fixe qui
+           se voit à travers le fond transparent de la section. Rendu identique. */
+        background-color: var(--black);
       }
       html.theme-light .roi-band {
         --roi-ink: #15181d;
@@ -898,8 +1284,16 @@
         background:
           radial-gradient(1100px 460px at 50% -12%, var(--orange-tint, rgba(67, 134, 177, .18)), transparent 62%),
           linear-gradient(180deg, rgba(21, 24, 29, .03), rgba(21, 24, 29, 0) 38%, rgba(21, 24, 29, .03));
+        /* idem : fond opaque pour masquer la timeline-bar fixe en mode clair */
+        background-color: var(--black);
       }
-      .roi-band-inner { max-width: 1100px; margin: 0 auto; }
+      .roi-band-inner {
+        max-width: 1100px;
+        margin: 0 auto;
+        /* Le padding vertical qui était sur .roi-band passe ici (le bandeau
+           est devenu une section complète avec titre sticky). */
+        padding: clamp(80px, 10vw, 130px) 24px;
+      }
       .roi-equation {
         display: flex;
         align-items: center;
@@ -1198,6 +1592,15 @@
         .roi-x8 { transform: translate(-50%, -50%) !important; }
       }
     </style>
+    <!-- Titre de section « grand titre » : même structure que la section
+         « Nos fonctionnalités » (requirements-layer-1), pas le motif sticky
+         mission-wrap qui faisait chevaucher le titre et le contenu. -->
+    <div class="requirements-layer-1">
+      <div class="align-vertically is-center-aligned">
+        <div class="global-subline"></div>
+        <div class="requirements-txt">Votre ROI</div>
+      </div>
+    </div>
     <div class="roi-band-inner">
       <div class="roi-equation" role="img" aria-label="1 euro investi en mitigation climatique rapporte 8 euros de dommages évités">
         <div class="roi-side roi-in">
@@ -1305,11 +1708,12 @@
         update();
       })();
     </script>
-  </div><div data-w-id="a61ab0be-c53b-1a70-e5b5-8d68e8815290" class="_06-testimonials"><div class="mission-wrap"><div data-w-id="a61ab0be-c53b-1a70-e5b5-8d68e8815292" class="mission-layer-1"><div class="mission-layer-1-inner"><div data-w-id="a61ab0be-c53b-1a70-e5b5-8d68e8815294" class="align-vertically is-center-aligned"><div class="global-subline"></div><div class="mission-txt reduced">Nos Acteurs</div></div></div></div><div class="mission-layer-2"><div class="chess-grid _2cx1r"><div data-w-id="a61ab0be-ct1" class="chess-field-black _100vh p-0 _1"><div class="chess-grid-img-txt-layer"><div class="global-headline-m is-left-aligned is-white">Assureurs<br/></div><div class="global-subline tm-05"><div class="copytext is-white">Scoring climatique &amp; tarification<br/></div></div></div><div class="gradient-chess-layer"></div><img src="vetter-consulting/assets/img/acteur-assureurs.jpg" loading="lazy" alt="Assureurs" sizes="(max-width: 1400px) 100vw, 1400px" srcset="vetter-consulting/assets/img/acteur-assureurs-p-500.jpg 500w, vetter-consulting/assets/img/acteur-assureurs.jpg 1400w" class="chess-grid-img fullwidth"/></div><div data-w-id="a61ab0be-ct2" class="chess-field-grey _100vh _2"><div class="chess-field-inner maxed"><div class="align-vertically g-2"><div class="align-vertically"><div data-w-id="a61ab0be-ct2-t" class="global-headline-m is-left-aligned is-white a1">Assureurs</div><div class="global-subline tm-1-5"><p class="copytext"><span class="is-white">Tarifiez chaque bien avec pr&eacute;cision</span> gr&acirc;ce au scoring multi-p&eacute;rils et aux projections 2050.</p><div class="list"><div data-w-id="x-_2-1" class="list-item _1"><div class="list-icon-div is-check"><img src="vetter-consulting/assets/img/66a20363e5bbc5dbaa1b59b4_check.svg" loading="lazy" alt="" class="check"/></div><div class="copytext"><span class="is-white">Scoring multi-p&eacute;rils</span> instantan&eacute; sur chaque bien</div></div><div data-w-id="x-_2-2" class="list-item _2"><div class="list-icon-div is-check"><img src="vetter-consulting/assets/img/66a20363e5bbc5dbaa1b59b4_check.svg" loading="lazy" alt="" class="check"/></div><div class="copytext"><span class="is-white">Conformit&eacute; Solvabilit&eacute; II</span> &amp; reporting ESG automatis&eacute;</div></div><div data-w-id="x-_2-3" class="list-item _3"><div class="list-icon-div is-check"><img src="vetter-consulting/assets/img/66a20363e5bbc5dbaa1b59b4_check.svg" loading="lazy" alt="" class="check"/></div><div class="copytext"><span class="is-white">R&eacute;duction des sinistres non couverts</span> et des co&ucirc;ts</div></div></div></div></div></div></div></div><div data-w-id="a61ab0be-ct3" class="chess-field-grey _100vh _3"><div class="chess-field-inner maxed"><div class="align-vertically g-2"><div class="align-vertically"><div data-w-id="a61ab0be-ct3-t" class="global-headline-m is-left-aligned is-white a1">Promoteurs</div><div class="global-subline tm-1-5"><p class="copytext"><span class="is-white">Anticipez les risques d&egrave;s la conception</span> pour valoriser chaque projet immobilier.</p><div class="list"><div data-w-id="x-_3-1" class="list-item _1"><div class="list-icon-div is-check"><img src="vetter-consulting/assets/img/66a20363e5bbc5dbaa1b59b4_check.svg" loading="lazy" alt="" class="check"/></div><div class="copytext"><span class="is-white">Analyse de zone</span> avant acquisition (risques naturels, RGA)</div></div><div data-w-id="x-_3-2" class="list-item _2"><div class="list-icon-div is-check"><img src="vetter-consulting/assets/img/66a20363e5bbc5dbaa1b59b4_check.svg" loading="lazy" alt="" class="check"/></div><div class="copytext"><span class="is-white">Jumeau num&eacute;rique</span> du projet &agrave; l&rsquo;&eacute;chelle du b&acirc;timent</div></div><div data-w-id="x-_3-3" class="list-item _3"><div class="list-icon-div is-check"><img src="vetter-consulting/assets/img/66a20363e5bbc5dbaa1b59b4_check.svg" loading="lazy" alt="" class="check"/></div><div class="copytext"><span class="is-white">Argumentaire de vente</span> diff&eacute;renciant face aux acheteurs</div></div></div></div></div></div></div></div><div data-w-id="a61ab0be-ct4" class="chess-field-black _100vh p-0 _4"><div class="chess-grid-img-txt-layer"><div class="global-headline-m is-left-aligned is-white">Promoteurs<br/></div><div class="global-subline tm-05"><div class="copytext is-white">Analyse de zone &amp; jumeau num&eacute;rique<br/></div></div></div><div class="gradient-chess-layer"></div><img src="vetter-consulting/assets/img/acteur-promoteurs.jpg" loading="lazy" alt="Promoteurs" sizes="(max-width: 1400px) 100vw, 1400px" srcset="vetter-consulting/assets/img/acteur-promoteurs-p-500.jpg 500w, vetter-consulting/assets/img/acteur-promoteurs.jpg 1400w" class="chess-grid-img fullwidth"/></div><div data-w-id="a61ab0be-ct5" class="chess-field-black _100vh p-0 _5"><div class="chess-grid-img-txt-layer"><div class="global-headline-m is-left-aligned is-white">Agents immobiliers<br/></div><div class="global-subline tm-05"><div class="copytext is-white">Diagnostic climatique de chaque bien<br/></div></div></div><div class="gradient-chess-layer"></div><img src="vetter-consulting/assets/img/acteur-agents-immobiliers.jpg" loading="lazy" alt="Agents immobiliers" sizes="(max-width: 1400px) 100vw, 1400px" srcset="vetter-consulting/assets/img/acteur-agents-immobiliers-p-500.jpg 500w, vetter-consulting/assets/img/acteur-agents-immobiliers.jpg 1400w" class="chess-grid-img fullwidth"/></div><div data-w-id="a61ab0be-ct6" class="chess-field-grey _100vh _6"><div class="chess-field-inner maxed"><div class="align-vertically g-2"><div class="align-vertically"><div data-w-id="a61ab0be-ct6-t" class="global-headline-m is-left-aligned is-white a1">Agents immobiliers</div><div class="global-subline tm-1-5"><p class="copytext"><span class="is-white">Vendez plus vite avec un diagnostic climatique</span> clair et certifi&eacute; pour chaque bien.</p><div class="list"><div data-w-id="x-_6-1" class="list-item _1"><div class="list-icon-div is-check"><img src="vetter-consulting/assets/img/66a20363e5bbc5dbaa1b59b4_check.svg" loading="lazy" alt="" class="check"/></div><div class="copytext"><span class="is-white">Rapport de risque</span> lisible en quelques minutes</div></div><div data-w-id="x-_6-2" class="list-item _2"><div class="list-icon-div is-check"><img src="vetter-consulting/assets/img/66a20363e5bbc5dbaa1b59b4_check.svg" loading="lazy" alt="" class="check"/></div><div class="copytext"><span class="is-white">Certification Climato-R&eacute;silient</span> Typhoon</div></div><div data-w-id="x-_6-3" class="list-item _3"><div class="list-icon-div is-check"><img src="vetter-consulting/assets/img/66a20363e5bbc5dbaa1b59b4_check.svg" loading="lazy" alt="" class="check"/></div><div class="copytext"><span class="is-white">Confiance renforc&eacute;e</span> acheteurs / vendeurs</div></div></div></div></div><div data-w-id="a61ab0be-ct6-cta" class="global-button-div tm-3 is-left-aligned"><a data-w-id="a61ab0be-ct6-cta-btn" href="/zone" target="_top" class="primary-btn w-inline-block"><div class="btn-txt-container"><div class="btn-txt">Commen&ccedil;ons</div><div class="btn-txt">Commen&ccedil;ons</div></div></a></div></div></div></div></div></div></div></div><div class="black-spacer"></div><div data-w-id="ac6355cb-4537-8cc6-b916-cd2965310973" class="_07-about"><div class="about-layer-1"><div class="about-layer-1-inner"><img src="vetter-consulting/assets/img/about-flood-3d.webp" loading="lazy" width="Auto" alt="Simulation 3D d'inondation" class="about-img"/><div class="about-headline-div"><div class="global-button-div tm-2 c2"></div></div></div></div><div class="about-layer-2"><div class="about-layer-2-inner"><div class="align-vertically _w-100"><h2 class="global-headline-xl">&Agrave; propos</h2><div class="global-subline c1"><div class="grid"><p data-w-id="bb7cfed1-c3db-78f3-4678-c75cc8eb1b36" class="copytext">Typhoon croise <span class="is-white">donn&eacute;es officielles</span> et <span class="is-white">IA g&eacute;n&eacute;rative</span> pour &eacute;valuer le risque climatique de chaque bien en quelques minutes.<br/><br/>Propuls&eacute; par <span class="is-white">Mistral AI</span>, con&ccedil;u pour la <span class="is-white">souverainet&eacute; des donn&eacute;es</span> en Europe.</p></div></div></div></div></div></div><div data-w-id="b4c5ebc3-1806-eccd-0626-e3389c67ff24" class="_08-contact"><div class="contact-outer"><div class="contact-inner"><div class="contact-txt-div v2"><div class="txt-div"><h2 data-w-id="7196531a-d879-c0a5-ef98-c0023b88578a" class="global-headline-xl">Contactez-nous</h2><div class="grid _3c1r"><div class="grid-item a1"><h3 data-w-id="1630a405-e5d9-bb88-7c41-575473117c68" class="global-headline-s">1. R&eacute;servez un appel </h3><div data-w-id="6344414f-f024-8a2c-8e3a-fbba1362f1d4" class="global-subline tm-05"><p class="copytext">R&eacute;servez un appel pour une <span class="is-white">d&eacute;mo gratuite de notre plateforme</span> - c'est simple et sans engagement.<br/></p></div></div><div class="grid-item a2"><h3 data-w-id="7c42fa04-7733-8e44-1999-985c735d8fc0" class="global-headline-s">2. Audit de votre portefeuille</h3><div data-w-id="4014764b-0702-cc78-7b94-e67277df9dec" class="global-subline tm-05"><p class="copytext">Nous vous contactons &agrave; la date souhait&eacute;e pour <span class="is-white">analyser vos besoins sp&eacute;cifiques.</span><br/></p></div></div><div class="grid-item a3"><h3 data-w-id="74af3cf8-0fc6-a707-81d4-2486efbb24f0" class="global-headline-s">3. Mise en place</h3><div data-w-id="93f664aa-f9ea-dd3b-a3ef-3ace98fb53ed" class="global-subline tm-05"><p class="copytext"><span class="is-white">Nous d&eacute;taillons vos besoins </span>et vous conseillons sur les indicateurs vraiment pertinents pour votre activit&eacute;.<br/></p></div></div></div></div></div></div></div></div><div class="_08-contact-mobile"><div class="global-headline-div-mobile"><div class="align-vertically is-center-aligned"><div class="global-subline"></div><div class="global-subline"><p class="global-headline-l is-left-aligned c1">Contactez-nous</p></div></div></div><div class="global-content-div"><div class="chess-grid"><div class="chess-field-grey slide-in"><div class="grid-icon-div"><img src="vetter-consulting/assets/img/66a20363e5bbc5dbaa1b5981_circle-check-solid.svg" loading="lazy" alt="" class="icon"/></div><h3 class="global-headline-s">1. R&eacute;servez un appel </h3><div class="global-subline tm-1"><p class="copytext">R&eacute;servez un appel pour une <span class="is-white">d&eacute;mo gratuite de notre plateforme</span> - c'est simple et sans engagement.</p></div></div><div class="chess-field-black slide-in"><div class="grid-icon-div"><img src="vetter-consulting/assets/img/66a20363e5bbc5dbaa1b5982_coins-solid.svg" loading="lazy" alt="" class="icon"/></div><h3 class="global-headline-s">2. Audit de votre portefeuille</h3><div class="global-subline tm-1"><p class="copytext">Nous vous contactons &agrave; la date souhait&eacute;e pour <span class="is-white">analyser vos besoins sp&eacute;cifiques.</span></p></div></div><div class="chess-field-grey slide-in"><div class="grid-icon-div"><img src="vetter-consulting/assets/img/66a20363e5bbc5dbaa1b597f_handshake-angle-solid.svg" loading="lazy" alt="" class="icon"/></div><h3 class="global-headline-s">3. Mise en place</h3><div class="global-subline tm-1"><p class="copytext"><span class="is-white">Nous d&eacute;taillons vos besoins </span>et vous conseillons sur les indicateurs vraiment pertinents pour votre activit&eacute;.</p></div></div></div></div></div><div data-w-id="3de3922c-b58a-1c21-fac4-83cd8675670a" class="_09-cta"><div class="cta-outer"><div class="cta-inner"><div class="cta-layer-3"><div class="cta-txt-wrap"><div class="cta-txt-div"><h2 class="global-headline-s is-center-aligned reduced">Le climat ne peut pas attendre. <br/>Passez &agrave; l'action.</h2><div class="global-subline tm-05"><p class="copytext is-center-aligned is-white">Lancez votre diagnostic g&eacute;o-risque gratuitement.</p></div><div class="global-button-div tm-2"><a data-w-id="2d91cafe-76f4-278d-23d3-546e763781bc" href="/zone" target="_top" class="primary-btn w-inline-block"><div class="btn-txt-container"><div style="-webkit-transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);-moz-transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);-ms-transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0)" class="btn-txt">Commen&ccedil;ons</div><div style="-webkit-transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);-moz-transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);-ms-transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0)" class="btn-txt">Commen&ccedil;ons</div></div></a></div></div></div><img src="vetter-consulting/assets/img/66a20363e5bbc5dbaa1b59d2_layer_3.png" loading="lazy" alt="" class="cta-img layer-3"/><div class="gradient"></div></div><div class="cta-layer-2"><img src="vetter-consulting/assets/img/66a20363e5bbc5dbaa1b5970_layer-2.svg" loading="lazy" alt="" class="cta-img layer-2"/></div><div class="cta-layer-1"><img src="vetter-consulting/assets/img/cta-photo.jpg" loading="lazy" alt="Typhoon" class="cta-img"/></div></div></div></div><div class="partners-loop"><style>
+  </div>
+<div data-w-id="a61ab0be-c53b-1a70-e5b5-8d68e8815290" class="_06-testimonials"><div class="mission-wrap"><div data-w-id="a61ab0be-c53b-1a70-e5b5-8d68e8815292" class="mission-layer-1"><div class="mission-layer-1-inner"><div data-w-id="a61ab0be-c53b-1a70-e5b5-8d68e8815294" class="align-vertically is-center-aligned"><div class="global-subline"></div><div class="mission-txt reduced">Nos Acteurs</div></div></div></div><div class="mission-layer-2"><div class="chess-grid _2cx1r"><div data-w-id="a61ab0be-ct1" class="chess-field-black _100vh p-0 _1"><div class="chess-grid-img-txt-layer"><div class="global-headline-m is-left-aligned is-white">Assureurs<br/></div><div class="global-subline tm-05"><div class="copytext is-white">Scoring climatique &amp; tarification<br/></div></div></div><div class="gradient-chess-layer"></div><img src="vetter-consulting/assets/img/acteur-assureurs.jpg" loading="lazy" alt="Assureurs" sizes="(max-width: 1400px) 100vw, 1400px" srcset="vetter-consulting/assets/img/acteur-assureurs-p-500.jpg 500w, vetter-consulting/assets/img/acteur-assureurs.jpg 1400w" class="chess-grid-img fullwidth"/></div><div data-w-id="a61ab0be-ct2" class="chess-field-grey _100vh _2"><div class="chess-field-inner maxed"><div class="align-vertically g-2"><div class="align-vertically"><div data-w-id="a61ab0be-ct2-t" class="global-headline-m is-left-aligned is-white a1">Assureurs</div><div class="global-subline tm-1-5"><p class="copytext"><span class="is-white">Tarifiez chaque bien avec pr&eacute;cision</span> gr&acirc;ce au scoring multi-p&eacute;rils et aux projections 2050.</p><div class="list"><div data-w-id="x-_2-1" class="list-item _1"><div class="list-icon-div is-check"><img src="vetter-consulting/assets/img/66a20363e5bbc5dbaa1b59b4_check.svg" loading="lazy" alt="" class="check"/></div><div class="copytext"><span class="is-white">Scoring multi-p&eacute;rils</span> instantan&eacute; sur chaque bien</div></div><div data-w-id="x-_2-2" class="list-item _2"><div class="list-icon-div is-check"><img src="vetter-consulting/assets/img/66a20363e5bbc5dbaa1b59b4_check.svg" loading="lazy" alt="" class="check"/></div><div class="copytext"><span class="is-white">Conformit&eacute; Solvabilit&eacute; II</span> &amp; reporting ESG automatis&eacute;</div></div><div data-w-id="x-_2-3" class="list-item _3"><div class="list-icon-div is-check"><img src="vetter-consulting/assets/img/66a20363e5bbc5dbaa1b59b4_check.svg" loading="lazy" alt="" class="check"/></div><div class="copytext"><span class="is-white">R&eacute;duction des sinistres non couverts</span> et des co&ucirc;ts</div></div></div></div></div></div></div></div><div data-w-id="a61ab0be-ct3" class="chess-field-grey _100vh _3"><div class="chess-field-inner maxed"><div class="align-vertically g-2"><div class="align-vertically"><div data-w-id="a61ab0be-ct3-t" class="global-headline-m is-left-aligned is-white a1">Promoteurs</div><div class="global-subline tm-1-5"><p class="copytext"><span class="is-white">Anticipez les risques d&egrave;s la conception</span> pour valoriser chaque projet immobilier.</p><div class="list"><div data-w-id="x-_3-1" class="list-item _1"><div class="list-icon-div is-check"><img src="vetter-consulting/assets/img/66a20363e5bbc5dbaa1b59b4_check.svg" loading="lazy" alt="" class="check"/></div><div class="copytext"><span class="is-white">Analyse de zone</span> avant acquisition (risques naturels, RGA)</div></div><div data-w-id="x-_3-2" class="list-item _2"><div class="list-icon-div is-check"><img src="vetter-consulting/assets/img/66a20363e5bbc5dbaa1b59b4_check.svg" loading="lazy" alt="" class="check"/></div><div class="copytext"><span class="is-white">Jumeau num&eacute;rique</span> du projet &agrave; l&rsquo;&eacute;chelle du b&acirc;timent</div></div><div data-w-id="x-_3-3" class="list-item _3"><div class="list-icon-div is-check"><img src="vetter-consulting/assets/img/66a20363e5bbc5dbaa1b59b4_check.svg" loading="lazy" alt="" class="check"/></div><div class="copytext"><span class="is-white">Argumentaire de vente</span> diff&eacute;renciant face aux acheteurs</div></div></div></div></div></div></div></div><div data-w-id="a61ab0be-ct4" class="chess-field-black _100vh p-0 _4"><div class="chess-grid-img-txt-layer"><div class="global-headline-m is-left-aligned is-white">Promoteurs<br/></div><div class="global-subline tm-05"><div class="copytext is-white">Analyse de zone &amp; jumeau num&eacute;rique<br/></div></div></div><div class="gradient-chess-layer"></div><img src="vetter-consulting/assets/img/acteur-promoteurs.jpg" loading="lazy" alt="Promoteurs" sizes="(max-width: 1400px) 100vw, 1400px" srcset="vetter-consulting/assets/img/acteur-promoteurs-p-500.jpg 500w, vetter-consulting/assets/img/acteur-promoteurs.jpg 1400w" class="chess-grid-img fullwidth"/></div><div data-w-id="a61ab0be-ct5" class="chess-field-black _100vh p-0 _5"><div class="chess-grid-img-txt-layer"><div class="global-headline-m is-left-aligned is-white">Agents immobiliers<br/></div><div class="global-subline tm-05"><div class="copytext is-white">Diagnostic climatique de chaque bien<br/></div></div></div><div class="gradient-chess-layer"></div><img src="vetter-consulting/assets/img/acteur-agents-immobiliers.jpg" loading="lazy" alt="Agents immobiliers" sizes="(max-width: 1400px) 100vw, 1400px" srcset="vetter-consulting/assets/img/acteur-agents-immobiliers-p-500.jpg 500w, vetter-consulting/assets/img/acteur-agents-immobiliers.jpg 1400w" class="chess-grid-img fullwidth"/></div><div data-w-id="a61ab0be-ct6" class="chess-field-grey _100vh _6"><div class="chess-field-inner maxed"><div class="align-vertically g-2"><div class="align-vertically"><div data-w-id="a61ab0be-ct6-t" class="global-headline-m is-left-aligned is-white a1">Agents immobiliers</div><div class="global-subline tm-1-5"><p class="copytext"><span class="is-white">Vendez plus vite avec un diagnostic climatique</span> clair et certifi&eacute; pour chaque bien.</p><div class="list"><div data-w-id="x-_6-1" class="list-item _1"><div class="list-icon-div is-check"><img src="vetter-consulting/assets/img/66a20363e5bbc5dbaa1b59b4_check.svg" loading="lazy" alt="" class="check"/></div><div class="copytext"><span class="is-white">Rapport de risque</span> lisible en quelques minutes</div></div><div data-w-id="x-_6-2" class="list-item _2"><div class="list-icon-div is-check"><img src="vetter-consulting/assets/img/66a20363e5bbc5dbaa1b59b4_check.svg" loading="lazy" alt="" class="check"/></div><div class="copytext"><span class="is-white">Certification Climato-R&eacute;silient</span> Typhoon</div></div><div data-w-id="x-_6-3" class="list-item _3"><div class="list-icon-div is-check"><img src="vetter-consulting/assets/img/66a20363e5bbc5dbaa1b59b4_check.svg" loading="lazy" alt="" class="check"/></div><div class="copytext"><span class="is-white">Confiance renforc&eacute;e</span> acheteurs / vendeurs</div></div></div></div></div><div data-w-id="a61ab0be-ct6-cta" class="global-button-div tm-3 is-left-aligned"><a data-w-id="a61ab0be-ct6-cta-btn" href="/zone" target="_top" class="primary-btn w-inline-block"><div class="btn-txt-container"><div class="btn-txt">Commen&ccedil;ons</div><div class="btn-txt">Commen&ccedil;ons</div></div></a></div></div></div></div></div></div></div></div><div class="black-spacer"></div><div data-w-id="ac6355cb-4537-8cc6-b916-cd2965310973" class="_07-about"><div class="about-layer-1"><div class="about-layer-1-inner"><img src="vetter-consulting/assets/img/about-flood-3d.webp" loading="lazy" width="Auto" alt="Simulation 3D d'inondation" class="about-img"/><div class="about-headline-div"><div class="global-button-div tm-2 c2"></div></div></div></div><div class="about-layer-2"><div class="about-layer-2-inner"><div class="align-vertically _w-100"><h2 class="global-headline-xl">&Agrave; propos</h2><div class="global-subline c1"><div class="grid"><p data-w-id="bb7cfed1-c3db-78f3-4678-c75cc8eb1b36" class="copytext">Typhoon croise <span class="is-white">donn&eacute;es officielles</span> et <span class="is-white">IA g&eacute;n&eacute;rative</span> pour &eacute;valuer le risque climatique de chaque bien en quelques minutes.<br/><br/>Propuls&eacute; par <span class="is-white">Mistral AI</span>, con&ccedil;u pour la <span class="is-white">souverainet&eacute; des donn&eacute;es</span> en Europe.</p></div></div></div></div></div></div><div data-w-id="b4c5ebc3-1806-eccd-0626-e3389c67ff24" class="_08-contact"><div class="contact-outer"><div class="contact-inner"><div class="contact-txt-div v2"><div class="txt-div"><h2 data-w-id="7196531a-d879-c0a5-ef98-c0023b88578a" class="global-headline-xl">Contactez-nous</h2><div class="grid _3c1r"><div class="grid-item a1"><h3 data-w-id="1630a405-e5d9-bb88-7c41-575473117c68" class="global-headline-s">1. R&eacute;servez un appel </h3><div data-w-id="6344414f-f024-8a2c-8e3a-fbba1362f1d4" class="global-subline tm-05"><p class="copytext">R&eacute;servez un appel pour une <span class="is-white">d&eacute;mo gratuite de notre plateforme</span> - c'est simple et sans engagement.<br/></p></div></div><div class="grid-item a2"><h3 data-w-id="7c42fa04-7733-8e44-1999-985c735d8fc0" class="global-headline-s">2. Audit de votre portefeuille</h3><div data-w-id="4014764b-0702-cc78-7b94-e67277df9dec" class="global-subline tm-05"><p class="copytext">Nous vous contactons &agrave; la date souhait&eacute;e pour <span class="is-white">analyser vos besoins sp&eacute;cifiques.</span><br/></p></div></div><div class="grid-item a3"><h3 data-w-id="74af3cf8-0fc6-a707-81d4-2486efbb24f0" class="global-headline-s">3. Mise en place</h3><div data-w-id="93f664aa-f9ea-dd3b-a3ef-3ace98fb53ed" class="global-subline tm-05"><p class="copytext"><span class="is-white">Nous d&eacute;taillons vos besoins </span>et vous conseillons sur les indicateurs vraiment pertinents pour votre activit&eacute;.<br/></p></div></div></div></div></div></div></div></div><div class="_08-contact-mobile"><div class="global-headline-div-mobile"><div class="align-vertically is-center-aligned"><div class="global-subline"></div><div class="global-subline"><p class="global-headline-l is-left-aligned c1">Contactez-nous</p></div></div></div><div class="global-content-div"><div class="chess-grid"><div class="chess-field-grey slide-in"><div class="grid-icon-div"><img src="vetter-consulting/assets/img/66a20363e5bbc5dbaa1b5981_circle-check-solid.svg" loading="lazy" alt="" class="icon"/></div><h3 class="global-headline-s">1. R&eacute;servez un appel </h3><div class="global-subline tm-1"><p class="copytext">R&eacute;servez un appel pour une <span class="is-white">d&eacute;mo gratuite de notre plateforme</span> - c'est simple et sans engagement.</p></div></div><div class="chess-field-black slide-in"><div class="grid-icon-div"><img src="vetter-consulting/assets/img/66a20363e5bbc5dbaa1b5982_coins-solid.svg" loading="lazy" alt="" class="icon"/></div><h3 class="global-headline-s">2. Audit de votre portefeuille</h3><div class="global-subline tm-1"><p class="copytext">Nous vous contactons &agrave; la date souhait&eacute;e pour <span class="is-white">analyser vos besoins sp&eacute;cifiques.</span></p></div></div><div class="chess-field-grey slide-in"><div class="grid-icon-div"><img src="vetter-consulting/assets/img/66a20363e5bbc5dbaa1b597f_handshake-angle-solid.svg" loading="lazy" alt="" class="icon"/></div><h3 class="global-headline-s">3. Mise en place</h3><div class="global-subline tm-1"><p class="copytext"><span class="is-white">Nous d&eacute;taillons vos besoins </span>et vous conseillons sur les indicateurs vraiment pertinents pour votre activit&eacute;.</p></div></div></div></div></div><div data-w-id="3de3922c-b58a-1c21-fac4-83cd8675670a" class="_09-cta"><div class="cta-outer"><div class="cta-inner"><div class="cta-layer-3"><div class="cta-txt-wrap"><div class="cta-txt-div"><h2 class="global-headline-s is-center-aligned reduced">Le climat ne peut pas attendre. <br/>Passez &agrave; l'action.</h2><div class="global-subline tm-05"><p class="copytext is-center-aligned is-white">Lancez votre diagnostic g&eacute;o-risque gratuitement.</p></div><div class="global-button-div tm-2"><a data-w-id="2d91cafe-76f4-278d-23d3-546e763781bc" href="/zone" target="_top" class="primary-btn w-inline-block"><div class="btn-txt-container"><div style="-webkit-transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);-moz-transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);-ms-transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0)" class="btn-txt">Commen&ccedil;ons</div><div style="-webkit-transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);-moz-transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);-ms-transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);transform:translate3d(0, 0%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0)" class="btn-txt">Commen&ccedil;ons</div></div></a></div></div></div><img src="vetter-consulting/assets/img/66a20363e5bbc5dbaa1b59d2_layer_3.png" loading="lazy" alt="" class="cta-img layer-3"/><div class="gradient"></div></div><div class="cta-layer-2"><img src="vetter-consulting/assets/img/66a20363e5bbc5dbaa1b5970_layer-2.svg" loading="lazy" alt="" class="cta-img layer-2"/></div><div class="cta-layer-1"><img src="vetter-consulting/assets/img/cta-photo.jpg" loading="lazy" alt="Typhoon" class="cta-img"/></div></div></div></div><div class="partners-loop"><style>
 .partners-loop{position:relative;z-index:1;background-color:var(--black,#090909);margin:5rem 0;padding:7rem 2.5rem 6rem;overflow:hidden;border-top:1px solid rgba(255,255,255,.08)}
 .partners-loop-inner{width:100%;max-width:1200px;margin:0 auto;display:flex;flex-direction:column;align-items:center;gap:2.25rem}
 .partners-loop-label{font-family:'Neue Montreal',sans-serif;font-size:11px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,.38);margin:0}
-.logoloop{position:relative;width:100%;--logoloop-gap:84px;--logoloop-logoHeight:44px}
+.logoloop{position:relative;width:100%;overflow:hidden;--logoloop-gap:84px;--logoloop-logoHeight:44px}
 .logoloop__track{display:flex;width:max-content;will-change:transform;user-select:none;position:relative;z-index:0}
 .logoloop__list{display:flex;align-items:center;margin:0;padding:0;list-style:none}
 .logoloop__item{flex:0 0 auto;margin-right:var(--logoloop-gap);font-size:var(--logoloop-logoHeight);line-height:1}
@@ -1410,7 +1814,7 @@ html.lenis {
 .lenis.lenis-scrolling iframe {
   pointer-events: none;
 }
-</style></div><script src="vetter-consulting/assets/js/jquery-3.5.1.min.dc5e7f18c8.js?site=66a20363e5bbc5dbaa1b5951" type="text/javascript" integrity="sha256-82hEkGrSMJh3quMSG4f7FbngmAPLTDM63H4eNayS4Us=" crossorigin="anonymous"></script><script src="vetter-consulting/assets/js/webflow.schunk.57d5559d2f0cd9f8.js" type="text/javascript"></script><script src="vetter-consulting/assets/js/webflow.schunk.6d17d205fe3a1c73.js" type="text/javascript"></script><script src="vetter-consulting/assets/js/webflow.eaac96f4.91757c5af4813652.js" type="text/javascript"></script><script>
+</style></div><script src="vetter-consulting/assets/js/jquery-3.5.1.min.dc5e7f18c8.js?site=66a20363e5bbc5dbaa1b5951" type="text/javascript"></script><script src="vetter-consulting/assets/js/webflow.schunk.57d5559d2f0cd9f8.js" type="text/javascript"></script><script src="vetter-consulting/assets/js/webflow.schunk.6d17d205fe3a1c73.js" type="text/javascript"></script><script src="vetter-consulting/assets/js/webflow.eaac96f4.91757c5af4813652.js" type="text/javascript"></script><script>
 const lenis = new Lenis()
 
 lenis.on('scroll', (e) => {
@@ -1562,38 +1966,44 @@ requestAnimationFrame(raf)
     })();
     </script>
     <script>
+    /* ── Préloader : entrée manuelle — le bouton « Comment anticiper cela ? »
+       révèle la page d'accueil au clic (plus de transition automatique ni de
+       minuterie IX2 : le préloader ne se masque plus jamais tout seul). ── */
     (function () {
-      var PRELOADER_FADE_MS = 900;
+      var preloader = document.querySelector('.preloader');
 
-      function hidePreloader() {
-        var preloader = document.querySelector('.preloader');
-        if (!preloader) return;
-        preloader.classList.add('is-hidden');
-        preloader.setAttribute('aria-hidden', 'true');
-        window.setTimeout(function () {
-          preloader.style.display = 'none';
-        }, PRELOADER_FADE_MS);
-      }
-
-      /* Plus de transition automatique : on entre sur la page d'accueil en
-         cliquant sur le bouton « Comment anticiper cela ? ». */
-      var cta = document.querySelector('[data-preloader-cta]');
-      if (cta) {
-        cta.addEventListener('click', hidePreloader);
-        /* Fond ambiant : les halos bleus s'intensifient au survol du bouton
-           (et à la prise de focus au clavier). */
-        var preloaderEl = document.querySelector('.preloader');
-        if (preloaderEl) {
-          function glowOn() { preloaderEl.classList.add('glow'); }
-          function glowOff() { preloaderEl.classList.remove('glow'); }
-          cta.addEventListener('mouseenter', glowOn);
-          cta.addEventListener('mouseleave', glowOff);
-          cta.addEventListener('focus', glowOn);
-          cta.addEventListener('blur', glowOff);
+      /* Entrée : on cache le préloader et on révèle le contenu de la page
+         (.load-hide : témoignages, services, mission, timeline, footer —
+         masqué au chargement pour que seul le préloader soit visible ;
+         sans cette révélation, la page restait bloquée sur le hero). */
+      function enterSite() {
+        if (preloader) preloader.classList.add('is-hidden');
+        var hiddenContent = document.querySelector('.load-hide');
+        if (hiddenContent) {
+          hiddenContent.classList.remove('load-hide');
+          /* IX2 cache aussi ce bloc en inline (display:none) au
+             chargement — on l'efface pour révéler la page. */
+          hiddenContent.style.display = 'block';
         }
+        /* Révèle le hero : les titres/sous-titre/bouton étaient figés en
+           opacity:0 par un état initial IX2 dont l'animation ne se
+           déclenche plus — on les fait apparaître en cascade. */
+        var hero = document.querySelector('.hero-layer-3');
+        if (hero) hero.classList.add('hero-reveal');
       }
+
+      /* Entrée clavier : Échap révèle aussi la page (comme le bouton). */
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && preloader && !preloader.classList.contains('is-hidden')) {
+          enterSite();
+        }
+      });
+
+      /* Entrée manuelle uniquement : le bouton « Entrer sur le site » (et la
+         touche Échap) révèle la page — plus de minuterie automatique. */
+      var enterBtn = document.querySelector('[data-preloader-enter]');
+      if (enterBtn) enterBtn.addEventListener('click', enterSite);
     })();
     </script>
   </body>
 </html>
-
