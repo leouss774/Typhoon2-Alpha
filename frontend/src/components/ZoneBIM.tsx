@@ -20,6 +20,7 @@ import type { RisqueReport, RisquesPrincipaux } from '../zone/config';
 import { API, ALEA_ICONS, ALEA_ICON_FALLBACK, WMS_LAYER_MAP, WFS_LAYER_MAP } from '../zone/config';
 import { ComprendreRisques } from './ComprendreRisques';
 import type { RecommendationZone } from '../jumeau/recommendations';
+import type { AdapterResult } from '../zone/diagnosticAdapter';
 import {
   SIMULABLE_ALEAS,
   runSimulationToEnd,
@@ -35,6 +36,7 @@ const SIM_MESSAGE_TYPE = 'typhoon:sim';
 
 export function ZoneBIM({
   report,
+  adaptedDiagnostic = null,
   recommendationZones = {},
   recommendationZonesLoading = false,
   recommendationZonesError = null,
@@ -43,6 +45,10 @@ export function ZoneBIM({
   onToggleLayer,
 }: {
   report: RisqueReport | null;
+  /* Contrat adapté (geometry + zones) du diagnostic — consommé par le
+     composant disaster-view (étape 3, Three.js/cannon-es) qui sera le
+     troisième toggle de cette étape. TODO(step 3): brancher ici. */
+  adaptedDiagnostic?: AdapterResult | null;
   recommendationZones?: Record<string, RecommendationZone>;
   recommendationZonesLoading?: boolean;
   recommendationZonesError?: string | null;

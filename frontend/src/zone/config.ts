@@ -3,6 +3,8 @@
 //   Reprend le contrat du legacy zone.html (backend port 8765).
 // =============================================================================
 
+import type { DiagnosticGeometry, DiagnosticZoneScore } from './diagnosticAdapter';
+
 export const API: string =
   (import.meta as any).env?.VITE_API_BASE ||
   (window as any).TYPHOON_API ||
@@ -131,11 +133,15 @@ export interface RisqueReport {
   code_insee: string;
   date_generation: string;
   alea_count: number;
-  aleas: AleaDetail[];
-  erreurs_partielles: string[];
-  bdnb?: BdnbAsset | null;
-  recommandations?: RecommandationsIA | null;
-  avertissement?: string;
+  aleas: AleaDetail[];    erreurs_partielles: string[];
+    bdnb?: BdnbAsset | null;
+    // Blocs geometry/zones ajoutés par /diagnostic/adresse (commit « Expose
+    // geometry and zones on address diagnostic responses ») — normalisés par
+    // adaptDiagnosticContract() pour le rendu 3D (cf. diagnosticAdapter.ts).
+    geometry?: DiagnosticGeometry | null;
+    zones?: Record<string, DiagnosticZoneScore> | null;
+    recommandations?: RecommandationsIA | null;
+    avertissement?: string;
 }
 
 export interface RecommandationsIA {

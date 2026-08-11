@@ -49,6 +49,11 @@ def _niveau_from_score(score: int) -> str:
     return "critique"
 
 
+# NOTE — scores SYNTHÉTIQUES : cette route n'exécute pas le moteur F×V
+# complet ; les scores par zone sont dérivés des niveaux d'aléa Géorisques
+# (approximation) et score_global reste codé à 0 — le frontend dérive ce
+# dernier de la moyenne des zones (cf. frontend/src/zone/diagnosticAdapter.ts).
+# TODO: brancher le vrai scoring_agent sur /diagnostic/adresse.
 def _zone_scores_from_report(report: RisqueReport) -> dict[str, dict[str, object]]:
     def score_for(alea_code: str, fallback: int = 15) -> int:
         for alea in report.aleas:

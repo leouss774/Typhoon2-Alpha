@@ -48,6 +48,7 @@ import {
   saveConversations,
   type Conversation,
 } from '../zone/conversations';
+import { adaptDiagnosticContract, type AdapterResult } from '../zone/diagnosticAdapter';
 import '../styles/zone.css';
 
 const LEGEND_RANGES = ['<20', '20–39', '40–59', '60–79', '≥80'];
@@ -118,6 +119,9 @@ export function Zone() {
   const [loading, setLoading] = useState(false);
   const [diagError, setDiagError] = useState<string | null>(null);
   const [report, setReport] = useState<RisqueReport | null>(null);
+  /* Contrat adapté pour le rendu 3D (geometry + zones) — alimentera le
+     composant disaster-view (étape 3) via ZoneBIM. */
+  const [adaptedDiagnostic, setAdaptedDiagnostic] = useState<AdapterResult | null>(null);
   const [detailedRecommendationZones, setDetailedRecommendationZones] = useState<Record<string, RecommendationZone>>({});
   const [detailedRecommendationsLoading, setDetailedRecommendationsLoading] = useState(false);
   const [detailedRecommendationsError, setDetailedRecommendationsError] = useState<string | null>(null);
@@ -248,6 +252,7 @@ export function Zone() {
     setDiagError(null);
     setLoading(true);
     setReport(null);
+    setAdaptedDiagnostic(null);
     recommendationsRequestId.current += 1;
     setDetailedRecommendationZones({});
     setDetailedRecommendationsLoading(false);
@@ -274,6 +279,7 @@ export function Zone() {
 
       const r = (await resp.json()) as RisqueReport;
       setReport(r);
+      setAdaptedDiagnostic(adaptDiagnosticContract(r));
       void loadDetailedRecommendations(r.adresse_normalisee || value);
       /* Historique « Récent » (localStorage) : adresse normalisée ou requête brute. */
       setConversations((prev) => {
@@ -808,6 +814,7 @@ export function Zone() {
             <section className="zone-bim" hidden={step !== 3}>
               <ZoneBIM
                 report={report}
+                adaptedDiagnostic={adaptedDiagnostic}
                 recommendationZones={detailedRecommendationZones}
                 recommendationZonesLoading={detailedRecommendationsLoading}
                 recommendationZonesError={detailedRecommendationsError}
