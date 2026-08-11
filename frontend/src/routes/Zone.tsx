@@ -236,6 +236,15 @@ export function Zone() {
     }
   }
 
+  /* Lancer l'analyse économique automatiquement dès que le rapport IA est généré */
+  const loadEconomieRef = useRef(loadEconomie);
+  loadEconomieRef.current = loadEconomie;
+  useEffect(() => {
+    if (rapport && !economie && !economieLoading && !economieError) {
+      void loadEconomieRef.current();
+    }
+  }, [rapport, economie, economieLoading, economieError]);
+
   /* ── Niveau 2 — Plan d'usine (enrichit le score) ── */
   async function enrichirPlanUsine(plan: PlanUsine) {
     if (planUsineLoading) return;

@@ -14,6 +14,9 @@ langchain-community
 httpx
 requests
 
+# --- Upload de fichiers (routes FastAPI avec File/Form, ex. plan d'usine) ---
+python-multipart
+
 # --- Lookup local DVF ---
 pandas
 
