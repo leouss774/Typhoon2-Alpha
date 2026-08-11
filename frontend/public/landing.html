@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="fr" data-wf-domain="vetter-consulting-en.webflow.io" data-wf-page="66a20363e5bbc5dbaa1b5945" data-wf-site="66a20363e5bbc5dbaa1b5951">
   <head>
     <meta charset="UTF-8" />
@@ -186,6 +186,383 @@
         pointer-events: none;
         transition: opacity .7s ease, visibility .7s ease;
       }
+
+      /* ═══ Préloader — page « compteur climatique » avec entrée manuelle ═══
+         Disposition (de haut en bas) :
+         1. wordmark Typhoon en haut à gauche ;
+         2. phrase « Le climat ne prévient pas… » (texte et classes d'origine
+            conservés à l'identique), placée un peu plus bas, avec le compteur
+            « coût cumulé des sinistres climatiques » à sa droite ;
+         3. en bas : la mascotte en transparence (ombre bleue portée) et, à
+            côté d'elle, le bouton « Comment anticiper cela ? » qui révèle la
+            page d'accueil au clic (plus de transition automatique). */
+      .preloader {
+        /* Plein écran garanti : le style partagé Webflow pose déjà
+           position:fixed / inset:0 / 100% de large, on verrouille ici en
+           plus 100vw et 100dvh pour couvrir même les barres d'outils
+           mobiles et les éventuels restes de cache intermédiaires. */
+        width: 100vw;
+        height: 100vh;
+        height: 100dvh;
+        /* Sécurité : si le contenu dépasse 100vh (écran peu haut), le
+           préloader défile au lieu de rogner. align-items: safe center
+           évite le bug de centrage flex (haut inaccessible au scroll) ;
+           les navigateurs sans « safe » ignorent la déclaration. */
+        align-items: safe center;
+        overflow-y: auto;
+      }
+      /* Fond ambiant non uni : halos bleus diffus qui brisent le fond uni,
+         avec une respiration très lente, et qui s'intensifient quand on
+         survole (ou focus-clavier) le bouton « Comment anticiper cela ? ».
+         La couche ::before passe derrière le contenu (z-index -1), au-dessus
+         du fond de .preloader. */
+      .preloader::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        z-index: -1;
+        pointer-events: none;
+        background:
+          radial-gradient(640px 460px at 16% 10%, rgba(67, 134, 177, .18), transparent 62%),
+          radial-gradient(760px 560px at 84% 88%, rgba(67, 134, 177, .22), transparent 62%),
+          radial-gradient(520px 400px at 70% 24%, rgba(67, 134, 177, .12), transparent 60%);
+        opacity: .75;
+        transition: opacity .5s ease;
+        animation: preloader-glow-breathe 7s ease-in-out infinite;
+      }
+      @keyframes preloader-glow-breathe {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.04); }
+      }
+      .preloader.glow::before {
+        opacity: 1;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .preloader::before {
+          animation: none;
+        }
+      }
+      .preloader-inner {
+        flex-flow: column;
+        justify-content: center;
+        align-items: stretch;
+        gap: 3rem;
+        width: 100%;
+        height: 100%;
+        display: flex;
+      }
+      .preloader-head {
+        justify-content: flex-start;
+        align-items: center;
+        width: 100%;
+        display: flex;
+      }
+      /* Rangée centrale : phrase à gauche, compteur à droite. */
+      .preloader-mid {
+        grid-column-gap: 3rem;
+        grid-row-gap: 2rem;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 34rem);
+        grid-auto-columns: 1fr;
+        align-items: center;
+        width: 100%;
+        display: grid;
+      }
+      .preloader-mid .global-headline-m.is-left-aligned.in-loader {
+        /* Le texte s'étend sur toute la largeur de sa colonne (la classe
+           partagée .in-loader impose 25rem). */
+        max-width: 100%;
+        font-size: clamp(1.8rem, 2.5vw, 2.35rem);
+        line-height: 1.2;
+      }
+      /* Rangée du bas : mascotte à gauche, CTA « Comment anticiper cela ? »
+         juste à côté d'elle. */
+      .preloader-bottom {
+        justify-content: center;
+        align-items: center;
+        gap: 2rem 3rem;
+        width: 100%;
+        display: flex;
+        flex-wrap: wrap;
+      }
+      .preloader-mascot {
+        object-fit: contain;
+        width: clamp(18rem, 30vw, 28rem);
+        max-width: none;
+        height: auto;
+        max-height: 19rem;
+        flex-shrink: 0;
+        /* L'ombre bleue suit la silhouette PNG (drop-shadow = stacking
+           context, inutile d'ajouter un z-index). */
+        filter: drop-shadow(0 1.25rem 2.5rem rgba(67, 134, 177, .35))
+                drop-shadow(0 .45rem 1rem rgba(67, 134, 177, .28));
+      }
+      /* Bouton d'entrée : révèle la page d'accueil au clic. */
+      .preloader-cta {
+        align-items: center;
+        gap: 1rem;
+        padding: 1.6rem 3.4rem 1.55rem;
+        border: 0;
+        border-radius: 999px;
+        /* Dégradé du bleu d'accent (gauche) vers un bleu plus foncé (droite). */
+        background: linear-gradient(90deg, var(--orange, #4386B1), #2f6f9e);
+        box-shadow: 0 14px 34px rgba(67, 134, 177, .35),
+                    inset 0 1px 0 rgba(255, 255, 255, .25);
+        color: #fff;
+        font-family: 'Google Sans', 'Neue Montreal', sans-serif;
+        font-size: 1.5rem;
+        font-weight: 600;
+        letter-spacing: -.01em;
+        cursor: pointer;
+        display: inline-flex;
+        transition: transform .2s ease, box-shadow .2s ease, filter .2s ease;
+      }
+      .preloader-cta:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 18px 44px rgba(67, 134, 177, .45),
+                    inset 0 1px 0 rgba(255, 255, 255, .3);
+        filter: brightness(1.08);
+      }
+      .preloader-cta:active {
+        transform: translateY(-1px) scale(.99);
+      }
+      .preloader-cta:focus-visible {
+        outline: 3px solid rgba(255, 255, 255, .6);
+        outline-offset: 3px;
+      }
+      .preloader-cta .cta-arrow {
+        width: 1.6rem;
+        height: 1.6rem;
+        flex-shrink: 0;
+        transition: transform .2s ease;
+      }
+      .preloader-cta:hover .cta-arrow {
+        transform: translateX(4px);
+      }
+      /* Entrée en douceur, en cascade, des trois zones du préloader. */
+      @keyframes preloader-rise {
+        from { opacity: 0; transform: translateY(14px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      .preloader-head {
+        animation: preloader-rise .6s ease-out both;
+      }
+      .preloader-mid {
+        animation: preloader-rise .6s .12s ease-out both;
+      }
+      .preloader-bottom {
+        animation: preloader-rise .6s .24s ease-out both;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .preloader-head,
+        .preloader-mid,
+        .preloader-bottom {
+          animation: none;
+        }
+      }
+      /* Écrans peu hauts : on compacte pour tenir dans 100vh sans défilement. */
+      @media (max-height: 850px) {
+        .preloader-inner {
+          gap: 1.75rem;
+        }
+        .preloader-head .logo.in-preloader {
+          width: 13rem;
+        }
+        .preloader-mid {
+          grid-template-columns: minmax(0, 1fr) minmax(0, 32rem);
+        }
+        .preloader-mascot {
+          width: 19rem;
+          max-height: 13rem;
+        }
+        .preloader-cta {
+          padding: 1.3rem 2.6rem;
+          font-size: 1.25rem;
+        }
+      }
+      /* Mobile : la phrase passe au-dessus du compteur ; mascotte + CTA
+         restent côte à côte (et s'empilent si besoin). */
+      @media (max-width: 767px) {
+        .preloader-inner {
+          justify-content: flex-start;
+          gap: 2rem;
+          padding: 1.5rem;
+        }
+        .preloader-mid {
+          grid-template-columns: minmax(0, 1fr);
+        }
+        .preloader-mascot {
+          width: min(48vw, 17rem);
+          max-height: 12rem;
+        }
+        .preloader-cta {
+          padding: 1.25rem 2.1rem;
+          font-size: 1.2rem;
+        }
+      }
+      @media (max-width: 479px) {
+        .preloader-mascot {
+          width: min(68vw, 15rem);
+        }
+        .preloader-cta {
+          width: 100%;
+          justify-content: center;
+        }
+      }
+
+      /* ═══ Préloader : carrousel progressif d'articles ═══
+         Le préloader présente 4 articles / sujets liés à l'assurance et au
+         risque climatique dans un carrousel « progressif » : la carte affichée
+         avance seule (durée 6 s) avec une barre de progression sous chaque
+         bouton, et cliquer sur un bouton fait défiler rapidement jusqu'à
+         l'article correspondant. Même style que les anciennes cartes (fond
+         var(--dark-grey), bordure var(--standard-grey), coins arrondis). */
+      .prog-carousel {
+        grid-column: auto;
+        flex-flow: column;
+        justify-content: center;
+        align-items: stretch;
+        gap: 1.5rem;
+        width: 100%;
+        display: flex;
+      }
+      .prog-slides {
+        position: relative;
+        width: 100%;
+      }
+      .prog-slide {
+        display: none;
+      }
+      .prog-slide.is-active {
+        display: block;
+        animation: prog-fade .55s ease-out both;
+      }
+      @keyframes prog-fade {
+        from { opacity: 0; transform: translateY(8px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      .prog-slide-card {
+        border: 1px solid var(--standard-grey);
+        background-color: var(--dark-grey);
+        border-radius: 28px;
+        overflow: hidden;
+        flex-flow: column;
+        display: flex;
+      }
+      .prog-slide-img {
+        width: 100%;
+        height: 230px;
+        object-fit: cover;
+        display: block;
+        border-bottom: 1px solid var(--standard-grey);
+      }
+      .prog-slide-body {
+        padding: 1.6rem 1.9rem 1.9rem;
+        flex-flow: column;
+        align-items: flex-start;
+        gap: .65rem;
+        display: flex;
+      }
+      .prog-slide-tag {
+        color: #87c8ea;
+        font-size: .72rem;
+        font-weight: 600;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+      }
+      .prog-slide-title {
+        color: var(--white);
+        font-size: 1.3rem;
+        font-weight: 600;
+        line-height: 1.25;
+        letter-spacing: -.01em;
+        margin: 0;
+      }
+      .prog-slide-desc {
+        color: var(--light-grey);
+        font-size: .95rem;
+        line-height: 1.55;
+        margin: 0;
+      }
+      .prog-slide-src {
+        color: var(--light-grey);
+        font-size: .72rem;
+        font-weight: 500;
+        letter-spacing: .04em;
+        text-transform: uppercase;
+        margin-top: .35rem;
+      }
+      .prog-btns {
+        grid-template-columns: repeat(4, 1fr);
+        gap: .6rem;
+        width: 100%;
+        display: grid;
+      }
+      .prog-btn {
+        position: relative;
+        border: 1px solid var(--standard-grey);
+        background-color: var(--dark-grey);
+        border-radius: 16px;
+        padding: .85rem .95rem;
+        text-align: left;
+        cursor: pointer;
+        font-family: 'Google Sans', 'Neue Montreal', sans-serif;
+        opacity: .5;
+        transition: opacity .25s ease, border-color .25s ease;
+      }
+      .prog-btn.is-active {
+        opacity: 1;
+        border-color: #4386b1;
+      }
+      .prog-btn-title {
+        display: block;
+        color: var(--white);
+        font-size: .85rem;
+        font-weight: 500;
+        line-height: 1.3;
+        margin-bottom: .6rem;
+      }
+      .prog-btn-bar {
+        display: block;
+        height: 3px;
+        border-radius: 2px;
+        background-color: var(--standard-grey);
+        overflow: hidden;
+      }
+      .prog-btn-fill {
+        display: block;
+        height: 100%;
+        width: 0%;
+        border-radius: 2px;
+        background-color: #4386b1;
+      }
+      .prog-btn.is-active .prog-btn-fill {
+        background-color: #87c8ea;
+      }
+      @media (max-width: 767px) {
+        .prog-carousel {
+          gap: 1.1rem;
+        }
+        .prog-slide-card {
+          border-radius: 20px;
+        }
+        .prog-slide-img {
+          height: 170px;
+        }
+        .prog-slide-body {
+          padding: 1.2rem 1.3rem 1.4rem;
+        }
+        .prog-slide-title {
+          font-size: 1.1rem;
+        }
+        .prog-btns {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .prog-slide.is-active {
+          animation: none;
+        }
+      }
       html, body { margin: 0; padding: 0; } .hero-wrapper.v2 { isolation: isolate; } .hero-layer-video { position: absolute; inset: 0; z-index: 2; overflow: hidden; pointer-events: none; opacity: 0.6; background: #000; } .hero-layer-video iframe, .hero-layer-video video { width: 100%; height: 100%; border: 0; transform: scale(1.18); transform-origin: center; object-fit: cover; display: block; }       .hero-layer-1 { z-index: 0; }
     </style>
     <style>
@@ -262,6 +639,32 @@
       .color-control.open .accent-panel {
         display: block;
         animation: accent-pop .18s ease-out;
+      }
+
+      /* ═══ Navbar centrée (desktop) : la barre logo + liens + CTA est centrée
+         exactement ; les bascules thème / couleur passent en absolu à droite
+         pour ne plus la décaler (l'horloge a été retirée). ═══ */
+      @media (min-width: 992px) {
+        .navbar .theme-toggle,
+        .navbar .color-control {
+          position: absolute;
+          top: 0;
+        }
+        .navbar .theme-toggle {
+          right: 1rem;
+        }
+        .navbar .color-control {
+          right: calc(1rem + 3.75rem + .5rem);
+        }
+        .navbar-inner {
+          justify-content: center;
+        }
+      }
+      /* Une fois entré (préloader masqué), le contenu de la page est
+         révélé quoi qu'il arrive — IX2 peut réappliquer son display:none
+         inline après coup ; la règle !important gagne sur l'inline. */
+      body:has(.preloader.is-hidden) .load-hide {
+        display: block !important;
       }
       @keyframes accent-pop {
         from { opacity: 0; transform: translateY(-6px); }
@@ -465,7 +868,88 @@
   </head>
   <body data-w-id="661550636b9312315bbc1917" class="global-body">
     <script>!function(o,c){var n=c.documentElement,t=" w-mod-";n.className+=t+"js",("ontouchstart"in o||o.DocumentTouch&&c instanceof DocumentTouch)&&(n.className+=t+"touch")}(window,document);</script>
-<div data-w-id="1a765f11-e76b-dc77-f1f8-bbfc09335b89" class="preloader"><div class="preloader-inner"><div class="preloader-grid _1st"><img src="vetter-consulting/assets/img/typhoon-wordmark.svg" loading="eager" alt="Typhoon" class="logo in-preloader"/><div class="global-headline-m is-left-aligned in-loader">Le climat ne pr&eacute;vient pas.<span class="is-white"> La pr&eacute;cision est cl&eacute;. </span>Chaque minute compte.<br/></div></div><div class="preloader-grid _2nd"><div class="preloader-clock"><div class="align-horizontally stretched is-vertically-aligned-oin-mobile"><div class="global-headline-s reduced">Vos concurrents</div><div class="grid-icon-div tm-0"><img src="vetter-consulting/assets/img/66a20363e5bbc5dbaa1b5980_user-tie-solid.svg" loading="lazy" alt="" class="icon"/></div></div><div class="clock-overflow-div"><div class="clock-txt">05:00</div></div></div><div class="preloader-clock"><div class="align-horizontally stretched is-vertically-aligned-oin-mobile"><div class="global-headline-s reduced">Votre portefeuille <span class="is-grey">sans Typhoon</span></div><div class="grid-icon-div tm-0"><img src="vetter-consulting/assets/img/66a20363e5bbc5dbaa1b597b_building-shield-solid.svg" loading="eager" alt="" class="icon"/></div></div><div class="clock-overflow-div"><div class="clock-number-column-1"><div class="clock-txt">0</div></div><div data-w-id="aaef39c9-dc12-e30d-24d4-ba6dbfcd2565" class="clock-number-column-2"><div class="clock-txt">5<br/></div><div class="clock-txt">4</div></div><div class="clock-number-column-3"><div class="clock-txt">:</div></div><div data-w-id="6a94415b-1f68-93f0-161f-84ee49887b91" class="clock-number-column-4"><div class="clock-txt">0</div><div class="clock-txt">5</div></div><div data-w-id="d463d7a9-2b40-fef5-e4e8-3776ce2857f0" class="clock-number-column-5"><div class="clock-txt">0</div><div class="clock-txt">9</div><div class="clock-txt">8</div><div class="clock-txt">7</div></div></div></div></div></div></div><div class="navbar landingpage"><div data-animation="default" data-collapse="medium" data-duration="400" data-easing="ease" data-easing2="ease" role="banner" class="webflow-native-navbar w-nav"><div class="navbar-outer"><div class="navbar-inner"><a href="/" aria-current="page" target="_top" class="navbar-logo-div visible-on-desktop w-nav-brand w--current"><img src="vetter-consulting/assets/img/typhoon-logo.svg" loading="eager" alt="Typhoon" class="logo"/></a><div class="nav-static-item"><div class="nav-arrow-div"><img src="vetter-consulting/assets/img/typhoon-logo.svg" loading="lazy" alt="Typhoon" class="nav-arrow"/></div><div class="nav-link-static">Menü</div></div><nav role="navigation" class="nav-menu-wrapper w-nav-menu"><ul role="list" class="nav-menu-right w-list-unstyled"><li class="nav-item"><a href="/" aria-current="page" target="_top" class="nav-link w--current">Home</a></li><li class="nav-item"><a href="/faq" target="_top" class="nav-link">FAQ</a></li><li class="nav-item"><a href="/contact" target="_top" class="nav-link">Contact</a></li><li class="nav-item"><a data-w-id="e8b68c38-7920-70a0-3c4d-94c7ad18ef1c" href="/zone" target="_top" class="primary-btn w-inline-block"><div class="btn-txt-container"><div class="btn-txt">Commen&ccedil;ons</div><div class="btn-txt">Commen&ccedil;ons</div></div></a></li><li class="mobile-margin-top-10"></li></ul></nav><div id="w-node-e8b68c38-7920-70a0-3c4d-94c7ad18ef24-ad18ef05" class="nav-area-left mobile"><div class="menu-button w-nav-button"><div data-is-ix2-target="1" class="hamburger-menu-dark" data-w-id="e8b68c38-7920-70a0-3c4d-94c7ad18ef26" data-animation-type="lottie" data-src="vetter-consulting/assets/img/66a20363e5bbc5dbaa1b59bb_656e40dffb81768885f3d9a9_menu_white.json" data-loop="0" data-direction="1" data-autoplay="0" data-renderer="svg" data-default-duration="2.3333333333333335" data-duration="0" data-loading="eager" data-ix2-initial-state="0"></div></div></div></div></div></div><button type="button" class="theme-toggle" data-theme-toggle aria-label="Basculer le mode clair / sombre" title="Mode clair / sombre"><svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg><svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></button><div class="color-control"><button type="button" class="color-toggle" data-accent-toggle title="Changer la couleur d'accent" aria-label="Changer la couleur d'accent" aria-expanded="false"><svg class="icon-palette" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22a10 10 0 1 1 10-10c0 1.7-1.3 3-3 3h-2a2 2 0 0 0-2 2c0 .6.2 1 .6 1.4.4.4.6.8.6 1.4 0 1.7-1.3 3-3 3z"/><circle cx="7.5" cy="11.5" r=".5" fill="currentColor"/><circle cx="11" cy="7.5" r=".5" fill="currentColor"/><circle cx="15.5" cy="7.5" r=".5" fill="currentColor"/></svg><span class="accent-dot"></span></button><div class="accent-panel" data-accent-panel role="dialog" aria-label="Couleur d'accent"><div class="accent-panel-title">Couleur d'accent</div><div class="accent-swatches"><button type="button" class="accent-swatch" data-accent-swatch="#4386B1" style="--swatch:#4386B1" aria-label="Bleu de marque" title="Bleu de marque"></button><button type="button" class="accent-swatch" data-accent-swatch="#7b2cbf" style="--swatch:#7b2cbf" aria-label="Violet" title="Violet"></button><button type="button" class="accent-swatch" data-accent-swatch="#e63946" style="--swatch:#e63946" aria-label="Rouge" title="Rouge"></button><button type="button" class="accent-swatch" data-accent-swatch="#f97316" style="--swatch:#f97316" aria-label="Orange" title="Orange"></button><button type="button" class="accent-swatch" data-accent-swatch="#22c55e" style="--swatch:#22c55e" aria-label="Vert" title="Vert"></button><button type="button" class="accent-swatch" data-accent-swatch="#06b6d4" style="--swatch:#06b6d4" aria-label="Cyan" title="Cyan"></button><button type="button" class="accent-swatch" data-accent-swatch="#ec4899" style="--swatch:#ec4899" aria-label="Rose" title="Rose"></button><button type="button" class="accent-swatch" data-accent-swatch="#eab308" style="--swatch:#eab308" aria-label="Jaune" title="Jaune"></button><button type="button" class="accent-swatch" data-accent-swatch="#64748b" style="--swatch:#64748b" aria-label="Ardoise" title="Ardoise"></button><button type="button" class="accent-swatch" data-accent-swatch="#10b981" style="--swatch:#10b981" aria-label="&Eacute;meraude" title="&Eacute;meraude"></button></div><button type="button" class="accent-reset" data-accent-reset aria-label="R&eacute;tablir le bleu d'origine" title="R&eacute;tablir le bleu d'origine"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg><span>R&eacute;tablir le bleu d'origine</span></button></div></div><div class="clock"><div class="clock-overflow-div small"><div class="clock-number-column-1 small"><div class="clock-txt small">0</div></div><div data-w-id="e8b68c38-7920-70a0-3c4d-94c7ad18ef2c" class="clock-number-column-2 small"><div class="clock-txt small">4<br/></div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1<br/></div><div class="clock-txt small">0</div></div><div class="clock-number-column-3 small"><div class="clock-txt small">:</div></div><div data-w-id="e8b68c38-7920-70a0-3c4d-94c7ad18ef3c" class="clock-number-column-4 small"><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0<br/></div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div data-w-id="e8b68c38-7920-70a0-3c4d-94c7ad18ef6e" class="clock-number-column-5"><div class="_1min"><div class="_10sec"><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div></div><div class="_1min"><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div></div><div class="_1min"><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div></div><div class="_1min"><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div></div></div></div></div></div><section data-w-id="933bc9ea-8f0f-40e8-a12e-39b1718e2ca5" class="main-content"><div class="hero"><div class="hero-wrapper v2"><div class="hero-layer-video" aria-hidden="true"><video id="hero-video" class="hero-video" src="vetter-consulting/assets/videos/hero.mp4" muted loop playsinline preload="auto" poster="vetter-consulting/assets/img/66a20363e5bbc5dbaa1b59ac_VC%20GmbH%20-%20Shooting%20-%20022024-272.webp" tabindex="-1"></video></div><script>
+<div data-w-id="1a765f11-e76b-dc77-f1f8-bbfc09335b89" class="preloader"><div class="preloader-inner"><div class="preloader-head"><img src="vetter-consulting/assets/img/typhoon-wordmark.svg" loading="eager" alt="Typhoon" class="logo in-preloader"/></div><div class="preloader-mid"><div class="global-headline-m is-left-aligned in-loader">Le climat ne pr&eacute;vient pas.<span class="is-white"> La pr&eacute;cision est cl&eacute;. </span><br/>Chaque seconde compte.</div><div class="prog-carousel" data-prog-carousel><div class="prog-slides"><div class="prog-slide inondations is-active" data-slide="inondations"><div class="prog-slide-card"><img class="prog-slide-img" src="https://images.unsplash.com/photo-1709949908058-a08659bfa922?q=80&w=1170&auto=format&fit=crop" alt="Ville illuminée la nuit" loading="lazy"/><div class="prog-slide-body"><span class="prog-slide-tag">Inondations</span><h3 class="prog-slide-title">Les villes face à la montée des eaux</h3><p class="prog-slide-desc">Les inondations coûtent chaque année plusieurs milliards d’euros aux assureurs français. Cartographier l’exposition d’un bien devient indispensable.</p><span class="prog-slide-src">France Assureurs</span></div></div></div><div class="prog-slide argiles" data-slide="argiles"><div class="prog-slide-card"><img class="prog-slide-img" src="https://images.unsplash.com/photo-1518972734183-c5b490a7c637?q=80&w=1170&auto=format&fit=crop" alt="Montagnes et lac" loading="lazy"/><div class="prog-slide-body"><span class="prog-slide-tag">Retrait-gonflement des argiles</span><h3 class="prog-slide-title">La sécheresse qui fissure les maisons</h3><p class="prog-slide-desc">Près d’un logement sur deux est exposé au retrait-gonflement des argiles, première cause d’indemnisation climatique en France.</p><span class="prog-slide-src">Géorisques</span></div></div></div><div class="prog-slide forets" data-slide="forets"><div class="prog-slide-card"><img class="prog-slide-img" src="https://images.unsplash.com/photo-1548192746-dd526f154ed9?q=80&w=1170&auto=format&fit=crop" alt="Forêt en automne" loading="lazy"/><div class="prog-slide-body"><span class="prog-slide-tag">Feux de forêt</span><h3 class="prog-slide-title">Un risque qui s’étend au-delà du Sud</h3><p class="prog-slide-desc">Avec le changement climatique, la période à risque s’allonge et les zones concernées progressent vers le nord. La prévention change la donne.</p><span class="prog-slide-src">Géorisques</span></div></div></div><div class="prog-slide catnat" data-slide="catnat"><div class="prog-slide-card"><img class="prog-slide-img" src="https://images.unsplash.com/photo-1628965882741-570e75becd5d?q=80&w=687&auto=format&fit=crop" alt="Forêt dans la brume" loading="lazy"/><div class="prog-slide-body"><span class="prog-slide-tag">Catastrophes naturelles</span><h3 class="prog-slide-title">CatNat : ce qui change pour les assurés</h3><p class="prog-slide-desc">Réforme des franchises, délais d’indemnisation, cartographie des zones : le nouveau régime CatNat renforce la transparence pour les particuliers et les entreprises.</p><span class="prog-slide-src">Actualité 2025</span></div></div></div></div><div class="prog-btns"><button type="button" class="prog-btn is-active" data-slide-btn="inondations"><span class="prog-btn-title">Inondations</span><span class="prog-btn-bar"><span class="prog-btn-fill" data-fill="inondations"></span></span></button><button type="button" class="prog-btn" data-slide-btn="argiles"><span class="prog-btn-title">Argiles</span><span class="prog-btn-bar"><span class="prog-btn-fill" data-fill="argiles"></span></span></button><button type="button" class="prog-btn" data-slide-btn="forets"><span class="prog-btn-title">Feux de forêt</span><span class="prog-btn-bar"><span class="prog-btn-fill" data-fill="forets"></span></span></button><button type="button" class="prog-btn" data-slide-btn="catnat"><span class="prog-btn-title">CatNat</span><span class="prog-btn-bar"><span class="prog-btn-fill" data-fill="catnat"></span></span></button></div></div></div><img src="/mascotte_transparent.png" loading="eager" alt="" class="preloader-mascot"/><button type="button" class="preloader-cta" data-preloader-cta><span>Comment anticiper cela&nbsp;?</span><svg class="cta-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></button></div></div></div><script>
+/* Carrousel progressif du préloader : 4 articles (assurance & climat).
+   Port vanilla du composant React « progressive-carousel » :
+   - une carte active avance seule (durée 6 s), barre de progression animée
+     sous chaque bouton ;
+   - cliquer un bouton accélère (400 ms) jusqu'à l'article demandé ;
+   - le carrousel boucle à l'infini, indépendamment de l'entrée dans la page. */
+(function () {
+  var carousel = document.querySelector('[data-prog-carousel]');
+  if (!carousel) return;
+  var slides = [].slice.call(carousel.querySelectorAll('[data-slide]'));
+  var btns = [].slice.call(carousel.querySelectorAll('[data-slide-btn]'));
+  var fills = [].slice.call(carousel.querySelectorAll('[data-fill]'));
+  if (!slides.length) return;
+
+  var DURATION = 6000;   /* ms par carte */
+  var FAST = 400;        /* ms pour rejoindre la carte cliquée */
+  var active = slides[0].getAttribute('data-slide');
+  var progress = 0;
+  var fast = false;
+  var target = null;
+  var firstFrame = performance.now();
+  var frame = 0;
+
+  function setActive(value) {
+    active = value;
+    for (var i = 0; i < slides.length; i++) {
+      slides[i].classList.toggle('is-active', slides[i].getAttribute('data-slide') === value);
+    }
+    for (var j = 0; j < btns.length; j++) {
+      btns[j].classList.toggle('is-active', btns[j].getAttribute('data-slide-btn') === value);
+    }
+  }
+
+  function indexOfValue(value) {
+    for (var i = 0; i < slides.length; i++) {
+      if (slides[i].getAttribute('data-slide') === value) return i;
+    }
+    return -1;
+  }
+
+  function draw(now) {
+    var dur = fast ? FAST : DURATION;
+    var t = Math.min((now - firstFrame) / dur, 1);
+    progress = fast ? progress + (100 - progress) * t : t * 100;
+    for (var i = 0; i < fills.length; i++) {
+      fills[i].style.width = (fills[i].getAttribute('data-fill') === active ? progress : 0) + '%';
+    }
+    if (t < 1) {
+      frame = requestAnimationFrame(draw);
+      return;
+    }
+    if (fast) {
+      fast = false;
+      if (target) { setActive(target); target = null; }
+    } else {
+      var idx = indexOfValue(active);
+      var next = (idx + 1) % slides.length;
+      setActive(slides[next].getAttribute('data-slide'));
+    }
+    progress = 0;
+    firstFrame = performance.now();
+    frame = requestAnimationFrame(draw);
+  }
+
+  for (var b = 0; b < btns.length; b++) {
+    btns[b].addEventListener('click', function () {
+      var value = this.getAttribute('data-slide-btn');
+      if (value !== active) {
+        progress = Math.min(((performance.now() - firstFrame) / DURATION) * 100, 100);
+        target = value;
+        fast = true;
+        firstFrame = performance.now();
+      }
+    });
+  }
+
+  setActive(active);
+  frame = requestAnimationFrame(draw);
+})();
+</script>
+<div class="navbar landingpage"><div data-animation="default" data-collapse="medium" data-duration="400" data-easing="ease" data-easing2="ease" role="banner" class="webflow-native-navbar w-nav"><div class="navbar-outer"><div class="navbar-inner"><a href="/" aria-current="page" target="_top" class="navbar-logo-div visible-on-desktop w-nav-brand w--current"><img src="vetter-consulting/assets/img/typhoon-logo.svg" loading="eager" alt="Typhoon" class="logo"/></a><div class="nav-static-item"><div class="nav-arrow-div"><img src="vetter-consulting/assets/img/typhoon-logo.svg" loading="lazy" alt="Typhoon" class="nav-arrow"/></div><div class="nav-link-static">Menü</div></div><nav role="navigation" class="nav-menu-wrapper w-nav-menu"><ul role="list" class="nav-menu-right w-list-unstyled"><li class="nav-item"><a href="/" aria-current="page" target="_top" class="nav-link w--current">Home</a></li><li class="nav-item"><a href="/faq" target="_top" class="nav-link">FAQ</a></li><li class="nav-item"><a href="/contact" target="_top" class="nav-link">Contact</a></li><li class="nav-item"><a data-w-id="e8b68c38-7920-70a0-3c4d-94c7ad18ef1c" href="/zone" target="_top" class="primary-btn w-inline-block"><div class="btn-txt-container"><div class="btn-txt">Commen&ccedil;ons</div><div class="btn-txt">Commen&ccedil;ons</div></div></a></li><li class="mobile-margin-top-10"></li></ul></nav><div id="w-node-e8b68c38-7920-70a0-3c4d-94c7ad18ef24-ad18ef05" class="nav-area-left mobile"><div class="menu-button w-nav-button"><div data-is-ix2-target="1" class="hamburger-menu-dark" data-w-id="e8b68c38-7920-70a0-3c4d-94c7ad18ef26" data-animation-type="lottie" data-src="vetter-consulting/assets/img/66a20363e5bbc5dbaa1b59bb_656e40dffb81768885f3d9a9_menu_white.json" data-loop="0" data-direction="1" data-autoplay="0" data-renderer="svg" data-default-duration="2.3333333333333335" data-duration="0" data-loading="eager" data-ix2-initial-state="0"></div></div></div></div></div></div></div><button type="button" class="theme-toggle" data-theme-toggle aria-label="Basculer le mode clair / sombre" title="Mode clair / sombre"><svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg><svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></button><div class="color-control"><button type="button" class="color-toggle" data-accent-toggle title="Changer la couleur d'accent" aria-label="Changer la couleur d'accent" aria-expanded="false"><svg class="icon-palette" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22a10 10 0 1 1 10-10c0 1.7-1.3 3-3 3h-2a2 2 0 0 0-2 2c0 .6.2 1 .6 1.4.4.4.6.8.6 1.4 0 1.7-1.3 3-3 3z"/><circle cx="7.5" cy="11.5" r=".5" fill="currentColor"/><circle cx="11" cy="7.5" r=".5" fill="currentColor"/><circle cx="15.5" cy="7.5" r=".5" fill="currentColor"/></svg><span class="accent-dot"></span></button><div class="accent-panel" data-accent-panel role="dialog" aria-label="Couleur d'accent"><div class="accent-panel-title">Couleur d'accent</div><div class="accent-swatches"><button type="button" class="accent-swatch" data-accent-swatch="#4386B1" style="--swatch:#4386B1" aria-label="Bleu de marque" title="Bleu de marque"></button><button type="button" class="accent-swatch" data-accent-swatch="#7b2cbf" style="--swatch:#7b2cbf" aria-label="Violet" title="Violet"></button><button type="button" class="accent-swatch" data-accent-swatch="#e63946" style="--swatch:#e63946" aria-label="Rouge" title="Rouge"></button><button type="button" class="accent-swatch" data-accent-swatch="#f97316" style="--swatch:#f97316" aria-label="Orange" title="Orange"></button><button type="button" class="accent-swatch" data-accent-swatch="#22c55e" style="--swatch:#22c55e" aria-label="Vert" title="Vert"></button><button type="button" class="accent-swatch" data-accent-swatch="#06b6d4" style="--swatch:#06b6d4" aria-label="Cyan" title="Cyan"></button><button type="button" class="accent-swatch" data-accent-swatch="#ec4899" style="--swatch:#ec4899" aria-label="Rose" title="Rose"></button><button type="button" class="accent-swatch" data-accent-swatch="#eab308" style="--swatch:#eab308" aria-label="Jaune" title="Jaune"></button><button type="button" class="accent-swatch" data-accent-swatch="#64748b" style="--swatch:#64748b" aria-label="Ardoise" title="Ardoise"></button><button type="button" class="accent-swatch" data-accent-swatch="#10b981" style="--swatch:#10b981" aria-label="&Eacute;meraude" title="&Eacute;meraude"></button></div><button type="button" class="accent-reset" data-accent-reset aria-label="R&eacute;tablir le bleu d'origine" title="R&eacute;tablir le bleu d'origine"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg><span>R&eacute;tablir le bleu d'origine</span></button></div></div><section data-w-id="933bc9ea-8f0f-40e8-a12e-39b1718e2ca5" class="main-content"><div class="hero"><div class="hero-wrapper v2"><div class="hero-layer-video" aria-hidden="true"><video id="hero-video" class="hero-video" src="vetter-consulting/assets/videos/hero-typhoon-house.mp4" muted loop playsinline preload="auto" poster="vetter-consulting/assets/img/66a20363e5bbc5dbaa1b59ac_VC%20GmbH%20-%20Shooting%20-%20022024-272.webp" tabindex="-1"></video></div><script>
 /* Typhoon — hero background video. Native <video> replaces the Mux iframe.
    Autoplay per mux.com/docs/guides/autoplay: call play() (not the autoplay
    attribute) so we can detect a blocked autoplay and fall back to the
@@ -1215,28 +1699,57 @@ requestAnimationFrame(raf)
     })();
     </script>
     <script>
-    /* ── Préloader & horloge navbar : comportement d'origine (Webflow IX2) ──
-       - Préloader : animation IX2 d'origine (« a-23 Preloader », déclenchée à
-         la fin du chargement) : le compteur « Votre portefeuille sans
-         Typhoon » défile en odomètre (05:00 → 04:59 → 04:58 → 04:57), puis
-         l'écran glisse vers le haut et disparaît. Les data-w-id des colonnes
-         et du conteneur sont restaurés pour que IX2 retrouve ses cibles.
-       - Horloge de la navbar : liée au défilement par l'interaction continue
-         IX2 « a-32 » (SCROLLING_IN_VIEW sur <body>) : le temps restant suit
-         la progression du scroll, de 04:56 (haut de page) à 00:00 (bas).
-       - Sécurité : si IX2 ne se déclenche pas, .is-hidden masque le préloader
-         après 9 s pour ne jamais bloquer la page. */
+    /* ── Préloader : entrée manuelle — le bouton « Comment anticiper cela ? »
+       révèle la page d'accueil au clic (plus de transition automatique ni de
+       minuterie IX2 : le préloader ne se masque plus jamais tout seul). ── */
     (function () {
-      var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       var preloader = document.querySelector('.preloader');
-      if (preloader && !reduce) {
-        window.setTimeout(function () {
-          var p = document.querySelector('.preloader');
-          if (!p) return;
-          if (getComputedStyle(p).display === 'none') return; /* IX2 a terminé */
-          p.classList.add('is-hidden');
-        }, 9000);
+      var cta = document.querySelector('[data-preloader-cta]');
+
+      /* Entrée : on cache le préloader et on révèle le contenu de la page
+         (.load-hide : témoignages, services, mission, timeline, footer —
+         masqué au chargement pour que seul le préloader soit visible ;
+         sans cette révélation, la page restait bloquée sur le hero). */
+      function enterSite() {
+        if (preloader) preloader.classList.add('is-hidden');
+        var hiddenContent = document.querySelector('.load-hide');
+        if (hiddenContent) {
+          hiddenContent.classList.remove('load-hide');
+          /* IX2 cache aussi ce bloc en inline (display:none) au
+             chargement — on l'efface pour révéler la page. */
+          hiddenContent.style.display = 'block';
+        }
       }
+      if (cta) {
+        cta.addEventListener('click', enterSite);
+        /* Fond ambiant : les halos bleus s'intensifient au survol du bouton
+           (et à la prise de focus au clavier). */
+        if (preloader) {
+          function glowOn() { preloader.classList.add('glow'); }
+          function glowOff() { preloader.classList.remove('glow'); }
+          cta.addEventListener('mouseenter', glowOn);
+          cta.addEventListener('mouseleave', glowOff);
+          cta.addEventListener('focus', glowOn);
+          cta.addEventListener('blur', glowOff);
+        }
+      }
+
+      /* Entrée clavier : Échap révèle aussi la page (comme le bouton). */
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && preloader && !preloader.classList.contains('is-hidden')) {
+          enterSite();
+        }
+      });
+
+      /* Entrée automatique : le préloader ne doit pas retenir le visiteur —
+         après ~8 s il se masque tout seul (le bouton et Échap restent
+         disponibles pour entrer plus tôt). On coupe la minuterie si le
+         visiteur est déjà entré, pour ne pas repasser par-dessus. */
+      setTimeout(function () {
+        if (preloader && !preloader.classList.contains('is-hidden')) {
+          enterSite();
+        }
+      }, 8000);
     })();
     </script>
   </body>
