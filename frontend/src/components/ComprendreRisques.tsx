@@ -1,8 +1,9 @@
 // =============================================================================
 //   TYPHOON — /zone : panneau « Comprendre risque »
-//   Tableau de bord analytique agrégeant les scores de risque par zone du
-//   bâtiment (fondations, murs, toiture, sous-sol…), calculés côté backend
-//   à partir des données Géorisques (voir /diagnostic/recommandations).
+//   Tableau de bord analytique agrégeant les scores de risque par aléa
+//   (inondation, RGA, sismicité…) sur l'ensemble des zones du bâtiment,
+//   calculés côté backend à partir des données Géorisques
+//   (voir /diagnostic/recommandations).
 // =============================================================================
 
 import { useEffect, useMemo, useState } from 'react';
@@ -46,7 +47,17 @@ function polarPoint(cx: number, cy: number, r: number, angle: number): [number, 
    peuvent dépasser largement les 4 mots courts des anciennes zones — on les
    découpe en plusieurs lignes plutôt que de laisser le SVG les tronquer. */
 function wrapLabel(label: string, maxCharsPerLine = 12, maxLines = 3): string[] {
-  const words = label.split(/\s+/).filter(Boolean);
+  // Les mots composés ("Retrait-gonflement") dépassent parfois à eux seuls
+  // maxCharsPerLine : on les coupe aussi au tiret pour permettre le retour à
+  // la ligne (le tiret est conservé sur le premier segment).
+  const words = label
+    .split(/\s+/)
+    .filter(Boolean)
+    .flatMap((word) =>
+      word.length > maxCharsPerLine
+        ? word.split(/(?<=-)/)
+        : [word],
+    );
   const lines: string[] = [];
   let current = '';
   for (const word of words) {
@@ -199,7 +210,7 @@ export function ComprendreRisques({
     <>
       <md-elevated-button
         className="bim-action"
-        aria-label="Comprendre les risques du bien par zone"
+        aria-label="Comprendre les risques du bien par aléa"
         onClick={() => setOpen(true)}
       >
         <md-icon slot="icon">analytics</md-icon>
@@ -233,7 +244,7 @@ export function ComprendreRisques({
             {loading && entries.length === 0 && (
               <div className="risk-state">
                 <span className="risk-status-dot" />
-                Calcul des scores de risque par zone…
+                Calcul des scores de risque par aléa…
               </div>
             )}
             {!loading && error && entries.length === 0 && (
@@ -268,38 +279,90 @@ export function ComprendreRisques({
                     {entries.length >= 3 ? (
                       <RadarChart entries={entries} />
                     ) : (
-                      <p className="risk-card-hint">
-                        Pas assez d'aléas distincts pour un radar — voir le détail ci-dessous.
-                      </p>
+                      <p className="risk-card-hint">Pas assez d'aléas distincts pour un radar.</p>
                     )}
                   </div>
                 </div>
 
-                <div className="risk-card risk-detail-card">
-                  <h3>Détail du score par aléa</h3>
-                  <ul className="risk-detail-list">
-                    {entries.map((e) => (
-                      <li key={e.key} className="risk-detail-row">
-                        <div className="risk-detail-head">
-                          <span className="risk-detail-name">{e.label}</span>
-                          {e.zones.length > 0 && (
-                            <span className="risk-detail-alea">Zones concernées : {e.zones.join(', ')}</span>
-                          )}
-                        </div>
-                        <div className="risk-detail-bar-wrap">
-                          <div className="risk-detail-bar">
-                            <div
-                              className="risk-detail-bar-fill"
-                              style={{ width: `${e.score}%`, background: e.band.color }}
-                            />
-                          </div>
-                          <span className="risk-detail-score">{e.score}</span>
-                          <span className={`d03-pill ${e.band.cls}`}>{e.band.label}</span>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+                {/* ── Risques principaux + facteurs aggravants (bas du dashboard) ── */}
+                {loading && !risquesPrincipaux && (
+                  <div className="risk-principaux-loading" role="status" aria-live="polite">
+                    <md-linear-progress indeterminate />
+                    <span>
+                      Croisement des données géographiques et bâtimentaires en
+                      cours…
+                    </span>
+                  </div>
+                )}
+
+                {risquesPrincipaux && risquesPrincipaux.risques.length > 0 && (
+                  <div className="risk-card risk-principaux-card">
+                    <div className="risk-principaux-head">
+                      <div>
+                        <h3>Les risques principaux de votre bien</h3>
+                        <p className="risk-card-hint">
+                          Classement calculé en croisant l'aléa géographique avec la
+                          vulnérabilité du bâtiment, puis interprété à la lumière de
+                          toutes les données disponibles (Géorisques, BDNB, climat…).
+                        </p>
+                      </div>
+                      {risquesPrincipaux.source?.includes('llm') && (
+                        <span
+                          className="risk-ai-badge"
+                          title="Explications croisées générées par IA à partir des données Géorisques et BDNB"
+                        >
+                          <md-icon>auto_awesome</md-icon>
+                          Analyse croisée IA
+                        </span>
+                      )}
+                    </div>
+                    <ol className="risk-principaux-list">
+                      {risquesPrincipaux.risques.map((r) => {
+                        const band = bandForKey(r.niveau) || bandForScore(r.score);
+                        return (
+                          <li key={r.code} className="risk-principal">
+                            <div className="risk-principal-body">
+                              <div className="risk-principal-head">
+                                <span className="risk-principal-name">{r.libelle}</span>
+                                <span
+                                  className="risk-principal-score"
+                                  style={{ color: band.color }}
+                                >
+                                  {r.score}
+                                </span>
+                                <span className={`d03-pill ${band.cls}`}>
+                                  Risque {band.label.toLowerCase()}
+                                </span>
+                              </div>
+                              {r.explication && (
+                                <p className="risk-principal-explication">
+                                  {r.explication}
+                                </p>
+                              )}
+                              {r.facteurs_aggravants && r.facteurs_aggravants.length > 0 && (
+                                <ul className="risk-aggravants">
+                                  {r.facteurs_aggravants.map((f, j) => (
+                                    <li key={j}>
+                                      <md-icon>trending_up</md-icon>
+                                      <span>{f}</span>
+                                    </li>
+                                  ))}
+                                </ul>
+                              )}
+                              {r.zone_la_plus_exposee && (
+                                <span className="risk-principal-zone">
+                                  <md-icon>pin_drop</md-icon>
+                                  Zone la plus exposée :{' '}
+                                  {formatZoneLabel(r.zone_la_plus_exposee)}
+                                </span>
+                              )}
+                            </div>
+                          </li>
+                        );
+                      })}
+                    </ol>
+                  </div>
+                )}
               </div>
             )}
           </section>

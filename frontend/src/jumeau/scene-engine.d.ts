@@ -7,3 +7,18 @@
 export function initScene(): void;
 export function disposeScene(): void;
 export function loadFromAddress(adresse: string): Promise<unknown>;
+
+export interface MatchArtisansInput {
+  apiBase: string;
+  adresse: string;
+  zoneName: string;
+  data: {
+    alea_principal?: string;
+    recommandations?: Array<{ mesure?: string; travaux?: string }>;
+  };
+  container?: HTMLDivElement | null;
+  button?: HTMLButtonElement | null;
+  limite?: number;
+}
+
+export function matchArtisans(input: MatchArtisansInput): Promise<void>;

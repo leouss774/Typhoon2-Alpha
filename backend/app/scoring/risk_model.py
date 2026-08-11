@@ -663,7 +663,48 @@ def _compute_zones_for_period(
         z = zones[zone_name]
         logger.info("  [%s] risque=%d (%s) | F=%.1f V=%.1f", zone_name, z["risque"], z["niveau"], z.get("_f_score", 0), z.get("_v_score", 0))
 
-    return zones, sources_tracking
+    # --- Risques par aléa (niveau bâtiment, pas par zone) ---------------
+    # Les 8 sous-scores F ci-dessus sont déjà calculés une fois pour tout le
+    # bâtiment (RGA, inondation... ne dépendent pas de la façade regardée) :
+    # on les expose tels quels plutôt que de les recalculer, pour un radar
+    # "par aléa" (incendie, inondation, RGA, sismique...) séparé du radar
+    # "par zone" existant. Aucun changement au calcul F/V/R des zones.
+    risques_par_alea = {
+        "argile": {
+            "label": "Retrait-gonflement des argiles",
+            "risque": argile_score, "niveau": _niveau(argile_score), "justification": argile_src,
+        },
+        "inondation": {
+            "label": "Inondation",
+            "risque": inondation_score, "niveau": _niveau(inondation_score), "justification": inondation_src,
+        },
+        "mouvement_terrain": {
+            "label": "Mouvement de terrain",
+            "risque": mvt_score, "niveau": _niveau(mvt_score), "justification": mvt_src,
+        },
+        "sismique": {
+            "label": "Sismique",
+            "risque": sismique_score, "niveau": _niveau(sismique_score), "justification": sismique_src,
+        },
+        "radon": {
+            "label": "Radon",
+            "risque": radon_score, "niveau": _niveau(radon_score), "justification": radon_src,
+        },
+        "canicule": {
+            "label": "Canicule / stress thermique",
+            "risque": canicule_score, "niveau": _niveau(canicule_score), "justification": canicule_src,
+        },
+        "precipitation": {
+            "label": "Précipitations intenses",
+            "risque": precip_score, "niveau": _niveau(precip_score), "justification": precip_src,
+        },
+        "feu_foret": {
+            "label": "Feu de forêt",
+            "risque": feu_foret_score, "niveau": _niveau(feu_foret_score), "justification": feu_foret_src,
+        },
+    }
+
+    return zones, sources_tracking, risques_par_alea
 
 
 def _score_global(zones: dict[str, dict[str, Any]]) -> int:
@@ -797,12 +838,12 @@ def compute_risk_scores(building_data: dict[str, Any]) -> dict[str, Any]:
     projection = climat.get("projection_2041_2050")
 
     logger.info("période référence (2025) :")
-    zones_2025, sources_2025 = _compute_zones_for_period(building_data, reference, is_projection=False)
+    zones_2025, sources_2025, risques_par_alea_2025 = _compute_zones_for_period(building_data, reference, is_projection=False)
     score_2025 = _score_global(zones_2025)
     logger.info("  -> score_global = %d", score_2025)
 
     logger.info("période projection (2050) :")
-    zones_2050, sources_2050 = _compute_zones_for_period(building_data, projection or reference, is_projection=True)
+    zones_2050, sources_2050, risques_par_alea_2050 = _compute_zones_for_period(building_data, projection or reference, is_projection=True)
     score_2050 = _score_global(zones_2050)
     logger.info("  -> score_global = %d", score_2050)
 
@@ -812,9 +853,11 @@ def compute_risk_scores(building_data: dict[str, Any]) -> dict[str, Any]:
     return {
         "score_global": score_2025,
         "zones": zones_2025,
+        "risques_par_alea": risques_par_alea_2025,
         "projection_2050": {
             "score_global": score_2050,
             "zones": zones_2050,
+            "risques_par_alea": risques_par_alea_2050,
         },
         "confidence": confidence,
         "sources": sources_2025,

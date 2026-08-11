@@ -29,18 +29,27 @@ THROTTLE_SECONDS = 0.3  # reduit : le retry backoff gere les rares 429
 # (cf. amelioration_recommandation.md, section 2)
 CHAT_MAX_TOKENS = 1000
 
+# Limite plus large pour le chat conversationnel (syntheses, tableaux) :
+# CHAT_MAX_TOKENS (1000) tronquait les reponses du chat en plein milieu
+# d'une synthese. Le prompt SYSTEM_PROMPT (route /chat) borne la longueur
+# attendue, ce max n'est qu'une securite contre les reponses fleuves.
+CHAT_TEXT_MAX_TOKENS = 1800
+
 _client: Mistral | None = None
+_cached_api_key: str | None = None
 
 
 def get_client() -> Mistral:
-    global _client
-    if _client is None:
-        if not settings.mistral_api_key:
+    global _client, _cached_api_key
+    current_key = settings.mistral_api_key
+    if _client is None or _cached_api_key != current_key:
+        if not current_key:
             raise RuntimeError(
                 "MISTRAL_API_KEY manquant. Renseigne-la dans le .env racine "
                 "du projet (voir .env.example à la racine)."
             )
-        _client = Mistral(api_key=settings.mistral_api_key, timeout_ms=REQUEST_TIMEOUT_MS)
+        _client = Mistral(api_key=current_key, timeout_ms=REQUEST_TIMEOUT_MS)
+        _cached_api_key = current_key
     return _client
 
 
@@ -119,6 +128,40 @@ def chat_json(
             print(f"    -> attente {wait:.0f}s avant nouvelle tentative")
             time.sleep(wait)
     raise RuntimeError(f"Echec appel Mistral (chat) apres {max_retries} tentatives: {last_err}")
+
+
+def chat_text(system_prompt: str, messages: list[dict], max_retries: int = 5) -> str:
+    """Appelle le modele de chat Mistral en texte libre, multi-tours.
+
+    `messages` : liste de {"role": "user"|"assistant", "content": str}
+    (l'historique de la conversation, le system prompt etant passe a
+    part). Contrairement a chat_json, la reponse n'est PAS forcee en JSON :
+    c'est le mode conversationnel du chat du jumeau numerique.
+    """
+    client = get_client()
+    last_err: Exception | None = None
+    for attempt in range(max_retries):
+        try:
+            response = client.chat.complete(
+                model=CHAT_MODEL,
+                messages=[{"role": "system", "content": system_prompt}, *messages],
+                temperature=0.7,
+                max_tokens=CHAT_TEXT_MAX_TOKENS,
+            )
+            content = response.choices[0].message.content
+            time.sleep(THROTTLE_SECONDS)
+            # SDK mistralai : `content` est soit un str, soit une liste de
+            # blocs content (modalites) selon la version — on normalise.
+            if isinstance(content, list):
+                return "".join(getattr(part, "text", "") or "" for part in content)
+            return content or ""
+        except Exception as e:
+            last_err = e
+            wait = _backoff_seconds(e, attempt)
+            print(f"    [retry {attempt + 1}/{max_retries}] erreur Mistral chat_text: {e}")
+            print(f"    -> attente {wait:.0f}s avant nouvelle tentative")
+            time.sleep(wait)
+    raise RuntimeError(f"Echec appel Mistral (chat_text) apres {max_retries} tentatives: {last_err}")
 
 
 def embed_texts(texts: list[str], max_retries: int = 5) -> list[list[float]]:

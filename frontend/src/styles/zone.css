@@ -2710,6 +2710,41 @@
   font-size: 10px;
   color: var(--md-sys-color-on-surface-variant);
 }
+.report-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+.report-official {
+  --md-text-button-label-text-size: 12px;
+}
+.report-export-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 12px 0 0;
+  padding: 10px 14px;
+  border: 1px solid color-mix(in srgb, var(--md-sys-color-error) 45%, var(--md-sys-color-outline-variant));
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--md-sys-color-error-container) 55%, transparent);
+  color: var(--md-sys-color-on-error-container);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.report-export-error md-icon {
+  --md-icon-size: 17px;
+  color: var(--md-sys-color-error);
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.report-regenerate {
+  --md-text-button-label-text-size: 12px;
+  flex-shrink: 0;
+}
+.report-regenerate:hover {
+  color: var(--md-sys-color-primary);
+}
 .report-export {
   --md-elevated-button-label-text-size: 12px;
   flex-shrink: 0;
@@ -3912,130 +3947,114 @@
     align-items: flex-start;
     gap: 12px;
   }
+  .report-actions {
+    width: 100%;
+  }
+  .report-actions > * {
+    flex: 1;
+  }
   .report-export {
     width: 100%;
   }
 }
 
-/* ============================================================================
-   Page « Paramètres du compte » (/account & /settings)
-   Même chrome que /zone : grid .zone-app (sidenav + colonne principale),
-   tokens M3 sombres, accent marque. Les styles .settings-* de base
-   (app.css) s'adaptent déjà via var(--md-sys-color-*) ; on neutralise ici
-   les couleurs claires codées en dur héritées du thème « marron » et on
-   met en page l'en-tête + le corps défilant.
-============================================================================ */
-.account-settings-scroll {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  padding: 2rem clamp(1rem, 4vw, 3rem) 4rem;
-}
-.account-settings-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 1.25rem;
-  flex-wrap: wrap;
-  margin-bottom: 1.75rem;
-}
-.account-settings-title {
-  flex: 1;
-  min-width: 0;
-}
-.account-settings-header h1 {
-  margin: 0 0 0.4rem;
-  font-size: 1.6rem;
-  font-weight: 600;
-  color: var(--md-sys-color-on-surface);
-}
-.account-settings-header p {
-  margin: 0;
-  max-width: 56ch;
-  font-size: 0.9rem;
-  line-height: 1.5;
-  color: var(--md-sys-color-on-surface-variant);
-}
+/* ===========================================================================
+   ZONE — Étape Recommandations · accordéon « Trouver des artisans »
+   Composant ZoneArtisans (frontend/src/components/ZoneArtisans.tsx).
+   Même langage M3 que les zone-reco-* : tokens --accent / --md-sys-color-*,
+   thème sombre par défaut + variante .theme-light.
+   =========================================================================== */
+.zone-artisans { margin-top: 14px; border-top: 1px dashed var(--md-sys-color-outline-variant); padding-top: 12px; }
+.zone-artisans-toggle { display: flex; align-items: center; gap: 9px; width: 100%; padding: 10px 12px; border: 1px solid var(--md-sys-color-outline-variant); border-radius: 12px; background: var(--md-sys-color-surface-container); color: var(--md-sys-color-on-surface-variant); font: 500 12px/1.4 inherit; letter-spacing: .01em; cursor: pointer; transition: border-color .18s ease, background .18s ease, color .18s ease; }
+.zone-artisans-toggle:hover { border-color: var(--accent); color: var(--md-sys-color-on-surface); background: var(--md-sys-color-surface-container-high); }
+.zone-artisans-toggle md-icon { font-size: 18px; color: var(--accent); }
+.zone-artisans-toggle .zone-artisans-chevron { margin-left: auto; font-size: 18px; color: var(--md-sys-color-on-surface-variant); transition: transform .2s ease; }
+.zone-artisans-toggle.open .zone-artisans-chevron { transform: rotate(180deg); }
+.zone-artisans-body { margin-top: 12px; padding-left: 2px; }
 
-/* ── Neutralisation des couleurs claires codées en dur ── */
-.account-settings-page .settings-tabs {
-  border-color: var(--md-sys-color-outline-variant);
-}
-.account-settings-page .settings-tab:hover {
-  background: var(--md-sys-color-surface-container-high);
-}
-.account-settings-page .settings-card {
-  background: var(--md-sys-color-surface-container-low);
-  border-color: var(--md-sys-color-outline-variant);
-  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.28);
-}
-.account-settings-page .m3-select:focus {
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--md-sys-color-primary) 30%, transparent);
-}
-.account-settings-page .mavatar-image {
-  background: linear-gradient(135deg, var(--md-sys-color-primary), var(--md-sys-color-tertiary));
-}
-.account-settings-page .avatar-preview {
-  border-color: var(--md-sys-color-outline);
-}
-.account-settings-page .delete-warning {
-  border-color: color-mix(in srgb, var(--md-sys-color-error) 32%, transparent);
-}
-.account-settings-page .chip-live {
-  background: rgba(76, 175, 80, 0.16);
-  color: #8ee29a;
-}
-.account-settings-page .switch-row {
-  border-bottom-color: var(--md-sys-color-outline-variant);
-}
-.account-settings-page .plan-summary-side {
-  border-left-color: var(--md-sys-color-outline-variant);
-}
-.account-settings-page .plan-attention {
-  background: rgba(178, 126, 0, 0.14);
-  border-color: rgba(240, 214, 138, 0.3);
-}
-.account-settings-page .plan-attention md-icon {
-  color: #f2b03d;
-}
-.account-settings-page .plan-attention strong {
-  color: #ffd97a;
-}
-.account-settings-page .plan-attention span {
-  color: #d9b564;
-}
-.account-settings-page .plan-progress-fill {
-  background: linear-gradient(90deg, var(--md-sys-color-primary), var(--md-sys-color-tertiary));
-}
-.account-settings-page .radio-option.selected {
-  background: color-mix(in srgb, var(--md-sys-color-primary) 12%, transparent);
-}
-.account-settings-page .paypal-note {
-  border-color: var(--md-sys-color-outline-variant);
-}
-.account-settings-page .saved-card {
-  border-color: var(--md-sys-color-outline-variant);
-}
-.account-settings-page .key-output code {
-  background: var(--md-sys-color-surface-container-high);
-  color: var(--md-sys-color-on-surface);
-}
-.account-settings-page .api-key-illo {
-  background: linear-gradient(135deg, var(--md-sys-color-surface-container-high), var(--md-sys-color-surface-container-low));
-}
+/* Loading / erreur / vide */
+.zone-artisans-loading { display: flex; align-items: center; gap: 12px; padding: 14px; border-radius: 12px; background: var(--md-sys-color-surface-container); color: var(--md-sys-color-on-surface-variant); font-size: 11px; line-height: 1.45; }
+.zone-artisans-loading md-circular-progress { --md-circular-progress-size: 20px; }
+.zone-artisans-error { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-radius: 12px; background: var(--md-sys-color-error-container); color: var(--md-sys-color-on-error-container); font-size: 11px; line-height: 1.45; }
+.zone-artisans-error > md-icon { font-size: 20px; flex-shrink: 0; }
+.zone-artisans-error div { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+.zone-artisans-error strong { font-weight: 600; }
+.zone-artisans-error md-text-button { margin-left: auto; flex-shrink: 0; }
+.zone-artisans-empty { display: flex; align-items: flex-start; gap: 9px; padding: 12px 14px; border-radius: 12px; background: var(--md-sys-color-surface-container); color: var(--md-sys-color-on-surface-variant); font-size: 11px; line-height: 1.5; }
+.zone-artisans-empty md-icon { font-size: 20px; flex-shrink: 0; color: var(--md-sys-color-on-surface-variant); }
 
-/* Mobile : la sidenav partagée passe en drawer (même comportement que /zone,
-   règle .zone-app.drawer-open existante) ; le corps prend toute la largeur. */
+/* Résumé + groupes par métier */
+.zone-artisans-summary { margin: 2px 2px 10px; color: var(--md-sys-color-on-surface-variant); font-size: 10.5px; letter-spacing: .02em; }
+.zone-artisans-group { margin-bottom: 14px; }
+.zone-artisans-group:last-child { margin-bottom: 0; }
+.zone-artisans-group-head { display: flex; align-items: center; gap: 10px; margin: 0 2px 8px; }
+.zone-artisans-group-head h5 { margin: 0; flex: 1; min-width: 0; color: var(--md-sys-color-on-surface); font-size: 12.5px; font-weight: 600; line-height: 1.4; }
+.zone-artisans-badge { flex-shrink: 0; padding: 3px 9px; border-radius: 999px; font-size: 9.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.zone-artisans-badge.rge { color: var(--md-sys-color-on-primary-container); background: var(--md-sys-color-primary-container); }
+.zone-artisans-badge.local { color: var(--md-sys-color-on-secondary-container); background: var(--md-sys-color-secondary-container); }
+.zone-artisans-group-erreur { margin: 0 2px 8px; padding: 8px 10px; border-radius: 10px; background: var(--md-sys-color-error-container); color: var(--md-sys-color-on-error-container); font-size: 10.5px; line-height: 1.45; }
+.zone-artisans-group-empty { margin: 0 2px; padding: 10px 12px; border-radius: 10px; background: var(--md-sys-color-surface-container); color: var(--md-sys-color-on-surface-variant); font-size: 10.5px; line-height: 1.45; }
+
+/* Carte entreprise */
+.zone-artisans-card { margin-bottom: 10px; padding: 14px; border: 1px solid var(--md-sys-color-outline-variant); border-radius: 14px; background: var(--md-sys-color-surface-container-low); }
+.zone-artisans-card:last-child { margin-bottom: 0; }
+.zone-artisans-card-top { display: flex; align-items: flex-start; gap: 12px; }
+.zone-artisans-card-title { flex: 1; min-width: 0; }
+.zone-artisans-card-title strong { display: block; color: var(--md-sys-color-on-surface); font-size: 13px; font-weight: 600; line-height: 1.4; }
+.zone-artisans-rge { display: inline-flex; align-items: center; gap: 4px; margin-top: 6px; padding: 2px 8px; border-radius: 999px; font-size: 9.5px; font-weight: 600; }
+.zone-artisans-rge md-icon { font-size: 13px; }
+.zone-artisans-rge.valid { color: #1F9D6C; background: color-mix(in srgb, #1F9D6C 16%, transparent); }
+.zone-artisans-rge.expired { color: var(--md-sys-color-error); background: color-mix(in srgb, var(--md-sys-color-error) 14%, transparent); }
+.zone-artisans-rge.none { color: var(--md-sys-color-on-surface-variant); background: var(--md-sys-color-surface-container); }
+.zone-artisans-score { flex-shrink: 0; text-align: right; color: var(--md-sys-color-on-surface-variant); }
+.zone-artisans-score strong { font-size: 17px; font-weight: 700; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+.zone-artisans-score small { font-size: 9px; }
+.zone-artisans-score.high strong { color: #1F9D6C; }
+.zone-artisans-score.mid strong { color: #D4AC3E; }
+.zone-artisans-score.low strong { color: var(--md-sys-color-on-surface-variant); }
+.zone-artisans-card-meta { display: flex; flex-direction: column; gap: 5px; margin-top: 10px; color: var(--md-sys-color-on-surface-variant); font-size: 10.5px; line-height: 1.45; }
+.zone-artisans-card-meta span { display: flex; align-items: center; gap: 6px; min-width: 0; overflow-wrap: anywhere; }
+.zone-artisans-card-meta md-icon { flex-shrink: 0; font-size: 14px; color: var(--accent); opacity: .85; }
+.zone-artisans-details { margin-top: 10px; }
+.zone-artisans-details summary { display: flex; align-items: center; gap: 6px; color: var(--md-sys-color-on-surface-variant); font-size: 10.5px; cursor: pointer; user-select: none; }
+.zone-artisans-details summary md-icon { font-size: 14px; color: var(--accent); }
+.zone-artisans-details ul { margin: 8px 0 0; padding: 10px 12px 10px 26px; border-radius: 10px; background: var(--md-sys-color-surface-container); color: var(--md-sys-color-on-surface-variant); font-size: 10.5px; line-height: 1.5; }
+.zone-artisans-card-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.zone-artisans-action { display: inline-flex; align-items: center; gap: 5px; padding: 6px 11px; border: 1px solid var(--md-sys-color-outline-variant); border-radius: 999px; background: transparent; color: var(--md-sys-color-on-surface-variant); font: 500 10.5px/1.2 inherit; text-decoration: none; transition: border-color .18s ease, color .18s ease, background .18s ease; }
+.zone-artisans-action md-icon { font-size: 14px; }
+.zone-artisans-action:hover { border-color: var(--accent); color: var(--md-sys-color-on-surface); }
+.zone-artisans-action.primary { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--accent); }
+.zone-artisans-action.primary:hover { background: color-mix(in srgb, var(--accent) 24%, transparent); }
+.zone-artisans-annuaire { margin: 10px 0 0; color: var(--md-sys-color-on-surface-variant); font-size: 9.5px; line-height: 1.5; }
+.zone-artisans-annuaire a { color: var(--accent); text-decoration: none; }
+.zone-artisans-annuaire a:hover { text-decoration: underline; }
+
+/* Mobile : cartes pleine largeur */
 @media (max-width: 900px) {
-  .account-settings-scroll {
-    padding: 1.25rem 1rem 3rem;
-  }
-  .account-settings-header {
-    align-items: center;
-  }
-  .account-settings-header .account-settings-hamburger {
-    display: inline-flex;
-    margin-right: 2px;
-  }
+  .zone-artisans-card-top { flex-direction: column; }
+  .zone-artisans-score { text-align: left; }
 }
+
+/* ===========================================================================
+   ZONE — Étape Artisans : recherche globale, après les recommandations
+   =========================================================================== */
+.zone-artisans-step { min-height: calc(100dvh - 72px); overflow: auto; background: var(--md-sys-color-surface); }
+.zone-artisans-view { width: min(1120px, calc(100% - 48px)); margin: 0 auto; padding: 38px 0 56px; }
+.zone-artisans-hero { display: flex; align-items: end; justify-content: space-between; gap: 24px; padding: 28px 32px; border: 1px solid var(--md-sys-color-outline-variant); border-radius: 22px; background: linear-gradient(120deg, color-mix(in srgb, var(--accent) 17%, var(--md-sys-color-surface-container-high)), var(--md-sys-color-surface-container)); }
+.zone-artisans-eyebrow { display: block; color: var(--accent); font: 700 10px/1.3 var(--mono); letter-spacing: .11em; text-transform: uppercase; }
+.zone-artisans-hero h2, .zone-artisans-results h3 { margin: 7px 0; color: var(--md-sys-color-on-surface); font: 700 28px/1.2 var(--serif); }
+.zone-artisans-hero p { max-width: 610px; margin: 0; color: var(--md-sys-color-on-surface-variant); font-size: 13px; line-height: 1.55; }
+.zone-artisans-address { display: inline-flex; align-items: center; gap: 5px; margin-top: 15px; color: var(--md-sys-color-on-surface-variant); font: 11px/1.4 var(--mono); }
+.zone-artisans-address md-icon { font-size: 15px; color: var(--accent); }
+.zone-artisans-hero-stat { min-width: 116px; padding: 14px 18px; border-radius: 14px; background: color-mix(in srgb, var(--md-sys-color-surface-container-highest) 80%, transparent); text-align: center; }
+.zone-artisans-hero-stat strong { display: block; color: var(--accent); font: 700 28px/1 var(--mono); }.zone-artisans-hero-stat span { color: var(--md-sys-color-on-surface-variant); font-size: 10px; }
+.zone-artisans-brief { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-top: 20px; padding: 18px 20px; border: 1px solid var(--md-sys-color-outline-variant); border-radius: 16px; background: var(--md-sys-color-surface-container); }
+.zone-artisans-brief > div { display: flex; align-items: center; gap: 11px; color: var(--md-sys-color-on-surface-variant); font-size: 12px; line-height: 1.45; }.zone-artisans-brief > div > md-icon { color: var(--accent); }.zone-artisans-brief strong { color: var(--md-sys-color-on-surface); }
+.zone-artisans-search { display: inline-flex; align-items: center; justify-content: center; gap: 8px; flex-shrink: 0; min-height: 42px; padding: 0 18px; border: 0; border-radius: 999px; background: var(--accent); color: var(--md-sys-color-on-primary); font: 700 12px/1 inherit; cursor: pointer; }.zone-artisans-search:disabled { opacity: .7; cursor: wait; }.zone-artisans-search md-icon { font-size: 18px; }.zone-artisans-search md-circular-progress { --md-circular-progress-size: 17px; --md-circular-progress-active-indicator-color: currentColor; }
+.zone-artisans-plan, .zone-artisans-results { margin-top: 24px; }.zone-artisans-plan h3 { margin: 0 0 12px; font-size: 14px; }.zone-artisans-plan > div { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 10px; }.zone-artisans-plan span { display: flex; gap: 8px; padding: 12px; border: 1px solid var(--md-sys-color-outline-variant); border-radius: 12px; color: var(--md-sys-color-on-surface-variant); font-size: 11px; line-height: 1.4; }.zone-artisans-plan md-icon { flex: 0 0 auto; color: var(--accent); font-size: 16px; }
+.zone-artisans-status { display: flex; align-items: center; gap: 10px; margin-top: 20px; padding: 15px 17px; border-radius: 14px; background: var(--md-sys-color-surface-container); color: var(--md-sys-color-on-surface-variant); font-size: 12px; }.zone-artisans-status md-icon { color: var(--accent); }.zone-artisans-status md-circular-progress { --md-circular-progress-size: 21px; }.zone-artisans-status.error { background: var(--md-sys-color-error-container); color: var(--md-sys-color-on-error-container); }.zone-artisans-status.error md-icon { color: inherit; }.zone-artisans-status button { margin-left: auto; border: 0; background: transparent; color: inherit; font-weight: 700; cursor: pointer; }
+.zone-artisans-results > header, .zone-artisans-result-group > header, .zone-artisans-company-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }.zone-artisans-results > header { align-items: end; margin-bottom: 14px; }.zone-artisans-results h3 { font-size: 21px; }.zone-artisans-results > header p { margin: 0; color: var(--md-sys-color-on-surface-variant); font-size: 11px; }.zone-artisans-groups { display: grid; gap: 16px; }.zone-artisans-result-group { padding: 19px; border: 1px solid var(--md-sys-color-outline-variant); border-radius: 18px; background: var(--md-sys-color-surface-container-low); }.zone-artisans-result-group h4 { margin: 0 0 6px; font-size: 14px; }.zone-artisans-result-group header span { display: inline-block; padding: 3px 8px; border-radius: 99px; background: var(--md-sys-color-secondary-container); color: var(--md-sys-color-on-secondary-container); font-size: 9px; font-weight: 700; }.zone-artisans-result-group header span.rge { background: var(--md-sys-color-primary-container); color: var(--md-sys-color-on-primary-container); }.zone-artisans-result-group header small { color: var(--md-sys-color-on-surface-variant); font: 10px var(--mono); }.zone-artisans-company-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(265px, 1fr)); gap: 12px; margin-top: 16px; }.zone-artisans-company { padding: 15px; border: 1px solid var(--md-sys-color-outline-variant); border-radius: 14px; background: var(--md-sys-color-surface-container); }.zone-artisans-company h5 { margin: 0 0 6px; color: var(--md-sys-color-on-surface); font-size: 13px; }.zone-artisans-company-head > strong { color: var(--accent); font: 700 18px/1 var(--mono); }.zone-artisans-company-head > strong small { font-size: 9px; }.zone-artisans-company-head span { display: inline-flex; align-items: center; gap: 3px; color: var(--md-sys-color-on-surface-variant); font-size: 9px; }.zone-artisans-company-head span.qualified { color: #43b889; }.zone-artisans-company-head span md-icon { font-size: 13px; }.zone-artisans-company-meta { display: grid; gap: 6px; margin-top: 13px; color: var(--md-sys-color-on-surface-variant); font-size: 10px; line-height: 1.4; }.zone-artisans-company-meta span { display: flex; gap: 5px; }.zone-artisans-company-meta md-icon { flex: 0 0 auto; color: var(--accent); font-size: 14px; }.zone-artisans-company-actions { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 14px; }.zone-artisans-company-actions a { display: inline-flex; align-items: center; gap: 4px; padding: 6px 9px; border: 1px solid var(--md-sys-color-outline-variant); border-radius: 8px; color: var(--md-sys-color-on-surface); font-size: 10px; text-decoration: none; }.zone-artisans-company-actions a:hover { border-color: var(--accent); color: var(--accent); }.zone-artisans-company-actions md-icon { font-size: 13px; }.zone-artisans-group-error { margin: 14px 0 0; color: var(--md-sys-color-error); font-size: 11px; }
+.zone-artisans-result-group header .zone-artisans-recommendation { display: block; margin: 0 0 5px; padding: 0; background: transparent; color: var(--accent); font: 700 9px/1.2 var(--mono); letter-spacing: .08em; text-transform: uppercase; }
+.zone-artisans-group-notice { margin: 14px 0 0; color: var(--md-sys-color-on-surface-variant); font-size: 10px; line-height: 1.45; }.zone-artisans-company-head span.pending { color: var(--md-sys-color-on-surface-variant); }
+@media (max-width: 700px) { .zone-artisans-view { width: min(100% - 28px, 1120px); padding-top: 20px; }.zone-artisans-hero, .zone-artisans-brief { align-items: stretch; flex-direction: column; padding: 20px; }.zone-artisans-hero h2 { font-size: 24px; }.zone-artisans-hero-stat { width: fit-content; }.zone-artisans-search { width: 100%; }.zone-artisans-results > header { align-items: flex-start; flex-direction: column; } }
+.zone-artisans-company-head .zone-artisans-company-avatar { display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; width: 42px; height: 42px; flex: 0 0 auto; margin-left: 10px; border-radius: 50%; background: var(--md-sys-color-secondary-container); color: var(--md-sys-color-on-secondary-container); font-size: 13px; font-weight: 700; letter-spacing: .03em; user-select: none; }.zone-artisans-company-head .zone-artisans-company-avatar img.zone-artisans-company-logo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
