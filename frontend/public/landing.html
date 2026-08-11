@@ -281,10 +281,10 @@
       }
       .preloader-mascot {
         object-fit: contain;
-        width: clamp(17rem, 28vw, 26rem);
+        width: clamp(18rem, 30vw, 28rem);
         max-width: none;
         height: auto;
-        max-height: 18rem;
+        max-height: 19rem;
         flex-shrink: 0;
         /* L'ombre bleue suit la silhouette PNG (drop-shadow = stacking
            context, inutile d'ajouter un z-index). */
@@ -366,8 +366,8 @@
           grid-template-columns: minmax(0, 1fr) minmax(0, 32rem);
         }
         .preloader-mascot {
-          width: 18rem;
-          max-height: 12.5rem;
+          width: 19rem;
+          max-height: 13rem;
         }
         .preloader-cta {
           padding: 1.3rem 2.6rem;
@@ -386,8 +386,8 @@
           grid-template-columns: minmax(0, 1fr);
         }
         .preloader-mascot {
-          width: min(46vw, 16rem);
-          max-height: 11.5rem;
+          width: min(48vw, 17rem);
+          max-height: 12rem;
         }
         .preloader-cta {
           padding: 1.25rem 2.1rem;
@@ -396,7 +396,7 @@
       }
       @media (max-width: 479px) {
         .preloader-mascot {
-          width: min(66vw, 14rem);
+          width: min(68vw, 15rem);
         }
         .preloader-cta {
           width: 100%;
@@ -461,6 +461,24 @@
         line-height: 1;
         letter-spacing: -.03em;
         font-variant-numeric: tabular-nums;
+        transform-origin: left center;
+      }
+      /* Effet de sensibilisation : à chaque palier de 1 000 € franchi par le
+         compteur, la valeur grossit et passe en rouge (la classe est
+         re-ajoutée par le script à chaque nouveau palier). */
+      .climate-counter-value.is-milestone {
+        animation: counter-milestone 1.1s ease-out;
+      }
+      @keyframes counter-milestone {
+        0%   { color: var(--white); transform: scale(1); text-shadow: none; }
+        25%  { color: #ff4d4f; transform: scale(1.16); text-shadow: 0 0 26px rgba(255, 77, 79, .55); }
+        55%  { color: #ff4d4f; transform: scale(1.1); text-shadow: 0 0 20px rgba(255, 77, 79, .4); }
+        100% { color: var(--white); transform: scale(1); text-shadow: none; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .climate-counter-value.is-milestone {
+          animation-duration: .3s;
+        }
       }
       .climate-counter-since {
         color: var(--light-grey);
@@ -795,9 +813,24 @@
   var format = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 });
   var el = document.getElementById('climate-counter-value');
   if (!el) return;
+  /* Nettoie la classe de palier une fois l'animation terminée. */
+  el.addEventListener('animationend', function () {
+    el.classList.remove('is-milestone');
+  });
+  var lastMilestone = 0;
   function render() {
     var seconds = (Date.now() - T0) / 1000;
-    el.textContent = format.format(Math.floor(seconds * RATE)) + ' €';
+    var value = Math.floor(seconds * RATE);
+    el.textContent = format.format(value) + ' €';
+    /* Sensibilisation : à chaque palier de 1 000 € franchi, la valeur
+       grossit et passe en rouge (reflow forcé pour relancer l'animation). */
+    var milestone = Math.floor(value / 1000);
+    if (milestone > lastMilestone) {
+      lastMilestone = milestone;
+      el.classList.remove('is-milestone');
+      void el.offsetWidth; /* force un reflow pour relancer l'animation */
+      el.classList.add('is-milestone');
+    }
   }
   render();
   setInterval(render, TICK_MS);
