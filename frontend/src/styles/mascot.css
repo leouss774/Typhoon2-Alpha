@@ -11,6 +11,28 @@
   gap: 12px;
 }
 
+/* Pendant le préloader de la page d'accueil : la mascotte (PNG transparent)
+   est descendue pour DÉBORDER d'~1,5rem sur la bande presse défilante en
+   bas de l'écran, et grossit un peu. Le panneau de chat, lui, reste au-dessus
+   de la bande. La classe est retirée dès que le préloader est masqué
+   (message postMessage de l'iframe). */
+.mascot-root.mascot-over-press {
+  /* Hauteur de la bande presse dans l'iframe (identique à --press-h). La
+     mascotte est positionnée exactement au-dessus du bord de la bande, sans
+     déborder dessus. */
+  --press-h-mascot: clamp(6.5rem, 18vh, 15rem);
+  bottom: calc(var(--press-h-mascot) - .75rem);
+}
+
+.mascot-root.mascot-over-press .mascot-fab {
+  width: 158px;
+  height: 158px;
+}
+
+.mascot-root.mascot-over-press .mascot-panel {
+  height: min(520px, calc(100vh - var(--press-h-mascot) + 3rem - 190px));
+}
+
 .mascot-trigger {
   display: flex;
   flex-direction: column;
@@ -273,6 +295,16 @@
   .mascot-root {
     right: 12px;
     bottom: 12px;
+  }
+
+  .mascot-root.mascot-over-press {
+    --press-h-mascot: clamp(5rem, 14vh, 11rem);
+    bottom: calc(var(--press-h-mascot) - .5rem);
+  }
+
+  .mascot-root.mascot-over-press .mascot-fab {
+    width: 120px;
+    height: 120px;
   }
 
   .mascot-fab {

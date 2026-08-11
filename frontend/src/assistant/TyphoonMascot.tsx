@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useAssistantContexte } from './AssistantContext';
 import { sendChatMessage, type ChatMessage } from './api';
 import { MarkdownLite } from './MarkdownLite';
@@ -20,6 +21,34 @@ export function TyphoonMascot() {
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
+
+  /* Sur la page d'accueil (préloader), la mascotte flotte AU-DESSUS de la
+     bande presse défilante en bas d'écran. Quand l'iframe du préloader
+     signale que le préloader est masqué (clic sur « Comment anticiper cela
+     ? »), elle redescend à sa position normale (bas droit). */
+  const location = useLocation();
+  const isHome = location.pathname === '/';
+  const [preloaderDone, setPreloaderDone] = useState(false);
+
+  useEffect(() => {
+    function onMessage(event: MessageEvent) {
+      /* Même origine (iframe du préloader) + type attendu uniquement. */
+      if (event.origin === window.location.origin && event.data && event.data.type === 'typhoon:preloader-hidden') {
+        setPreloaderDone(true);
+      }
+    }
+    window.addEventListener('message', onMessage);
+    return () => window.removeEventListener('message', onMessage);
+  }, []);
+
+  /* Retour sur la page d'accueil : le préloader est réaffiché (nouveau
+     chargement de l'iframe), on remonte donc la mascotte au-dessus de la
+     bande presse jusqu'au prochain clic. */
+  useEffect(() => {
+    if (isHome) setPreloaderDone(false);
+  }, [isHome]);
+
+  const overPress = isHome && !preloaderDone;
 
   useEffect(() => {
     if (listRef.current) listRef.current.scrollTop = listRef.current.scrollHeight;
@@ -54,7 +83,7 @@ export function TyphoonMascot() {
   }
 
   return (
-    <div className="mascot-root">
+    <div className={overPress ? 'mascot-root mascot-over-press' : 'mascot-root'}>
       {open && (
         <div className="mascot-panel" role="dialog" aria-label="Compagnon virtuel Typhoon">
           <div className="mascot-panel-header">

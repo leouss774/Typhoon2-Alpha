@@ -204,6 +204,9 @@
            évite le bug de centrage flex (haut inaccessible au scroll) ;
            les navigateurs sans « safe » ignorent la déclaration. */
         align-items: safe center;
+        /* Hauteur de la bande presse : entre 1/8 et 1/4 de l'écran (~18vh),
+           partagée avec le padding bas du contenu (--press-h). */
+        --press-h: clamp(6.5rem, 18vh, 15rem);
         overflow-y: auto;
       }
       /* Fond ambiant non uni : halos bleus diffus qui brisent le fond uni,
@@ -239,9 +242,13 @@
       }
       .preloader-inner {
         flex-flow: column;
-        justify-content: center;
+        justify-content: flex-start;
         align-items: stretch;
-        gap: 3rem;
+        gap: 2.5rem;
+        /* Padding : conserve le 3rem partagé (latéral + haut) et réserve en
+           bas la hauteur de la bande presse (--press-h) pour que la mascotte
+           et le bouton ne soient pas masqués derrière elle. */
+        padding: 3rem 3rem var(--press-h);
         width: 100%;
         height: 100%;
         display: flex;
@@ -252,15 +259,28 @@
         width: 100%;
         display: flex;
       }
-      /* Rangée centrale : phrase à gauche, compteur à droite. */
+      /* Rangée centrale : à gauche la colonne « phrase + mascotte + bouton »
+         (empilés), à droite le compteur. Marge haute : descend la phrase et
+         la mascotte sous le logo (le contenu est aligné en haut). */
       .preloader-mid {
         grid-column-gap: 3rem;
         grid-row-gap: 2rem;
         grid-template-columns: minmax(0, 1fr) minmax(0, 34rem);
         grid-auto-columns: 1fr;
-        align-items: center;
+        align-items: flex-start;
+        margin-top: clamp(2.5rem, 7vh, 5rem);
         width: 100%;
         display: grid;
+      }
+      .preloader-left {
+        flex-flow: column;
+        align-items: flex-start;
+        gap: 2.25rem;
+        /* Descend la phrase + le bouton sous le compteur (la grille garde sa
+           marge : seul le compteur reste en haut). */
+        margin-top: clamp(2.5rem, 6.5vh, 5.5rem);
+        min-width: 0;
+        display: flex;
       }
       .preloader-mid .global-headline-m.is-left-aligned.in-loader {
         /* Le texte s'étend sur toute la largeur de sa colonne (la classe
@@ -269,27 +289,14 @@
         font-size: clamp(1.8rem, 2.5vw, 2.35rem);
         line-height: 1.2;
       }
-      /* Rangée du bas : mascotte à gauche, CTA « Comment anticiper cela ? »
-         juste à côté d'elle. */
+      /* Sous la phrase : mascotte + CTA « Comment anticiper cela ? », à gauche. */
       .preloader-bottom {
-        justify-content: center;
+        justify-content: flex-start;
         align-items: center;
-        gap: 2rem 3rem;
+        gap: 1.75rem 2.5rem;
         width: 100%;
         display: flex;
         flex-wrap: wrap;
-      }
-      .preloader-mascot {
-        object-fit: contain;
-        width: clamp(18rem, 30vw, 28rem);
-        max-width: none;
-        height: auto;
-        max-height: 19rem;
-        flex-shrink: 0;
-        /* L'ombre bleue suit la silhouette PNG (drop-shadow = stacking
-           context, inutile d'ajouter un z-index). */
-        filter: drop-shadow(0 1.25rem 2.5rem rgba(67, 134, 177, .35))
-                drop-shadow(0 .45rem 1rem rgba(67, 134, 177, .28));
       }
       /* Bouton d'entrée : révèle la page d'accueil au clic. */
       .preloader-cta {
@@ -355,7 +362,18 @@
         }
       }
       /* Écrans peu hauts : on compacte pour tenir dans 100vh sans défilement. */
+      /* Tablette (768–991px) : la colonne compteur se réduit pour laisser de
+         la place à la colonne « phrase + mascotte + bouton » à gauche. */
+      @media (max-width: 991px) {
+        .preloader-mid {
+          grid-template-columns: minmax(0, 1fr) minmax(0, 29rem);
+          grid-column-gap: 2rem;
+        }
+      }
       @media (max-height: 850px) {
+        .preloader {
+          --press-h: clamp(5.5rem, 16vh, 12rem);
+        }
         .preloader-inner {
           gap: 1.75rem;
         }
@@ -364,43 +382,148 @@
         }
         .preloader-mid {
           grid-template-columns: minmax(0, 1fr) minmax(0, 32rem);
+          margin-top: 1.5rem;
         }
-        .preloader-mascot {
-          width: 19rem;
-          max-height: 13rem;
+        .preloader-left {
+          gap: 1.5rem;
+          margin-top: 1.5rem;
         }
         .preloader-cta {
-          padding: 1.3rem 2.6rem;
-          font-size: 1.25rem;
+          padding: 1.1rem 2.2rem;
+          font-size: 1.15rem;
+        }
+        .preloader-press {
+          padding: .7rem 0;
+        }
+        .preloader-press-track {
+          min-height: calc(var(--press-h) - 1.4rem);
         }
       }
-      /* Mobile : la phrase passe au-dessus du compteur ; mascotte + CTA
-         restent côte à côte (et s'empilent si besoin). */
+      /* Mobile : phrase + mascotte + CTA au-dessus, compteur en dessous. */
       @media (max-width: 767px) {
+        .preloader {
+          --press-h: clamp(5rem, 14vh, 11rem);
+        }
         .preloader-inner {
           justify-content: flex-start;
           gap: 2rem;
-          padding: 1.5rem;
+          padding: 1.5rem 1.5rem var(--press-h);
         }
         .preloader-mid {
           grid-template-columns: minmax(0, 1fr);
         }
-        .preloader-mascot {
-          width: min(48vw, 17rem);
-          max-height: 12rem;
+        .preloader-left {
+          gap: 1.5rem;
         }
         .preloader-cta {
-          padding: 1.25rem 2.1rem;
-          font-size: 1.2rem;
+          padding: 1.1rem 1.9rem;
+          font-size: 1.1rem;
+        }
+        .preloader-press-item {
+          gap: .35rem;
+          padding: .45rem 1.2rem;
+          font-size: 1rem;
+        }
+        .preloader-press-logo {
+          height: 3.4rem;
+        }
+        .preloader-press-logo img {
+          max-height: 2.4rem;
+          max-width: 9rem;
         }
       }
       @media (max-width: 479px) {
-        .preloader-mascot {
-          width: min(68vw, 15rem);
-        }
         .preloader-cta {
           width: 100%;
           justify-content: center;
+        }
+        .preloader-press-item {
+          font-size: .95rem;
+        }
+      }
+
+      /* ═══ Préloader : bande presse défilante (bas d'écran) ═══
+         Bande bleue fixée en bas du viewport pendant que le préloader est
+         affiché. Les articles (logo + titre) défilent en boucle infinie de
+         droite à gauche ; le défilement s'interrompt au survol / focus.
+         Chaque logo est posé sur une pastille blanche arrondie pour que les
+         logos couleur restent lisibles sur le fond bleu. */
+      .preloader-press {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 5;
+        /* Bande presse noire : les logos (pastilles blanches) et les titres
+           blancs ressortent fortement sur le fond sombre. */
+        background: #0c0c0e;
+        box-shadow: 0 -10px 30px rgba(0, 0, 0, .45);
+        overflow: hidden;
+        min-height: var(--press-h);
+        padding: 1rem 0;
+      }
+      .preloader-press-track {
+        width: max-content;
+        display: flex;
+        align-items: center;
+        min-height: calc(var(--press-h) - 2rem);
+        /* Track agrandi (~2×) : on ralentit pour garder une lecture confortable. */
+        animation: preloader-press-scroll 62s linear infinite;
+      }
+      .preloader-press:hover .preloader-press-track,
+      .preloader-press:focus-within .preloader-press-track {
+        animation-play-state: paused;
+      }
+      @keyframes preloader-press-scroll {
+        to { transform: translateX(-50%); }
+      }
+      .preloader-press-group {
+        display: flex;
+        align-items: center;
+        flex-shrink: 0;
+      }
+      .preloader-press-item {
+        /* Logo au-dessus du titre (empilés), centrés. */
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: .45rem;
+        padding: .5rem 1.6rem;
+        border-right: 1px solid rgba(255, 255, 255, .22);
+        color: #fff;
+        text-align: center;
+        text-decoration: none;
+        white-space: nowrap;
+        font-family: 'Google Sans', 'Neue Montreal', sans-serif;
+        font-size: clamp(1.05rem, 1.6vw, 1.3rem);
+        font-weight: 500;
+        letter-spacing: .01em;
+        display: inline-flex;
+        transition: background .2s ease;
+      }
+      .preloader-press-item:hover,
+      .preloader-press-item:focus-visible {
+        background: rgba(255, 255, 255, .12);
+        outline: none;
+      }
+      .preloader-press-logo {
+        justify-content: center;
+        align-items: center;
+        height: clamp(3.9rem, 5.6vh, 5rem);
+        /* Logos livrés sur fond transparent : on les affiche tels quels sur la
+           bande noire, sans pastille blanche. */
+        display: inline-flex;
+      }
+      .preloader-press-logo img {
+        display: block;
+        max-height: clamp(2.9rem, 4.2vh, 3.6rem);
+        width: auto;
+        max-width: 13rem;
+        object-fit: contain;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .preloader-press-track {
+          animation: none;
         }
       }
 
@@ -798,7 +921,7 @@
   </head>
   <body data-w-id="661550636b9312315bbc1917" class="global-body">
     <script>!function(o,c){var n=c.documentElement,t=" w-mod-";n.className+=t+"js",("ontouchstart"in o||o.DocumentTouch&&c instanceof DocumentTouch)&&(n.className+=t+"touch")}(window,document);</script>
-<div data-w-id="1a765f11-e76b-dc77-f1f8-bbfc09335b89" class="preloader"><div class="preloader-inner"><div class="preloader-head"><img src="vetter-consulting/assets/img/typhoon-wordmark.svg" loading="eager" alt="Typhoon" class="logo in-preloader"/></div><div class="preloader-mid"><div class="global-headline-m is-left-aligned in-loader">Le climat ne pr&eacute;vient pas.<span class="is-white"> La pr&eacute;cision est cl&eacute;. </span><br/>Chaque seconde compte.</div><div class="climate-counter"><div class="climate-counter-head"><div class="climate-counter-label">Coût cumulé des sinistres climatiques en France</div><div class="climate-counter-source">*Moyenne calculée sur 73,4 Md€ / 1989–2019 — France Assureurs</div></div><div class="climate-counter-row"><div class="climate-counter-value" id="climate-counter-value">0&nbsp;€</div><div class="climate-counter-since">depuis que vous lisez cette page</div></div><div class="climate-counter-footnote">Sur la base de la moyenne historique, c'est environ 78€ de sinistres climatiques indemnisés chaque seconde en France — et ce rythme ne cesse d'accélérer.</div></div></div><div class="preloader-bottom"><img src="/mascotte_transparent.png" loading="eager" alt="" class="preloader-mascot"/><button type="button" class="preloader-cta" data-preloader-cta><span>Comment anticiper cela&nbsp;?</span><svg class="cta-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></button></div></div></div><script>
+<div data-w-id="1a765f11-e76b-dc77-f1f8-bbfc09335b89" class="preloader"><div class="preloader-inner"><div class="preloader-head"><img src="vetter-consulting/assets/img/typhoon-wordmark.svg" loading="eager" alt="Typhoon" class="logo in-preloader"/></div><div class="preloader-mid"><div class="preloader-left"><div class="global-headline-m is-left-aligned in-loader">Le climat ne pr&eacute;vient pas.<span class="is-white"> La pr&eacute;cision est cl&eacute;. </span><br/>Chaque seconde compte.</div><div class="preloader-bottom"><button type="button" class="preloader-cta" data-preloader-cta><span>Comment anticiper cela&nbsp;?</span><svg class="cta-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></button></div></div><div class="climate-counter"><div class="climate-counter-head"><div class="climate-counter-label">Coût cumulé des sinistres climatiques en France</div><div class="climate-counter-source">*Moyenne calculée sur 73,4 Md€ / 1989–2019 — France Assureurs</div></div><div class="climate-counter-row"><div class="climate-counter-value" id="climate-counter-value">0&nbsp;€</div><div class="climate-counter-since">depuis que vous lisez cette page</div></div><div class="climate-counter-footnote">Sur la base de la moyenne historique, c'est environ 78€ de sinistres climatiques indemnisés chaque seconde en France — et ce rythme ne cesse d'accélérer.</div></div></div></div><div class="preloader-press" role="region" aria-label="La presse en parle"><div class="preloader-press-track"><div class="preloader-press-group"><a class="preloader-press-item" href="https://edito.seloger.com/conseils-d-experts/assurance-habitation/assurer-bien-devenu-plus-difficile-article-18408.html" target="_blank" rel="noopener"><span class="preloader-press-logo"><img src="/articles/seloger.png" alt="SeLoger"/></span><span>Assurer son bien est-il devenu plus difficile ?</span></a><a class="preloader-press-item" href="https://www.francetransactions.com/actus/assurances/tarifs-2026-assurance-habitation.html" target="_blank" rel="noopener"><span class="preloader-press-logo"><img src="/articles/francetransactions.png" alt="France Transactions"/></span><span>Assurance habitation : explosion des tarifs en 2026, bien au-delà des 7 % à 8 % annoncés fin 2025</span></a><a class="preloader-press-item" href="https://solutions.lesechos.fr/ils-en-parlent/c/l-assurance-habitation-face-aux-risques-climatiques-croissants-enjeux-pour-les-assureurs/" target="_blank" rel="noopener"><span class="preloader-press-logo"><img src="/articles/les_echos.avif" alt="Les Echos"/></span><span>L'assurance habitation face aux risques climatiques croissants : enjeux pour les assureurs</span></a><a class="preloader-press-item" href="https://www.france24.com/fr/%C3%A9missions/%C3%A9l%C3%A9ment-terre-le-reportage/20260327-bient%C3%B4t-une-maison-sur-deux-fissur%C3%A9e-%C3%A0-cause-du-changement-climatique" target="_blank" rel="noopener"><span class="preloader-press-logo"><img src="/articles/France24.png" alt="France 24"/></span><span>Bientôt une maison sur deux fissurée à cause du changement climatique</span></a><a class="preloader-press-item" href="https://www.lexpress.fr/economie/incendies-en-europe-la-facture-economique-du-rechauffement-climatique-senvole-XZBIEQ37B5H6HEQHL4XKFEI26U/" target="_blank" rel="noopener"><span class="preloader-press-logo"><img src="/articles/L’Express.svg.webp" alt="L'Express"/></span><span>Incendies en Europe : la facture du réchauffement climatique s'envole</span></a><a class="preloader-press-item" href="https://www.leparisien.fr/environnement/climat/maisons-fissurees-stations-sans-neige-chaleur-mortelle-comment-le-changement-climatique-chamboule-deja-nos-vies-10-12-2025-GUM64RHCIFEB7HLDJFGIAB2SE4.php" target="_blank" rel="noopener"><span class="preloader-press-logo"><img src="/articles/Le_Parisien.png" alt="Le Parisien"/></span><span>Maisons fissurées, stations sans neige, chaleur mortelle : comment le changement climatique chamboule déjà nos vies</span></a><a class="preloader-press-item" href="https://www.franceinfo.fr/replay-jt/france-2/20-heures/apres-les-inondations-et-les-secheresses-12-millions-de-maisons-individuelles-concernees-par-des-fissures_7868216.html" target="_blank" rel="noopener"><span class="preloader-press-logo"><img src="/articles/France_Info.png" alt="France Info"/></span><span>Après les inondations et les sécheresses, 12 millions de maisons individuelles concernées par des fissures</span></a></div><div class="preloader-press-group" aria-hidden="true"><a class="preloader-press-item" href="https://edito.seloger.com/conseils-d-experts/assurance-habitation/assurer-bien-devenu-plus-difficile-article-18408.html" target="_blank" rel="noopener" tabindex="-1"><span class="preloader-press-logo"><img src="/articles/seloger.png" alt=""/></span><span>Assurer son bien est-il devenu plus difficile ?</span></a><a class="preloader-press-item" href="https://www.francetransactions.com/actus/assurances/tarifs-2026-assurance-habitation.html" target="_blank" rel="noopener" tabindex="-1"><span class="preloader-press-logo"><img src="/articles/francetransactions.png" alt=""/></span><span>Assurance habitation : explosion des tarifs en 2026, bien au-delà des 7 % à 8 % annoncés fin 2025</span></a><a class="preloader-press-item" href="https://solutions.lesechos.fr/ils-en-parlent/c/l-assurance-habitation-face-aux-risques-climatiques-croissants-enjeux-pour-les-assureurs/" target="_blank" rel="noopener" tabindex="-1"><span class="preloader-press-logo"><img src="/articles/les_echos.avif" alt=""/></span><span>L'assurance habitation face aux risques climatiques croissants : enjeux pour les assureurs</span></a><a class="preloader-press-item" href="https://www.france24.com/fr/%C3%A9missions/%C3%A9l%C3%A9ment-terre-le-reportage/20260327-bient%C3%B4t-une-maison-sur-deux-fissur%C3%A9e-%C3%A0-cause-du-changement-climatique" target="_blank" rel="noopener" tabindex="-1"><span class="preloader-press-logo"><img src="/articles/France24.png" alt=""/></span><span>Bientôt une maison sur deux fissurée à cause du changement climatique</span></a><a class="preloader-press-item" href="https://www.lexpress.fr/economie/incendies-en-europe-la-facture-economique-du-rechauffement-climatique-senvole-XZBIEQ37B5H6HEQHL4XKFEI26U/" target="_blank" rel="noopener" tabindex="-1"><span class="preloader-press-logo"><img src="/articles/L’Express.svg.webp" alt=""/></span><span>Incendies en Europe : la facture du réchauffement climatique s'envole</span></a><a class="preloader-press-item" href="https://www.leparisien.fr/environnement/climat/maisons-fissurees-stations-sans-neige-chaleur-mortelle-comment-le-changement-climatique-chamboule-deja-nos-vies-10-12-2025-GUM64RHCIFEB7HLDJFGIAB2SE4.php" target="_blank" rel="noopener" tabindex="-1"><span class="preloader-press-logo"><img src="/articles/Le_Parisien.png" alt=""/></span><span>Maisons fissurées, stations sans neige, chaleur mortelle : comment le changement climatique chamboule déjà nos vies</span></a><a class="preloader-press-item" href="https://www.franceinfo.fr/replay-jt/france-2/20-heures/apres-les-inondations-et-les-secheresses-12-millions-de-maisons-individuelles-concernees-par-des-fissures_7868216.html" target="_blank" rel="noopener" tabindex="-1"><span class="preloader-press-logo"><img src="/articles/France_Info.png" alt=""/></span><span>Après les inondations et les sécheresses, 12 millions de maisons individuelles concernées par des fissures</span></a></div></div></div></div><script>
 /* Compteur climatique : coût cumulé des sinistres climatiques en France.
    Moyenne historique France Assureurs : 73,4 Md€ indemnisés sur 1989–2019,
    soit 30 ans × 365,25 j × 86 400 s = 946 728 000 s → ≈ 77,55 €/s.
@@ -1573,6 +1696,12 @@ requestAnimationFrame(raf)
         window.setTimeout(function () {
           preloader.style.display = 'none';
         }, PRELOADER_FADE_MS);
+        /* Informe la page parente (chatbot flottant) que le préloader est
+           terminé : le compagnon Typhoon redescend alors à sa position
+           normale, sous la bande presse. */
+        if (window.parent !== window) {
+          window.parent.postMessage({ type: 'typhoon:preloader-hidden' }, window.location.origin);
+        }
       }
 
       /* Plus de transition automatique : on entre sur la page d'accueil en
