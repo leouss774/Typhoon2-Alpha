@@ -206,6 +206,37 @@
         align-items: safe center;
         overflow-y: auto;
       }
+      /* Fond ambiant non uni : halos bleus diffus qui brisent le fond uni,
+         avec une respiration très lente, et qui s'intensifient quand on
+         survole (ou focus-clavier) le bouton « Comment anticiper cela ? ».
+         La couche ::before passe derrière le contenu (z-index -1), au-dessus
+         du fond de .preloader. */
+      .preloader::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        z-index: -1;
+        pointer-events: none;
+        background:
+          radial-gradient(640px 460px at 16% 10%, rgba(67, 134, 177, .18), transparent 62%),
+          radial-gradient(760px 560px at 84% 88%, rgba(67, 134, 177, .22), transparent 62%),
+          radial-gradient(520px 400px at 70% 24%, rgba(67, 134, 177, .12), transparent 60%);
+        opacity: .75;
+        transition: opacity .5s ease;
+        animation: preloader-glow-breathe 7s ease-in-out infinite;
+      }
+      @keyframes preloader-glow-breathe {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.04); }
+      }
+      .preloader.glow::before {
+        opacity: 1;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .preloader::before {
+          animation: none;
+        }
+      }
       .preloader-inner {
         flex-flow: column;
         justify-content: center;
@@ -1516,6 +1547,17 @@ requestAnimationFrame(raf)
       var cta = document.querySelector('[data-preloader-cta]');
       if (cta) {
         cta.addEventListener('click', hidePreloader);
+        /* Fond ambiant : les halos bleus s'intensifient au survol du bouton
+           (et à la prise de focus au clavier). */
+        var preloaderEl = document.querySelector('.preloader');
+        if (preloaderEl) {
+          function glowOn() { preloaderEl.classList.add('glow'); }
+          function glowOff() { preloaderEl.classList.remove('glow'); }
+          cta.addEventListener('mouseenter', glowOn);
+          cta.addEventListener('mouseleave', glowOff);
+          cta.addEventListener('focus', glowOn);
+          cta.addEventListener('blur', glowOff);
+        }
       }
     })();
     </script>
