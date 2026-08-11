@@ -1165,14 +1165,7 @@
   height: 100%;
   overflow: hidden;
 }
-<<<<<<< HEAD
-  .zone-workspace[hidden],
-  .zone-empty-step[hidden],
-  .zone-analysis[hidden],
-  .zone-report[hidden] {
-    display: none;
-  }
-=======
+
 .zone-workspace[hidden],
 .zone-analyse[hidden],
 .zone-bim[hidden],
@@ -1180,7 +1173,7 @@
 .zone-report[hidden] {
   display: none;
 }
->>>>>>> origin/develop
+
 
 /* ── Étape Recommandations ─────────────────────────────────────────────── */
 .zone-recommendations {
@@ -3889,134 +3882,7 @@
   }
 }
 
-<<<<<<< HEAD
-/* ── Module économie dans le Rapport IA ── */
-.report-economie {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  padding: 18px 20px;
-  background: var(--md-sys-color-surface-container-low);
-  border: 1px solid var(--md-sys-color-outline-variant);
-  border-radius: 14px;
-}
-.report-economie-header {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-.report-economie-header h3 {
-  margin: 0;
-  font-family: var(--serif);
-  font-size: 16px;
-  color: var(--md-sys-color-primary);
-}
-.report-economie-meta {
-  margin: 0;
-  font-family: var(--mono);
-  font-size: 10px;
-  color: var(--md-sys-color-on-surface-variant);
-}
-.report-economie-loading {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-  padding: 24px 0;
-  font-size: 12px;
-  color: var(--md-sys-color-on-surface-variant);
-}
-.report-economie-loading md-linear-progress {
-  width: 100%;
-  max-width: 320px;
-}
-.report-economie-error {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 12px;
-  background: var(--d03-eleve-bg);
-  border: 1px solid rgba(208, 112, 48, 0.35);
-  border-radius: 10px;
-  font-size: 11px;
-  color: var(--md-sys-color-on-surface);
-}
-.report-economie-error md-icon {
-  font-size: 16px;
-  color: var(--d03-eleve);
-  flex-shrink: 0;
-}
-.report-economie-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 12px;
-}
-.report-economie-kpi {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 14px 16px;
-  background: var(--md-sys-color-surface-container);
-  border: 1px solid var(--md-sys-color-outline-variant);
-  border-radius: 12px;
-  transition: border-color 0.18s, transform 0.18s;
-}
-.report-economie-kpi:hover {
-  border-color: var(--md-sys-color-primary);
-  transform: translateY(-2px);
-}
-.report-economie-kpi-label {
-  font-size: 9.5px;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--md-sys-color-on-surface-variant);
-}
-.report-economie-kpi-value {
-  font-family: var(--serif);
-  font-size: 22px;
-  font-weight: 600;
-  color: var(--md-sys-color-on-surface);
-  line-height: 1.2;
-}
-.report-economie-kpi-sub {
-  font-size: 10px;
-  color: var(--md-sys-color-on-surface-variant);
-}
-.report-economie-kpi-accent {
-  background: color-mix(in srgb, var(--md-sys-color-primary-container) 40%, var(--md-sys-color-surface-container));
-  border-color: var(--md-sys-color-primary);
-}
-.report-economie-kpi-accent .report-economie-kpi-value {
-  color: var(--md-sys-color-primary);
-}
-.report-economie-cta {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 12px 20px;
-  background: var(--md-sys-color-primary-container);
-  color: var(--md-sys-color-on-primary-container);
-  border: 1px solid var(--md-sys-color-primary);
-  border-radius: 999px;
-  font-family: inherit;
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.18s;
-  align-self: flex-start;
-}
-.report-economie-cta:hover {
-  background: var(--md-sys-color-primary);
-  color: var(--md-sys-color-on-primary);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-}
-.report-economie-cta md-icon {
-  font-size: 18px;
-}
-
-/* ============================================================================
+/* =========================================================================
    ÉTAPE 3 — ANALYSE (risques industriels & technologiques)
    ============================================================================ */
 
@@ -4677,7 +4543,6 @@
   color: var(--md-sys-color-primary);
   font-weight: 600;
 }
-=======
 /* ===========================================================================
    ZONE — Étape Recommandations · accordéon « Trouver des artisans »
    Composant ZoneArtisans (frontend/src/components/ZoneArtisans.tsx).
@@ -4778,4 +4643,4 @@
 .zone-artisans-group-notice { margin: 14px 0 0; color: var(--md-sys-color-on-surface-variant); font-size: 10px; line-height: 1.45; }.zone-artisans-company-head span.pending { color: var(--md-sys-color-on-surface-variant); }
 @media (max-width: 700px) { .zone-artisans-view { width: min(100% - 28px, 1120px); padding-top: 20px; }.zone-artisans-hero, .zone-artisans-brief { align-items: stretch; flex-direction: column; padding: 20px; }.zone-artisans-hero h2 { font-size: 24px; }.zone-artisans-hero-stat { width: fit-content; }.zone-artisans-search { width: 100%; }.zone-artisans-results > header { align-items: flex-start; flex-direction: column; } }
 .zone-artisans-company-head .zone-artisans-company-avatar { display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; width: 42px; height: 42px; flex: 0 0 auto; margin-left: 10px; border-radius: 50%; background: var(--md-sys-color-secondary-container); color: var(--md-sys-color-on-secondary-container); font-size: 13px; font-weight: 700; letter-spacing: .03em; user-select: none; }.zone-artisans-company-head .zone-artisans-company-avatar img.zone-artisans-company-logo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
->>>>>>> origin/develop
+

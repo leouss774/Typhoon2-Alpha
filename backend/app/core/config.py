@@ -26,21 +26,14 @@ ROOT_DIR = BASE_DIR.parent
 
 
 class Settings(BaseSettings):
-<<<<<<< HEAD
-    # Chemin absolu : la configuration reste identique que Uvicorn soit lancé
-    # depuis la racine du dépôt ou depuis le dossier backend.
-    # Le .env est dans backend/.env (pas à la racine du dépôt).
-    model_config = SettingsConfigDict(env_file=BASE_DIR / ".env", extra="ignore")
-=======
-    # Chemins absolus : la configuration reste identique que Uvicorn soit lancé
-    # depuis la racine du dépôt ou depuis le dossier backend. Deux .env sont
-    # lus — backend/.env puis <racine>/.env, le dernier ayant priorité : les
+    # Chemins absolus : la configuration reste identique que Uvicorn soit lanc├®
+    # depuis la racine du d├®p├┤t ou depuis le dossier backend. Deux .env sont
+    # lus ÔÇö backend/.env puis <racine>/.env, le dernier ayant priorit├® : les
     # postes qui ne renseignent que backend/.env (cas courant) fonctionnent,
-    # sans changer la précédence documentée du .env racine.
+    # sans changer la pr├®c├®dence document├®e du .env racine.
     model_config = SettingsConfigDict(
         env_file=(BASE_DIR / ".env", ROOT_DIR / ".env"), extra="ignore"
     )
->>>>>>> origin/develop
 
     # BDNB (aucune cle necessaire, confirme par un test reel - voir le guide)
     bdnb_api_key: str | None = None
@@ -79,7 +72,7 @@ class Settings(BaseSettings):
     dvf_enabled: bool = False
     dvf_lookup_dir: str = str(BASE_DIR / "data" / "lookup" / "dvf")
 
-    # Mistral (agent recommandations — RAG travaux, cf.
+    # Mistral (agent recommandations ÔÇö RAG travaux, cf.
     # app/recommandations/ et backend/recommendation_travaux-main/)
     mistral_api_key: str | None = None
 
@@ -92,7 +85,7 @@ class Settings(BaseSettings):
     # code entierement plutot que juste desactive.
 
     # Divers
-    http_timeout_seconds: float = 30.0  # Augmenté pour éviter les timeouts sur les services lents
+    http_timeout_seconds: float = 15.0
 
 
 settings = Settings()

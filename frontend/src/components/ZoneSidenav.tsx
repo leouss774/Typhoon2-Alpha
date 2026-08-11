@@ -162,6 +162,10 @@ export function ZoneSidenav({
               <md-icon slot="start">home</md-icon>
               <span slot="headline">Accueil</span>
             </md-list-item>
+            <md-list-item type="button" onClick={() => navGo('/usine')}>
+              <md-icon slot="start">factory</md-icon>
+              <span slot="headline">Analyse Usine</span>
+            </md-list-item>
             <md-list-item type="button" onClick={() => navGo('/faq')}>
               <md-icon slot="start">help</md-icon>
               <span slot="headline">FAQ</span>

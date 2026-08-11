@@ -1,0 +1,6 @@
+14:46:10  INFO    app.recommandations.service       recommandations -- index charge (876 fiches, 0.20s)
+14:46:10  INFO    app.property_id.service           property_id.service — initialisé : compteur=0, 0 Property ID(s) chargés
+14:46:10  INFO    app.main                          Typhoon API demarree — routes : POST /diagnostic, GET /health, POST /api/v1/artisans/matching, POST /property-id/generate, GET /property-id/{id}
+15:00:51  INFO    app.api.routes.usine              POST /diagnostic/usine  adresse=None
+15:00:51  INFO    app.scoring.plan_usine            plan_usine -- enrichissement avec 2 zone(s) et 2 équipement(s) pour 'Usine de test'
+15:00:51  INFO    app.api.routes.usine              diagnostic/usine OK en 0.00s

@@ -10,13 +10,15 @@
   },
   "dependencies": {
     "@material/web": "^2.2.0",
+    "@react-three/drei": "^10.7.8",
+    "@react-three/fiber": "^9.7.0",
     "cesium": "^1.144.0",
     "jspdf": "^4.2.1",
     "ol": "^10.10.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-router-dom": "^7.0.0",
-    "three": "^0.128.0"
+    "three": "^0.160.0"
   },
   "devDependencies": {
     "@types/react": "^19.0.0",

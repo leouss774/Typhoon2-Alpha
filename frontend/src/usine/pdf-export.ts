@@ -1,0 +1,448 @@
+// =============================================================================
+//   TYPHOON — /usine : export PDF du rapport d'analyse de plan d'usine (jsPDF)
+//   Génère un PDF A4 « façon product » sans aucun appel réseau :
+//     · bande d'en-tête de marque (logo Typhoon, liseré accent)
+//     · métadonnées du site + aléa Géorisques (si renseigné)
+//     · score de risque global (jauge + bande D03)
+//     · tableau des zones (vulnérabilité · risque · niveau)
+//     · tableau des équipements sensibles (zone · valeur · danger · risque)
+//     · enveloppe budgétaire des recommandations
+//     · pied de page paginé (sources, page X/Y)
+// =============================================================================
+
+import { jsPDF } from 'jspdf';
+import { bandForScore, type AnalyseUsine, type Equipement, type ZonePlan } from './types';
+
+/* ── Palette PDF (alignée sur la marque Typhoon) ── */
+const NAVY = '#0C2233';
+const NAVY_LIGHT = '#16374F';
+const ACCENT = '#4386B1';
+const INK = '#1A2733';
+const MUTED = '#5B6B7A';
+const LINE = '#C9D6E0';
+const TINT = '#EDF4F9';
+const ROW_ALT = '#F6FAFD';
+const WARN_TINT = '#FBF6EA';
+const WARN_INK = '#8A6D1F';
+const WHITE_60 = '#B9CCDA';
+
+const PAGE_W = 210;
+const PAGE_H = 297;
+const M = 16;
+const CW = PAGE_W - 2 * M;
+const FOOTER_TOP = PAGE_H - 12;
+const SAFE_BOTTOM = PAGE_H - 16;
+
+/* Logo Typhoon (blanc, fond transparent) encodé en dur pour un export 100 %
+   hors-ligne. viewBox 766.43 × 140.93 (aspect ≈ 5.438). */
+const TYPHOON_WORDMARK_SVG = `<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_2" data-name="Layer 2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 766.43 140.93">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: #fff;
+      }
+    </style>
+  </defs>
+  <g id="Layer_1-2" data-name="Layer 1">
+    <g>
+      <g>
+        <path class="cls-1" d="M4.13,95.28c.44-.96,1.78-.96,2.26-.02,3.78,7.5,11.49,12.97,19.38,15.37,31.98,9.71,85.44-16.17,104.32-42.5,7.24-10.1,12.74-24.32-2.11-30.37-.06-.02-.11-.04-.17-.06l-.9-.24c-1.39-.37-1.17-2.4.27-2.46,10.63-.41,23.48.57,28.55,9.56,8.54,15.15-10.87,38.18-21.37,48.13-22.35,21.17-56.43,37.62-87,41.77-20.21,2.74-50.95.26-47.01-27.69.12-.85,2.21-8.02,3.79-11.5Z"/>
+        <path class="cls-1" d="M96.93,138.58l9.11-5.31s.04-.02.06-.04c21.48-14.09,60.76-48.23,63.77-74.87,1.66-14.67-7.14-25.8-21.25-29-23.79-5.39-52.46,7.23-70,22.94-.37.08-.34-.52-.24-.73.19-.42,5.35-5.86,6.19-6.69,14.47-14.33,36.02-24.41,56.11-27.59,60.67-9.62,75.65,34.69,38.23,76.86-20.45,23.05-50.8,39.64-81.07,46.73-1.4.33-2.15-1.58-.91-2.3Z"/>
+        <path class="cls-1" d="M69.22,78.57c-2.46-.21-6.29-.93-8.65-1.75-19.68-6.91-.25-28.36,8.39-36.14,16.85-15.19,42.68-27.8,64.4-34.17,26.54-7.78,77.23-15.9,79.66,22.56.08,1.23-1.45,1.83-2.22.87-2.91-3.65-6.17-6.82-10.23-9.41-34.56-22.08-94.81-2.61-122.69,23.62-7.5,7.06-19.02,20.82-9.3,30.33.09.09.2.17.32.23l3.04,1.57c1.16.6.75,2.35-.56,2.36-.73.01-1.45,0-2.16-.06Z"/>
+        <path class="cls-1" d="M87.54,70.16c.91,3.59.96,4.74,4.9,4.39,5.85-.52,31.46-15.51,31.46-15.51,1.53-1.19,1.93-3.33.96-5.01-11.21-19.54-43.3-7.44-37.32,16.13Z"/>
+        <path class="cls-1" d="M76.99,85.86c-14.01,2.79-36.37,1.89-32.17-18.3,4.27-20.56,37.32-41.86,54.84-51.15l12.93-6.27c.49-.24.2-.98-.32-.82-30.34,9.5-63.34,27.62-80.66,54.45-20.11,31.15.48,45.25,31.92,38.85,18.27-3.71,38.59-15.91,51.01-29.72,1.11-1.24,4.61-5.71,6.8-8.57.3-.39-.18-.91-.59-.63,0,0-31.45,19.71-43.76,22.16Z"/>
+      </g>
+      <g>
+        <path class="cls-1" d="M279.38,26.5v80.89c0,1.04-.84,1.88-1.88,1.88h-16.6c-1.04,0-1.88-.84-1.88-1.88V26.5c0-1.04-.84-1.88-1.88-1.88h-29.05c-1.04,0-1.88-.84-1.88-1.88V7.32c0-1.04.84-1.88,1.88-1.88h82.21c1.04,0,1.88.84,1.88,1.88v15.43c0,1.04-.84,1.88-1.88,1.88h-29.05c-1.04,0-1.88.84-1.88,1.88Z"/>
+        <path class="cls-1" d="M314.55,135.03l15.42-34.04c.23-.51.22-1.09-.02-1.59l-28.91-59.48c-.61-1.25.3-2.7,1.69-2.7h17.61c.74,0,1.4.43,1.71,1.1l16.91,37.17c.68,1.49,2.8,1.46,3.44-.05l15.57-37.07c.29-.7.97-1.15,1.73-1.15h16.64c1.36,0,2.27,1.41,1.71,2.65l-43.56,96.7c-.3.67-.97,1.11-1.71,1.11h-16.52c-1.36,0-2.27-1.41-1.71-2.65Z"/>
+        <path class="cls-1" d="M383.79,135.22V39.1c0-1.04.84-1.88,1.88-1.88h15.14c1.04,0,1.88.84,1.88,1.88v1.72c0,1.62,1.92,2.49,3.12,1.4,1.4-1.28,3.1-2.46,5.08-3.53,3.81-2.05,8.44-3.07,13.91-3.07s9.96.95,14.06,2.85c4.1,1.9,7.59,4.54,10.47,7.91,2.88,3.37,5.05,7.32,6.52,11.86,1.46,4.54,2.2,9.49,2.2,14.86s-.81,10.52-2.42,15.16c-1.61,4.64-3.91,8.64-6.88,12.01-2.98,3.37-6.57,6-10.76,7.91-4.2,1.9-8.84,2.85-13.91,2.85s-9.25-.86-12.81-2.56c-1.89-.91-3.53-1.92-4.91-3.03-1.24-1-3.07-.15-3.07,1.44v28.34c0,1.04-.84,1.88-1.88,1.88h-15.72c-1.04,0-1.88-.84-1.88-1.88ZM438.85,73.24c0-6.44-1.73-11.42-5.2-14.94-3.47-3.51-7.69-5.27-12.67-5.27-2.54,0-4.88.46-7.03,1.39-2.15.93-4.05,2.25-5.71,3.95-1.66,1.71-2.95,3.81-3.88,6.3-.93,2.49-1.39,5.34-1.39,8.57s.46,6.08,1.39,8.57c.93,2.49,2.22,4.61,3.88,6.37,1.66,1.76,3.56,3.1,5.71,4.03,2.61,1.13,5.51,1.57,8.7,1.33,1.76-.13,3.5-.57,5.12-1.28,7.38-3.27,11.07-9.6,11.07-19.01Z"/>
+        <path class="cls-1" d="M483.68,109.27h-15.72c-1.04,0-1.88-.84-1.88-1.88V5.12c0-1.04.84-1.88,1.88-1.88h15.72c1.04,0,1.88.84,1.88,1.88v33.68c0,1.54,1.77,2.46,2.98,1.51,1.74-1.36,3.72-2.42,5.95-3.17,3.61-1.22,7.12-1.83,10.54-1.83,4.59,0,8.57.76,11.93,2.27,3.37,1.51,6.15,3.54,8.35,6.08,2.2,2.54,3.83,5.56,4.91,9.08,1.07,3.51,1.61,7.23,1.61,11.13v43.52c0,1.04-.84,1.88-1.88,1.88h-15.72c-1.04,0-1.88-.84-1.88-1.88v-40.15c0-4.1-1.05-7.52-3.15-10.25-2.1-2.73-5.49-4.1-10.18-4.1-4.1,0-7.32,1.34-9.67,4.03-2.34,2.69-3.61,6.03-3.81,10.03v40.44c0,1.04-.84,1.88-1.88,1.88Z"/>
+        <path class="cls-1" d="M576.64,35.02c5.37,0,10.37.95,15.01,2.86,4.64,1.9,8.64,4.54,12.01,7.91,3.37,3.37,6,7.39,7.91,12.08,1.9,4.69,2.86,9.81,2.86,15.38s-.95,10.67-2.86,15.3c-1.9,4.64-4.54,8.66-7.91,12.08-3.37,3.42-7.37,6.08-12.01,7.98-4.64,1.9-9.64,2.86-15.01,2.86s-10.37-.95-15.01-2.86c-4.64-1.9-8.64-4.56-12.01-7.98-3.37-3.42-6-7.44-7.91-12.08-1.9-4.64-2.86-9.74-2.86-15.3s.95-10.69,2.86-15.38c1.9-4.69,4.54-8.71,7.91-12.08,3.37-3.37,7.37-6.01,12.01-7.91,4.64-1.9,9.64-2.86,15.01-2.86ZM576.64,93.75c2.34,0,4.64-.44,6.88-1.32,2.24-.88,4.2-2.17,5.86-3.88,1.66-1.71,3-3.83,4.03-6.37,1.03-2.54,1.54-5.51,1.54-8.93s-.51-6.39-1.54-8.93c-1.02-2.54-2.37-4.66-4.03-6.37-1.66-1.71-3.61-3-5.86-3.88-2.25-.88-4.54-1.32-6.88-1.32s-4.64.44-6.88,1.32c-2.25.88-4.2,2.17-5.86,3.88-1.66,1.71-3,3.83-4.03,6.37-1.03,2.54-1.54,5.52-1.54,8.93s.51,6.4,1.54,8.93c1.02,2.54,2.37,4.66,4.03,6.37,1.66,1.71,3.61,3,5.86,3.88,2.24.88,4.54,1.32,6.88,1.32Z"/>
+        <path class="cls-1" d="M654.84,35.02c5.37,0,10.37.95,15.01,2.86,4.64,1.9,8.64,4.54,12.01,7.91s6,7.39,7.91,12.08c1.9,4.69,2.86,9.81,2.86,15.38s-.95,10.67-2.86,15.3c-1.9,4.64-4.54,8.66-7.91,12.08-3.37,3.42-7.37,6.08-12.01,7.98-4.64,1.9-9.64,2.86-15.01,2.86s-10.37-.95-15.01-2.86c-4.64-1.9-8.64-4.56-12.01-7.98-3.37-3.42-6-7.44-7.91-12.08-1.9-4.64-2.86-9.74-2.86-15.3s.95-10.69,2.86-15.38c1.9-4.69,4.54-8.71,7.91-12.08,3.37-3.37,7.37-6.01,12.01-7.91,4.64-1.9,9.64-2.86,15.01-2.86ZM654.84,93.75c2.34,0,4.64-.44,6.88-1.32,2.24-.88,4.2-2.17,5.86-3.88,1.66-1.71,3-3.83,4.03-6.37,1.03-2.54,1.54-5.51,1.54-8.93s-.51-6.39-1.54-8.93c-1.02-2.54-2.37-4.66-4.03-6.37-1.66-1.71-3.61-3-5.86-3.88-2.25-.88-4.54-1.32-6.88-1.32s-4.64.44-6.88,1.32c-2.25.88-4.2,2.17-5.86,3.88-1.66,1.71-3,3.83-4.03,6.37-1.03,2.54-1.54,5.52-1.54,8.93s.51,6.4,1.54,8.93c1.02,2.54,2.37,4.66,4.03,6.37,1.66,1.71,3.61,3,5.86,3.88,2.24.88,4.54,1.32,6.88,1.32Z"/>
+        <path class="cls-1" d="M718.28,109.27h-15.72c-1.04,0-1.88-.84-1.88-1.88V39.1c0-1.04.84-1.88,1.88-1.88h15.14c1.04,0,1.88.84,1.88,1.88v1.64c0,1.68,2.02,2.49,3.22,1.3,1.7-1.69,3.68-3.06,5.94-4.08,3.86-1.76,7.73-2.64,11.64-2.64,4.49,0,8.37.76,11.64,2.27,3.27,1.51,5.98,3.54,8.13,6.08,2.15,2.54,3.73,5.56,4.76,9.08,1.02,3.51,1.54,7.23,1.54,11.13v43.52c0,1.04-.84,1.88-1.88,1.88h-15.72c-1.04,0-1.88-.84-1.88-1.88v-40.15c0-4.1-1.05-7.52-3.15-10.25-2.1-2.73-5.49-4.1-10.18-4.1-4.3,0-7.61,1.44-9.96,4.32-2.34,2.88-3.51,6.42-3.51,10.62v39.57c0,1.04-.84,1.88-1.88,1.88Z"/>
+      </g>
+    </g>
+  </g>
+</svg>`;
+
+/** Rasterise un SVG (blob local) en PNG data-URL via canvas — nécessaire pour
+    que jsPDF puisse embarquer le logo (il ne lit pas les SVG). */
+async function svgToPngDataUrl(svg: string, aspect: number): Promise<string | null> {
+  try {
+    const blob = new Blob([svg], { type: 'image/svg+xml;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const img = new Image();
+    await new Promise<void>((resolve, reject) => {
+      img.onload = () => resolve();
+      img.onerror = () => reject(new Error('svg load'));
+      img.src = url;
+    });
+    const w = 900;
+    const h = Math.round(w / aspect);
+    const canvas = document.createElement('canvas');
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) throw new Error('no canvas 2d context');
+    ctx.drawImage(img, 0, 0, w, h);
+    URL.revokeObjectURL(url);
+    return canvas.toDataURL('image/png');
+  } catch {
+    return null;
+  }
+}
+
+/* Nettoyage des caractères hors encodage WinAnsi (les polices standards jsPDF
+   ne dessinent pas les flèches, ≥, ✓…) — on les remplace sans les inventer. */
+function sanitizePdfText(input: string): string {
+  return String(input ?? '')
+    .replace(/\*\*/g, '')
+    .replace(/→/g, ' — ')
+    .replace(/←/g, ' — ')
+    .replace(/[⇒⇔↔↑↓]/g, ' ')
+    .replace(/≥/g, '>= ')
+    .replace(/≤/g, '<= ')
+    .replace(/⚠️|⚠/g, '')
+    .replace(/✅/g, '')
+    .replace(/❌/g, '')
+    .trim();
+}
+
+export async function exportRapportUsinePdf(analyse: AnalyseUsine): Promise<void> {
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4', compress: true });
+  const wordmark = await svgToPngDataUrl(TYPHOON_WORDMARK_SVG, 766.43 / 140.93);
+
+  let y = 0;
+
+  /* ── Helpers de mise en page (mutent `y` partagé) ── */
+  const ensureSpace = (h: number) => {
+    if (y + h > SAFE_BOTTOM) {
+      doc.addPage();
+      y = 18;
+    }
+  };
+
+  const sectionTitle = (title: string) => {
+    ensureSpace(10);
+    doc.setFillColor(ACCENT);
+    doc.rect(M, y - 3.4, 1.7, 5.6, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(12.5);
+    doc.setTextColor(NAVY);
+    doc.text(title, M + 4.6, y);
+    y += 5.6;
+  };
+
+  const paragraph = (text: string, size = 10, lineH = 4.9, color = INK, style: 'normal' | 'italic' = 'normal') => {
+    doc.setFont('helvetica', style);
+    doc.setFontSize(size);
+    doc.setTextColor(color);
+    const lines = doc.splitTextToSize(sanitizePdfText(text), CW);
+    for (const ln of lines) {
+      if (y > SAFE_BOTTOM) {
+        doc.addPage();
+        y = 18;
+      }
+      doc.text(ln, M, y);
+      y += lineH;
+    }
+  };
+
+  /* ══ Bande d'en-tête de marque ══ */
+  doc.setFillColor(NAVY);
+  doc.rect(0, 0, PAGE_W, 46, 'F');
+  doc.setFillColor(NAVY_LIGHT);
+  doc.rect(0, 0, PAGE_W, 3, 'F');
+  doc.setFillColor(ACCENT);
+  doc.rect(0, 46, PAGE_W, 2.2, 'F');
+
+  if (wordmark) {
+    doc.addImage(wordmark, 'PNG', M, 15, 52, 52 / (766.43 / 140.93));
+  } else {
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(24);
+    doc.setTextColor('#FFFFFF');
+    doc.text('TYPHOON', M, 23);
+  }
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(15);
+  doc.setTextColor('#FFFFFF');
+  doc.text('Rapport d\u0027analyse de plan d\u0027usine', PAGE_W - M, 17, { align: 'right' });
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8.5);
+  doc.setTextColor(WHITE_60);
+  doc.text('Résilience industrielle · Risk engine F × V', PAGE_W - M, 23, { align: 'right' });
+
+  y = 56;
+
+  /* ══ Métadonnées du site ══ */
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(15.5);
+  doc.setTextColor(NAVY);
+  const nameLines = doc.splitTextToSize(sanitizePdfText(analyse.nom_usine || 'Site industriel'), CW);
+  doc.text(nameLines, M, y);
+  y += nameLines.length * 6.4;
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9);
+  doc.setTextColor(MUTED);
+  const metaBits = [
+    `${analyse.nb_zones} zones`,
+    `${analyse.nb_equipements} équipements`,
+    analyse.aleas_site?.libelle ? `Aléa site : ${analyse.aleas_site.libelle}` : 'Aléa site : neutre (F = 50)',
+    `Confiance ${analyse.confiance.niveau} (${analyse.confiance.score}/100)`,
+  ];
+  doc.text(metaBits.join('  ·  '), M, y);
+  y += 7;
+
+  /* ══ Score global + bande D03 ══ */
+  const band = bandForScore(analyse.score_global);
+  ensureSpace(26);
+  doc.setFillColor(TINT);
+  doc.roundedRect(M, y - 1, CW, 24, 2.5, 2.5, 'F');
+  doc.setFillColor(ACCENT);
+  doc.rect(M, y - 1, 2.2, 24, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(30);
+  doc.setTextColor(band.color);
+  doc.text(`${analyse.score_global}/100`, M + 8, y + 16);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10);
+  doc.setTextColor(INK);
+  doc.text('Score de risque global — résilience du site', M + 8, y + 6);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(11);
+  doc.setTextColor(band.color);
+  doc.text(band.label.toUpperCase(), PAGE_W - M - 4, y + 13, { align: 'right' });
+  y += 27;
+
+  /* ══ Tableau des zones ══ */
+  sectionTitle('Risque par zone');
+  const zoneCols = [
+    { title: 'Zone', w: 68 },
+    { title: 'Type', w: 52 },
+    { title: 'Surface', w: 30 },
+    { title: 'Vuln.', w: 20 },
+    { title: 'Risque', w: 18 },
+  ];
+  const zoneRows = [...analyse.zones].sort((a, b) => (b.risque ?? 0) - (a.risque ?? 0));
+  drawTable(doc, { ensureSpace, M, CW, y: () => y, setY: (ny) => (y = ny) }, zoneCols, zoneRows.length, (i) => {
+    const z = zoneRows[i];
+    const zb = bandForScore(z.risque);
+    return {
+      cells: [
+        sanitizePdfText(z.nom || '—'),
+        sanitizePdfText(typeZone(z.type)),
+        typeof z.surface_m2 === 'number' ? `${Math.round(z.surface_m2).toLocaleString('fr-FR')} m²` : '—',
+        z.vulnerabilite != null ? String(z.vulnerabilite) : '—',
+        z.risque != null ? String(z.risque) : '—',
+      ],
+      scoreColor: zb.color,
+    };
+  });
+  y += 5;
+
+  /* ══ Tableau des équipements ══ */
+  sectionTitle('Équipements sensibles');
+  const eqCols = [
+    { title: 'Équipement', w: 58 },
+    { title: 'Zone', w: 44 },
+    { title: 'Type', w: 34 },
+    { title: 'Valeur', w: 28 },
+    { title: 'Danger', w: 12 },
+    { title: 'Risque', w: 12 },
+  ];
+  const eqRows = [...analyse.equipements].sort((a, b) => (b.risque ?? 0) - (a.risque ?? 0));
+  drawTable(doc, { ensureSpace, M, CW, y: () => y, setY: (ny) => (y = ny) }, eqCols, eqRows.length, (i) => {
+    const e = eqRows[i];
+    const eb = bandForScore(e.risque);
+    return {
+      cells: [
+        sanitizePdfText(e.nom || '—'),
+        sanitizePdfText(e.zone || '—'),
+        sanitizePdfText(typeEquip(e.type)),
+        typeof e.valeur_remplacement_eur === 'number'
+          ? `${Math.round(e.valeur_remplacement_eur).toLocaleString('fr-FR')} €`
+          : '—',
+        e.matieres_dangereuses ? 'OUI' : '—',
+        e.risque != null ? String(e.risque) : '—',
+      ],
+      scoreColor: eb.color,
+    };
+  });
+  y += 5;
+
+  /* ══ Points de vigilance ══ */
+  const criticalZones = analyse.zones.filter((z) => (z.risque ?? 0) >= 60);
+  const dangereux = analyse.equipements.filter((e) => e.matieres_dangereuses);
+  if (criticalZones.length > 0 || dangereux.length > 0) {
+    sectionTitle('Points de vigilance');
+    const points: string[] = [];
+    if (criticalZones.length > 0) {
+      points.push(`${criticalZones.length} zone(s) à risque élevé ou critique : ${criticalZones.map((z) => z.nom).join(', ')}.`);
+    }
+    if (dangereux.length > 0) {
+      points.push(`${dangereux.length} équipement(s) impliquant des matières dangereuses.`);
+    }
+    points.forEach((p) => {
+      ensureSpace(8);
+      doc.setFillColor(bandForScore(60).color);
+      doc.circle(M + 1.4, y - 1.8, 0.9, 'F');
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10);
+      doc.setTextColor(INK);
+      const lines = doc.splitTextToSize(p, CW - 6);
+      let ly = y;
+      for (const ln of lines) {
+        doc.text(ln, M + 5, ly);
+        ly += 4.8;
+      }
+      y = ly + 1.5;
+    });
+    y += 2;
+  }
+
+  /* ══ Avertissement ══ */
+  const avert =
+    "Ce rapport est généré automatiquement par le risk engine Typhoon à partir du plan importé et des attributs de zones/équipements. Il ne remplace pas une étude d'ingénierie, une analyse ICPE réglementaire ni l'avis d'un expert en risques industriels.";
+  const warnLines = doc.splitTextToSize(sanitizePdfText(avert), CW - 8);
+  const boxH = warnLines.length * 3.8 + 11;
+  ensureSpace(boxH);
+  doc.setFillColor(WARN_TINT);
+  doc.roundedRect(M, y - 1, CW, boxH, 2, 2, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8.5);
+  doc.setTextColor(WARN_INK);
+  doc.text('Avertissement', M + 4, y + 3.6);
+  doc.setFont('helvetica', 'italic');
+  doc.setFontSize(8);
+  doc.setTextColor(MUTED);
+  let wy = y + 7;
+  for (const ln of warnLines) {
+    doc.text(ln, M + 4, wy);
+    wy += 3.8;
+  }
+  y = wy + 5;
+
+  /* ══ Pied de page (toutes pages) ══ */
+  const total = doc.getNumberOfPages();
+  for (let i = 1; i <= total; i++) {
+    doc.setPage(i);
+    doc.setDrawColor(LINE);
+    doc.setLineWidth(0.3);
+    doc.line(M, FOOTER_TOP, PAGE_W - M, FOOTER_TOP);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor(MUTED);
+    doc.text('Généré par Typhoon · Risk engine F × V · Analyse de plan d\u0027usine', M, FOOTER_TOP + 5);
+    doc.text(`Page ${i} / ${total}`, PAGE_W - M, FOOTER_TOP + 5, { align: 'right' });
+  }
+
+  const datePart = new Date().toISOString().slice(0, 10);
+  doc.save(`rapport_usine_typhoon_${slug(analyse.nom_usine)}_${datePart}.pdf`);
+}
+
+/* ─────────── Tableau générique (en-tête + lignes zébrées) ─────────── */
+
+function drawTable(
+  doc: jsPDF,
+  ctx: { ensureSpace: (h: number) => void; M: number; CW: number; y: () => number; setY: (ny: number) => void },
+  cols: { title: string; w: number }[],
+  rowCount: number,
+  row: (i: number) => { cells: string[]; scoreColor?: string }
+) {
+  const headerH = 7;
+  const rowH = 6.4;
+  const x0 = ctx.M;
+  ctx.ensureSpace(headerH + 6);
+  let y = ctx.y();
+
+  /* En-tête */
+  doc.setFillColor(NAVY);
+  doc.rect(x0, y - 4.4, ctx.CW, headerH, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8.2);
+  doc.setTextColor('#FFFFFF');
+  let hx = x0 + 2;
+  cols.forEach((c) => {
+    doc.text(c.title, hx, y - 0.6);
+    hx += c.w;
+  });
+  y += headerH;
+
+  /* Lignes */
+  for (let i = 0; i < rowCount; i++) {
+    ctx.ensureSpace(rowH + 2);
+    if (i > 0) y = ctx.y();
+    if (i % 2 === 1) {
+      doc.setFillColor(ROW_ALT);
+      doc.rect(x0, y - 4.4, ctx.CW, rowH, 'F');
+    }
+    const r = row(i);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8.4);
+    doc.setTextColor(INK);
+    let cx = x0 + 2;
+    r.cells.forEach((cell, ci) => {
+      const isScore = ci === r.cells.length - 1;
+      if (isScore && r.scoreColor) doc.setTextColor(r.scoreColor);
+      doc.text(cell, cx, y - 0.4);
+      if (isScore) doc.setTextColor(INK);
+      cx += cols[ci].w;
+    });
+    y += rowH;
+    ctx.setY(y);
+  }
+  y = ctx.y();
+  doc.setDrawColor(LINE);
+  doc.setLineWidth(0.3);
+  doc.line(x0, y - 4.4 + rowH, x0 + ctx.CW, y - 4.4 + rowH);
+}
+
+/* ─────────── Helpers ─────────── */
+
+function typeZone(type: string): string {
+  const map: Record<string, string> = {
+    production: 'Production',
+    stockage: 'Stockage',
+    bureaux: 'Bureaux',
+    cuves: 'Cuves / réservoirs',
+    expedition: 'Expédition',
+    laboratoire: 'Laboratoire',
+    maintenance: 'Maintenance',
+  };
+  return map[type] || type;
+}
+
+function typeEquip(type: string): string {
+  const map: Record<string, string> = {
+    machine_outil: 'Machine outil',
+    ligne_production: 'Ligne production',
+    four: 'Four',
+    compresseur: 'Compresseur',
+    groupe_froid: 'Groupe froid',
+    pompe: 'Pompe',
+    chaudiere: 'Chaudière',
+    reservoir: 'Réservoir',
+    cuve: 'Cuve',
+    silo: 'Silo',
+    pont_roulant: 'Pont roulant',
+    robot: 'Robot',
+    automate: 'Automate',
+    serveur: 'Serveur',
+    laboratoire: 'Laboratoire',
+    autre: 'Autre',
+  };
+  return map[type] || type;
+}
+
+function slug(name: string): string {
+  return (name || 'usine')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 40);
+}

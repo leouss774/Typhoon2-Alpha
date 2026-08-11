@@ -57,7 +57,7 @@ TYPE_ZONE_LABELS = {
 }
 
 
-def _sensibilite_equipement(equipement: dict[str, Any]) -> float:
+def _sensibilite_equipement(equipement: dict[str, Any]) -> int:
     """Calcule la sensibilité d'un équipement (0-100)."""
     type_eq = str(equipement.get("type", "autre")).lower()
     base = SENSIBILITE_EQUIPEMENT.get(type_eq, SENSIBILITE_EQUIPEMENT["autre"])
@@ -83,10 +83,68 @@ def _sensibilite_equipement(equipement: dict[str, Any]) -> float:
     return _clamp(base)
 
 
+def _zone_aliases(zone: dict[str, Any]) -> set[str]:
+    """Ensemble des identifiants sous lesquels une zone peut être référencée
+    par un équipement : son `id` ET son `nom` (le VLM renvoie souvent le nom
+    de la zone dans `equipements[].zone`). La comparaison est insensible à la
+    casse et aux espaces superflus."""
+    aliases: set[str] = set()
+    for key in ("id", "nom"):
+        value = zone.get(key)
+        if isinstance(value, str) and value.strip():
+            aliases.add(value.strip().lower())
+    return aliases
+
+
+def _attribuer_equipement(equipement: dict[str, Any], zones: list[dict[str, Any]]) -> str | None:
+    """Résout la zone d'un équipement vers un identifiant de zone.
+
+    L'équipement référence sa zone par `zone` (nom ou id, comme le renvoie le
+    VLM) ; on cherche parmi les `zones` une correspondance par `id` ou `nom`.
+    Retourne l'id de la zone, ou None si aucune zone ne correspond.
+    """
+    ref = equipement.get("zone")
+    if not isinstance(ref, str) or not ref.strip():
+        return None
+    ref_norm = ref.strip().lower()
+    for zone in zones:
+        if ref_norm in _zone_aliases(zone):
+            return str(zone.get("id", f"zone_{zones.index(zone)}"))
+    return None
+
+
+def _enrichir_equipement(
+    equipement: dict[str, Any],
+    zone_id: str | None,
+    f_global: int,
+    v_zone: int | None = None,
+) -> dict[str, Any]:
+    """Enrichit un équipement avec sa sensibilité et son score de risque.
+
+    R = 100 × (F/100)^0.5 × (V_eq/100)^0.5 — même moteur que le scoring des
+    zones (risk_model._combine_risk). V_eq = sensibilité de l'équipement,
+    éventuellement atténuée par la vulnérabilité de la zone d'accueil.
+    """
+    sensibilite = _sensibilite_equipement(equipement)
+    if v_zone is not None:
+        v_eq = sensibilite * 0.6 + v_zone * 0.4
+    else:
+        v_eq = sensibilite
+    risque = _clamp(_combine_risk(f_global, v_eq))
+    return {
+        **equipement,
+        "zone_id": zone_id,
+        "sensibilite": sensibilite,
+        "risque": risque,
+        "niveau": _niveau(risque),
+    }
+
+
 def _vulnerabilite_zone(
     zone: dict[str, Any],
     equipements: list[dict[str, Any]],
-) -> tuple[float, str, list[str]]:
+    equipements_zone: list[dict[str, Any]],
+) -> tuple[int, str, list[str]]:
     """Calcule la vulnérabilité d'une zone (0-100) à partir de ses équipements.
 
     Retourne (vulnerabilite, description, sources).
@@ -105,8 +163,7 @@ def _vulnerabilite_zone(
         "expedition": 40,
     }.get(type_zone, 50)
 
-    # Équipements de la zone
-    eq_zone = [e for e in equipements if e.get("zone") == zone.get("id")]
+    eq_zone = equipements_zone
 
     phrases: list[str] = []
     sources: list[str] = []
@@ -118,10 +175,10 @@ def _vulnerabilite_zone(
             f"vulnérabilité de base {v_final:.0f}/100 pour ce type de zone."
         )
         sources.append(f"plan_usine.zone.{zone.get('id', '?')}")
-        return v_final, " ".join(phrases), sources
+        return _clamp(v_final), " ".join(phrases), sources
 
     # Vulnérabilité = moyenne pondérée des sensibilités des équipements
-    sensibilites = [_sensibilite_equipement(e) for e in eq_zone]
+    sensibilites = [e.get("sensibilite") or _sensibilite_equipement(e) for e in eq_zone]
     v_eq = sum(sensibilites) / len(sensibilites)
 
     # Combinaison : base + équipements
@@ -159,49 +216,90 @@ def _vulnerabilite_zone(
     return _clamp(v_final), " ".join(phrases), sources
 
 
-def enrichir_avec_plan(
-    risk_scores: dict[str, Any],
+def compute_usine_risk(
     plan: dict[str, Any],
+    risk_scores: dict[str, Any] | None = None,
+    aleas_site: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    """Enrichit les risk_scores du niveau 1 avec le plan d'usine (niveau 2).
+    """Calcule le risque complet d'une usine à partir de son plan (niveau 2).
+
+    Même méthodologie que le scoring des zones (D05) : chaque zone et chaque
+    équipement combine F (aléa du site) × V (vulnérabilité) via la moyenne
+    géométrique non-compensatoire R = 100 × (F/100)^0.5 × (V/100)^0.5.
 
     Parameters
     ----------
-    risk_scores : dict
-        Résultat de compute_risk_scores() (niveau 1).
     plan : dict
         {equipements: [...], zones: [...], nom_usine: str}
+    risk_scores : dict | None
+        Résultat de compute_risk_scores() (niveau 1). Sans plan, `score_global`
+        vaut 50 (aléa du site par défaut) sauf si `aleas_site` est fourni.
+    aleas_site : dict | None
+        Contexte d'aléa du site (ex. maxScore du RisqueReport Géorisques) :
+        {score: int, libelle: str} — remplace le score global par défaut.
 
-    Retourne les risk_scores enrichis avec :
-      - zones_plan : dict des zones personnalisées avec vulnérabilité spécifique
-      - score_plan_global : int (0-100)
-      - confiance_plan : dict (score de confiance enrichi)
+    Retourne le contrat complet consommé par le frontend /usine :
+      - nom_usine, nb_zones, nb_equipements
+      - score_global : int (0-100)
+      - zones : list (vulnérabilité / risque / niveau / description / équipements enrichis)
+      - equipements : list (sensibilité / risque / niveau / zone_id)
+      - confiance : dict (score, niveau, message)
+      - aleas_site : dict | None
+      - plan_usine : dict (compatibilité ascendante)
     """
+    risk_scores = risk_scores or {}
     equipements = plan.get("equipements", []) or []
     zones = plan.get("zones", []) or []
     nom_usine = plan.get("nom_usine", "Usine")
 
     if not zones:
         logger.info("plan_usine -- aucun zone déclarée, plan ignoré")
-        return risk_scores
+        return {
+            "nom_usine": nom_usine,
+            "nb_zones": 0,
+            "nb_equipements": len(equipements),
+            "score_global": risk_scores.get("score_global", aleas_site.get("score", 50) if aleas_site else 50),
+            "zones": [],
+            "equipements": [],
+            "confiance": risk_scores.get("confidence", {"score": 0, "niveau": "indetermine"}),
+            "aleas_site": aleas_site,
+            "plan_usine": {"nom_usine": nom_usine, "zones_plan": {}, "nb_equipements": len(equipements), "nb_zones": 0},
+        }
 
     logger.info(
         "plan_usine -- enrichissement avec %d zone(s) et %d équipement(s) pour %r",
         len(zones), len(equipements), nom_usine,
     )
 
-    # Calcul de la vulnérabilité par zone
-    zones_plan: dict[str, dict[str, Any]] = {}
-    v_scores: list[float] = []
-    for zone in zones:
-        zone_id = str(zone.get("id", f"zone_{len(zones_plan)}"))
-        v_zone, description, sources = _vulnerabilite_zone(zone, equipements)
+    # F (aléa global du site) : score fourni explicitement, sinon contexte d'aléa
+    # Géorisques, sinon valeur neutre.
+    if risk_scores.get("score_global") is not None:
+        f_global = int(risk_scores["score_global"])
+    elif aleas_site and aleas_site.get("score") is not None:
+        f_global = int(aleas_site["score"])
+    else:
+        f_global = 50
 
-        # Risque = combinaison F (aléa global du bâtiment) × V (vulnérabilité zone)
-        f_global = risk_scores.get("score_global", 50)
+    # Résolution de la zone de chaque équipement (id OU nom) + enrichissement.
+    equipements_enrichis: list[dict[str, Any]] = []
+    equipements_par_zone: dict[str, list[dict[str, Any]]] = {}
+    for eq in equipements:
+        zone_id = _attribuer_equipement(eq, zones)
+        eq_enrichi = _enrichir_equipement(eq, zone_id, f_global)
+        equipements_enrichis.append(eq_enrichi)
+        if zone_id is not None:
+            equipements_par_zone.setdefault(zone_id, []).append(eq_enrichi)
+
+    # Calcul de la vulnérabilité et du risque par zone.
+    zones_plan: dict[str, dict[str, Any]] = {}
+    for idx, zone in enumerate(zones):
+        zone_id = str(zone.get("id", f"zone_{idx}"))
+        eq_zone = equipements_par_zone.get(zone_id, [])
+        v_zone, description, sources = _vulnerabilite_zone(zone, equipements, eq_zone)
         risque_zone = _clamp(_combine_risk(f_global, v_zone))
 
         zones_plan[zone_id] = {
+            "id": zone_id,
             "nom": zone.get("nom", zone_id),
             "type": zone.get("type", "production"),
             "surface_m2": zone.get("surface_m2"),
@@ -210,20 +308,25 @@ def enrichir_avec_plan(
             "niveau": _niveau(risque_zone),
             "description": description,
             "justification": description,
-            "equipements": [e for e in equipements if e.get("zone") == zone_id],
+            "equipements": [e.get("id") for e in eq_zone],
             "sources": sources,
         }
-        v_scores.append(v_zone)
 
-    # Score global du plan = moyenne pondérée des risques des zones
-    if v_scores:
-        score_plan = _clamp(sum(z["risque"] for z in zones_plan.values()) / len(zones_plan))
-    else:
-        score_plan = risk_scores.get("score_global", 0)
+    # Score global du plan = moyenne des risques des zones.
+    score_plan = _clamp(sum(z["risque"] for z in zones_plan.values()) / max(len(zones_plan), 1))
 
-    # Confiance enrichie : +15 pts si plan fourni (données plus complètes)
+    # Confiance : base du niveau 1 (si disponible) sinon 40 (le plan fourni est
+    # déjà un signal fort), puis bonus de complétude du plan (+15 si plan fourni,
+    # +couverture surfaces / valeurs / attributs métiers).
     confiance_base = risk_scores.get("confidence", {})
-    score_confiance = _clamp((confiance_base.get("score", 0) or 0) + 15)
+    base_confiance = confiance_base.get("score", 40) or 40
+    score_confiance = _clamp(base_confiance + 15)
+    score_confiance = _clamp(
+        score_confiance
+        + (10 if all(z.get("surface_m2") for z in zones) else 0)
+        + (10 if equipements and all(e.get("valeur_remplacement_eur") is not None for e in equipements) else 0)
+        + (5 if equipements and all(e.get("critique_production") is not None or e.get("matieres_dangereuses") is not None for e in equipements) else 0)
+    )
     niveau_confiance = (
         "elevee" if score_confiance >= 80
         else "bonne" if score_confiance >= 60
@@ -232,7 +335,18 @@ def enrichir_avec_plan(
     )
 
     return {
-        **risk_scores,
+        "nom_usine": nom_usine,
+        "nb_zones": len(zones),
+        "nb_equipements": len(equipements),
+        "score_global": score_plan,
+        "aleas_site": aleas_site,
+        "zones": list(zones_plan.values()),
+        "equipements": equipements_enrichis,
+        "confiance": {
+            "score": score_confiance,
+            "niveau": niveau_confiance,
+            "message": "Confiance augmentée grâce au plan d'usine fourni",
+        },
         "plan_usine": {
             "nom_usine": nom_usine,
             "zones_plan": zones_plan,
@@ -246,3 +360,16 @@ def enrichir_avec_plan(
             },
         },
     }
+
+
+def enrichir_avec_plan(
+    risk_scores: dict[str, Any],
+    plan: dict[str, Any],
+) -> dict[str, Any]:
+    """Enrichit les risk_scores du niveau 1 avec le plan d'usine (niveau 2).
+
+    Point d'entrée historique : délègue au nouveau `compute_usine_risk` et
+    fusionne le résultat dans `risk_scores` (compatibilité ascendante).
+    """
+    resultat = compute_usine_risk(plan, risk_scores)
+    return {**risk_scores, **resultat}

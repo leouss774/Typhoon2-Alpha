@@ -141,12 +141,9 @@ export interface RisqueReport {
   alea_count: number;
   aleas: AleaDetail[];
   erreurs_partielles: string[];
-<<<<<<< HEAD
   type_batiment?: TypeBatiment | null;  // détection Overpass (usine vs maison)
-=======
   bdnb?: BdnbAsset | null;
   recommandations?: RecommandationsIA | null;
->>>>>>> origin/develop
   avertissement?: string;
 }
 

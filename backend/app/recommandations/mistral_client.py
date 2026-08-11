@@ -124,6 +124,55 @@ def chat_json(
     raise RuntimeError(f"Echec appel Mistral (chat) apres {max_retries} tentatives: {last_err}")
 
 
+def chat_text(
+    system_prompt: str,
+    messages: list[dict[str, str]],
+    max_retries: int = 5,
+    max_tokens: int | None = None,
+) -> str:
+    """Appelle le modele de chat Mistral en texte libre (multi-tours).
+
+    Utilise par la route `POST /chat` de l'assistant conversationnel du
+    jumeau numerique. Accepte un historique de messages
+    ``[{role: system|user|assistant, content: ...}, ...]`` (le system_prompt
+    est prependu en premiere position) et renvoie la reponse texte.
+    """
+    client = get_client()
+    last_err: Exception | None = None
+    full_messages = [{"role": "system", "content": system_prompt}] + list(messages)
+    for attempt in range(max_retries):
+        try:
+            response = client.chat.complete(
+                model=CHAT_MODEL,
+                messages=full_messages,
+                temperature=0.2,
+                max_tokens=max_tokens or CHAT_MAX_TOKENS,
+            )
+            content = response.choices[0].message.content
+            time.sleep(THROTTLE_SECONDS)
+            if isinstance(content, list):
+                text_parts = []
+                for chunk in content:
+                    text = getattr(chunk, "text", None)
+                    if isinstance(text, str):
+                        text_parts.append(text)
+                    elif hasattr(text, "text"):
+                        text_parts.append(str(text.text))
+                content = "".join(text_parts)
+            return str(content)
+        except Exception as e:
+            last_err = e
+            print(f"    [retry chat_text {attempt + 1}/{max_retries}] erreur Mistral: {e}")
+            if _is_capacity_error(e) or attempt == max_retries - 1:
+                break
+            wait = _backoff_seconds(e, attempt)
+            print(f"    -> attente {wait:.0f}s avant nouvelle tentative")
+            time.sleep(wait)
+    raise RuntimeError(
+        f"Echec appel Mistral (chat_text) apres {max_retries} tentatives: {last_err}"
+    )
+
+
 def embed_texts(texts: list[str], max_retries: int = 5) -> list[list[float]]:
     client = get_client()
     last_err: Exception | None = None

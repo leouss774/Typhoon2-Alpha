@@ -1,0 +1,57 @@
+INFO:     Will watch for changes in these directories: ['C:\\Users\\USER\\Desktop\\features\\Typhoon2-Alpha\\backend']
+INFO:     Uvicorn running on http://127.0.0.1:8765 (Press CTRL+C to quit)
+INFO:     Started reloader process [2428] using WatchFiles
+Process SpawnProcess-1:
+Traceback (most recent call last):
+  File "C:\Users\USER\AppData\Local\Programs\Python\Python311\Lib\multiprocessing\process.py", line 314, in _bootstrap
+    self.run()
+  File "C:\Users\USER\AppData\Local\Programs\Python\Python311\Lib\multiprocessing\process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+  File "C:\Users\USER\Desktop\features\Typhoon2-Alpha\backend\.venv\Lib\site-packages\uvicorn\_subprocess.py", line 80, in subprocess_started
+    target(sockets=sockets)
+  File "C:\Users\USER\Desktop\features\Typhoon2-Alpha\backend\.venv\Lib\site-packages\uvicorn\server.py", line 77, in run
+    return asyncio_run(self.serve(sockets=sockets), loop_factory=self.config.get_loop_factory())
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\USER\Desktop\features\Typhoon2-Alpha\backend\.venv\Lib\site-packages\uvicorn\_compat.py", line 30, in asyncio_run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "C:\Users\USER\AppData\Local\Programs\Python\Python311\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\USER\AppData\Local\Programs\Python\Python311\Lib\asyncio\base_events.py", line 654, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "C:\Users\USER\Desktop\features\Typhoon2-Alpha\backend\.venv\Lib\site-packages\uvicorn\server.py", line 81, in serve
+    await self._serve(sockets)
+  File "C:\Users\USER\Desktop\features\Typhoon2-Alpha\backend\.venv\Lib\site-packages\uvicorn\server.py", line 88, in _serve
+    config.load()
+  File "C:\Users\USER\Desktop\features\Typhoon2-Alpha\backend\.venv\Lib\site-packages\uvicorn\config.py", line 494, in load
+    self.loaded_app = self.load_app()
+                      ^^^^^^^^^^^^^^^
+  File "C:\Users\USER\Desktop\features\Typhoon2-Alpha\backend\.venv\Lib\site-packages\uvicorn\config.py", line 428, in load_app
+    return import_from_string(self.app)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\USER\Desktop\features\Typhoon2-Alpha\backend\.venv\Lib\site-packages\uvicorn\importer.py", line 19, in import_from_string
+    module = importlib.import_module(module_str)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\USER\AppData\Local\Programs\Python\Python311\Lib\importlib\__init__.py", line 126, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1204, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1176, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1147, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 690, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 940, in exec_module
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "C:\Users\USER\Desktop\features\Typhoon2-Alpha\backend\app\main.py", line 18, in <module>
+    from app.api.routes import artisans, chat, diagnostic, health, property_id as property_id_router
+  File "C:\Users\USER\Desktop\features\Typhoon2-Alpha\backend\app\api\routes\artisans.py", line 27, in <module>
+    from app.artisans.service import matcher
+  File "C:\Users\USER\Desktop\features\Typhoon2-Alpha\backend\app\artisans\service.py", line 12, in <module>
+    from app.artisans.classification import classer_avec_mistral, decision_regle
+  File "C:\Users\USER\Desktop\features\Typhoon2-Alpha\backend\app\artisans\classification.py", line 10, in <module>
+    from app.core.config import settings
+  File "C:\Users\USER\Desktop\features\Typhoon2-Alpha\backend\app\core\config.py", line 29
+    <<<<<<< HEAD
+    ^^
+IndentationError: expected an indented block after class definition on line 28

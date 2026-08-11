@@ -4,9 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Typhoon — Diagnostic Climatique Immobilier</title>
-<<<<<<< HEAD
-<link rel="icon" href="data:,">
-=======
+
 <meta name="description" content="Typhoon anticipe le risque climatique d'un bien immobilier — jumeau numérique 3D, score de résilience et recommandations de travaux, à partir d'une simple adresse.">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Typhoon — Diagnostic Climatique Immobilier">
@@ -14,7 +12,7 @@
 <meta property="og:image" content="assets/landing/og-share.jpg.jpeg">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" type="image/svg+xml" href="assets/landing/SVG/logo-typhoon-blue.svg">
->>>>>>> origin/develop
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600;700&family=Google+Sans+Code:wght@400;500;600&display=swap" rel="stylesheet">
@@ -71,10 +69,7 @@
     padding: 14px 18px; color: #3E4850; z-index: 10; backdrop-filter: blur(8px);
     box-shadow: 0 0 20px rgba(67, 134, 177, 0.15); width: 280px;
   }
-<<<<<<< HEAD
-  #toggle-panel h3 { margin: 0 0 8px 0; font-size: 12px; font-weight: 600; color: #316f96; text-transform: uppercase; letter-spacing: 0.08em; }
-  #toggle-panel .addr-line { font-size: 13px; color: #4E5860; margin: 0 0 10px 0; line-height: 1.4; }
-=======
+
   /* Identité de marque en tête de panneau : remplace l'ancien label
      "JUMEAU NUMÉRIQUE — DIAGNOSTIC" en majuscules par une composition
      pictogramme + wordmark, cohérente avec le reste de l'interface
@@ -85,7 +80,7 @@
   #toggle-panel .tp-name { font-family: var(--font-head); font-size: 15px; font-weight: 700; color: #1E2A33; letter-spacing: 0.005em; }
   #toggle-panel .tp-sub { font-size: 10px; font-weight: 700; color: #316f96; text-transform: uppercase; letter-spacing: 0.08em; margin-top: 2px; }
   #toggle-panel .addr-line { font-size: 13px; color: #4E5860; margin: 0 0 12px 0; padding-bottom: 12px; line-height: 1.4; border-bottom: 1px solid rgba(220, 230, 236, 0.8); }
->>>>>>> origin/develop
+
   #toggle-buttons button {
     background: rgba(241, 246, 249, 0.8); border: 1px solid #DCE6EC; color: #3E4850; padding: 8px 16px;
     border-radius: 6px; cursor: pointer; font-size: 13px; margin-right: 6px; transition: all .15s;
@@ -340,95 +335,8 @@
     position: fixed; inset: 0; z-index: 150;
     background: #FFFFFF; overflow-y: auto; -webkit-overflow-scrolling: touch;
   }
-<<<<<<< HEAD
-  #home-header {
-    position: sticky; top: 0; z-index: 5; background: rgba(255,255,255,0.92); backdrop-filter: blur(10px);
-    border-bottom: 1px solid #DCE6EC; padding: 16px 5vw;
-    display: flex; align-items: center; justify-content: space-between;
-  }
-  #home-nav { display: flex; align-items: center; gap: 30px; }
-  #home-nav a {
-    color: #4B5760; text-decoration: none; font-size: 14px; font-weight: 600;
-  }
-  #home-nav a:hover { color: #316f96; }
 
-  /* ---- Animation d'apparition au scroll ---- */
-  .reveal { opacity: 0; transform: translateY(28px); transition: opacity .7s ease, transform .7s ease; will-change: opacity, transform; }
-  .reveal.visible { opacity: 1; transform: translateY(0); }
-  .reveal-stagger > * { opacity: 0; transform: translateY(20px); transition: opacity .6s ease, transform .6s ease; }
-  .reveal-stagger.visible > * { opacity: 1; transform: translateY(0); }
-  .reveal-stagger.visible > *:nth-child(1) { transition-delay: .05s; }
-  .reveal-stagger.visible > *:nth-child(2) { transition-delay: .15s; }
-  .reveal-stagger.visible > *:nth-child(3) { transition-delay: .25s; }
-  .reveal-stagger.visible > *:nth-child(4) { transition-delay: .35s; }
-  @media (prefers-reduced-motion: reduce) {
-    .reveal, .reveal-stagger > * { opacity: 1 !important; transform: none !important; transition: none !important; }
-  }
-  #home-header-actions { display: flex; align-items: center; gap: 14px; }
-  .btn-ghost {
-    background: none; border: 1px solid #DCE6EC; color: #1E2A33; font-family: var(--font-body);
-    font-weight: 700; font-size: 13.5px; padding: 10px 18px; border-radius: 8px; cursor: pointer; transition: border-color .15s, color .15s;
-  }
-  .btn-ghost:hover { border-color: #316f96; color: #316f96; }
-  .btn-primary {
-    background: #316f96; border: none; color: #FFFFFF; font-family: var(--font-body);
-    font-weight: 700; font-size: 13.5px; padding: 10px 20px; border-radius: 8px; cursor: pointer;
-    transition: background .15s, transform .1s; box-shadow: 0 6px 18px rgba(67,134,177,0.3);
-  }
-  .btn-primary:hover { background: #204e6d; }
-  .btn-primary:active { transform: scale(0.98); }
 
-  #home-hero {
-    display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 40px; align-items: center;
-    padding: 70px 5vw 60px; max-width: 1280px; margin: 0 auto;
-  }
-  #home-hero .eyebrow {
-    display: inline-flex; align-items: center; gap: 6px; color: #316f96; background: #dceef4;
-    font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em;
-    padding: 6px 14px; border-radius: 999px; margin-bottom: 18px;
-  }
-  #home-hero h1 { font-size: 44px; line-height: 1.14; color: #1E2A33; margin: 0 0 18px 0; font-weight: 700; letter-spacing: -0.01em; }
-  #home-hero h1 em { color: #316f96; font-style: normal; }
-  #home-hero .lead { color: #4B5760; font-size: 16px; line-height: 1.6; max-width: 480px; margin: 0 0 30px 0; }
-  #home-hero .hero-ctas { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
-  #home-hero .hero-ctas .btn-primary { font-size: 15px; padding: 15px 26px; }
-  #home-hero .hero-link { color: #1E2A33; font-weight: 700; font-size: 14px; text-decoration: none; border-bottom: 2px solid #DCE6EC; padding-bottom: 2px; }
-  #home-hero .hero-link:hover { border-color: #316f96; color: #316f96; }
-
-  #home-hero-visual {
-    position: relative; border: 1px solid #DCE6EC; border-radius: 8px; padding: 28px;
-    min-height: 400px; display: flex; flex-direction: column; justify-content: flex-end;
-    overflow: hidden; background: #1E2A33 url('photo-maison.jpg') center/cover no-repeat;
-  }
-  #home-hero-visual::before {
-    content: ''; position: absolute; inset: 0;
-    background: linear-gradient(180deg, rgba(30,42,51,0.05) 0%, rgba(30,42,51,0.45) 55%, rgba(30,42,51,0.78) 100%);
-  }
-  #home-hero-visual .hv-stack { position: relative; z-index: 1; }
-  #home-hero-visual .hv-card {
-    background: rgba(255,255,255,0.97); border: 1px solid #DCE6EC; border-radius: 6px; padding: 14px 18px;
-    box-shadow: 0 10px 26px rgba(20,15,10,0.18); margin-bottom: 10px;
-  }
-  #home-hero-visual .hv-card:last-child { margin-bottom: 0; }
-  #home-hero-visual .hv-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-  #home-hero-visual .hv-label { color: #8B959D; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; }
-  #home-hero-visual .hv-value { color: #1E2A33; font-size: 15px; font-weight: 800; }
-  #home-hero-visual .hv-badge { font-size: 10.5px; font-weight: 800; padding: 3px 10px; border-radius: 999px; }
-  #home-hero-visual .hv-badge.risk-high { background: #FDE7E2; color: #DC4B39; }
-  #home-hero-visual .hv-badge.risk-mod { background: #FBEED9; color: #D98A2B; }
-  #home-hero-visual .hv-badge.risk-low { background: #E4F5EC; color: #1F9D6C; }
-  #home-hero-visual .hv-bar-track { height: 6px; border-radius: 999px; background: #E9EEF2; overflow: hidden; margin-top: 8px; }
-  #home-hero-visual .hv-bar-fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, #6fa8cc, #316f96); }
-
-  #home-trustbar {
-    border-top: 1px solid #DCE6EC; border-bottom: 1px solid #DCE6EC; background: #F1F6F9;
-    padding: 22px 5vw; display: flex; flex-wrap: wrap; justify-content: center; gap: 42px;
-  }
-  #home-trustbar .trust-stat { text-align: center; }
-  #home-trustbar .trust-stat .num { color: #1E2A33; font-size: 22px; font-weight: 700; font-family: var(--font-head); }
-  #home-trustbar .trust-stat .lbl { color: #8B959D; font-size: 12px; margin-top: 2px; }
-=======
->>>>>>> origin/develop
 
   #home-features { max-width: 1180px; margin: 0 auto; padding: 70px 5vw; text-align: center; }
   #home-features .section-eyebrow { color: #316f96; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px; }
@@ -1460,10 +1368,7 @@
   <div class="rl-item"><span class="rl-dot" style="background:#C0392B;"></span>Critique</div>
 </div>
 
-<<<<<<< HEAD
-<div id="toggle-panel">
-  <h3>Jumeau numérique — Diagnostic</h3>
-=======
+
 <div id="toggle-panel" class="tab-3d-only">
   <div id="toggle-panel-brand">
     <img class="tp-mark" src="assets/landing/SVG/logo-typhoon-blue.svg" alt="" aria-hidden="true">
@@ -1472,7 +1377,7 @@
       <span class="tp-sub">Diagnostic climatique</span>
     </div>
   </div>
->>>>>>> origin/develop
+
   <div class="addr-line" id="addr-line">—</div>
   <div id="toggle-buttons">
     <button id="btn-2025" class="active">2025</button>
@@ -1565,15 +1470,12 @@
 
 <div id="hint">Glisser = orbiter · Molette = zoom · Clic sur une zone = détails</div>
 
-<<<<<<< HEAD
-<div id="brand-watermark" title="Retour à l'accueil">
-  <div class="mark"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5 3.5 9 8 11 4.5-2 8-6 8-11V5z"/><path d="m9 12 2 2 4-4"/></svg></div>
-=======
+
 <div id="hint" class="tab-3d-only">Glisser = orbiter · Molette = zoom · Clic sur une zone = détails</div>
 
 <div id="brand-watermark" class="tab-3d-only" title="Retour à l'accueil">
   <img class="mark-img" src="assets/landing/SVG/logo-typhoon-blue.svg" alt="Typhoon">
->>>>>>> origin/develop
+
   <span>TYPHOON</span>
 </div>
 

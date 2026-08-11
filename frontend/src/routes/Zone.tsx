@@ -1,21 +1,16 @@
 // =============================================================================
-//   TYPHOON — /zone : diagnostic géo-risque par adresse (Stepper Material 3)
-//   Étapes :
-//     1. Adresse      — hero centré façon Gemini (champ de recherche au centre)
-//     2. Cartographie — carte OpenLayers + panneau aléas (data viz Géorisques)
-<<<<<<< HEAD
-//     3. Analyse      — risques industriels & technologiques
-//     4. Rapport IA   — rapport narratif Mistral + module économie
-=======
-//     3. Analyse      — fiche bâtiment BDNB (Synthèse / Construction / Énergie…)
-//     4. Jumeau BIM   — viewer 3D thingraph en iframe (glTF généré depuis l'emprise BDNB)
-//     5. Recommandations — plan d'adaptation du bien
-//     6. Artisans       — professionnels associés aux travaux
-//     7. Rapport IA     — rapport narratif Mistral + export PDF
->>>>>>> origin/develop
+//   TYPHOON ��� /zone : diagnostic g+�o-risque par adresse (Stepper Material 3)
+//   +�tapes :
+//     1. Adresse      ��� hero centr+� fa+�on Gemini (champ de recherche au centre)
+//     2. Cartographie ��� carte OpenLayers + panneau al+�as (data viz G+�orisques)
+//     3. Analyse      ��� fiche b+�timent BDNB (Synth+�se / Construction / +�nergie�Ǫ)
+//     4. Jumeau BIM   ��� viewer 3D thingraph en iframe (glTF g+�n+�r+� depuis l'emprise BDNB)
+//     5. Recommandations ��� plan d'adaptation du bien
+//     6. Artisans       ��� professionnels associ+�s aux travaux
+//     7. Rapport IA     ��� rapport narratif Mistral + export PDF
 //
-//   Stepper linéaire : les étapes 2-4 sont bloquées tant qu'aucune adresse
-//   n'a été diagnostiquée — l'étape Adresse passe en état d'erreur (icône
+//   Stepper lin+�aire : les +�tapes 2-4 sont bloqu+�es tant qu'aucune adresse
+//   n'a +�t+� diagnostiqu+�e ��� l'+�tape Adresse passe en +�tat d'erreur (ic+�ne
 //   erreur + message) si l'on tente de les atteindre sans rapport.
 // =============================================================================
 
@@ -45,11 +40,6 @@ import {
   type GeocodeSuggestion,
   type RisquesPrincipaux,
 } from '../zone/config';
-<<<<<<< HEAD
-import { runEconomiePipeline } from './economie/api';
-import type { ResultatEconomie } from './economie/types';
-import { PlanUsinePanel, TYPES_ZONE_LABELS, type PlanUsine } from './PlanUsine';
-=======
 import type { RecommendationZone } from '../jumeau/recommendations';
 import {
   addConversation,
@@ -58,19 +48,18 @@ import {
   saveConversations,
   type Conversation,
 } from '../zone/conversations';
->>>>>>> origin/develop
 import '../styles/zone.css';
 
-const LEGEND_RANGES = ['<20', '20–39', '40–59', '60–79', '≥80'];
+const LEGEND_RANGES = ['<20', '20���39', '40���59', '60���79', '���80'];
 
-/* Erreur structurée du rapport IA — contrat backend /diagnostic/adresse/rapport :
+/* Erreur structur+�e du rapport IA ��� contrat backend /diagnostic/adresse/rapport :
    { error: <code>, detail: <message utilisateur>, cause: <cause technique> } */
 interface RapportError {
   code: string; // mistral_api_key_manquante | mistral_indisponible | reseau | http_*
   status?: number;
   message: string; // message lisible
   hint?: string; // conseil actionnable (facultatif)
-  cause?: string; // détail technique (affiché dans <details>)
+  cause?: string; // d+�tail technique (affich+� dans <details>)
 }
 
 const STEPS = [
@@ -103,8 +92,8 @@ export function Zone() {
     first?.focus();
   }, [isMobile, drawerOpen]);
 
-  /* Le menu réglages se referme de lui-même (clic extérieur / Échap) → on
-     resynchronise l'état React sur l'événement `closed` du md-menu. */
+  /* Le menu r+�glages se referme de lui-m+�me (clic ext+�rieur / +�chap) ��� on
+     resynchronise l'+�tat React sur l'+�v+�nement `closed` du md-menu. */
   useEffect(() => {
     const menu = settingsMenuRef.current;
     if (!menu) return;
@@ -113,7 +102,7 @@ export function Zone() {
     return () => menu.removeEventListener('closed', onClosed);
   }, []);
 
-  /* md-switch émet `change` (custom element) — on écoute via le ref. */
+  /* md-switch +�met `change` (custom element) ��� on +�coute via le ref. */
   useEffect(() => {
     const sw = themeSwitchRef.current;
     if (!sw) return;
@@ -136,33 +125,22 @@ export function Zone() {
   const [conversations, setConversations] = useState<Conversation[]>(() => loadConversations());
   const [rapport, setRapport] = useState<RapportNarratif | null>(null);
   const [rapportLoading, setRapportLoading] = useState(false);
-<<<<<<< HEAD
-  const [rapportError, setRapportError] = useState<string | null>(null);
-  const [economie, setEconomie] = useState<ResultatEconomie | null>(null);
-  const [economieLoading, setEconomieLoading] = useState(false);
-  const [economieError, setEconomieError] = useState<string | null>(null);
-  const [planUsineOpen, setPlanUsineOpen] = useState(false);
-  const [planUsineResult, setPlanUsineResult] = useState<any>(null);
-  const [planUsineLoading, setPlanUsineLoading] = useState(false);
-  const [planUsineError, setPlanUsineError] = useState<string | null>(null);
-=======
   const [rapportError, setRapportError] = useState<RapportError | null>(null);
-  /* true quand l'étape Rapport IA a été atteinte pendant le chargement des
-     recommandations : le rapport n'est généré qu'une fois celles-ci prêtes. */
+  /* true quand l'+�tape Rapport IA a +�t+� atteinte pendant le chargement des
+     recommandations : le rapport n'est g+�n+�r+� qu'une fois celles-ci pr+�tes. */
   const [rapportWaiting, setRapportWaiting] = useState(false);
-  /* Export PDF du rapport IA (jsPDF côté client) — vrai bouton de téléchargement. */
+  /* Export PDF du rapport IA (jsPDF c+�t+� client) ��� vrai bouton de t+�l+�chargement. */
   const [exportingPdf, setExportingPdf] = useState(false);
   const [exportPdfError, setExportPdfError] = useState<string | null>(null);
-  /* Intention « régénération forcée » mémorisée quand la relance est différée
+  /* Intention -� r+�g+�n+�ration forc+�e -+ m+�moris+�e quand la relance est diff+�r+�e
      par l'attente des recommandations (sinon force serait perdu). */
   const rapportForceRef = useRef(false);
->>>>>>> origin/develop
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [visibleLayerKeys, setVisibleLayerKeys] = useState<ReadonlySet<string>>(new Set());
 
-  /* ── Compagnon virtuel Typhoon : synchronise le contexte du diagnostic
-     affiché à l'écran (adresse, bien, zones/recommandations) pour que le
-     chat réponde à propos de CE bien. Contrat : backend/app/api/routes/chat.py. */
+  /* ������ Compagnon virtuel Typhoon : synchronise le contexte du diagnostic
+     affich+� +� l'+�cran (adresse, bien, zones/recommandations) pour que le
+     chat r+�ponde +� propos de CE bien. Contrat : backend/app/api/routes/chat.py. */
   const { setContexte } = useAssistantContexte();
   useEffect(() => {
     if (!report) {
@@ -183,7 +161,7 @@ export function Zone() {
   }, [report, detailedRecommendationZones, setContexte]);
   useEffect(() => () => setContexte(null), [setContexte]);
 
-  /* Champ de la topbar (étapes 2-4) et champ du hero (étape 1) : deux
+  /* Champ de la topbar (+�tapes 2-4) et champ du hero (+�tape 1) : deux
      instances distinctes de md-outlined-text-field, chacune avec son ref. */
   const inputRef = useRef<HTMLElement & { value: string }>(null);
   const heroInputRef = useRef<HTMLInputElement>(null);
@@ -204,7 +182,7 @@ export function Zone() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ adresse: address, copernicus: false }),
       });
-      if (!fastResponse.ok) throw new Error(`Diagnostic détaillé HTTP ${fastResponse.status}`);
+      if (!fastResponse.ok) throw new Error(`Diagnostic d+�taill+� HTTP ${fastResponse.status}`);
       const fastContract = await fastResponse.json();
       if (!fastContract?._resume) throw new Error('Contexte de recommandations absent');
 
@@ -220,13 +198,13 @@ export function Zone() {
       setDetailedRisquesPrincipaux(detailedContract?.risques_principaux || null);
     } catch (error) {
       if (requestId !== recommendationsRequestId.current) return;
-      setDetailedRecommendationsError(error instanceof Error ? error.message : 'Recommandations détaillées indisponibles');
+      setDetailedRecommendationsError(error instanceof Error ? error.message : 'Recommandations d+�taill+�es indisponibles');
     } finally {
       if (requestId === recommendationsRequestId.current) setDetailedRecommendationsLoading(false);
     }
   }
 
-  /* ── BAN autocomplétion ── */
+  /* ������ BAN autocompl+�tion ������ */
   function fetchSuggestions(q: string) {
     fetch(`${API}/api/geocode/search?q=${encodeURIComponent(q)}&limit=5`)
       .then((resp) => (resp.ok ? resp.json() : Promise.reject(new Error(`HTTP ${resp.status}`))))
@@ -243,8 +221,8 @@ export function Zone() {
 
   function onQueryChange(value: string) {
     lastQuery.current = value;
-    setStepError(false); // l'erreur « adresse manquante » se dissipe dès la saisie
-    setDiagError(null); // l'erreur d'API se dissipe aussi dès la saisie
+    setStepError(false); // l'erreur -� adresse manquante -+ se dissipe d+�s la saisie
+    setDiagError(null); // l'erreur d'API se dissipe aussi d+�s la saisie
     if (banTimeout.current) window.clearTimeout(banTimeout.current);
     if (value.trim().length < 3) {
       hideSuggestions();
@@ -259,7 +237,7 @@ export function Zone() {
     void runDiagnosis(s.label);
   }
 
-  /* ── Diagnostic ── */
+  /* ������ Diagnostic ������ */
   async function runDiagnosis(q: string) {
     const value = q.trim();
     if (!value) {
@@ -277,8 +255,6 @@ export function Zone() {
     setDetailedRisquesPrincipaux(null);
     setRapport(null);
     setRapportError(null);
-    setEconomie(null);
-    setEconomieError(null);
     setSidebarOpen(false);
 
     try {
@@ -299,28 +275,28 @@ export function Zone() {
       const r = (await resp.json()) as RisqueReport;
       setReport(r);
       void loadDetailedRecommendations(r.adresse_normalisee || value);
-      /* Historique « Récent » (localStorage) : adresse normalisée ou requête brute. */
+      /* Historique -� R+�cent -+ (localStorage) : adresse normalis+�e ou requ+�te brute. */
       setConversations((prev) => {
         const next = addConversation(prev, r.adresse_normalisee || value);
         saveConversations(next);
         return next;
       });
-      setStepError(false); // l'adresse est validée → étapes suivantes débloquées
-      setStep(1); // → étape Cartographie
+      setStepError(false); // l'adresse est valid+�e ��� +�tapes suivantes d+�bloqu+�es
+      setStep(1); // ��� +�tape Cartographie
       if (!userClosedSidebar.current) setSidebarOpen(true);
       setVisibleLayerKeys(
         new Set((r.aleas || []).filter((a) => a.present === true).map((a) => a.code))
       );
     } catch {
-      setDiagError('Erreur réseau — backend inaccessible ?');
+      setDiagError('Erreur r+�seau ��� backend inaccessible ?');
     } finally {
       setLoading(false);
     }
   }
 
-  /* ── Rapport narratif IA (Mistral) — POST RisqueReport → RapportNarratif ── */
-  async function loadRapport() {
-    if (!report || rapport || rapportLoading) return;
+  /* ������ Rapport narratif IA (Mistral) ��� POST RisqueReport ��� RapportNarratif ������ */
+  async function loadRapport(force = false) {
+    if (!report || (rapport && !force) || rapportLoading) return;
     setRapportLoading(true);
     setRapportError(null);
     try {
@@ -330,8 +306,8 @@ export function Zone() {
         body: JSON.stringify(report),
       });
       if (!resp.ok) {
-        // Contrat backend : detail = { error, detail, cause }. On gère aussi
-        // le cas FastAPI où detail est une simple chaîne ({"detail": "..."}).
+        // Contrat backend : detail = { error, detail, cause }. On g+�re aussi
+        // le cas FastAPI o+� detail est une simple cha+�ne ({"detail": "..."}).
         const err = await resp.json().catch(() => null);
         const rawDetail = err?.detail;
         const d =
@@ -346,8 +322,8 @@ export function Zone() {
           message:
             d.detail ||
             (resp.status === 503
-              ? 'Le rapport IA nécessite une clé Mistral côté serveur.'
-              : `Le service n'a pas pu générer le rapport (HTTP ${resp.status}).`),
+              ? 'Le rapport IA n+�cessite une cl+� Mistral c+�t+� serveur.'
+              : `Le service n'a pas pu g+�n+�rer le rapport (HTTP ${resp.status}).`),
           hint: hintForRapportError(d.error, resp.status),
           cause: d.cause || undefined,
         });
@@ -355,11 +331,11 @@ export function Zone() {
       }
       setRapport((await resp.json()) as RapportNarratif);
     } catch (err) {
-      // fetch() a échoué : backend injoignable, CORS, DNS…
+      // fetch() a +�chou+� : backend injoignable, CORS, DNS�Ǫ
       setRapportError({
         code: 'reseau',
-        message: 'Impossible de joindre le serveur pour générer le rapport IA.',
-        hint: 'Vérifiez que le backend Typhoon est démarré (port 8765) puis réessayez.',
+        message: 'Impossible de joindre le serveur pour g+�n+�rer le rapport IA.',
+        hint: 'V+�rifiez que le backend Typhoon est d+�marr+� (port 8765) puis r+�essayez.',
         cause: err instanceof Error ? err.message : String(err),
       });
     } finally {
@@ -367,77 +343,10 @@ export function Zone() {
     }
   }
 
-<<<<<<< HEAD
-  /* ── Module économie — utilise la MÊME adresse analysée (workflow fluide) ── */
-  async function loadEconomie() {
-    if (!lastQuery.current.trim() || economie || economieLoading) return;
-    setEconomieLoading(true);
-    setEconomieError(null);
-    try {
-      const res = await runEconomiePipeline(lastQuery.current);
-      setEconomie(res);
-    } catch (err) {
-      setEconomieError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setEconomieLoading(false);
-    }
-  }
-
-  /* Lancer l'analyse économique automatiquement dès que le rapport IA est généré */
-  const loadEconomieRef = useRef(loadEconomie);
-  loadEconomieRef.current = loadEconomie;
-  useEffect(() => {
-    if (rapport && !economie && !economieLoading && !economieError) {
-      void loadEconomieRef.current();
-    }
-  }, [rapport, economie, economieLoading, economieError]);
-
-  /* ── Niveau 2 — Plan d'usine (enrichit le score) ── */
-  async function enrichirPlanUsine(plan: PlanUsine) {
-    if (planUsineLoading) return;
-    setPlanUsineLoading(true);
-    setPlanUsineError(null);
-    try {
-      // Récupérer les risk_scores via le pipeline fast (même adresse)
-      const fast = await fetch(`${API}/diagnostic/fast`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ adresse: lastQuery.current, copernicus: false }),
-      });
-      if (!fast.ok) {
-        const err = await fast.json().catch(() => ({}));
-        throw new Error(err.detail?.detail || `HTTP ${fast.status}`);
-      }
-      const fastData = await fast.json();
-      const resume = fastData._resume;
-      if (!resume) throw new Error('Contrat rapide sans _resume');
-
-      const resp = await fetch(`${API}/diagnostic/plan-usine`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          risk_scores: resume.risk_scores,
-          plan,
-          adresse: lastQuery.current,
-        }),
-      });
-      if (!resp.ok) {
-        const err = await resp.json().catch(() => ({}));
-        throw new Error(err.detail?.detail || `HTTP ${resp.status}`);
-      }
-      const resultat = await resp.json();
-      setPlanUsineResult(resultat);
-      setPlanUsineOpen(false);
-    } catch (err) {
-      setPlanUsineError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setPlanUsineLoading(false);
-    }
-=======
-  /* Rapport IA en attente : si l'étape 5 a été atteinte pendant le chargement
-     des recommandations détaillées, on génère le rapport dès qu'elles sont
-     prêtes (même en cas d'échec : le rapport reste générable). L'intention
-     « force » est conservée pour la relance (Régénérer). */
+  /* Rapport IA en attente : si l'+�tape 5 a +�t+� atteinte pendant le chargement
+     des recommandations d+�taill+�es, on g+�n+�re le rapport d+�s qu'elles sont
+     pr+�tes (m+�me en cas d'+�chec : le rapport reste g+�n+�rable). L'intention
+     -� force -+ est conserv+�e pour la relance (R+�g+�n+�rer). */
   useEffect(() => {
     if (rapportWaiting && !detailedRecommendationsLoading && step === 5 && report) {
       const force = rapportForceRef.current;
@@ -448,49 +357,41 @@ export function Zone() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rapportWaiting, detailedRecommendationsLoading, step, report]);
 
-  /* Conseil actionnable selon le code d'erreur renvoyé par le backend. */
+  /* Conseil actionnable selon le code d'erreur renvoy+� par le backend. */
   function hintForRapportError(code: string | undefined, status: number): string | undefined {
     if (code === 'mistral_api_key_manquante') {
-      return "Ajoutez MISTRAL_API_KEY au fichier .env du backend puis redémarrez l'API.";
+      return "Ajoutez MISTRAL_API_KEY au fichier .env du backend puis red+�marrez l'API.";
     }
     if (code === 'mistral_indisponible' || status === 502) {
-      return 'Le service Mistral est momentanément indisponible ou a expiré — réessayez dans quelques instants.';
+      return 'Le service Mistral est momentan+�ment indisponible ou a expir+� ��� r+�essayez dans quelques instants.';
     }
     if (status === 503) {
-      return 'Le service de génération IA n\'est pas configuré côté serveur.';
+      return 'Le service de g+�n+�ration IA n\'est pas configur+� c+�t+� serveur.';
     }
     if (status >= 500) {
-      return 'Le serveur a rencontré une erreur interne — réessayez, ou relancez le backend si cela persiste.';
+      return 'Le serveur a rencontr+� une erreur interne ��� r+�essayez, ou relancez le backend si cela persiste.';
     }
     return undefined;
->>>>>>> origin/develop
   }
 
-  /* ── Navigation du stepper (linéaire : impossible de sauter l'adresse) ── */
+  /* ������ Navigation du stepper (lin+�aire : impossible de sauter l'adresse) ������ */
   function goToStep(i: number) {
     if (i > 0 && !report) {
-      setStepError(true); // étape Adresse → état d'erreur, navigation bloquée
-      setDiagError(null); // le message du stepper prime sur une erreur d'API antérieure
+      setStepError(true); // +�tape Adresse ��� +�tat d'erreur, navigation bloqu+�e
+      setDiagError(null); // le message du stepper prime sur une erreur d'API ant+�rieure
       window.setTimeout(() => heroInputRef.current?.focus(), 80);
       return;
     }
     setStepError(false);
     setStep(i);
-    /* Quitter l'étape Rapport IA avant la fin des recommandations : on retire
-       l'état « en attente » (sera redéclenché si l'on revient à l'étape 5). */
+    /* Quitter l'+�tape Rapport IA avant la fin des recommandations : on retire
+       l'+�tat -� en attente -+ (sera red+�clench+� si l'on revient +� l'+�tape 5). */
     if (i !== 5) setRapportWaiting(false);
     if (i === 0) window.setTimeout(() => heroInputRef.current?.focus(), 80);
-<<<<<<< HEAD
-    if (i === 3 && report) {
-      void loadRapport();
-      void loadEconomie();
-    }
-=======
     if (i === 6 && report) void loadRapport();
->>>>>>> origin/develop
   }
 
-  /* ── Visibilité des couches ── */
+  /* ������ Visibilit+� des couches ������ */
   function toggleLayer(code: string) {
     setVisibleLayerKeys((prev) => {
       const next = new Set(prev);
@@ -502,12 +403,12 @@ export function Zone() {
 
   function toggleSidebar() {
     setSidebarOpen((o) => {
-      userClosedSidebar.current = o; // fermeture manuelle → true · réouverture → false
+      userClosedSidebar.current = o; // fermeture manuelle ��� true -� r+�ouverture ��� false
       return !o;
     });
   }
 
-  /* ── Historique « Récent » (sidenav) ── */
+  /* ������ Historique -� R+�cent -+ (sidenav) ������ */
   function handleOpenConversation(address: string) {
     setDrawerOpen(false);
     void runDiagnosis(address);
@@ -527,7 +428,7 @@ export function Zone() {
     setVisibleLayerKeys(visible ? new Set(codes) : new Set());
   }
 
-  /* ── Dérivés du rapport ── */
+  /* ������ D+�riv+�s du rapport ������ */
   const presentAleas = (report?.aleas || []).filter((a) => a.present === true);
   const maxScore = presentAleas.length ? Math.max(...presentAleas.map((a) => aleaScore(a))) : null;
   const band = maxScore != null ? D03.find((b) => (maxScore as number) < b.max) || D03[D03.length - 1] : null;
@@ -540,12 +441,12 @@ export function Zone() {
   );
 
   const wmsActive = !!report && report.aleas.some((a) => WMS_LAYER_MAP[a.code]);
-  /* PDF officiel Géorisques (ERRIAL) — lien secondaire conservé. */
+  /* PDF officiel G+�orisques (ERRIAL) ��� lien secondaire conserv+�. */
   const pdfUrl = report
     ? `${API}/diagnostic/adresse/rapport-pdf?lat=${report.lat}&lon=${report.lon}`
     : '#';
 
-  /* ── Export PDF du rapport IA (client-side, jsPDF importé à la demande) ── */
+  /* ������ Export PDF du rapport IA (client-side, jsPDF import+� +� la demande) ������ */
   async function handleExportPdf() {
     if (!report || !rapport || exportingPdf) return;
     setExportingPdf(true);
@@ -554,9 +455,9 @@ export function Zone() {
       const { exportRapportPdf } = await import('../zone/pdf-export');
       await exportRapportPdf(report, rapport);
     } catch (err) {
-      console.error('Export PDF du rapport IA échoué :', err);
+      console.error('Export PDF du rapport IA +�chou+� :', err);
       setExportPdfError(
-        "L'export PDF a échoué dans le navigateur. Réessayez — si le problème persiste, utilisez le lien « PDF officiel Géorisques »."
+        "L'export PDF a +�chou+� dans le navigateur. R+�essayez ��� si le probl+�me persiste, utilisez le lien -� PDF officiel G+�orisques -+."
       );
     } finally {
       setExportingPdf(false);
@@ -564,8 +465,8 @@ export function Zone() {
   }
 
   const stripText = report
-    ? `${report.adresse_normalisee} · ${report.alea_count} aléa(s) · 0 simulés`
-    : 'En attente d’une adresse';
+    ? `${report.adresse_normalisee} -� ${report.alea_count} al+�a(s) -� 0 simul+�s`
+    : 'En attente d���une adresse';
 
   const allPresentVisible =
     report !== null &&
@@ -579,7 +480,7 @@ export function Zone() {
       }${navCollapsed && !isMobile ? ' nav-collapsed' : ''}${drawerOpen ? ' drawer-open' : ''}`}
       style={{ '--accent': accent } as CSSProperties}
     >
-      {/* ===== SIDENAV rétractable (navigation façon Gemini) ===== */}
+      {/* ===== SIDENAV r+�tractable (navigation fa+�on Gemini) ===== */}
       <ZoneSidenav
         sidenavRef={sidenavRef}
         collapsed={navCollapsed && !isMobile}
@@ -609,8 +510,8 @@ export function Zone() {
 
       {/* ===== COLONNE PRINCIPALE ===== */}
       <div className="zone-main">
-        {/* ===== STEPPER (indicateur d'étapes, linéaire) ===== */}
-        <nav className="zone-stepper" aria-label="Étapes du diagnostic">
+        {/* ===== STEPPER (indicateur d'+�tapes, lin+�aire) ===== */}
+        <nav className="zone-stepper" aria-label="+�tapes du diagnostic">
           <md-icon-button
             className="sidenav-hamburger"
             aria-label="Ouvrir le menu"
@@ -652,11 +553,11 @@ export function Zone() {
           })}
         </nav>
 
-        {/* ===== ÉTAPE 1 — ADRESSE (hero façon Gemini) ===== */}
+        {/* ===== +�TAPE 1 ��� ADRESSE (hero fa+�on Gemini) ===== */}
       {step === 0 && (
         <section className="zone-hero">
           <div className="hero-brand">
-            <h1>Diagnostic géo-risque</h1>
+            <h1>Diagnostic g+�o-risque</h1>
           </div>
 
           <div className="hero-search">
@@ -683,7 +584,7 @@ export function Zone() {
                     <i />
                     <i />
                   </span>
-                  <span className="hero-thinking-txt">Diagnostic en cours…</span>
+                  <span className="hero-thinking-txt">Diagnostic en cours�Ǫ</span>
                 </div>
               ) : (
                 (stepError || diagError) && (
@@ -691,7 +592,7 @@ export function Zone() {
                     <md-icon>error</md-icon>
                     <span>
                       {diagError ||
-                        "Saisissez d'abord une adresse pour accéder aux étapes suivantes."}
+                        "Saisissez d'abord une adresse pour acc+�der aux +�tapes suivantes."}
                     </span>
                   </div>
                 )
@@ -700,14 +601,14 @@ export function Zone() {
             {!loading && (
               <div className="hero-hints">
                 <span>ex. 14 Avenue des Palmiers 06000 Nice</span>
-                <span>Entrée ↵ pour diagnostiquer</span>
+                <span>Entr+�e ��� pour diagnostiquer</span>
               </div>
             )}
           </div>
         </section>
       )}
 
-      {/* ===== ÉTAPES 2–5 : topbar + scène ===== */}
+      {/* ===== +�TAPES 2���5 : topbar + sc+�ne ===== */}
       {step >= 1 && (
         <>
           <header className="zone-topbar">
@@ -735,8 +636,8 @@ export function Zone() {
                   toggle
                   selected={sidebarOpen}
                   className="panel-toggle"
-                  aria-label="Afficher / masquer le panneau des aléas"
-                  title="Panneau des aléas"
+                  aria-label="Afficher / masquer le panneau des al+�as"
+                  title="Panneau des al+�as"
                   aria-pressed={sidebarOpen}
                   onClick={toggleSidebar}
                 >
@@ -748,24 +649,24 @@ export function Zone() {
           </header>
 
           <div className={`zone-stage${step === 1 ? ' workspace' : ' flat'}`}>
-            {/* Workspace — toujours monté pour préserver la carte OpenLayers
-                (masqué via [hidden] hors de l'étape Cartographie) */}
+            {/* Workspace ��� toujours mont+� pour pr+�server la carte OpenLayers
+                (masqu+� via [hidden] hors de l'+�tape Cartographie) */}
             <div className="zone-workspace" hidden={step !== 1}>
-              {/* SIDEBAR (couches + résultats) */}
+              {/* SIDEBAR (couches + r+�sultats) */}
               <aside className="zone-sidebar">
                 {report ? (
                   <section className="zone-results">
                     <div className="addr-heading">
                       <div className="norm">{report.adresse_normalisee}</div>
                       <div className="meta">
-                        GPS {report.lat.toFixed(5)}°N, {report.lon.toFixed(5)}°E · Code INSEE{' '}
-                        {report.code_insee} · Généré le {report.date_generation}
+                        GPS {report.lat.toFixed(5)}-�N, {report.lon.toFixed(5)}-�E -� Code INSEE{' '}
+                        {report.code_insee} -� G+�n+�r+� le {report.date_generation}
                       </div>
                     </div>
 
                     <details className="legend-section" open>
                       <summary className="section-heading legend-summary">
-                        <span>Bandes D03 — Risque</span>
+                        <span>Bandes D03 ��� Risque</span>
                         <md-icon>expand_more</md-icon>
                       </summary>
                       <div className="legend-box">
@@ -777,24 +678,23 @@ export function Zone() {
                           </div>
                         ))}
                       </div>
-                    </details>
-                    <div className="score-block">
-                      <div className="score-row">
-                        <span className="score-num" style={{ color: band?.color }}>
-                          {maxScore ?? '—'}
-                        </span>
-                        <div className="score-meta">
-                          <span className="score-label">Score de risque global /100</span>
-                          <span className={`d03-pill ${band ? band.cls : ''}`}>
-                            {band ? band.label : 'Indéterminé'}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
+                    </details>      <div className="score-block">
+        <div className="score-row">
+          <span className="score-num" style={{ color: band?.color }}>
+            {maxScore ?? '���'}
+          </span>
+          <div className="score-meta">
+            <span className="score-label">Score de risque global /100</span>
+            <span className={`d03-pill ${band ? band.cls : ''}`}>
+              {band ? band.label : 'Ind+�termin+�'}
+            </span>
+          </div>
+        </div>
+      </div>
 
                     <div className="aleas-section">
                       <div className="section-heading">
-                        <span>Aléas recensés — Géorisques</span>
+                        <span>Al+�as recens+�s ��� G+�orisques</span>
                         <md-text-button
                           className="toggle-all"
                           aria-label={
@@ -826,8 +726,8 @@ export function Zone() {
                       <details className="catnat-section">
                         <summary className="section-heading catnat-summary">
                           <span>
-                            Historique arrêtés CatNat{' '}
-                            <span className="catnat-count">({catnat.length} arrêtés)</span>
+                            Historique arr+�t+�s CatNat{' '}
+                            <span className="catnat-count">({catnat.length} arr+�t+�s)</span>
                           </span>
                           <md-icon>expand_more</md-icon>
                         </summary>
@@ -836,7 +736,7 @@ export function Zone() {
                             <md-list-item key={i}>
                               <md-icon slot="start">history</md-icon>
                               <span slot="headline">
-                                {ev.libelle_risque_jo || ev.libelle || '—'}
+                                {ev.libelle_risque_jo || ev.libelle || '���'}
                               </span>
                               {ev.date_debut_evt ? (
                                 <span slot="supporting-text">
@@ -849,7 +749,7 @@ export function Zone() {
                           ))}
                           {catnat.length > 15 && (
                             <md-list-item>
-                              <span slot="headline">+ {catnat.length - 15} autre(s)…</span>
+                              <span slot="headline">+ {catnat.length - 15} autre(s)�Ǫ</span>
                             </md-list-item>
                           )}
                         </md-list>
@@ -861,8 +761,8 @@ export function Zone() {
                         <md-icon>warning</md-icon>
                         <span>
                           <strong>Sources partiellement indisponibles :</strong>{' '}
-                          {escHtml(report.erreurs_partielles.join(' · '))}. Les aléas concernés
-                          affichent « source indisponible ».
+                          {escHtml(report.erreurs_partielles.join(' -� '))}. Les al+�as concern+�s
+                          affichent -� source indisponible -+.
                         </span>
                       </div>
                     )}
@@ -870,16 +770,16 @@ export function Zone() {
                     <div className="avertissement">
                       <md-icon>info</md-icon>
                       <span>
-                        <strong>⚠ Ce rapport n'est pas l'ERRIAL officiel.</strong> Il agrège les
-                        données publiques Géorisques (BRGM / MTE). Il ne remplace pas l'État des
-                        Risques réglementaire obligatoire à la vente/location.
+                        <strong>��� Ce rapport n'est pas l'ERRIAL officiel.</strong> Il agr+�ge les
+                        donn+�es publiques G+�orisques (BRGM / MTE). Il ne remplace pas l'+�tat des
+                        Risques r+�glementaire obligatoire +� la vente/location.
                       </span>
                     </div>
                   </section>
                 ) : (
                   <div className="sidebar-empty">
                     <md-icon>gps_fixed</md-icon>
-                    <p>Recherchez une adresse pour afficher le diagnostic géo-risque.</p>
+                    <p>Recherchez une adresse pour afficher le diagnostic g+�o-risque.</p>
                   </div>
                 )}
               </aside>
@@ -893,324 +793,18 @@ export function Zone() {
                     <span className="strip-dot" />
                     <span id="strip-text">{stripText}</span>
                   </span>
-                  <span>© CARTO · © OpenStreetMap contributors · © BRGM Géorisques</span>
+                  <span>-� CARTO -� -� OpenStreetMap contributors -� -� BRGM G+�orisques</span>
                 </div>
                 {wmsActive && <div className="wms-badge">WMS BRGM actif</div>}
               </section>
             </div>
 
-<<<<<<< HEAD
-            {/* ÉTAPE 3 — ANALYSE (risques industriels & technologiques) */}
-            <section className="zone-analysis" hidden={step !== 2}>
-              {!report ? (
-                <div className="report-empty">
-                  <md-icon>search</md-icon>
-                  <h2>Aucun diagnostic</h2>
-                  <p>Diagnostiquez d'abord une adresse pour voir l'analyse approfondie.</p>
-                </div>
-              ) : (
-                <>
-                  <header className="analysis-header">
-                    <div className="analysis-title">
-                      <h2>Analyse des risques</h2>
-                      <p className="report-meta">
-                        {report.adresse_normalisee} · {report.alea_count} aléa(s) recensé(s)
-                      </p>
-                    </div>
-                  </header>
-
-                  {/* Score global */}
-                  <div className="analysis-score-block">
-                    <div className="score-row">
-                      <span className="score-num" style={{ color: band?.color }}>
-                        {maxScore ?? '—'}
-                      </span>
-                      <div className="score-meta">
-                        <span className="score-label">Score de risque global /100</span>
-                        <span className={`d03-pill ${band ? band.cls : ''}`}>
-                          {band ? band.label : 'Indéterminé'}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Synthèse des aléas */}
-                  <div className="analysis-section">
-                    <h3>Aléas recensés</h3>
-                    <div className="analysis-grid">
-                      {(report.aleas || []).map((a) => {
-                        const aband = a.niveau ? bandForKey(a.niveau) : undefined;
-                        const aicon = ALEA_ICONS[a.code] || ALEA_ICON_FALLBACK;
-                        return (
-                          <div
-                            key={a.code}
-                            className={`analysis-card${a.present === true ? ' present' : ''}${
-                              a.present === null ? ' error-partial' : ''
-                            }`}
-                          >
-                            <span className={`alea-icon ${aband ? aband.cls : ''}`}>
-                              <md-icon>{aicon}</md-icon>
-                            </span>
-                            <div className="analysis-card-body">
-                              <span className="analysis-card-name">{a.libelle}</span>
-                              {a.present === true ? (
-                                <span className={`d03-pill ${aband ? aband.cls : ''}`}>
-                                  {aband ? aband.label : 'Présent'}
-                                </span>
-                              ) : a.present === null ? (
-                                <span className="status-chip chip-off">
-                                  <md-icon>cloud_off</md-icon> source indisponible
-                                </span>
-                              ) : (
-                                <span className="status-chip chip-off">
-                                  <md-icon>check_circle</md-icon> non concerné
-                                </span>
-                              )}
-                              {a.zonage ? <p className="analysis-card-zone">{a.zonage}</p> : null}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Risques industriels & technologiques */}
-                  <div className="analysis-section analysis-section-industry">
-                    <h3>🏭 Risques industriels & technologiques</h3>
-                    <div className="analysis-industry-banner">
-                      <md-icon>factory</md-icon>
-                      <span>
-                        <strong>Sites industriels (ICPE), sols pollués et plans de prévention
-                        des risques technologiques (PPRT)</strong> sont intégrés à l'analyse.
-                        Ces données proviennent de Géorisques (BRGM / MTE).
-                      </span>
-                    </div>
-                    <div className="analysis-industry-list">
-                      {['icpe', 'ssp', 'pprt', 'canalisations'].map((code) => {
-                        const alea = (report.aleas || []).find((x) => x.code === code);
-                        if (!alea) return null;
-                        const aband = alea.niveau ? bandForKey(alea.niveau) : undefined;
-                        const aicon = ALEA_ICONS[code] || ALEA_ICON_FALLBACK;
-                        return (
-                          <div className="analysis-industry-row" key={code}>
-                            <span className={`alea-icon ${aband ? aband.cls : ''}`}>
-                              <md-icon>{aicon}</md-icon>
-                            </span>
-                            <div className="analysis-industry-info">
-                              <span className="analysis-industry-name">{alea.libelle}</span>
-                              {alea.zonage ? (
-                                <span className="analysis-industry-zone">{alea.zonage}</span>
-                              ) : null}
-                            </div>
-                            {alea.present === true ? (
-                              <span className={`d03-pill ${aband ? aband.cls : ''}`}>
-                                {aband ? aband.label : 'Présent'}
-                              </span>
-                            ) : alea.present === null ? (
-                              <span className="status-chip chip-off">
-                                <md-icon>cloud_off</md-icon>
-                              </span>
-                            ) : (
-                              <span className="status-chip chip-off">
-                                <md-icon>check_circle</md-icon> non concerné
-                              </span>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Plan du bâtiment (niveau 2) — disponible pour tous, adapté pour les usines */}
-                  <div className="analysis-section analysis-section-usine">
-                    <h3>
-                      🏗️ Plan du bâtiment (niveau 2 — optionnel)
-                      {report?.type_batiment?.type === 'industriel' && ' — Usine détectée'}
-                    </h3>
-                    <div className="analysis-usine-note">
-                      <md-icon>info</md-icon>
-                      <span>
-                        Enrichissez le score de risque avec le plan réel du bâtiment : zones,
-                        équipements critiques, matières dangereuses.
-                        {report?.type_batiment?.type === 'industriel' && (
-                          <span> Pour les <strong>usines</strong>, le score intègre également les{' '}
-                            <strong>zones industrielles spécifiques</strong> (charpente, équipements
-                            de production, stockage, cuves/réservoirs) et une{' '}
-                            <strong>vulnérabilité adaptée</strong>.</span>
-                        )}
-                        <br />
-                        Formats supportés : Images (JPG, PNG) · GeoJSON · JSON · CSV · DXF.
-                      </span>
-                    </div>
-
-                      {/* Niveau 2 — Plan d'usine (optionnel, uniquement pour les usines) */}
-                      {!planUsineOpen && (
-                        <div className="plan-usine-banner">
-                          <div className="plan-usine-banner-info">
-                            <strong>
-                              📐 Niveau 2 — Plan de l'usine (optionnel)
-                            </strong>
-                            <span>
-                              Enrichissez le score avec le plan réel de l'usine : zones, équipements critiques, matières dangereuses.
-                            </span>
-                          </div>
-                          <md-filled-button onClick={() => setPlanUsineOpen(true)}>
-                            <md-icon slot="icon">map</md-icon>
-                            Importer le plan
-                          </md-filled-button>
-                        </div>
-                      )}
-
-                      {planUsineOpen && (
-                        <PlanUsinePanel
-                          onEnrichir={(plan) => void enrichirPlanUsine(plan)}
-                          onClose={() => setPlanUsineOpen(false)}
-                        />
-                      )}
-
-                      {planUsineLoading && (
-                        <div className="plan-usine-loading">
-                          <md-linear-progress indeterminate></md-linear-progress>
-                          <span>Enrichissement du score avec le plan…</span>
-                        </div>
-                      )}
-
-                      {planUsineError && (
-                        <div className="plan-usine-error">
-                          <md-icon>error</md-icon>
-                          <span>{planUsineError}</span>
-                        </div>
-                      )}
-
-                      {planUsineResult?.plan_usine && (
-                        <div className="plan-usine-result">
-                          <h4>✅ Score enrichi avec le plan</h4>
-                          <div className="plan-usine-result-grid">
-                            <div className="plan-usine-result-kpi">
-                              <span className="plan-usine-result-label">Score global plan</span>
-                              <span className="plan-usine-result-value">
-                                {planUsineResult.plan_usine.score_plan_global}/100
-                              </span>
-                            </div>
-                            <div className="plan-usine-result-kpi">
-                              <span className="plan-usine-result-label">Zones personnalisées</span>
-                              <span className="plan-usine-result-value">
-                                {planUsineResult.plan_usine.nb_zones}
-                              </span>
-                            </div>
-                            <div className="plan-usine-result-kpi">
-                              <span className="plan-usine-result-label">Équipements</span>
-                              <span className="plan-usine-result-value">
-                                {planUsineResult.plan_usine.nb_equipements}
-                              </span>
-                            </div>
-                            <div className="plan-usine-result-kpi plan-usine-result-kpi-accent">
-                              <span className="plan-usine-result-label">Confiance</span>
-                              <span className="plan-usine-result-value">
-                                {planUsineResult.plan_usine.confiance_plan.score}/100
-                              </span>
-                              <span className="plan-usine-result-sub">
-                                {planUsineResult.plan_usine.confiance_plan.message}
-                              </span>
-                            </div>
-                          </div>
-                          <div className="plan-usine-result-zones">
-                            <h5>Vulnérabilité par zone</h5>
-                            {Object.keys(planUsineResult.plan_usine.zones_plan || {}).map((zoneId) => {
-                              const zones = planUsineResult.plan_usine.zones_plan as Record<string, any>;
-                              const zone = zones[zoneId];
-                              const zband = zone.niveau ? bandForKey(zone.niveau) : undefined;
-                              return (
-                                <div className="plan-usine-result-zone" key={zoneId}>
-                                  <div className="plan-usine-result-zone-top">
-                                    <span className="plan-usine-result-zone-name">{zone.nom}</span>
-                                    <span className="plan-usine-result-zone-type">
-                                      {TYPES_ZONE_LABELS[zone.type] || zone.type}
-                                    </span>
-                                    {zband ? (
-                                      <span className={`d03-pill ${zband.cls}`}>{zband.label}</span>
-                                    ) : null}
-                                  </div>
-                                  <div className="plan-usine-result-zone-values">
-                                    <span className="plan-usine-result-zone-value">
-                                      Risque {zone.risque}/100
-                                    </span>
-                                    <span className="plan-usine-result-zone-sub">
-                                      Vulnérabilité {zone.vulnerabilite}/100
-                                    </span>
-                                  </div>
-                                  {(zone.description || zone.justification) && (
-                                    <p className="plan-usine-result-zone-desc">
-                                      {zone.description || zone.justification}
-                                    </p>
-                                  )}
-                                  {zone.equipements?.length > 0 && (
-                                    <div className="plan-usine-result-zone-eqs">
-                                      <span className="plan-usine-result-zone-eqs-label">
-                                        Équipements :
-                                      </span>
-                                      {zone.equipements.map((eq: any, i: number) => (
-                                        <span
-                                          className={`plan-usine-result-zone-eq${
-                                            eq.matieres_dangereuses || eq.critique_production
-                                              ? ' critical'
-                                              : ''
-                                          }`}
-                                          key={i}
-                                        >
-                                          {eq.nom || eq.type || 'Équipement'}
-                                          {eq.matieres_dangereuses && (
-                                            <md-icon title="Matières dangereuses">warning</md-icon>
-                                          )}
-                                          {eq.critique_production && (
-                                            <md-icon title="Critique production">bolt</md-icon>
-                                          )}
-                                        </span>
-                                      ))}
-                                    </div>
-                                  )}
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                  {report.erreurs_partielles?.length > 0 && (
-                    <div className="partial-banner">
-                      <md-icon>warning</md-icon>
-                      <span>
-                        <strong>Sources partiellement indisponibles :</strong>{' '}
-                        {escHtml(report.erreurs_partielles.join(' · '))}.
-                      </span>
-                    </div>
-                  )}
-
-                  <div className="avertissement">
-                    <md-icon>info</md-icon>
-                    <span>
-                      <strong>⚠ Ce rapport ne remplace pas l'ERRIAL officiel.</strong> Il agrège
-                      les données publiques Géorisques (BRGM / MTE) et intègre les risques
-                      industriels et technologiques pour les sites industriels.
-                    </span>
-                  </div>
-                </>
-              )}
-            </section>
-          </div>
-        </>
-      )}
-
-      {/* ÉTAPE 4 — RAPPORT IA (Mistral) + Module économie */}
-      <section className="zone-report" hidden={step !== 3}>
-=======
-            {/* ÉTAPE 3 — ANALYSE BDNB (fiche bâtiment) */}
+            {/* +�TAPE 3 ��� ANALYSE BDNB (fiche b+�timent) */}
             <section className="zone-analyse" hidden={step !== 2}>
               <ZoneAnalyse report={report} />
             </section>
 
-            {/* ÉTAPE 4 — JUMEAU BIM (viewer 3D thingraph/bim-viewer en iframe) */}
+            {/* +�TAPE 4 ��� JUMEAU BIM (viewer 3D thingraph/bim-viewer en iframe) */}
             <section className="zone-bim" hidden={step !== 3}>
               <ZoneBIM
                 report={report}
@@ -1223,7 +817,7 @@ export function Zone() {
               />
             </section>
 
-            {/* ÉTAPE 5 — RECOMMANDATIONS */}
+            {/* +�TAPE 5 ��� RECOMMANDATIONS */}
             <section className="zone-recommendations" hidden={step !== 4}>
               <ZoneRecommendations
                 report={report}
@@ -1233,7 +827,7 @@ export function Zone() {
               />
             </section>
 
-            {/* ÉTAPE 6 — ARTISANS */}
+            {/* +�TAPE 6 ��� ARTISANS */}
             <section className="zone-artisans-step" hidden={step !== 5}>
               <ZoneArtisans
                 report={report}
@@ -1243,33 +837,30 @@ export function Zone() {
               />
             </section>
 
-            {/* ÉTAPE 7 — RAPPORT IA */}
+            {/* +�TAPE 7 ��� RAPPORT IA */}
             <section className="zone-report" hidden={step !== 6}>
->>>>>>> origin/develop
               {!report ? (
                 <div className="report-empty">
                   <md-icon>description</md-icon>
                   <h2>Aucun diagnostic</h2>
-                  <p>Diagnostiquez d'abord une adresse pour générer le rapport d'analyse IA.</p>
+                  <p>Diagnostiquez d'abord une adresse pour g+�n+�rer le rapport d'analyse IA.</p>
                   <md-filled-button onClick={() => goToStep(0)}>
                     <md-icon slot="icon">search</md-icon> Chercher une adresse
                   </md-filled-button>
                 </div>
-<<<<<<< HEAD
-=======
               ) : rapportLoading ? (
                 <div className="report-empty">
                   <md-icon>psychology</md-icon>
-                  <h2>Génération du rapport IA…</h2>
-                  <p>Mistral analyse les données Géorisques de {report.adresse_normalisee}.</p>
+                  <h2>G+�n+�ration du rapport IA�Ǫ</h2>
+                  <p>Mistral analyse les donn+�es G+�orisques de {report.adresse_normalisee}.</p>
                   <md-linear-progress indeterminate></md-linear-progress>
                 </div>
               ) : rapportWaiting && !rapport ? (
                 <div className="report-empty">
                   <md-icon>hourglass_top</md-icon>
-                  <h2>Analyse des recommandations en cours…</h2>
+                  <h2>Analyse des recommandations en cours�Ǫ</h2>
                   <p>
-                    Le rapport IA sera généré dès la fin de l'analyse détaillée
+                    Le rapport IA sera g+�n+�r+� d+�s la fin de l'analyse d+�taill+�e
                     du bien.
                   </p>
                   <md-linear-progress indeterminate></md-linear-progress>
@@ -1296,17 +887,17 @@ export function Zone() {
                   {rapportError.cause ? (
                     <details className="report-error-details">
                       <summary>
-                        <md-icon>bug_report</md-icon> Détail technique
+                        <md-icon>bug_report</md-icon> D+�tail technique
                       </summary>
                       <code>
                         [{rapportError.code}
-                        {rapportError.status ? ` · HTTP ${rapportError.status}` : ''}] {rapportError.cause}
+                        {rapportError.status ? ` -� HTTP ${rapportError.status}` : ''}] {rapportError.cause}
                       </code>
                     </details>
                   ) : null}
                   <div className="report-error-actions">
                     <md-filled-button onClick={() => void loadRapport()}>
-                      <md-icon slot="icon">refresh</md-icon> Réessayer
+                      <md-icon slot="icon">refresh</md-icon> R+�essayer
                     </md-filled-button>
                     <md-text-button onClick={() => goToStep(0)}>
                       <md-icon slot="icon">search</md-icon> Nouvelle adresse
@@ -1319,19 +910,19 @@ export function Zone() {
                     <div className="report-title">
                       <h2>Rapport d'analyse IA</h2>
                       <p className="report-meta">
-                        {report.adresse_normalisee} · Code INSEE {report.code_insee} ·{' '}
+                        {report.adresse_normalisee} -� Code INSEE {report.code_insee} -�{' '}
                         {report.date_generation}
                       </p>
                     </div>
                     <div className="report-actions">
                       <md-text-button
                         className="report-regenerate"
-                        aria-label="Régénérer le rapport IA (nouvel appel Mistral, sans cache)"
-                        title="Régénérer avec le prompt actuel"
+                        aria-label="R+�g+�n+�rer le rapport IA (nouvel appel Mistral, sans cache)"
+                        title="R+�g+�n+�rer avec le prompt actuel"
                         onClick={() => void loadRapport(true)}
                       >
                         <md-icon slot="icon">refresh</md-icon>
-                        Régénérer
+                        R+�g+�n+�rer
                       </md-text-button>
                       <md-elevated-button
                         className="pdf-btn report-export"
@@ -1342,16 +933,16 @@ export function Zone() {
                         <md-icon slot="icon">
                           {exportingPdf ? 'hourglass_top' : 'picture_as_pdf'}
                         </md-icon>
-                        {exportingPdf ? 'Génération du PDF…' : 'Exporter en PDF'}
+                        {exportingPdf ? 'G+�n+�ration du PDF�Ǫ' : 'Exporter en PDF'}
                       </md-elevated-button>
                       <md-text-button
                         className="report-official"
                         href={pdfUrl}
                         target="_blank"
                         rel="noopener"
-                        title="PDF officiel Géorisques (ERRIAL) pour ces coordonnées"
+                        title="PDF officiel G+�orisques (ERRIAL) pour ces coordonn+�es"
                       >
-                        PDF officiel Géorisques
+                        PDF officiel G+�orisques
                       </md-text-button>
                     </div>
                     {exportPdfError && (
@@ -1376,7 +967,7 @@ export function Zone() {
                   <aside className="report-synthese">
                     <md-icon>summarize</md-icon>
                     <div>
-                      <h3>Synthèse finale</h3>
+                      <h3>Synth+�se finale</h3>
                       <p>{rapport.synthese_finale}</p>
                     </div>
                   </aside>
@@ -1384,7 +975,7 @@ export function Zone() {
                   {rapport.obligations_reglementaires &&
                     rapport.obligations_reglementaires.length > 0 && (
                       <section className="report-obligations">
-                        <h3>Obligations réglementaires</h3>
+                        <h3>Obligations r+�glementaires</h3>
                         <ul>
                           {rapport.obligations_reglementaires.map((o, i) => (
                             <li key={i}>{o}</li>
@@ -1397,183 +988,27 @@ export function Zone() {
                     <md-icon>info</md-icon>
                     <span>
                       {rapport.avertissement_ia ||
-                        "Ce rapport est généré automatiquement par IA à partir des données publiques Géorisques normalisées. Il ne remplace pas l'ERRIAL ni l'avis d'un expert."}
+                        "Ce rapport est g+�n+�r+� automatiquement par IA +� partir des donn+�es publiques G+�orisques normalis+�es. Il ne remplace pas l'ERRIAL ni l'avis d'un expert."}
                     </span>
                   </p>
                 </>
->>>>>>> origin/develop
               ) : (
-                <>
-                  {/* ── Rapport IA : état selon Mistral ── */}
-                  {rapportLoading ? (
-                    <div className="report-empty">
-                      <md-icon>psychology</md-icon>
-                      <h2>Génération du rapport IA…</h2>
-                      <p>Mistral analyse les données Géorisques de {report.adresse_normalisee}.</p>
-                      <md-linear-progress indeterminate></md-linear-progress>
-                    </div>
-                  ) : rapportError ? (
-                    <div className="report-empty">
-                      <md-icon>error</md-icon>
-                      <h2>Rapport IA indisponible</h2>
-                      <p>{rapportError}</p>
-                      <md-filled-button onClick={() => void loadRapport()}>
-                        <md-icon slot="icon">refresh</md-icon> Réessayer
-                      </md-filled-button>
-                    </div>
-                  ) : rapport ? (
-                    <>
-                      <header className="report-header">
-                        <div className="report-title">
-                          <h2>Rapport d'analyse IA</h2>
-                          <p className="report-meta">
-                            {report.adresse_normalisee} · Code INSEE {report.code_insee} ·{' '}
-                            {report.date_generation}
-                          </p>
-                        </div>
-                        <md-elevated-button
-                          className="pdf-btn report-export"
-                          href={pdfUrl}
-                          target="_blank"
-                          rel="noopener"
-                        >
-                          <md-icon slot="icon">picture_as_pdf</md-icon>
-                          Exporter en PDF
-                        </md-elevated-button>
-                      </header>
-
-                      <p className="report-intro">{rapport.introduction}</p>
-
-                      <div className="report-sections">
-                        {rapport.sections.map((s, i) => (
-                          <article className="report-section" key={i}>
-                            <h3>{s.titre}</h3>
-                            <p>{s.contenu}</p>
-                          </article>
-                        ))}
-                      </div>
-
-                      <aside className="report-synthese">
-                        <md-icon>summarize</md-icon>
-                        <div>
-                          <h3>Synthèse finale</h3>
-                          <p>{rapport.synthese_finale}</p>
-                        </div>
-                      </aside>
-
-                      {rapport.obligations_reglementaires &&
-                        rapport.obligations_reglementaires.length > 0 && (
-                          <section className="report-obligations">
-                            <h3>Obligations réglementaires</h3>
-                            <ul>
-                              {rapport.obligations_reglementaires.map((o, i) => (
-                                <li key={i}>{o}</li>
-                              ))}
-                            </ul>
-                          </section>
-                        )}
-
-                      <p className="report-avertissement">
-                        <md-icon>info</md-icon>
-                        <span>
-                          {rapport.avertissement_ia ||
-                            "Ce rapport est généré automatiquement par IA à partir des données publiques Géorisques normalisées. Il ne remplace pas l'ERRIAL ni l'avis d'un expert."}
-                        </span>
-                      </p>
-                    </>
-                  ) : (
-                    <div className="report-empty">
-                      <md-icon>description</md-icon>
-                      <h2>Prêt à générer</h2>
-                      <p>
-                        Générez le rapport narratif IA à partir du diagnostic{' '}
-                        {report.adresse_normalisee}.
-                      </p>
-                      <md-filled-button onClick={() => void loadRapport()}>
-                        <md-icon slot="icon">auto_awesome</md-icon> Générer le rapport
-                      </md-filled-button>
-                    </div>
-                  )}
-
-                  {/* ── Module économie (TOUJOURS affiché, même si rapport IA échoue) ── */}
-                  <section className="report-economie">
-                    <header className="report-economie-header">
-                      <h3>💶 Analyse économique des travaux</h3>
-                      <p className="report-economie-meta">
-                        Calculé pour {economie?.adresse || report.adresse_normalisee}
-                      </p>
-                    </header>
-
-                    {economieLoading ? (
-                      <div className="report-economie-loading">
-                        <md-linear-progress indeterminate></md-linear-progress>
-                        <span>Calcul du retour sur investissement…</span>
-                      </div>
-                    ) : economieError ? (
-                      <div className="report-economie-error">
-                        <md-icon>error</md-icon>
-                        <span>{economieError}</span>
-                      </div>
-                    ) : economie?.contract ? (
-                      (() => {
-                        const c = economie.contract;
-                        const fmtEur = (b: any) =>
-                          !b || b.statut === 'null'
-                            ? 'Non calculé'
-                            : new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(
-                                b.valeur ?? (b.min + b.max) / 2
-                              );
-                        const fmtAn = (b: any) =>
-                          !b || b.statut === 'null'
-                            ? 'Non calculé'
-                            : `${new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 1 }).format(
-                                b.valeur ?? (b.min + b.max) / 2
-                              )} ans`;
-                        return (
-                          <div className="report-economie-grid">
-                            <div className="report-economie-kpi">
-                              <span className="report-economie-kpi-label">Coût net</span>
-                              <span className="report-economie-kpi-value">
-                                {fmtEur(c.niveau_b?.cout_travaux?.cout_net)}
-                              </span>
-                              <span className="report-economie-kpi-sub">après subventions</span>
-                            </div>
-                            <div className="report-economie-kpi">
-                              <span className="report-economie-kpi-label">Bénéfice annuel</span>
-                              <span className="report-economie-kpi-value">
-                                {fmtEur(c.niveau_b?.benefice_assurance?.total)}
-                              </span>
-                              <span className="report-economie-kpi-sub">sinistres évités</span>
-                            </div>
-                            <div className="report-economie-kpi">
-                              <span className="report-economie-kpi-label">Retour sur investissement</span>
-                              <span className="report-economie-kpi-value">
-                                {fmtAn(c.roi?.temps_de_retour)}
-                              </span>
-                              <span className="report-economie-kpi-sub">pour rentabiliser</span>
-                            </div>
-                            <div className="report-economie-kpi report-economie-kpi-accent">
-                              <span className="report-economie-kpi-label">Confiance</span>
-                              <span className="report-economie-kpi-value">
-                                {c.confidence?.score ?? '—'}/100
-                              </span>
-                              <span className="report-economie-kpi-sub">
-                                niveau {c.confidence?.niveau ?? '—'}
-                              </span>
-                            </div>
-                          </div>
-                        );
-                      })()
-                    ) : (
-                      <button type="button" className="report-economie-cta" onClick={() => void loadEconomie()}>
-                        <md-icon slot="icon">calcul</md-icon>
-                        Calculer le retour sur investissement
-                      </button>
-                    )}
-                  </section>
-                </>
+                <div className="report-empty">
+                  <md-icon>description</md-icon>
+                  <h2>Pr+�t +� g+�n+�rer</h2>
+                  <p>
+                    G+�n+�rez le rapport narratif IA +� partir du diagnostic{' '}
+                    {report.adresse_normalisee}.
+                  </p>
+                  <md-filled-button onClick={() => void loadRapport()}>
+                    <md-icon slot="icon">auto_awesome</md-icon> G+�n+�rer le rapport
+                  </md-filled-button>
+                </div>
               )}
             </section>
+          </div>
+        </>
+      )}
       </div>
 
       {/* Scrim du drawer mobile */}
@@ -1586,10 +1021,10 @@ export function Zone() {
   );
 }
 
-/* ── Champ d'adresse de l'étape 1 (hero) — input natif simple ──
-   Un <input type="search"> standard stylé en pilule : aucune dépendance au
-   champ Material (md-outlined-text-field), donc aucune largeur intrinsèque
-   qui pourrait dépasser la page. Ref, écouteurs et dropdown propres. */
+/* ������ Champ d'adresse de l'+�tape 1 (hero) ��� input natif simple ������
+   Un <input type="search"> standard styl+� en pilule : aucune d+�pendance au
+   champ Material (md-outlined-text-field), donc aucune largeur intrins+�que
+   qui pourrait d+�passer la page. Ref, +�couteurs et dropdown propres. */
 function HeroAddressField({
   fieldRef,
   initialValue,
@@ -1615,8 +1050,8 @@ function HeroAddressField({
   loading: boolean;
   error: string | null;
 }) {
-  /* Écouteurs attachés au montage ; la valeur initiale restaure la dernière
-     requête saisie (lastQuery) lorsque le champ est (ré)monté. */
+  /* +�couteurs attach+�s au montage ; la valeur initiale restaure la derni+�re
+     requ+�te saisie (lastQuery) lorsque le champ est (r+�)mont+�. */
   useEffect(() => {
     const el = fieldRef.current;
     if (!el) return;
@@ -1662,7 +1097,7 @@ function HeroAddressField({
           ref={fieldRef}
           id="addr-input-hero"
           type="search"
-          placeholder="Rechercher une adresse en France…"
+          placeholder="Rechercher une adresse en France�Ǫ"
           autoComplete="off"
           spellCheck={false}
           inputMode="search"
@@ -1691,9 +1126,9 @@ function HeroAddressField({
   );
 }
 
-/* ── Champ d'adresse réutilisable (topbar) ──
-   Chaque instance possède son propre md-outlined-text-field (ref distincte),
-   ses écouteurs (autocomplétion BAN, Entrée) et son dropdown de suggestions. */
+/* ������ Champ d'adresse r+�utilisable (topbar) ������
+   Chaque instance poss+�de son propre md-outlined-text-field (ref distincte),
+   ses +�couteurs (autocompl+�tion BAN, Entr+�e) et son dropdown de suggestions. */
 function AddressField({
   id,
   fieldRef,
@@ -1717,8 +1152,8 @@ function AddressField({
   onDiagnose: (value: string) => void;
   children?: ReactNode;
 }) {
-  /* Écouteurs attachés au montage : la valeur initiale restaure la dernière
-     requête saisie (lastQuery) lorsque le champ est (ré)monté. */
+  /* +�couteurs attach+�s au montage : la valeur initiale restaure la derni+�re
+     requ+�te saisie (lastQuery) lorsque le champ est (r+�)mont+�. */
   useEffect(() => {
     const el = fieldRef.current;
     if (!el) return;
@@ -1753,7 +1188,7 @@ function AddressField({
         ref={fieldRef}
         id={id}
         type="search"
-        placeholder="Rechercher une adresse en France…"
+        placeholder="Rechercher une adresse en France�Ǫ"
         label="Rechercher une adresse"
         autoComplete="off"
         spellCheck={false}
@@ -1768,7 +1203,7 @@ function AddressField({
   );
 }
 
-/* ── Suggestions BAN (dropdown) ── */
+/* ������ Suggestions BAN (dropdown) ������ */
 function Suggestions({
   suggestions,
   onPick,
@@ -1794,7 +1229,7 @@ function Suggestions({
   );
 }
 
-/* ── Carte d'aléa ── */
+/* ������ Carte d'al+�a ������ */
 function AleaCard({
   alea,
   visible,
@@ -1829,11 +1264,11 @@ function AleaCard({
             <>
               <span className={`status-chip ${addrPresent ? 'chip-on' : 'chip-off'}`}>
                 <md-icon>location_on</md-icon>
-                {addrPresent ? 'CONCERNÉ' : 'PAS DE RISQUE'}
+                {addrPresent ? 'CONCERN+�' : 'PAS DE RISQUE'}
               </span>
               <span className={`status-chip ${communePresent ? 'chip-mid' : 'chip-off'}`}>
                 <md-icon>account_balance</md-icon>
-                {communePresent ? 'EXISTANT' : 'NON CONCERNÉ'}
+                {communePresent ? 'EXISTANT' : 'NON CONCERN+�'}
               </span>
             </>
           )}
@@ -1866,8 +1301,8 @@ function AleaCard({
   );
 }
 
-/* ── Détection mobile — 900px, même breakpoint que @media (max-width:900px)
-   dans zone.css (garder les deux synchronisés) ── */
+/* ������ D+�tection mobile ��� 900px, m+�me breakpoint que @media (max-width:900px)
+   dans zone.css (garder les deux synchronis+�s) ������ */
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(() =>
     typeof window !== 'undefined' && window.matchMedia('(max-width: 900px)').matches
@@ -1881,9 +1316,9 @@ function useIsMobile() {
   return isMobile;
 }
 
-/* ── Sidenav rétractable (navigation façon Gemini) ──
-   Desktop : rail pleine largeur ↔ colonne d'icônes (collapsed).
-   Mobile  : drawer hors-écran ouvert via le hamburger du stepper + scrim. */
+/* ������ Sidenav r+�tractable (navigation fa+�on Gemini) ������
+   Desktop : rail pleine largeur ��� colonne d'ic+�nes (collapsed).
+   Mobile  : drawer hors-+�cran ouvert via le hamburger du stepper + scrim. */
 function ZoneSidenav({
   sidenavRef,
   collapsed,
@@ -1942,11 +1377,11 @@ function ZoneSidenav({
     >
       <header className="sidenav-header">
         {collapsed ? (
-          /* Replié : l'icône d'expansion remplace le logo (clic → déplier) */
+          /* Repli+� : l'ic+�ne d'expansion remplace le logo (clic ��� d+�plier) */
           <md-icon-button
             className="sidenav-expand"
-            aria-label="Déplier le menu"
-            title="Déplier le menu"
+            aria-label="D+�plier le menu"
+            title="D+�plier le menu"
             onClick={onToggleCollapse}
           >
             <md-icon>chevron_right</md-icon>
@@ -1956,12 +1391,12 @@ function ZoneSidenav({
             <Link
               to="/"
               className="sidenav-brand"
-              aria-label="Typhoon — accueil"
+              aria-label="Typhoon ��� accueil"
               onClick={onCloseDrawer}
             >
-              {/* Wordmark teinté par l'accent : le SVG blanc sert de masque
-                  alpha, la couleur est --accent (voir zone.css). Le lien a déjà
-                  aria-label — le span est décoratif. */}
+              {/* Wordmark teint+� par l'accent : le SVG blanc sert de masque
+                  alpha, la couleur est --accent (voir zone.css). Le lien a d+�j+�
+                  aria-label ��� le span est d+�coratif. */}
               <span className="sidenav-wordmark-img" aria-hidden="true" />
             </Link>
             <md-icon-button
@@ -1977,7 +1412,7 @@ function ZoneSidenav({
       </header>
 
       {collapsed ? (
-        /* ── Mode replié : colonne d'icônes ── */
+        /* ������ Mode repli+� : colonne d'ic+�nes ������ */
         <nav className="sidenav-rail" aria-label="Raccourcis">
           <md-icon-button title="Nouveau diagnostic" aria-label="Nouveau diagnostic" onClick={onNewDiagnostic}>
             <md-icon>add_circle</md-icon>
@@ -1993,7 +1428,7 @@ function ZoneSidenav({
           </md-icon-button>
         </nav>
       ) : (
-        /* ── Mode déplié : liste M3 + historique « Récent » ── */
+        /* ������ Mode d+�pli+� : liste M3 + historique -� R+�cent -+ ������ */
         <div className="sidenav-body">
           <md-list className="sidenav-nav">
             <md-list-item
@@ -2031,8 +1466,8 @@ function ZoneSidenav({
         <md-icon-button
           id="settings-anchor"
           className="sidenav-settings"
-          aria-label="Réglages"
-          title="Réglages"
+          aria-label="R+�glages"
+          title="R+�glages"
           aria-expanded={settingsOpen}
           aria-haspopup="menu"
           onClick={onOpenSettings}
@@ -2074,25 +1509,23 @@ function ZoneSidenav({
             </div>
             <button type="button" className="sidenav-accent-reset" onClick={onResetAccent}>
               <md-icon>restart_alt</md-icon>
-              <span>Rétablir le bleu d'origine</span>
+              <span>R+�tablir le bleu d'origine</span>
             </button>
           </div>
 
           <md-menu-item type="button" onClick={() => navGo('/')}>
             <md-icon slot="start">home</md-icon>
-            <span slot="headline">Retour à l'accueil</span>
+            <span slot="headline">Retour +� l'accueil</span>
           </md-menu-item>
         </md-menu>
       </footer>
     </aside>
   );
-<<<<<<< HEAD
-=======
 }
 
-/* ── Historique « Récent » de la sidenav (façon Gemini) ──
-   Section repliable : liste des adresses diagnostiquées (localStorage),
-   clic → relance le diagnostic, survol → bouton de suppression. */
+/* ������ Historique -� R+�cent -+ de la sidenav (fa+�on Gemini) ������
+   Section repliable : liste des adresses diagnostiqu+�es (localStorage),
+   clic ��� relance le diagnostic, survol ��� bouton de suppression. */
 function ConversationHistory({
   conversations,
   activeAddress,
@@ -2121,8 +1554,8 @@ function ConversationHistory({
       open={open}
       onToggle={(e) => setOpen((e.currentTarget as HTMLDetailsElement).open)}
     >
-      <summary className="sidenav-recent-header" aria-label="Historique des adresses diagnostiquées">
-        <span className="sidenav-recent-title">Récent</span>
+      <summary className="sidenav-recent-header" aria-label="Historique des adresses diagnostiqu+�es">
+        <span className="sidenav-recent-title">R+�cent</span>
         <md-icon>expand_more</md-icon>
       </summary>
       <div className="sidenav-recent-list">
@@ -2156,5 +1589,4 @@ function ConversationHistory({
       </div>
     </details>
   );
->>>>>>> origin/develop
 }
