@@ -188,6 +188,218 @@
         transform: translateY(-10px) scale(.99);
         pointer-events: none;
       }
+
+      /* ═══ Préloader : disposition du haut — logo + phrase en haut à gauche,
+             mascotte à droite, qui déborde sur la carte du compteur ═══
+         La grille _1st (2 colonnes Webflow) accueille une colonne « brand »
+         (wordmark + phrase « Le climat ne prévient pas… », texte et classes
+         d'origine conservés à l'identique) à gauche, et la mascotte
+         transparente à droite. La mascotte est volontairement plus grande que
+         sa colonne (max-width: none), ancrée en bas et tirée vers le bas par
+         une marge négative : elle « sort » de son bloc et chevauche le bord
+         supérieur de la carte du compteur (z-index supérieur), avec une ombre
+         bleue portée derrière elle (drop-shadow sur la silhouette PNG). */
+      .preloader {
+        /* Sécurité : si le contenu dépasse 100vh (écran peu haut), le
+           préloader défile au lieu de rogner. align-items: safe center
+           évite le bug de centrage flex (haut inaccessible au scroll) ;
+           les navigateurs sans « safe » ignorent la déclaration. */
+        align-items: safe center;
+        overflow-y: auto;
+      }
+      /* Grilles en hauteur naturelle + centrage + espace fixe : le
+         chevauchement mascotte/carte devient déterministe (il dépend de la
+         marge négative, pas de l'espace libre du viewport). */
+      .preloader-inner {
+        justify-content: center;
+        gap: 3rem;
+      }
+      .preloader-grid {
+        height: auto;
+        max-height: none;
+      }
+      .preloader-grid._1st {
+        align-items: center;
+      }
+      .preloader-brand {
+        flex-flow: column;
+        justify-content: flex-start;
+        align-items: flex-start;
+        gap: 1.75rem;
+        min-width: 0;
+        align-self: flex-start;
+        display: flex;
+      }
+      .preloader-mascot {
+        /* Grand (≈1,8–2× l'ancienne taille), déborde de sa colonne, ancré en
+           bas. margin-bottom négative = vrai chevauchement avec la carte. */
+        object-fit: contain;
+        width: clamp(30rem, 44vw, 46rem);
+        max-width: none;
+        height: auto;
+        max-height: 34rem;
+        align-self: flex-end;
+        justify-self: center;
+        margin-bottom: -5.5rem;
+        position: relative;
+        z-index: 2;
+        filter: drop-shadow(0 1.25rem 2.5rem rgba(67, 134, 177, .35))
+                drop-shadow(0 .4rem .9rem rgba(67, 134, 177, .28));
+      }
+      /* La carte passe derrière la mascotte (mais au-dessus du fond). */
+      .climate-counter {
+        position: relative;
+        z-index: 1;
+      }
+      @media (min-width: 768px) and (max-width: 900px) {
+        /* Largeurs intermédiaires : le plancher de 30rem du clamp dépasse la
+           colonne de la grille (la mascotte déborderait à droite hors de
+           l'écran). On resserre la largeur dans cette tranche. */
+        .preloader-mascot {
+          width: min(44vw, 25rem);
+        }
+      }
+      @media (max-height: 850px) {
+        /* Écrans peu hauts : on compacte le bloc gauche et la mascotte pour
+           que logo + phrase + compteur tiennent dans 100vh sans défilement
+           (chevauchement conservé : marge −4.5rem vs gap 2rem). */
+        .preloader-inner {
+          gap: 2rem;
+        }
+        .preloader-brand {
+          gap: 1rem;
+        }
+        .preloader-grid._1st .logo.in-preloader {
+          width: 13rem;
+        }
+        .preloader-mascot {
+          width: min(36vw, 34rem);
+          margin-bottom: -4.5rem;
+        }
+      }
+      @media (max-width: 767px) {
+        /* Sur mobile les hauteurs fixes des grilles (20%/80%) ne suffisent
+           plus avec le bloc empilé : on laisse chaque zone prendre sa hauteur
+           naturelle (le défilement est déjà géré au niveau .preloader). */
+        .preloader-inner {
+          justify-content: flex-start;
+          gap: 2.5rem;
+        }
+        .preloader-grid._1st,
+        .preloader-grid._2nd {
+          height: auto;
+          max-height: none;
+        }
+        .preloader-brand {
+          gap: 1.25rem;
+        }
+        .preloader-mascot {
+          width: min(100%, 18rem);
+          margin-bottom: -5rem;
+        }
+      }
+      @media (max-width: 479px) {
+        .preloader-grid._1st {
+          flex-wrap: wrap;
+          align-content: center;
+        }
+        .preloader-brand {
+          width: 100%;
+        }
+        .preloader-mascot {
+          width: min(100%, 14rem);
+          margin-left: auto;
+          margin-bottom: -4rem;
+        }
+      }
+
+      /* ═══ Préloader : compteur « coût cumulé des sinistres climatiques » ═══
+         Le style reprend l'ancien préloader : fond du thème (clair/blanc en
+         thème clair), police Google Sans / Neue Montreal. En haut, le bloc
+         wordmark + phrase « Le climat ne prévient pas… » avec la mascotte à
+         droite (voir disposition _1st ci-dessus) ; en bas, la zone des deux
+         horloges de compte à rebours est remplacée par le compteur
+         climatique, présenté dans une carte du même style que les anciennes
+         horloges (fond var(--dark-grey), bordure var(--standard-grey),
+         coins arrondis). */
+      .climate-counter {
+        grid-column: 1 / -1;
+        border: 1px solid var(--standard-grey);
+        background-color: var(--dark-grey);
+        border-radius: 36px;
+        flex-flow: column;
+        justify-content: center;
+        align-items: flex-start;
+        width: 100%;
+        padding: 2.5rem 2.5rem 2.25rem;
+        display: flex;
+        font-family: 'Google Sans', 'Neue Montreal', sans-serif;
+      }
+      .climate-counter-head {
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 1rem 2rem;
+        width: 100%;
+        display: flex;
+        flex-wrap: wrap;
+      }
+      .climate-counter-label {
+        color: var(--white);
+        font-size: 1.05rem;
+        font-weight: 500;
+        letter-spacing: .01em;
+      }
+      .climate-counter-source {
+        color: var(--light-grey);
+        font-size: .7rem;
+        font-weight: 400;
+        letter-spacing: .02em;
+      }
+      .climate-counter-row {
+        justify-content: flex-start;
+        align-items: baseline;
+        gap: 1.75rem;
+        width: 100%;
+        margin-top: 1.75rem;
+        display: flex;
+        flex-wrap: wrap;
+      }
+      .climate-counter-value {
+        color: var(--white);
+        font-size: clamp(3.25rem, 8vw, 6.5rem);
+        font-weight: 600;
+        line-height: 1;
+        letter-spacing: -.03em;
+        font-variant-numeric: tabular-nums;
+      }
+      .climate-counter-since {
+        color: var(--light-grey);
+        font-size: 1rem;
+        font-weight: 400;
+        line-height: 1.45;
+        max-width: 13rem;
+      }
+      .climate-counter-footnote {
+        width: 100%;
+        margin-top: 2rem;
+        padding-top: 1.25rem;
+        border-top: 1px solid var(--standard-grey);
+        color: var(--light-grey);
+        font-size: .95rem;
+        line-height: 1.55;
+      }
+      @media (max-width: 767px) {
+        .climate-counter {
+          border-radius: 24px;
+          padding: 1.5rem;
+        }
+        .climate-counter-since {
+          max-width: none;
+        }
+        .climate-counter-footnote {
+          margin-top: 1.5rem;
+        }
+      }
     </style>
     <style>
       @font-face { font-family: 'Neue Montreal'; src: url('vetter-consulting/assets/fonts/66a20363e5bbc5dbaa1b595a_PPNeueMontreal-Light.otf') format('opentype'); font-weight: 200; font-style: normal; font-display: swap; }
@@ -478,7 +690,29 @@
   </head>
   <body data-w-id="661550636b9312315bbc1917" class="global-body">
     <script>!function(o,c){var n=c.documentElement,t=" w-mod-";n.className+=t+"js",("ontouchstart"in o||o.DocumentTouch&&c instanceof DocumentTouch)&&(n.className+=t+"touch")}(window,document);</script>
-<div data-w-id="1a765f11-e76b-dc77-f1f8-bbfc09335b89" class="preloader"><div class="preloader-inner"><div class="preloader-grid _1st"><img src="vetter-consulting/assets/img/typhoon-wordmark.svg" loading="eager" alt="Typhoon" class="logo in-preloader"/><div class="global-headline-m is-left-aligned in-loader">Le climat ne pr&eacute;vient pas.<span class="is-white"> La pr&eacute;cision est cl&eacute;. </span>Chaque minute compte.<br/></div></div><div class="preloader-grid _2nd"><div class="preloader-clock"><div class="align-horizontally stretched is-vertically-aligned-oin-mobile"><div class="global-headline-s reduced">Vos concurrents</div><div class="grid-icon-div tm-0"><img src="vetter-consulting/assets/img/66a20363e5bbc5dbaa1b5980_user-tie-solid.svg" loading="lazy" alt="" class="icon"/></div></div><div class="clock-overflow-div"><div class="clock-txt">05:00</div></div></div><div class="preloader-clock"><div class="align-horizontally stretched is-vertically-aligned-oin-mobile"><div class="global-headline-s reduced">Votre portefeuille <span class="is-grey">sans Typhoon</span></div><div class="grid-icon-div tm-0"><img src="vetter-consulting/assets/img/66a20363e5bbc5dbaa1b597b_building-shield-solid.svg" loading="eager" alt="" class="icon"/></div></div><div class="clock-overflow-div"><div class="clock-number-column-1"><div class="clock-txt">0</div></div><div data-w-id="aaef39c9-dc12-e30d-24d4-ba6dbfcd2565" class="clock-number-column-2"><div class="clock-txt">5<br/></div><div class="clock-txt">4</div></div><div class="clock-number-column-3"><div class="clock-txt">:</div></div><div data-w-id="6a94415b-1f68-93f0-161f-84ee49887b91" class="clock-number-column-4"><div class="clock-txt">0</div><div class="clock-txt">5</div></div><div data-w-id="d463d7a9-2b40-fef5-e4e8-3776ce2857f0" class="clock-number-column-5"><div class="clock-txt">0</div><div class="clock-txt">9</div><div class="clock-txt">8</div><div class="clock-txt">7</div></div></div></div></div></div></div><div class="navbar landingpage"><div data-animation="default" data-collapse="medium" data-duration="400" data-easing="ease" data-easing2="ease" role="banner" class="webflow-native-navbar w-nav"><div class="navbar-outer"><div class="navbar-inner"><a href="/" aria-current="page" target="_top" class="navbar-logo-div visible-on-desktop w-nav-brand w--current"><img src="vetter-consulting/assets/img/typhoon-logo.svg" loading="eager" alt="Typhoon" class="logo"/></a><div class="nav-static-item"><div class="nav-arrow-div"><img src="vetter-consulting/assets/img/typhoon-logo.svg" loading="lazy" alt="Typhoon" class="nav-arrow"/></div><div class="nav-link-static">Menü</div></div><nav role="navigation" class="nav-menu-wrapper w-nav-menu"><ul role="list" class="nav-menu-right w-list-unstyled"><li class="nav-item"><a href="/" aria-current="page" target="_top" class="nav-link w--current">Home</a></li><li class="nav-item"><a href="/faq" target="_top" class="nav-link">FAQ</a></li><li class="nav-item"><a href="/contact" target="_top" class="nav-link">Contact</a></li><li class="nav-item"><a data-w-id="e8b68c38-7920-70a0-3c4d-94c7ad18ef1c" href="/zone" target="_top" class="primary-btn w-inline-block"><div class="btn-txt-container"><div class="btn-txt">Commen&ccedil;ons</div><div class="btn-txt">Commen&ccedil;ons</div></div></a></li><li class="mobile-margin-top-10"></li></ul></nav><div id="w-node-e8b68c38-7920-70a0-3c4d-94c7ad18ef24-ad18ef05" class="nav-area-left mobile"><div class="menu-button w-nav-button"><div data-is-ix2-target="1" class="hamburger-menu-dark" data-w-id="e8b68c38-7920-70a0-3c4d-94c7ad18ef26" data-animation-type="lottie" data-src="vetter-consulting/assets/img/66a20363e5bbc5dbaa1b59bb_656e40dffb81768885f3d9a9_menu_white.json" data-loop="0" data-direction="1" data-autoplay="0" data-renderer="svg" data-default-duration="2.3333333333333335" data-duration="0" data-loading="eager" data-ix2-initial-state="0"></div></div></div></div></div></div><button type="button" class="theme-toggle" data-theme-toggle aria-label="Basculer le mode clair / sombre" title="Mode clair / sombre"><svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg><svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></button><div class="color-control"><button type="button" class="color-toggle" data-accent-toggle title="Changer la couleur d'accent" aria-label="Changer la couleur d'accent" aria-expanded="false"><svg class="icon-palette" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22a10 10 0 1 1 10-10c0 1.7-1.3 3-3 3h-2a2 2 0 0 0-2 2c0 .6.2 1 .6 1.4.4.4.6.8.6 1.4 0 1.7-1.3 3-3 3z"/><circle cx="7.5" cy="11.5" r=".5" fill="currentColor"/><circle cx="11" cy="7.5" r=".5" fill="currentColor"/><circle cx="15.5" cy="7.5" r=".5" fill="currentColor"/></svg><span class="accent-dot"></span></button><div class="accent-panel" data-accent-panel role="dialog" aria-label="Couleur d'accent"><div class="accent-panel-title">Couleur d'accent</div><div class="accent-swatches"><button type="button" class="accent-swatch" data-accent-swatch="#4386B1" style="--swatch:#4386B1" aria-label="Bleu de marque" title="Bleu de marque"></button><button type="button" class="accent-swatch" data-accent-swatch="#7b2cbf" style="--swatch:#7b2cbf" aria-label="Violet" title="Violet"></button><button type="button" class="accent-swatch" data-accent-swatch="#e63946" style="--swatch:#e63946" aria-label="Rouge" title="Rouge"></button><button type="button" class="accent-swatch" data-accent-swatch="#f97316" style="--swatch:#f97316" aria-label="Orange" title="Orange"></button><button type="button" class="accent-swatch" data-accent-swatch="#22c55e" style="--swatch:#22c55e" aria-label="Vert" title="Vert"></button><button type="button" class="accent-swatch" data-accent-swatch="#06b6d4" style="--swatch:#06b6d4" aria-label="Cyan" title="Cyan"></button><button type="button" class="accent-swatch" data-accent-swatch="#ec4899" style="--swatch:#ec4899" aria-label="Rose" title="Rose"></button><button type="button" class="accent-swatch" data-accent-swatch="#eab308" style="--swatch:#eab308" aria-label="Jaune" title="Jaune"></button><button type="button" class="accent-swatch" data-accent-swatch="#64748b" style="--swatch:#64748b" aria-label="Ardoise" title="Ardoise"></button><button type="button" class="accent-swatch" data-accent-swatch="#10b981" style="--swatch:#10b981" aria-label="&Eacute;meraude" title="&Eacute;meraude"></button></div><button type="button" class="accent-reset" data-accent-reset aria-label="R&eacute;tablir le bleu d'origine" title="R&eacute;tablir le bleu d'origine"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg><span>R&eacute;tablir le bleu d'origine</span></button></div></div><div class="clock"><div class="clock-overflow-div small"><div class="clock-number-column-1 small"><div class="clock-txt small">0</div></div><div data-w-id="e8b68c38-7920-70a0-3c4d-94c7ad18ef2c" class="clock-number-column-2 small"><div class="clock-txt small">4<br/></div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1<br/></div><div class="clock-txt small">0</div></div><div class="clock-number-column-3 small"><div class="clock-txt small">:</div></div><div data-w-id="e8b68c38-7920-70a0-3c4d-94c7ad18ef3c" class="clock-number-column-4 small"><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0<br/></div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div data-w-id="e8b68c38-7920-70a0-3c4d-94c7ad18ef6e" class="clock-number-column-5"><div class="_1min"><div class="_10sec"><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div></div><div class="_1min"><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div></div><div class="_1min"><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div></div><div class="_1min"><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div></div></div></div></div></div><section data-w-id="933bc9ea-8f0f-40e8-a12e-39b1718e2ca5" class="main-content"><div class="hero"><div class="hero-wrapper v2"><div class="hero-layer-video" aria-hidden="true"><video id="hero-video" class="hero-video" src="vetter-consulting/assets/videos/hero-typhoon-house.mp4" muted loop playsinline preload="auto" poster="vetter-consulting/assets/img/66a20363e5bbc5dbaa1b59ac_VC%20GmbH%20-%20Shooting%20-%20022024-272.webp" tabindex="-1"></video></div><script>
+<div data-w-id="1a765f11-e76b-dc77-f1f8-bbfc09335b89" class="preloader"><div class="preloader-inner"><div class="preloader-grid _1st"><div class="preloader-brand"><img src="vetter-consulting/assets/img/typhoon-wordmark.svg" loading="eager" alt="Typhoon" class="logo in-preloader"/><div class="global-headline-m is-left-aligned in-loader">Le climat ne pr&eacute;vient pas.<span class="is-white"> La pr&eacute;cision est cl&eacute;. </span>Chaque minute compte.<br/></div></div><img src="/mascotte_transparent.png" loading="eager" alt="" class="preloader-mascot"/></div><div class="preloader-grid _2nd"><div class="climate-counter"><div class="climate-counter-head"><div class="climate-counter-label">Coût cumulé des sinistres climatiques en France</div><div class="climate-counter-source">*Moyenne calculée sur 73,4 Md€ / 1989–2019 — France Assureurs</div></div><div class="climate-counter-row"><div class="climate-counter-value" id="climate-counter-value">0&nbsp;€</div><div class="climate-counter-since">depuis que vous lisez cette page</div></div><div class="climate-counter-footnote">Sur la base de la moyenne historique, c'est environ 78€ de sinistres climatiques indemnisés chaque seconde en France — et ce rythme ne cesse d'accélérer.</div></div></div></div></div><script>
+/* Compteur climatique : coût cumulé des sinistres climatiques en France.
+   Moyenne historique France Assureurs : 73,4 Md€ indemnisés sur 1989–2019,
+   soit 30 ans × 365,25 j × 86 400 s = 946 728 000 s → ≈ 77,55 €/s.
+   Mise à jour toutes les 50 ms (rendu fluide), formatage Intl fr-FR.
+   Le compteur démarre à 0 au chargement et ne redémarre jamais en cours
+   de session : la valeur est recalculée depuis l'horodatage de chargement
+   (aucun reset au scroll, seulement au rechargement complet de la page). */
+(function () {
+  var T0 = Date.now();
+  var RATE = 73400000000 / 946728000; /* ≈ 77,55 €/s */
+  var TICK_MS = 50;
+  var format = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 });
+  var el = document.getElementById('climate-counter-value');
+  if (!el) return;
+  function render() {
+    var seconds = (Date.now() - T0) / 1000;
+    el.textContent = format.format(Math.floor(seconds * RATE)) + ' €';
+  }
+  render();
+  setInterval(render, TICK_MS);
+})();
+</script><div class="navbar landingpage"><div data-animation="default" data-collapse="medium" data-duration="400" data-easing="ease" data-easing2="ease" role="banner" class="webflow-native-navbar w-nav"><div class="navbar-outer"><div class="navbar-inner"><a href="/" aria-current="page" target="_top" class="navbar-logo-div visible-on-desktop w-nav-brand w--current"><img src="vetter-consulting/assets/img/typhoon-logo.svg" loading="eager" alt="Typhoon" class="logo"/></a><div class="nav-static-item"><div class="nav-arrow-div"><img src="vetter-consulting/assets/img/typhoon-logo.svg" loading="lazy" alt="Typhoon" class="nav-arrow"/></div><div class="nav-link-static">Menü</div></div><nav role="navigation" class="nav-menu-wrapper w-nav-menu"><ul role="list" class="nav-menu-right w-list-unstyled"><li class="nav-item"><a href="/" aria-current="page" target="_top" class="nav-link w--current">Home</a></li><li class="nav-item"><a href="/faq" target="_top" class="nav-link">FAQ</a></li><li class="nav-item"><a href="/contact" target="_top" class="nav-link">Contact</a></li><li class="nav-item"><a data-w-id="e8b68c38-7920-70a0-3c4d-94c7ad18ef1c" href="/zone" target="_top" class="primary-btn w-inline-block"><div class="btn-txt-container"><div class="btn-txt">Commen&ccedil;ons</div><div class="btn-txt">Commen&ccedil;ons</div></div></a></li><li class="mobile-margin-top-10"></li></ul></nav><div id="w-node-e8b68c38-7920-70a0-3c4d-94c7ad18ef24-ad18ef05" class="nav-area-left mobile"><div class="menu-button w-nav-button"><div data-is-ix2-target="1" class="hamburger-menu-dark" data-w-id="e8b68c38-7920-70a0-3c4d-94c7ad18ef26" data-animation-type="lottie" data-src="vetter-consulting/assets/img/66a20363e5bbc5dbaa1b59bb_656e40dffb81768885f3d9a9_menu_white.json" data-loop="0" data-direction="1" data-autoplay="0" data-renderer="svg" data-default-duration="2.3333333333333335" data-duration="0" data-loading="eager" data-ix2-initial-state="0"></div></div></div></div></div></div><button type="button" class="theme-toggle" data-theme-toggle aria-label="Basculer le mode clair / sombre" title="Mode clair / sombre"><svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg><svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></button><div class="color-control"><button type="button" class="color-toggle" data-accent-toggle title="Changer la couleur d'accent" aria-label="Changer la couleur d'accent" aria-expanded="false"><svg class="icon-palette" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22a10 10 0 1 1 10-10c0 1.7-1.3 3-3 3h-2a2 2 0 0 0-2 2c0 .6.2 1 .6 1.4.4.4.6.8.6 1.4 0 1.7-1.3 3-3 3z"/><circle cx="7.5" cy="11.5" r=".5" fill="currentColor"/><circle cx="11" cy="7.5" r=".5" fill="currentColor"/><circle cx="15.5" cy="7.5" r=".5" fill="currentColor"/></svg><span class="accent-dot"></span></button><div class="accent-panel" data-accent-panel role="dialog" aria-label="Couleur d'accent"><div class="accent-panel-title">Couleur d'accent</div><div class="accent-swatches"><button type="button" class="accent-swatch" data-accent-swatch="#4386B1" style="--swatch:#4386B1" aria-label="Bleu de marque" title="Bleu de marque"></button><button type="button" class="accent-swatch" data-accent-swatch="#7b2cbf" style="--swatch:#7b2cbf" aria-label="Violet" title="Violet"></button><button type="button" class="accent-swatch" data-accent-swatch="#e63946" style="--swatch:#e63946" aria-label="Rouge" title="Rouge"></button><button type="button" class="accent-swatch" data-accent-swatch="#f97316" style="--swatch:#f97316" aria-label="Orange" title="Orange"></button><button type="button" class="accent-swatch" data-accent-swatch="#22c55e" style="--swatch:#22c55e" aria-label="Vert" title="Vert"></button><button type="button" class="accent-swatch" data-accent-swatch="#06b6d4" style="--swatch:#06b6d4" aria-label="Cyan" title="Cyan"></button><button type="button" class="accent-swatch" data-accent-swatch="#ec4899" style="--swatch:#ec4899" aria-label="Rose" title="Rose"></button><button type="button" class="accent-swatch" data-accent-swatch="#eab308" style="--swatch:#eab308" aria-label="Jaune" title="Jaune"></button><button type="button" class="accent-swatch" data-accent-swatch="#64748b" style="--swatch:#64748b" aria-label="Ardoise" title="Ardoise"></button><button type="button" class="accent-swatch" data-accent-swatch="#10b981" style="--swatch:#10b981" aria-label="&Eacute;meraude" title="&Eacute;meraude"></button></div><button type="button" class="accent-reset" data-accent-reset aria-label="R&eacute;tablir le bleu d'origine" title="R&eacute;tablir le bleu d'origine"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg><span>R&eacute;tablir le bleu d'origine</span></button></div></div><div class="clock"><div class="clock-overflow-div small"><div class="clock-number-column-1 small"><div class="clock-txt small">0</div></div><div data-w-id="e8b68c38-7920-70a0-3c4d-94c7ad18ef2c" class="clock-number-column-2 small"><div class="clock-txt small">4<br/></div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1<br/></div><div class="clock-txt small">0</div></div><div class="clock-number-column-3 small"><div class="clock-txt small">:</div></div><div data-w-id="e8b68c38-7920-70a0-3c4d-94c7ad18ef3c" class="clock-number-column-4 small"><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0<br/></div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div data-w-id="e8b68c38-7920-70a0-3c4d-94c7ad18ef6e" class="clock-number-column-5"><div class="_1min"><div class="_10sec"><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div></div><div class="_1min"><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div></div><div class="_1min"><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div></div><div class="_1min"><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div></div></div></div></div></div><section data-w-id="933bc9ea-8f0f-40e8-a12e-39b1718e2ca5" class="main-content"><div class="hero"><div class="hero-wrapper v2"><div class="hero-layer-video" aria-hidden="true"><video id="hero-video" class="hero-video" src="vetter-consulting/assets/videos/hero-typhoon-house.mp4" muted loop playsinline preload="auto" poster="vetter-consulting/assets/img/66a20363e5bbc5dbaa1b59ac_VC%20GmbH%20-%20Shooting%20-%20022024-272.webp" tabindex="-1"></video></div><script>
 /* Typhoon — hero background video. Native <video> replaces the Mux iframe.
    Autoplay per mux.com/docs/guides/autoplay: call play() (not the autoplay
    attribute) so we can detect a blocked autoplay and fall back to the
