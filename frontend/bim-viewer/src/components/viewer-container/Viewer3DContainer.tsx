@@ -99,15 +99,10 @@ export default class Viewer3DContainer extends Vue {
       viewer && viewer.resize(window.innerWidth, window.innerHeight);
     }, false);
 
-    // Simulations : suit l'activité pour le bouton flottant et ouvre le
-    // panneau dat.gui dès qu'une simulation s'active (auto-dérivée du
-    // rapport typhon ou déclenchée à la main) — sinon personne ne les trouve.
+    // Simulations : on suit seulement l'état (le bouton flottant et le
+    // panneau dat.gui qu'il ouvrait ont été retirés — cf. Viewer3D).
     viewer.simulations && (viewer.simulations.onActivityChange = (active: boolean) => {
-      const wasActive = this.simulationsActive;
       this.simulationsActive = active;
-      if (active && !wasActive) {
-        viewer.openSimulationsPanel();
-      }
     });
 
     viewer.watch("selectedObject", (obj: any) => {
@@ -295,15 +290,9 @@ export default class Viewer3DContainer extends Vue {
           <i class="el-icon-back" />
           <span>Projets</span>
         </button>
-        <button
-          class={`${styles.simulationsButton}${this.simulationsActive ? " " + styles.simulationsButtonActive : ""}`}
-          onClick={() => this.viewer && this.viewer.openSimulationsPanel()}
-          title={"Simulations de catastrophes (inondation, feu, séisme)" + (this.simulationsActive ? " — une simulation est en cours" : "")}
-        >
-          <i class="el-icon-caret-right" />
-          <span>Simulations</span>
-          <i class={`${styles.simStatusDot}${this.simulationsActive ? " " + styles.simStatusDotActive : ""}`} />
-        </button>
+        {/* Bouton « Simulations » retiré : il n'ouvrait que le panneau dat.gui,
+            lui-même désactivé. Les simulations restent pilotées par le rapport
+            (postMessage `typhoon:sim`). */}
         <input type="file" id="uploadModelFile" style="display: none" onChange={ this.uploadModelFile(this.viewer) } />
         {this.onLoading && <ProgressBar text={this.loadingText} progressValue={this.loadingProgress} />}
         <el-dialog

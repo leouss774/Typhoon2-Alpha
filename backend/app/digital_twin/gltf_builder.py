@@ -925,14 +925,10 @@ _TOIT_TEXTURE_DEFAUT = "toit_defaut.jpg"
 # dépend du contexte : gazon pour une maison (campagne/périurbain), dallage
 # de trottoir + route asphaltée côté rue pour un immeuble (urbain).
 _SOL_TEXTURE = "sol_herbe.jpg"
-_SOL_TROTTOIR_TEXTURE = "sol_trottoir.jpg"
-_SOL_ROUTE_TEXTURE = "sol_route.jpg"
 _PLANCHER_TEXTURE = "plancher_granite.jpg"
 _PORTE_TEXTURE = "porte.jpg"
 
 # Dimensions de la scène de rue (mode immeuble), en mètres.
-_TROTTOIR_LARGEUR_M = 6.0   # bande de trottoir entre la façade et la route
-_ROUTE_LARGEUR_M = 8.0      # chaussée le long de la façade côté rue
 
 # Taille "monde" d'un carreau de texture, en mètres (une texture 1K seamless
 # répétée tous les N mètres). Clé = nom de matériau glTF.
@@ -1373,6 +1369,43 @@ def _serialise_parts_glb(
 
         attributes: dict[str, int] = {"POSITION": acc_base + 1}
 
+        # -- NORMAL : indispensable à l'éclairage PBR. Sans lui, les lumières
+        # directes de three.js n'éclairent pas (murs noirs) — le défaut était
+        # masqué tant qu'une carte d'environnement éclairait la scène. Les
+        # sommets ne sont pas partagés entre triangles : la normale de face,
+        # déjà orientée par _push_tri/_push_quad, donne un flat shading exact.
+        if vertices:
+            normals: list[Point3D] = [(0.0, 1.0, 0.0)] * len(vertices)
+            for a, b, c in triangles:
+                nx, ny, nz = _tri_normal(vertices[a], vertices[b], vertices[c])
+                longueur = math.sqrt(nx * nx + ny * ny + nz * nz)
+                if longueur < 1e-12:
+                    continue  # triangle dégénéré : normale +Y par défaut
+                n = (nx / longueur, ny / longueur, nz / longueur)
+                normals[a] = n
+                normals[b] = n
+                normals[c] = n
+            nrm_data: list[float] = []
+            for nx, ny, nz in normals:
+                nrm_data.extend([nx, ny, nz])
+            nrm_bytes = _pack_f32(nrm_data)
+            buffer_views.append({
+                "buffer": 0,
+                "byteOffset": byte_cursor,
+                "byteLength": len(nrm_bytes),
+                "target": 34962,  # ARRAY_BUFFER
+            })
+            byte_cursor += len(nrm_bytes)
+            bin_parts.append(nrm_bytes)
+            accessors.append({
+                "bufferView": len(buffer_views) - 1,
+                "byteOffset": 0,
+                "componentType": 5126,
+                "count": len(vertices),
+                "type": "VEC3",
+            })
+            attributes["NORMAL"] = len(accessors) - 1
+
         # -- TEXCOORD_0 : seulement pour les parties dont le matériau porte
         # une texture (UV planaires monde, cf. _planar_uvs).
         mat_def = materials[mat_index[mid]]
@@ -1584,19 +1617,27 @@ def _materials_for(
         },
         {
             "name": "Cadres",
+            # Menuiserie gris moyen : le blanc éclatant d'origine, répété sur
+            # toute la façade d'un immeuble, écrasait la texture des murs.
             "pbrMetallicRoughness": {
-                "baseColorFactor": [0.92, 0.93, 0.95, 1.0],
+                "baseColorFactor": [0.52, 0.52, 0.53, 1.0],
                 "metallicFactor": 0.0,
-                "roughnessFactor": 0.35,
+                "roughnessFactor": 0.6,
             },
             "doubleSided": True,
         },
         {
             "name": "Vitrage",
+            # Verre translucide, PAS un miroir : metallic 0.9 / roughness 0.05
+            # transformait les façades en surfaces réfléchissantes qui
+            # glissaient avec la caméra et masquaient les textures BDNB.
+            # Teinte NEUTRE : le bleu franc d'origine (0.45, 0.62, 0.72),
+            # répété sur des centaines de fenêtres, colorait tout le bâtiment
+            # en bleu et masquait la couleur propre des textures BDNB.
             "pbrMetallicRoughness": {
-                "baseColorFactor": [0.45, 0.62, 0.72, 0.5],
-                "metallicFactor": 0.9,
-                "roughnessFactor": 0.05,
+                "baseColorFactor": [0.58, 0.60, 0.61, 0.45],
+                "metallicFactor": 0.0,
+                "roughnessFactor": 0.55,
             },
             "doubleSided": True,
             "alphaMode": "BLEND",
@@ -1621,26 +1662,12 @@ def _materials_for(
         },
     ]
 
-    # Matériau de la chaussée (mode immeuble). Émis seulement si la partie
-    # "route" a de la géométrie (le filtre used-parts de _serialise_parts_glb
-    # l'écarte sinon) — les maisons n'embarquent donc jamais ce matériau.
-    mats.append({
-        "name": "Route",
-        "pbrMetallicRoughness": {
-            "baseColorFactor": [0.18, 0.18, 0.19, 1.0],
-            "metallicFactor": 0.0,
-            "roughnessFactor": 1.0,
-        },
-        "doubleSided": True,
-    })
-
-    # Textures fixes (indépendantes de la BDNB) : sol, route, planchers,
-    # porte. Même contrat fail-soft : fichier absent → couleur unie.
+    # Textures fixes (indépendantes de la BDNB) : sol, planchers, porte.
+    # Même contrat fail-soft : fichier absent → couleur unie.
     # "_tile_m" (clé privée, retirée à la sérialisation) écrase le pas de
     # répétition par défaut du matériau.
     statiques: dict[str, tuple[str, float | None]] = {
-        "Sol": (_SOL_TROTTOIR_TEXTURE, 2.5) if immeuble else (_SOL_TEXTURE, None),
-        "Route": (_SOL_ROUTE_TEXTURE, 4.0),
+        "Sol": (_SOL_TEXTURE, None),
         "Planchers": (_PLANCHER_TEXTURE, None),
         "Porte": (_PORTE_TEXTURE, None),
     }
@@ -1655,9 +1682,6 @@ def _materials_for(
             mat_def["pbrMetallicRoughness"]["baseColorFactor"] = [1.0, 1.0, 1.0, 1.0]
             if tile_m is not None:
                 mat_def["_tile_m"] = tile_m
-        elif mat_def["name"] == "Sol" and immeuble:
-            # Pas de texture trottoir : gris minéral plutôt que le vert gazon.
-            mat_def["pbrMetallicRoughness"]["baseColorFactor"] = [0.62, 0.61, 0.59, 1.0]
 
     return mats
 
@@ -1770,11 +1794,11 @@ def build_glb_bim(
         bx0, bx1 = min(xs), max(xs)
         bz0, bz1 = min(zs), max(zs)
         marge = max(12.0, 0.6 * max(bx1 - bx0, bz1 - bz0))
-        if immeuble:
-            marge = max(marge, _TROTTOIR_LARGEUR_M + _ROUTE_LARGEUR_M + 6.0)
         x0, x1 = bx0 - marge, bx1 + marge
         z0, z1 = bz0 - marge, bz1 + marge
-        y_sol = 0.02 if immeuble else -0.05
+        # Sous le plan d'herbe du viewer (y = 0) : le gazon du décor prend le
+        # relais au-delà de l'emprise, sans z-fighting entre les deux plans.
+        y_sol = -0.05
         sol_v: list[Point3D] = []
         sol_t: list[tuple[int, int, int]] = []
         _push_quad(
@@ -1784,31 +1808,6 @@ def build_glb_bim(
         )
         parts["sol"] = (sol_v, sol_t)
 
-        if immeuble:
-            # Chaussée : bande parallèle à la façade rue, à _TROTTOIR_LARGEUR_M
-            # du bâtiment. Convention repère : x = Est, z = Sud (nord -> -z).
-            entree_o = str(entree_facade or "").lower().replace("murs_", "").strip()
-            if entree_o not in _ORIENTATIONS:
-                entree_o = "sud"
-            t, r = _TROTTOIR_LARGEUR_M, _ROUTE_LARGEUR_M
-            if entree_o == "sud":
-                rx0, rx1, rz0, rz1 = x0, x1, bz1 + t, bz1 + t + r
-            elif entree_o == "nord":
-                rx0, rx1, rz0, rz1 = x0, x1, bz0 - t - r, bz0 - t
-            elif entree_o == "est":
-                rx0, rx1, rz0, rz1 = bx1 + t, bx1 + t + r, z0, z1
-            else:  # ouest
-                rx0, rx1, rz0, rz1 = bx0 - t - r, bx0 - t, z0, z1
-            y_route = 0.03
-            route_v: list[Point3D] = []
-            route_t: list[tuple[int, int, int]] = []
-            _push_quad(
-                route_v, route_t,
-                (rx0, y_route, rz0), (rx1, y_route, rz0),
-                (rx1, y_route, rz1), (rx0, y_route, rz1),
-                (0.0, 1.0, 0.0),
-            )
-            parts["route"] = (route_v, route_t)
 
     materials = _materials_for(
         mat_mur, mat_toit, immeuble=immeuble, toit_plat=not roof_pitched
@@ -1869,16 +1868,12 @@ def build_glb_from_bdnb(
         ratio_vitrage = float(ratio_raw)
         if ratio_vitrage > 1.0:  # champ BDNB exprime en pourcentage (0-100)
             ratio_vitrage /= 100.0
+    # Sans données DPE de baies vitrées, on ne pose AUCUNE fenêtre : la
+    # grille par défaut posée auparavant sur les quatre façades inventait une
+    # donnée absente et, sur un immeuble, couvrait les murs d'un mur-rideau de
+    # verre et de cadres blancs qui masquait complètement les textures BDNB.
     if not facades_vitrage or not ratio_vitrage:
         facades_vitrage, ratio_vitrage = [], None
-
-    # Enrichissement visuel : la couverture DPE des baies vitrées est très
-    # partielle — sans donnée, on pose une grille de fenêtres par défaut sur
-    # les quatre façades (ratio modeste) plutôt que des façades aveugles.
-    # Purement cosmétique : aucune donnée de risque n'est inventée.
-    if not facades_vitrage:
-        facades_vitrage = ["murs_nord", "murs_sud", "murs_est", "murs_ouest"]
-        ratio_vitrage = 0.12
 
     # -- Porte d'entree : facade la plus proche du point d'adresse geocode --
     entree_facade: str | None = None
@@ -1946,9 +1941,11 @@ def build_glb_from_bdnb(
 
             immeuble=immeuble,
 
-            # Découpe par étage + une node par partie : la simulation sismique
-            # du viewer peut cisailer/effondrer chaque niveau indépendamment.
-            etages_separes=True,
+            # Murs d'un seul tenant : la découpe par étage n'existait que pour
+            # la simulation sismique (retirée du viewer). Elle laissait une
+            # couture visible à chaque niveau — les bandes horizontales qui
+            # donnaient au bâtiment son aspect de plaques empilées.
+            etages_separes=False,
             parts_as_nodes=True,
 
         )

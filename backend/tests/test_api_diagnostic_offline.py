@@ -467,16 +467,17 @@ def test_gltf_builder_bim_fenetres_et_porte():
     doc2 = json.loads(glb2[20 : 20 + json_len2].decode("utf-8"))
     names2 = [m["name"] for m in doc2["materials"]]
     assert names2 == ["Murs", "Toiture", "Planchers", "Cadres", "Vitrage", "Porte", "Sol"]
-    # build_glb_from_bdnb emet une node par partie (etages separes) : la
-    # porte vit dans sa propre mesh "Porte", pas dans la primitive 5.
+    # build_glb_from_bdnb emet une node par partie : la porte vit dans sa
+    # propre mesh "Porte", pas dans la primitive 5.
     porte_mesh = next(m for m in doc2["meshes"] if m["name"] == "Porte")
     porte_pos = doc2["accessors"][porte_mesh["primitives"][0]["attributes"]["POSITION"]]
     assert porte_pos["count"] > 0, "porte absente malgre un point d'adresse fourni"
-    # Les etages sont bien des nodes independantes (nb_niveau=2 ; la pente
-    # raide du toit peut absorber la derniere bande -> au moins une node
-    # "Etage" + autant de meshes que de nodes).
+    # Les murs sont d'UN SEUL TENANT : la decoupe par etage n'existait que
+    # pour la simulation sismique (retiree du viewer) et laissait une couture
+    # visible a chaque niveau.
     node_names2 = [n["name"] for n in doc2["nodes"]]
-    assert any(n.startswith("Etage ") for n in node_names2), node_names2
+    assert not any(n.startswith("Etage ") for n in node_names2), node_names2
+    assert "Murs" in node_names2
     assert len(doc2["meshes"]) == len(doc2["nodes"])
 
     # --- La porte est INDEPENDANTE du vitrage DPE : un batiment sans donnees
@@ -501,11 +502,11 @@ def test_gltf_builder_bim_fenetres_et_porte():
     assert not any(m["name"] == "Vitrage" for m in doc3["materials"])
 
 
-def test_gltf_builder_bim_sol_urbain_avec_route():
-    """Mode immeuble : le sol devient un trottoir dallé (au-dessus de l'herbe
-    du viewer) et une bande de chaussée est posée le long de la façade côté
-    rue (entree_facade). Une maison (immeuble=False) garde le gazon et
-    n'embarque jamais le matériau Route."""
+def test_gltf_builder_bim_sol_gazon_sans_route():
+    """Décor : uniquement du gazon. Aucune chaussée ni trottoir n'est émis,
+    quel que soit le type de bâtiment, et le sol reste sous le plan d'herbe
+    du viewer (y = -0.05) pour qu'il n'y ait pas de z-fighting entre les deux.
+    Le vitrage n'est pas métallique (pas d'effet miroir sur les façades)."""
     from app.digital_twin.gltf_builder import build_glb_bim
 
     polygones = [
@@ -516,29 +517,28 @@ def test_gltf_builder_bim_sol_urbain_avec_route():
         json_len, _ = struct.unpack("<II", glb[12:20])
         return json.loads(glb[20 : 20 + json_len].decode("utf-8"))
 
-    # Immeuble, rue au sud (+z dans le repère scène)
-    doc = doc_of(build_glb_bim(
-        polygones, hauteur_m=18.0, label="test", floors=6,
-        pente_toit_deg=0.0, entree_facade="murs_sud", immeuble=True,
-    ))
-    names = [m["name"] for m in doc["materials"]]
-    assert names[-2:] == ["Sol", "Route"]
-    prims = doc["meshes"][0]["primitives"]
-    route_pos = doc["accessors"][prims[names.index("Route")]["attributes"]["POSITION"]]
-    # La chaussée est au sud du bâtiment (z > 10, la façade sud) et surélevée
-    # au-dessus du trottoir (0.03 vs 0.02).
-    assert route_pos["min"][2] > 10.0, "route pas au sud du batiment"
-    assert abs(route_pos["min"][1] - 0.03) < 1e-6
-    sol_pos = doc["accessors"][prims[names.index("Sol")]["attributes"]["POSITION"]]
-    assert abs(sol_pos["min"][1] - 0.02) < 1e-6, "trottoir pas au-dessus de l'herbe du viewer"
+    for kwargs in (
+        # Immeuble (ex-cas « scène de rue ») puis maison individuelle
+        dict(hauteur_m=18.0, floors=6, pente_toit_deg=0.0,
+             entree_facade="murs_sud", immeuble=True),
+        dict(hauteur_m=6.0, floors=2),
+    ):
+        doc = doc_of(build_glb_bim(polygones, label="test", **kwargs))
+        names = [m["name"] for m in doc["materials"]]
+        assert "Route" not in names, f"chaussee emise pour {kwargs}"
+        assert names[-1] == "Sol", "le sol doit rester la derniere partie"
+        prims = doc["meshes"][0]["primitives"]
+        sol = doc["accessors"][prims[names.index("Sol")]["attributes"]["POSITION"]]
+        assert abs(sol["min"][1] + 0.05) < 1e-6, "sol pas sous l'herbe du viewer"
 
-    # Maison : pas de Route, gazon sous le plan d'herbe du viewer (-0.05)
-    doc2 = doc_of(build_glb_bim(polygones, hauteur_m=6.0, label="test", floors=2))
-    names2 = [m["name"] for m in doc2["materials"]]
-    assert "Route" not in names2
-    prims2 = doc2["meshes"][0]["primitives"]
-    sol2 = doc2["accessors"][prims2[names2.index("Sol")]["attributes"]["POSITION"]]
-    assert abs(sol2["min"][1] + 0.05) < 1e-6
+    # Vitrage translucide mais non métallique : aucun reflet d'environnement.
+    doc = doc_of(build_glb_bim(
+        polygones, hauteur_m=8.0, label="test", floors=3,
+        facades_avec_vitrage=["murs_sud"], ratio_vitrage=0.15,
+    ))
+    vitrage = next(m for m in doc["materials"] if m["name"] == "Vitrage")
+    assert vitrage["pbrMetallicRoughness"]["metallicFactor"] == 0.0
+    assert vitrage["alphaMode"] == "BLEND"
 
 
 def test_gltf_builder_bim_trou_cour_interieure():

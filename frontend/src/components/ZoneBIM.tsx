@@ -15,9 +15,9 @@
 //   niveaux réels calculés par le backend, sans inventer de donnée.
 // =============================================================================
 
-import { lazy, Suspense, useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import type { RisqueReport, RisquesPrincipaux } from '../zone/config';
-import { API, ALEA_ICONS, ALEA_ICON_FALLBACK, WMS_LAYER_MAP, WFS_LAYER_MAP } from '../zone/config';
+import { API, ALEA_ICONS, ALEA_ICON_FALLBACK, WMS_LAYER_MAP, WFS_LAYER_MAP, bandForNiveau } from '../zone/config';
 import { ComprendreRisques } from './ComprendreRisques';
 import type { RecommendationZone } from '../jumeau/recommendations';
 import {
@@ -33,6 +33,14 @@ const CesiumViewer = lazy(() => import('../zone3d/CesiumViewer'));
 
 const SIM_MESSAGE_TYPE = 'typhoon:sim';
 
+/** Vol d'approche carte → jumeau, piloté par Zone.tsx (cf. useEffect apiRef). */
+export interface ZoneBIMApi {
+  /** Place la caméra à la verticale, cadrée sur `groundWidthM` mètres de sol. */
+  arm(groundWidthM: number): void;
+  /** Descente du zénith vers la vue habituelle (~1 s). */
+  fly(): void;
+}
+
 export function ZoneBIM({
   report,
   recommendationZones = {},
@@ -41,6 +49,7 @@ export function ZoneBIM({
   risquesPrincipaux = null,
   visibleLayerKeys,
   onToggleLayer,
+  apiRef,
 }: {
   report: RisqueReport | null;
   recommendationZones?: Record<string, RecommendationZone>;
@@ -49,10 +58,15 @@ export function ZoneBIM({
   risquesPrincipaux?: RisquesPrincipaux | null;
   visibleLayerKeys: ReadonlySet<string>;
   onToggleLayer: (code: string) => void;
+  /* Vol d'approche piloté par Zone.tsx (clic sur le marqueur de la carte).
+     Non appelé sur les autres chemins d'arrivée → caméra en position finale. */
+  apiRef?: React.MutableRefObject<ZoneBIMApi | null>;
 }) {
   const [view, setView] = useState<'bim' | 'terrain'>('bim');
   const [loaded, setLoaded] = useState(false);
   const [attempt, setAttempt] = useState(0);
+  // Nouvel horodatage à chaque diagnostic et à chaque « Recharger ».
+  const bust = useMemo(() => Date.now(), [attempt, report?.adresse_saisie]);
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
 
   /* Simulation CZML (Sprint 2) : alea lancé, statut du job, URL du CZML prêt. */
@@ -113,6 +127,67 @@ export function ZoneBIM({
     );
   }, [loaded, report, attempt]);
 
+  /* Zones de risque → viewer, pour l'infobulle au survol des parties du
+     bâtiment. On envoie des données DÉJÀ RÉSOLUES (score, libellé de niveau,
+     couleur) : la conversion niveau → bande reste ainsi au seul endroit qui
+     la détient (zone/config.ts), le viewer n'en réimplémente aucune.
+     Les 4 façades du contrat portent toujours la même valeur (risk_model
+     calcule `risque_murs` une fois) : on les présente en une zone « Murs ».
+     Clés = noms des meshes du .glb, vérifiés sur le modèle généré. */
+  useEffect(() => {
+    const iframe = iframeRef.current;
+    if (!loaded || !iframe?.contentWindow) return;
+    const zoneInfo = (cle: string, libelle: string) => {
+      const z = recommendationZones?.[cle] as
+        | { risque?: number; niveau?: string; alea_principal?: string }
+        | undefined;
+      const score = typeof z?.risque === 'number' ? Math.round(z.risque) : null;
+      const bande = bandForNiveau(z?.niveau);
+      return {
+        libelle,
+        score,
+        // Jamais de vert par défaut : sans donnée, la zone est « non évaluable ».
+        niveauLabel: bande?.label ?? 'Non évaluable',
+        couleur: bande?.color ?? '#8B959D',
+        aleaPrincipal: z?.alea_principal ?? null,
+        evaluee: score != null && bande != null,
+      };
+    };
+    iframe.contentWindow.postMessage(
+      {
+        type: 'typhoon:zones',
+        parts: {
+          Murs: zoneInfo('murs_nord', 'Murs'),
+          Toiture: zoneInfo('toiture', 'Toiture'),
+          Planchers: zoneInfo('fondations', 'Fondations / planchers'),
+        },
+      },
+      '*'
+    );
+  }, [loaded, recommendationZones, attempt, view]);
+
+  /* API impérative du vol d'approche, pilotée par Zone.tsx au rythme de la
+     View Transition. Le découpage arm/fly est imposé par le cycle de vie du
+     morphing : tant que la section est masquée l'iframe fait 0×0 (aspect
+     inutilisable), et pendant l'animation le contenu live est masqué par les
+     captures. On arme donc au moment `ready` (DOM à jour, live encore
+     masqué : la caméra se place au zénith sans que ça se voie), puis on vole
+     à `finished`, quand le rendu live réapparaît — déjà au bon cadrage. */
+  useEffect(() => {
+    if (!apiRef) return;
+    const send = (msg: Record<string, unknown>) => {
+      const w = iframeRef.current?.contentWindow;
+      if (w) w.postMessage({ type: 'typhoon:approach', ...msg }, '*');
+    };
+    apiRef.current = {
+      arm: (groundWidthM: number) => send({ phase: 'arm', groundWidthM }),
+      fly: () => send({ phase: 'fly' }),
+    };
+    return () => {
+      apiRef.current = null;
+    };
+  }, [apiRef]);
+
   if (!report) {
     return (
       <div className="analyse-empty">
@@ -124,11 +199,13 @@ export function ZoneBIM({
   }
 
   const batiment = report.bdnb?.batiment || null;
-  // `_r` : cache-buster — l'endpoint répond Cache-Control max-age=3600, sans
-  // lui le bouton « Recharger » resservirait le .glb du cache navigateur.
+  // `_r` : cache-buster HORODATÉ — un compteur (0,1,2…) retombe sur des URL
+  // déjà mises en cache lors de visites passées (époque max-age=3600) et
+  // ressert d'anciens modèles. L'horodatage garantit une URL inédite à
+  // chaque diagnostic et à chaque « Recharger ». (Rétabli : perdu au merge.)
   const modelUrl = `${API}/diagnostic/adresse/gltf?q=${encodeURIComponent(
     report.adresse_saisie
-  )}&_r=${attempt}`;
+  )}&_r=${bust}`;
   const iframeSrc = `/bim-viewer/projects/remote?model=${encodeURIComponent(modelUrl)}`;
   const iframeKey = `${attempt}-${report.adresse_saisie}`;
 

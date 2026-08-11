@@ -45,7 +45,6 @@ import Stats from "three/examples/jsm/libs/stats.module";
 import SkyboxUtils from "./utils/SkyboxUtils";
 import store from "../store/index";
 import Viewer3DUtils, { Views } from "./utils/Viewer3DUtils";
-import { PmremUtils } from "./utils/PmremUtils";
 // eslint-disable-next-line
 const TWEEN = require('tween')
 const IFC = require("../../public/three/js/libs/ifc/IFCLoader.js");
@@ -114,6 +113,23 @@ export default class Viewer3D {
   private simElapsed = 0;
   private simLastTime = 0;
   private simMessageHandler?: (e: MessageEvent) => void;
+  // Approche demandée avant que le modèle ne soit chargé : largeur de sol en
+  // mètres, ou -1 pour "approche sans largeur fournie". undefined = aucune.
+  private pendingApproachWidth?: number;
+  // Cadrage d'arrivée mémorisé entre l'armement (caméra au zénith) et le vol.
+  private approachTarget?: { eye: THREE.Vector3; look: THREE.Vector3 };
+  /* Survol « risque » : scores par partie du bâtiment (envoyés résolus par le
+     parent React — cf. ZoneBIM `typhoon:zones`), infobulle et surlignage. */
+  private riskParts?: Record<string, {
+    libelle: string; score: number | null; niveauLabel: string;
+    couleur: string; aleaPrincipal: string | null; evaluee: boolean;
+  }>;
+
+  private riskTooltip?: HTMLDivElement;
+  private riskHoverHandler?: (e: MouseEvent) => void;
+  private riskLeaveHandler?: () => void;
+  private riskHovered?: THREE.Mesh;
+  private riskHoveredEmissive?: number;
 
   constructor(width: number, height: number, settings: SettingsType = defaultSettings) {
     this.width = width;
@@ -133,7 +149,9 @@ export default class Viewer3D {
     this.initLights();
     this.initPointerEvents();
     this.initSimulations();
-    this.initDatGui(); // should be initialized later than sky, ground grid, etc.
+    /* Typhoon : panneau dat.gui (« Open Controls ») désactivé — on ne veut
+       que le jumeau sur son gazon. Les réglages qu'il portait (herbe, ciel)
+       sont désormais appliqués en dur dans initOthers(). */
     this.initPostmate();
     this.initOthers();
   }
@@ -169,13 +187,11 @@ export default class Viewer3D {
 
     this.stats = new Stats();
 
-    const pmremGenerator = new THREE.PMREMGenerator(this.renderer);
-    pmremGenerator.compileEquirectangularShader();
-    PmremUtils.createEnvTextureFromDataArray(pmremGenerator).then((texture) => {
-      if (this.scene) {
-        this.scene.environment = texture;
-      }
-    });
+    /* Typhoon : PAS de carte d'environnement (PMREM). Elle plaquait un reflet
+       de rue HDR sur les matériaux PBR, qui glissait sur les façades à chaque
+       mouvement de caméra et donnait au bâtiment un aspect verre/métal — au
+       lieu des textures BDNB (pierre, brique, enduit). L'éclairage vient des
+       lumières de la scène (ambiante + hémisphérique + directionnelle). */
   }
 
   private initCamera() {
@@ -350,13 +366,20 @@ export default class Viewer3D {
     }
     // TODO: move light settings into project settings panel
     // Maybe we can automatically calculate light direction, intensity, etc. according to models' materials
+    /* Éclairage Typhoon : l'original écrasait tout (hémisphérique blanche à
+       3, directionnelle à 0,3) — les textures BDNB partaient au blanc et le
+       bâtiment paraissait en plastique, sans relief. On rééquilibre : un
+       ciel diffus modéré + une vraie directionnelle qui sculpte les façades. */
     const color = 0xffffff;
-    const highIntensity = 0.3;
-    const dl = new THREE.DirectionalLight(color, highIntensity);
-    dl.position.set(-2, 2, 4);
+    const dl = new THREE.DirectionalLight(color, 1.5);
+    dl.position.set(-60, 100, 60);
     this.directionalLight = dl;
     this.ambientLight = new THREE.AmbientLight(0x303030);
-    this.hemisphereLight = new THREE.HemisphereLight(color, 0xdddddd, 3);
+    /* Lumière NEUTRE : un ciel bleuté teintait toutes les façades en bleu et
+       masquait la couleur propre des textures BDNB (pierre, brique, enduit).
+       Ciel blanc + sol gris clair = les textures ressortent telles quelles,
+       avec juste assez d'écart haut/bas pour garder du relief. */
+    this.hemisphereLight = new THREE.HemisphereLight(0xffffff, 0x9a978f, 0.75);
     this.hemisphereLight.position.set(0, 300, 0);
 
     this.scene.add(dl);
@@ -433,9 +456,31 @@ export default class Viewer3D {
       if (e.source !== window.parent) {
         return;
       }
-      const data = e.data as { type?: string; payload?: SimPayload } | undefined;
+      const data = e.data as {
+        type?: string;
+        payload?: SimPayload;
+        groundWidthM?: number;
+        phase?: "arm" | "fly";
+      } | undefined;
       if (data && data.type === "typhoon:sim" && this.simulations) {
         this.simulations.setPayload(data.payload || null);
+      }
+      // Raccord carte → jumeau (cf. Zone.tsx, clic sur le marqueur) :
+      //  - "arm" : caméra placée au zénith AVANT la capture du morphing, pour
+      //    que l'image d'arrivée soit déjà au cadrage de la carte ;
+      //  - "fly" : descente vers la vue habituelle, une fois le morphing fini
+      //    et le rendu live redevenu visible.
+      // Zones de risque (scores du moteur) pour l'infobulle au survol.
+      if (data && data.type === "typhoon:zones") {
+        this.riskParts = (data as any).parts || undefined;
+        this.initRiskHover();
+      }
+      if (data && data.type === "typhoon:approach") {
+        if (data.phase === "fly") {
+          this.flyApproach();
+        } else {
+          this.armApproach(data.groundWidthM);
+        }
       }
     };
     window.addEventListener("message", this.simMessageHandler);
@@ -484,38 +529,19 @@ export default class Viewer3D {
       return;
     }
 
-    // Read some settings from Dat.Gui. While in future,
-    // these default settings should be defined by project settings.
-    const ctrl = this.datGui && this.datGui.controls;
-    if (ctrl) {
-      // some settings are read from datGui, so it requires to initialize datGui first
-      if (ctrl.showGroundGrid) {
-        this.groundGrid = GroundUtils.createGroundGrid();
-        this.scene.add(this.groundGrid);
+    /* Décor Typhoon, en dur (le panneau dat.gui qui portait ces réglages est
+       désactivé) : gazon au sol, ciel nuageux, pas de grille technique. */
+    (async() => {
+      this.grassGround = await GroundUtils.createGrassGround();
+      this.scene && this.scene.add(this.grassGround);
+      this.enableRender();
+    })();
+    SkyboxUtils.createSkyFromTextures("cloudy").then(texture => {
+      if (this.scene) {
+        this.scene.background = texture;
+        this.enableRender();
       }
-      if (ctrl.showGrassGround) {
-        (async() => {
-          this.grassGround = await GroundUtils.createGrassGround();
-          this.scene && this.scene.add(this.grassGround);
-          this.enableRender();
-        })();
-      }
-
-      ctrl.webcam && this.enableWebCam();
-      // the order of passes matters, outline pass should be the last one
-      this.composerEnabled = ctrl.composerEnabled;
-      if (this.composerEnabled) {
-        this.enableComposer(true);
-        this.enableRenderPass(ctrl.renderPassEnabled);
-        this.enableFxaaPass(ctrl.fxaaEnabled);
-        this.enableSaoPass(ctrl.saoEnabled);
-        this.enableSsaoPass(ctrl.ssaoEnabled);
-        this.enableOutlinePass(ctrl.outlineEnabled);
-        this.enableSsaaPass(ctrl.ssaaEnabled);
-        this.enableBloomPass(ctrl.bloomEnabled);
-        this.enableUnrealBloomPass(ctrl.unrealBloomEnabled);
-      }
-    }
+    });
 
     console.log(`[Viewer] WebGL: ${DeviceUtils.getWebGlRendererInfo(this.renderer.domElement)}`);
     // erase the black outline when viewer is focused
@@ -1114,17 +1140,19 @@ export default class Viewer3D {
     const modelUuids = Object.values(this.loadedModels).map(obj => obj.uuid);
     const isFirstModel = (!modelUuids || modelUuids.length <= 1);
     if (isFirstModel) {
-      const ctrl = this.datGui && this.datGui.controls;
-      // Ne régénère le dôme dégradé que si ce mode de ciel est actif : sinon
-      // il recouvrirait le skybox "Cloudy" (défaut Typhoon) après chargement.
-      // (skyMode est déclaré string[] mais dat.gui y range la valeur choisie.)
-      if (!ctrl || String(ctrl.skyMode) === "Gradient ramp") {
-        this.regenSkyOfGradientRamp();
+      /* Ni dôme dégradé (il recouvrirait le skybox nuageux), ni grille
+         technique : le décor Typhoon est fixé dans initOthers(). */
+      // Approche demandée avant la fin du chargement (le parent a cliqué le
+      // marqueur pendant que le .glb arrivait) : elle remplace la vue home,
+      // sinon les deux animations se disputeraient la caméra.
+      if (this.pendingApproachWidth !== undefined) {
+        const width = this.pendingApproachWidth;
+        this.pendingApproachWidth = undefined;
+        this.armApproach(width >= 0 ? width : undefined);
+        this.flyApproach();
+      } else {
+        this.goToHomeView(); // only go to home view once, when the first model loaded
       }
-      if (ctrl && ctrl.showGroundGrid) {
-        this.regenGroundGrid();
-      }
-      this.goToHomeView(); // only go to home view once, when the first model loaded
     }
     this.scene.add(bbox);
 
@@ -1623,6 +1651,272 @@ export default class Viewer3D {
         this.flyTo(eye, look);
       }
     }
+  }
+
+  /**
+   * Cadrage "vue habituelle" du modèle : celui de goToHomeView(), extrait
+   * pour que l'animation d'approche atterrisse exactement dessus.
+   * @returns false si aucun modèle n'est chargé (rien à cadrer).
+   */
+  private getHomeEyeLook(eye: THREE.Vector3, look: THREE.Vector3): boolean {
+    const proj = store.state.activeProject;
+    const home = proj && proj.camera;
+    const position = home && ProjectManager.arrayToVector3(home.eye);
+    const target = home && ProjectManager.arrayToVector3(home.look);
+    if (position && target) {
+      eye.copy(position);
+      look.copy(target);
+      return !eye.equals(look);
+    }
+    if (!this.scene) {
+      return false;
+    }
+    const uuids = Object.values(this.loadedModels).map(obj => obj.uuid);
+    if (!uuids.length) {
+      return false;
+    }
+    Viewer3DUtils.getCameraPositionByObjectUuids(this.scene, uuids, Views.Front, eye, look);
+    return !eye.equals(look);
+  }
+
+  /**
+   * ANIMATION D'APPROCHE (Typhoon) — raccord carte 2D → jumeau 3D.
+   *
+   * La caméra démarre à la VERTICALE du bâtiment, cadrée pour couvrir la
+   * même largeur de sol que la carte OpenLayers au moment où elle s'est
+   * arrêtée (`groundWidthM`), nord vers le haut — puis descend et pivote
+   * vers la vue habituelle en ~1 s, avec une décélération qui prolonge
+   * l'accélération du zoom carte.
+   *
+   * @param groundWidthM largeur de sol (en mètres) couverte par la carte à
+   *   la fin de son zoom. Absent → cadrage de repli dérivé de la vue
+   *   standard (l'illusion est moins exacte mais le vol reste cohérent).
+   */
+  public armApproach(groundWidthM?: number) {
+    const camera = this.camera;
+    const controls = this.controls;
+    if (!camera || !controls || !this.scene) {
+      return;
+    }
+    const eye = new THREE.Vector3();
+    const look = new THREE.Vector3();
+    if (!this.getHomeEyeLook(eye, look)) {
+      // Modèle pas encore chargé : on arme l'approche, elle sera jouée à la
+      // fin du chargement (cf. addLoadedModelToScene).
+      this.pendingApproachWidth = groundWidthM === undefined ? -1 : groundWidthM;
+      return;
+    }
+    this.pendingApproachWidth = undefined;
+
+    // Accessibilité : mouvement d'ampleur → on le supprime entièrement, la
+    // caméra reste au cadrage habituel.
+    if (Viewer3D.prefersReducedMotion()) {
+      this.approachTarget = undefined;
+      camera.position.copy(eye);
+      controls.target.copy(look);
+      controls.update();
+      this.enableRender();
+      return;
+    }
+
+    // L'iframe reste en display:none (0×0) tant que l'étape « Jumeau BIM »
+    // est masquée : la caméra a alors un rapport d'aspect NaN et tout calcul
+    // de cadrage produirait une position NaN. On resynchronise sur les
+    // dimensions réelles avant de calculer quoi que ce soit.
+    this.resize();
+
+    // Altitude de départ : la moitié de la largeur de sol visible divisée
+    // par la tangente du demi-champ HORIZONTAL — la largeur couverte au sol
+    // par le rendu 3D égale alors celle de la carte.
+    const perspective = camera as THREE.PerspectiveCamera;
+    const aspect = perspective.isPerspectiveCamera &&
+      isFinite(perspective.aspect) && perspective.aspect > 0
+      ? perspective.aspect
+      : 16 / 9; // ultime repli : aspect plausible plutôt qu'un NaN propagé
+    let altitude: number;
+    if (groundWidthM && groundWidthM > 0 && perspective.isPerspectiveCamera) {
+      const fovV = (perspective.fov * Math.PI) / 180;
+      const fovH = 2 * Math.atan(Math.tan(fovV / 2) * aspect);
+      altitude = (groundWidthM / 2) / Math.tan(fovH / 2);
+    } else {
+      altitude = eye.distanceTo(look) * 2.5; // repli : recul zénithal franc
+    }
+    if (!isFinite(altitude) || altitude <= 0) {
+      altitude = Math.max(eye.distanceTo(look) * 2.5, 50);
+    }
+
+    // Départ quasi vertical (PHI0 depuis la verticale, décalé vers +z = sud) :
+    // avec up = +Y, l'écran a alors -z (nord) vers le haut et +x (est) à
+    // droite — même orientation que la carte. La verticale EXACTE est
+    // dégénérée pour lookAt (up parallèle à la visée), d'où ce petit angle.
+    const PHI0 = 0.08; // ≈ 4,6°, visuellement indistinguable de la verticale
+    const start = look.clone().add(new THREE.Vector3(
+      0,
+      altitude * Math.cos(PHI0),
+      altitude * Math.sin(PHI0)
+    ));
+
+    this.approachTarget = { eye: eye.clone(), look: look.clone() };
+    camera.position.copy(start);
+    controls.target.copy(look);
+    camera.lookAt(look);
+    controls.update();
+    this.enableRender();
+  }
+
+  /**
+   * Deuxième temps : descente du zénith vers la vue habituelle (~1 s), avec
+   * une décélération qui prolonge l'accélération du zoom carte. Appelé une
+   * fois le morphing terminé, quand le rendu live redevient visible.
+   */
+  public flyApproach() {
+    const camera = this.camera;
+    const controls = this.controls;
+    const target = this.approachTarget;
+    if (!camera || !controls || !target) {
+      return;
+    }
+    this.approachTarget = undefined;
+    const { eye, look } = target;
+
+    const applyFinal = () => {
+      camera.position.copy(eye);
+      controls.target.copy(look);
+      controls.update();
+      this.enableRender();
+    };
+    if (Viewer3D.prefersReducedMotion()) {
+      applyFinal();
+      return;
+    }
+
+    const p = camera.position.clone();
+    const tween = new TWEEN.Tween(p);
+    tween.to(eye, 1000);
+    tween.easing(TWEEN.Easing.Quadratic.Out); // décélération : prolonge le zoom carte
+    tween.onUpdate(() => {
+      camera.position.set(p.x, p.y, p.z);
+      camera.lookAt(look);
+      controls.target.copy(look);
+      controls.update();
+      this.enableRender();
+    });
+    tween.onComplete(() => {
+      applyFinal();
+    });
+    // La boucle de rendu n'appelle TWEEN.update() que si this.tween est
+    // défini (cf. animate()) — l'affectation est donc indispensable.
+    this.tween = tween;
+    tween.start();
+    this.enableRender();
+  }
+
+  /**
+   * SURVOL DES PARTIES DU BÂTIMENT (Typhoon).
+   *
+   * Raycast sur les meshes du modèle : au survol, la partie est éclaircie
+   * (émissif) — sa texture et sa couleur restent intactes — et une infobulle
+   * affiche le score du moteur de risque pour la zone correspondante.
+   * La correspondance mesh → zone est établie par le parent (clés du payload
+   * = noms des meshes du .glb), jamais devinée ici.
+   */
+  private initRiskHover() {
+    if (this.riskHoverHandler || !this.renderer) {
+      return; // déjà armé : un nouveau payload met seulement à jour les scores
+    }
+    const canvas = this.renderer.domElement;
+    const parent = canvas.parentElement || document.body;
+
+    const tip = document.createElement("div");
+    tip.style.cssText = [
+      "position:absolute", "pointer-events:none", "z-index:20", "display:none",
+      "max-width:260px", "padding:10px 12px", "border-radius:10px",
+      "background:rgba(20,22,25,.92)", "color:#F2F4F6",
+      "font:12px/1.45 system-ui,sans-serif", "box-shadow:0 6px 24px rgba(0,0,0,.35)"
+    ].join(";");
+    parent.appendChild(tip);
+    this.riskTooltip = tip;
+
+    const raycaster = new THREE.Raycaster();
+    const pointer = new THREE.Vector2();
+
+    const clearHover = () => {
+      if (this.riskHovered) {
+        const m = this.riskHovered.material as THREE.MeshStandardMaterial;
+        if (m && m.emissive && this.riskHoveredEmissive !== undefined) {
+          m.emissive.setHex(this.riskHoveredEmissive);
+        }
+        this.riskHovered = undefined;
+        this.riskHoveredEmissive = undefined;
+        this.enableRender();
+      }
+      tip.style.display = "none";
+    };
+
+    this.riskHoverHandler = (e: MouseEvent) => {
+      if (!this.camera || !this.scene || !this.riskParts) {
+        return;
+      }
+      const rect = canvas.getBoundingClientRect();
+      pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+      pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+      raycaster.setFromCamera(pointer, this.camera);
+
+      const cibles: THREE.Object3D[] = [];
+      Object.values(this.loadedModels).forEach(m => {
+        const obj = this.scene && this.scene.getObjectByProperty("uuid", m.uuid);
+        obj && cibles.push(obj);
+      });
+      const hits = raycaster.intersectObjects(cibles, true);
+      const hit = hits.find(h => {
+        const o = h.object as THREE.Mesh;
+        return (o as any).isMesh && this.riskParts && this.riskParts[o.name] !== undefined;
+      });
+      if (!hit) {
+        clearHover();
+        return;
+      }
+      const mesh = hit.object as THREE.Mesh;
+      const info = this.riskParts[mesh.name];
+
+      if (this.riskHovered !== mesh) {
+        clearHover();
+        const mat = mesh.material as THREE.MeshStandardMaterial;
+        if (mat && mat.emissive) {
+          this.riskHoveredEmissive = mat.emissive.getHex();
+          // Éclaircissement seul : la couleur/texture de la partie est conservée.
+          mat.emissive.setHex(0x333333);
+          this.riskHovered = mesh;
+          this.enableRender();
+        }
+        const score = info.score == null
+          ? "<span style='opacity:.75'>non évaluable</span>"
+          : `<strong style="font-size:17px">${info.score}</strong><span style="opacity:.7">/100</span>`;
+        const alea = info.aleaPrincipal
+          ? `<div style="opacity:.75;margin-top:4px">Aléa principal : ${info.aleaPrincipal}</div>`
+          : "";
+        const pastille = `width:9px;height:9px;border-radius:50%;background:${info.couleur};display:inline-block`;
+        tip.innerHTML = `
+          <div style="font-weight:600;margin-bottom:4px">${info.libelle}</div>
+          <div style="display:flex;align-items:center;gap:8px">
+            ${score}
+            <span style="display:inline-flex;align-items:center;gap:5px">
+              <i style="${pastille}"></i>${info.niveauLabel}
+            </span>
+          </div>${alea}`;
+      }
+      tip.style.display = "block";
+      tip.style.left = Math.min(e.clientX - rect.left + 14, rect.width - 270) + "px";
+      tip.style.top = Math.max(e.clientY - rect.top - 10, 4) + "px";
+    };
+    this.riskLeaveHandler = clearHover;
+    canvas.addEventListener("mousemove", this.riskHoverHandler);
+    canvas.addEventListener("mouseleave", this.riskLeaveHandler);
+  }
+
+  private static prefersReducedMotion(): boolean {
+    return typeof window.matchMedia === "function" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   }
 
   /**
