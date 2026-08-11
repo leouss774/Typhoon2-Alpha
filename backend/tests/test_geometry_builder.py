@@ -81,8 +81,11 @@ def test_build_geometry_from_bdnb_deterministic_fields():
     assert geometry["hauteur_sous_plafond_m"] == 2.5  # hauteur_mean / nb_niveau
     assert geometry["materiau_mur"] == "meuliere"
     assert geometry["materiau_toiture"] == "ardoises"
-    assert geometry["roof_shape"] == "deux_pans"  # fallback typologique
-    assert geometry["pente_toit_deg"] == 42.0  # heuristique ardoise
+    # La BDNB ne renseigne pas la forme de toiture : rien n'est invente
+    # (ni pignon ni dalle) — roof_shape/pente restent None, remontes en
+    # champs_manquants. Le rendu 3D ne dessine alors pas de toit.
+    assert geometry["roof_shape"] is None
+    assert geometry["pente_toit_deg"] is None
     print("test_build_geometry_from_bdnb_deterministic_fields OK ->", json.dumps(geometry, ensure_ascii=False))
 
 
@@ -97,7 +100,7 @@ def test_build_geometry_flags_missing_fields_instead_of_guessing():
     # titre que cave/sous-sol/garage/jardin.
     assert set(result["champs_manquants"]) == {
         "has_basement", "has_cellar", "has_garage", "has_garden",
-        "ouvertures", "entree_facade",
+        "ouvertures", "entree_facade", "roof_shape", "pente_toit_deg",
     }
     for champ in ("has_basement", "has_cellar", "has_garage", "has_garden"):
         assert result["geometry"][champ] is None

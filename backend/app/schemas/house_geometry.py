@@ -93,8 +93,10 @@ class HouseGeometry(BaseModel):
     floors_count: int = Field(default=1, ge=1, le=6)
     hauteur_sous_plafond_m: float = Field(default=2.6, ge=2.0, le=3.5)
 
-    roof_shape: RoofShape = "deux_pans"
-    pente_toit_deg: float = Field(default=35.0, ge=0, le=60)
+    # None quand ni la BDNB ni un formulaire ne renseignent la forme : le
+    # rendu 3D ne dessine alors pas de toit plutot que d'en inventer un.
+    roof_shape: RoofShape | None = None
+    pente_toit_deg: float | None = Field(default=None, ge=0, le=60)
 
     materiau_mur: str | None = None
     materiau_toiture: str | None = None

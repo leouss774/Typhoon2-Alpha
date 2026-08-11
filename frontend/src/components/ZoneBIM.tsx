@@ -29,8 +29,10 @@ import {
 import type { CesiumSimulation } from '../zone3d/CesiumViewer';
 
 /* Chargé à la demande (React.lazy) : le bundle Cesium (~10 Mo) n'est
-   téléchargé qu'au premier clic sur l'onglet « Vue terrain 3D ». */
+   téléchargé qu'au premier clic sur l'onglet « Vue terrain 3D », et
+   three+cannon-es seulement à l'ouverture de la « Simulation catastrophe ». */
 const CesiumViewer = lazy(() => import('../zone3d/CesiumViewer'));
+const DisasterView = lazy(() => import('../zone3d/DisasterView'));
 
 const SIM_MESSAGE_TYPE = 'typhoon:sim';
 
@@ -46,8 +48,8 @@ export function ZoneBIM({
 }: {
   report: RisqueReport | null;
   /* Contrat adapté (geometry + zones) du diagnostic — consommé par le
-     composant disaster-view (étape 3, Three.js/cannon-es) qui sera le
-     troisième toggle de cette étape. TODO(step 3): brancher ici. */
+     composant disaster-view (Three.js/cannon-es, troisième toggle de cette
+     étape) : geometry → construction du bâtiment, zones → vue risque. */
   adaptedDiagnostic?: AdapterResult | null;
   recommendationZones?: Record<string, RecommendationZone>;
   recommendationZonesLoading?: boolean;
@@ -56,7 +58,7 @@ export function ZoneBIM({
   visibleLayerKeys: ReadonlySet<string>;
   onToggleLayer: (code: string) => void;
 }) {
-  const [view, setView] = useState<'bim' | 'terrain'>('bim');
+  const [view, setView] = useState<'bim' | 'terrain' | 'disaster'>('bim');
   const [loaded, setLoaded] = useState(false);
   const [attempt, setAttempt] = useState(0);
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
@@ -319,6 +321,16 @@ export function ZoneBIM({
           <md-icon>public</md-icon>
           <span>Vue terrain 3D</span>
         </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={view === 'disaster'}
+          className={`bim-view-tab${view === 'disaster' ? ' active' : ''}`}
+          onClick={() => setView('disaster')}
+        >
+          <md-icon>crisis_alert</md-icon>
+          <span>Simulation catastrophe</span>
+        </button>
       </div>
 
       {view === 'bim' ? (
@@ -341,6 +353,26 @@ export function ZoneBIM({
             onLoad={() => setLoaded(true)}
           />
         </div>
+      ) : view === 'disaster' ? (
+        adaptedDiagnostic ? (
+          <Suspense
+            fallback={
+              <div className="bim-loading cesium-suspense" role="status" aria-live="polite">
+                <md-icon>crisis_alert</md-icon>
+                <span>Chargement de la simulation catastrophe…</span>
+                <md-linear-progress indeterminate />
+              </div>
+            }
+          >
+            <DisasterView adaptedDiagnostic={adaptedDiagnostic} />
+          </Suspense>
+        ) : (
+          <div className="analyse-empty">
+            <md-icon>crisis_alert</md-icon>
+            <h2>Simulation indisponible</h2>
+            <p>Diagnostiquez d'abord une adresse pour lancer une simulation catastrophe.</p>
+          </div>
+        )
       ) : (
         <div className="cesium-panel">
           {terrainAleas.length > 0 && (

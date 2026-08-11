@@ -301,10 +301,22 @@ def build_geometry_from_bdnb(
     else:
         champs_manquants.append("materiau_toiture")
 
-    # -- toiture (fallback typologique deterministe, cf. README §3) --
-    roof_shape = formulaire.get("roof_shape", "deux_pans")
-    pente_toit_deg = formulaire.get("pente_toit_deg") or _pente_from_materiau_toiture(materiau_toiture)
-    champs_ok += ["roof_shape", "pente_toit_deg"]
+    # -- toiture -- La BDNB ne renseigne pas la forme de toiture (seul le
+    # materiau) : on ne la devine pas, on ne force ni pignon ni dalle plate.
+    # Inconnu -> None (champs_manquants) : le rendu 3D ne dessine alors pas
+    # de toit plutot que d'en inventer un. Seul un formulaire explicite
+    # impose roof_shape ; la pente n'est derivee du materiau que pour un
+    # toit a deux pans demande explicitement.
+    roof_shape = formulaire.get("roof_shape")
+    pente_toit_deg = formulaire.get("pente_toit_deg")
+    if roof_shape:
+        champs_ok.append("roof_shape")
+        if pente_toit_deg is None:
+            pente_toit_deg = _pente_from_materiau_toiture(materiau_toiture) if roof_shape == "deux_pans" else 0.0
+        else:
+            champs_ok.append("pente_toit_deg")
+    else:
+        champs_manquants += ["roof_shape", "pente_toit_deg"]
 
     # -- forme et type de bati, deduits du polygone reel --
     # `footprint_shape` etait jusqu'ici fige a "rectangulaire" : il reflete

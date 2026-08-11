@@ -1854,6 +1854,167 @@
   --md-icon-size: 15px;
 }
 
+/* ── Étape 4 — Simulation catastrophe (vue 3D physique three + cannon-es) ── */
+.disaster-panel {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.disaster-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 8px 12px;
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: 14px;
+  background: var(--md-sys-color-surface-container-low);
+}
+.disaster-toolbar-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--md-sys-color-on-surface);
+  white-space: nowrap;
+}
+.disaster-toolbar-title md-icon {
+  color: var(--md-sys-color-primary);
+  font-size: 18px;
+}
+.disaster-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 5px 11px;
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: 999px;
+  background: var(--md-sys-color-surface-container);
+  color: var(--md-sys-color-on-surface-variant);
+  font: inherit;
+  font-size: 11.5px;
+  cursor: pointer;
+  transition: border-color 0.16s, color 0.16s, background 0.16s, box-shadow 0.16s;
+}
+.disaster-btn:hover:not(:disabled) {
+  color: var(--md-sys-color-on-surface);
+  border-color: var(--md-sys-color-primary);
+}
+.disaster-btn.active {
+  color: var(--md-sys-color-on-primary-container);
+  background: var(--md-sys-color-primary-container);
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 45%, transparent);
+}
+.disaster-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.disaster-btn md-icon {
+  font-size: 16px;
+}
+.disaster-spacer {
+  flex: 1;
+}
+.disaster-legend {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.disaster-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  color: var(--md-sys-color-on-surface-variant);
+}
+.disaster-legend-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 3px;
+}
+.disaster-intensity {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11px;
+  color: var(--md-sys-color-on-surface-variant);
+}
+.disaster-intensity input[type="range"] {
+  width: 110px;
+  accent-color: var(--accent);
+}
+.disaster-intensity-val {
+  font-family: var(--mono);
+  font-size: 11px;
+  min-width: 34px;
+  text-align: right;
+  color: var(--md-sys-color-on-surface);
+}
+.disaster-wrap {
+  position: relative;
+  flex: 1;
+  min-height: 420px;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid var(--md-sys-color-outline-variant);
+  background: #0e1216;
+}
+.disaster-canvas {
+  position: absolute;
+  inset: 0;
+}
+.disaster-canvas canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.disaster-loading,
+.disaster-error {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: var(--md-sys-color-surface-container-low);
+  color: var(--md-sys-color-primary);
+  font-size: 13px;
+}
+.disaster-error {
+  color: var(--md-sys-color-error);
+}
+.disaster-loading md-icon {
+  --md-icon-size: 34px;
+}
+.disaster-loading md-linear-progress {
+  width: 220px;
+}
+.disaster-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0;
+  padding: 10px 14px;
+  border: 1px solid color-mix(in srgb, var(--md-sys-color-tertiary) 40%, var(--md-sys-color-outline-variant));
+  border-radius: 12px;
+  background: var(--md-sys-color-tertiary-container);
+  color: var(--md-sys-color-on-tertiary-container);
+  font-size: 11.5px;
+  line-height: 1.5;
+}
+.disaster-note md-icon {
+  flex-shrink: 0;
+  font-size: 16px;
+}
+
 @media (max-width: 900px) {
   .bim-header {
     flex-direction: column;
