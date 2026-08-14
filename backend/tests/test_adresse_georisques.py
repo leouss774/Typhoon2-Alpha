@@ -164,17 +164,13 @@ def test_risque_report_nice():
     report = asyncio.run(_run())
     assert isinstance(report, RisqueReport)
     assert report.code_insee == "06088"
-    assert report.alea_count >= 1
+    assert report.alea_count == 0
     assert report.erreurs_partielles == []
 
-    # Inondation doit être présente (2 arrêtés CATNAT + hazard + zones inondables)
-    inond = next(a for a in report.aleas if a.code == "inondation")
-    assert inond.present is True
-    assert inond.niveau in (NiveauRisque.MODERE, NiveauRisque.ELEVE, NiveauRisque.CRITIQUE)
-
-    # Radon catégorie 2 → présent
-    radon = next(a for a in report.aleas if a.code == "radon")
-    assert radon.present is True
+    # Seuls les périls conservés (ICPE, canalisations, vents cycloniques, PPR, SSP)
+    # sont désormais normalisés — aucun n'est présent dans la fixture Nice.
+    codes = {a.code for a in report.aleas}
+    assert codes == {"icpe", "canalisations", "vent_cyclonique", "ppr", "ssp"}
 
     # Aucun aléa ne doit avoir present=None (toutes les sources sont dispo dans la fixture)
     for alea in report.aleas:
@@ -206,8 +202,8 @@ def test_erreurs_partielles():
     assert "zonage_sismique" in report.erreurs_partielles[0]
 
     # Les autres aléas doivent quand même être normalisés
-    inond = next(a for a in report.aleas if a.code == "inondation")
-    assert inond.present is not None
+    ssp = next(a for a in report.aleas if a.code == "ssp")
+    assert ssp.present is not None
 
 
 # ---------------------------------------------------------------------------
@@ -275,8 +271,8 @@ def test_no_decommissioned_geocodage_connector_import():
 # Test 9 : CatNat filtré par péril + PPR et SSP normalisés
 # ---------------------------------------------------------------------------
 
-def test_catnat_filtering_and_ppr_ssp():
-    """Vérifie l'exposition de PPR, SSP et du CatNat filtré sur RGA et MVT."""
+def test_ppr_ssp_normalises():
+    """Vérifie la normalisation de PPR et SSP (périls conservés)."""
     raw_enriched = {
         **GEORISQUES_RAW_NICE,
         "ppr": [{"num_ppr": "PPR123", "type_ppr": "PPRN"}],
@@ -304,10 +300,6 @@ def test_catnat_filtering_and_ppr_ssp():
     assert ssp.present is True
     assert ssp.niveau == NiveauRisque.MODERE
 
-    # Vérification CatNat filtré pour RGA
-    rga = next(a for a in report.aleas if a.code == "rga")
-    assert rga.catnat_historique is not None
-    assert any("Sécheresse" in (c.get("libelle_risque_jo") or "") for c in rga.catnat_historique)
 
 
 # ---------------------------------------------------------------------------

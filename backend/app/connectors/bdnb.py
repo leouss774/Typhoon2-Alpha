@@ -220,8 +220,40 @@ _BBOX_CACHE: dict[str, tuple[float, dict]] = {}
 _BBOX_CACHE_TTL = 300.0
 
 
-def _bbox_cache_key(west: float, south: float, east: float, north: float, limit: int) -> str:
-    return f"{west:.4f},{south:.4f},{east:.4f},{north:.4f},{limit}"
+def _bbox_cache_key(west: float, south: float, east: float, north: float, limit: int, with_risks: bool) -> str:
+    return f"{west:.4f},{south:.4f},{east:.4f},{north:.4f},{limit},{int(with_risks)}"
+
+
+async def _fetch_risks_batch(client: httpx.AsyncClient, batiment_groupe_ids: list[str]) -> dict[str, dict]:
+    """Niveaux de risque bâtiment (argile/radon/sismique) pour un lot de
+    `batiment_groupe_id`, en **une seule** requête PostgREST (`in.(...)`) —
+    utilisé par le mode carte « Bâtiments » (coloration de tous les bâtiments
+    d'un rayon, pas seulement le bâtiment cible) sans repasser en O(n) appels
+    individuels, qui saturerait vite le tier Open (429, cf. `_get_bdnb_page`).
+    Best-effort : une erreur ne fait pas échouer la couche bâtiments, elle
+    laisse simplement ces bâtiments sans couleur de risque.
+    """
+    if not batiment_groupe_ids:
+        return {}
+    ids_filter = "(" + ",".join(batiment_groupe_ids) + ")"
+    try:
+        response = await client.get(
+            f"{settings.bdnb_base_url}/v1/bdnb/donnees/batiment_groupe_risques",
+            params={
+                "select": "batiment_groupe_id,alea_argile,alea_radon,alea_sismique",
+                "batiment_groupe_id": f"in.{ids_filter}",
+                "limit": len(batiment_groupe_ids),
+            },
+            headers=_headers(),
+        )
+        response.raise_for_status()
+    except httpx.HTTPStatusError as exc:
+        logger.warning(
+            "  [bdnb bbox] lot de risques indisponible (%s) -> batiments sans couleur de risque",
+            exc.response.status_code,
+        )
+        return {}
+    return {row["batiment_groupe_id"]: row for row in response.json() if row.get("batiment_groupe_id")}
 
 
 async def fetch_buildings_in_bbox(
@@ -231,6 +263,7 @@ async def fetch_buildings_in_bbox(
     east: float,
     north: float,
     limit: int = 800,
+    with_risks: bool = False,
 ) -> dict:
     """Retourne une GeoJSON FeatureCollection des groupes de batiments BDNB
     dont l'empreinte intersecte la bounding box (WGS84), reprojetee en 4326.
@@ -240,6 +273,12 @@ async def fetch_buildings_in_bbox(
     (metres, hauteur moyenne du groupe). Les resultats sont plafonnes a
     `limit` ; `limit <= 0` signifie « tous » : on pagine jusqu'a epuisement
     (plafond de securite 10 000 pour ne pas marteler le tier Open).
+
+    `with_risks=True` ajoute `alea_argile`/`alea_radon`/`alea_sismique` à
+    chaque feature (une requête groupée supplémentaire, cf. `_fetch_risks_batch`)
+    — réservé aux appels à petit rayon (mode carte « Bâtiments », ~100 m) : sur
+    un plein viewport (des centaines de bâtiments) ça resterait un seul appel
+    de plus, mais l'appelant est censé garder ce mode à une zone restreinte.
 
     L'API BDNB (PostgREST + PostGIS) accepte un filtre spatial via
     l'operateur `ov` (overlap, bbox) : `geom_groupe=ov.SRID=2154;POLYGON(...)`.
@@ -261,7 +300,7 @@ async def fetch_buildings_in_bbox(
 
     # Cache : la même fenêtre re-demandée dans la minute est servie sans
     # re-paginer (le tier Open rate-limite vite les appels séquentiels).
-    cache_key = _bbox_cache_key(west, south, east, north, limit)
+    cache_key = _bbox_cache_key(west, south, east, north, limit, with_risks)
     cached = _BBOX_CACHE.get(cache_key)
     if cached and time.monotonic() - cached[0] < _BBOX_CACHE_TTL:
         return cached[1]
@@ -311,6 +350,15 @@ async def fetch_buildings_in_bbox(
                 break
         if len(features) >= limit or len(rows) < page_size:
             break
+
+    if with_risks and features:
+        risks_by_id = await _fetch_risks_batch(client, [f["properties"]["batiment_groupe_id"] for f in features])
+        for f in features:
+            risks = risks_by_id.get(f["properties"]["batiment_groupe_id"])
+            if risks:
+                f["properties"]["alea_argile"] = risks.get("alea_argile")
+                f["properties"]["alea_radon"] = risks.get("alea_radon")
+                f["properties"]["alea_sismique"] = risks.get("alea_sismique")
 
     result = {"type": "FeatureCollection", "features": features}
     _BBOX_CACHE[cache_key] = (time.monotonic(), result)

@@ -11,7 +11,7 @@
   "dependencies": {
     "@material/web": "^2.2.0",
     "jspdf": "^4.2.1",
-    "mapbox-gl": "^2.15.0",
+    "mapbox-gl": "^3.28.1",
     "ol": "^10.10.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
@@ -19,7 +19,7 @@
     "three": "^0.128.0"
   },
   "devDependencies": {
-    "@types/mapbox-gl": "^2.7.21",
+    "@types/geojson": "^7946.0.16",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@vitejs/plugin-react": "^5.0.0",

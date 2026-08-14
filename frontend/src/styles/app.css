@@ -492,14 +492,20 @@ label {
   gap: 1.4rem;
 }
 
+/* L'ombre « elevation » auto-rendue par Material Web (dans ses boutons) est
+   supprimée sur la page des paramètres — elle n'apporte rien ici. */
+.settings-page md-elevation[part='elevation'] {
+  display: none;
+}
+
 .settings-tabs {
   display: flex;
   gap: 0.4rem;
   flex-wrap: wrap;
   padding: 0.25rem;
   border-radius: 999px;
-  background: var(--md-sys-color-surface-container-high, rgba(125, 90, 69, 0.08));
-  border: 1px solid rgba(59, 42, 32, 0.08);
+  background: var(--md-sys-color-surface-container-high);
+  border: 1px solid var(--md-sys-color-outline-variant);
   width: fit-content;
   max-width: 100%;
 }
@@ -512,7 +518,7 @@ label {
   border: none;
   border-radius: 999px;
   background: transparent;
-  color: var(--md-sys-color-on-surface-variant, #5b4b41);
+  color: var(--md-sys-color-on-surface-variant);
   font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
@@ -525,13 +531,13 @@ label {
 }
 
 .settings-tab:hover {
-  background: rgba(125, 90, 69, 0.08);
+  background: var(--md-sys-color-surface-container-high);
 }
 
 .settings-tab.active {
-  background: var(--md-sys-color-secondary-container, #f0e2d4);
-  color: var(--md-sys-color-on-secondary-container, #2c2019);
-  box-shadow: 0 2px 10px rgba(43, 30, 22, 0.12);
+  background: var(--md-sys-color-secondary-container);
+  color: var(--md-sys-color-on-secondary-container);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12);
 }
 
 .settings-body {
@@ -542,9 +548,9 @@ label {
 
 .settings-card {
   border-radius: 1.4rem;
-  border: 1px solid rgba(59, 42, 32, 0.09);
-  background: rgba(255, 252, 248, 0.85);
-  box-shadow: 0 18px 44px rgba(43, 30, 22, 0.06);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  background: var(--md-sys-color-surface-container-low);
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.06);
   padding: 1.5rem 1.6rem;
 }
 
@@ -555,7 +561,7 @@ label {
 
 .settings-card-desc {
   margin: 0 0 1.2rem;
-  color: var(--md-sys-color-on-surface-variant, #5b4b41);
+  color: var(--md-sys-color-on-surface-variant);
   font-size: 0.85rem;
 }
 
@@ -590,7 +596,7 @@ label {
 .m3-select-label {
   font-size: 0.75rem;
   font-weight: 600;
-  color: var(--md-sys-color-on-surface-variant, #5b4b41);
+  color: var(--md-sys-color-on-surface-variant);
   padding-left: 0.25rem;
 }
 
@@ -598,9 +604,9 @@ label {
   width: 100%;
   padding: 0.7rem 0.8rem;
   border-radius: 0.9rem;
-  border: 1px solid var(--md-sys-color-outline, rgba(59, 42, 32, 0.3));
-  background: var(--md-sys-color-surface, #fffdfa);
-  color: var(--md-sys-color-on-surface, #241c18);
+  border: 1px solid var(--md-sys-color-outline);
+  background: var(--md-sys-color-surface);
+  color: var(--md-sys-color-on-surface);
   font-size: 0.9rem;
   outline: none;
   cursor: pointer;
@@ -608,8 +614,8 @@ label {
 }
 
 .m3-select:focus {
-  border-color: var(--md-sys-color-primary, #7d5a45);
-  box-shadow: 0 0 0 2px rgba(125, 90, 69, 0.18);
+  border-color: var(--md-sys-color-primary);
+  box-shadow: 0 0 0 2px var(--md-sys-color-primary);
 }
 
 .settings-actions {
@@ -629,7 +635,7 @@ label {
 }
 
 .settings-saved {
-  color: var(--md-sys-color-primary, #7d5a45);
+  color: var(--md-sys-color-primary);
   font-size: 0.82rem;
   font-weight: 600;
 }
@@ -641,7 +647,7 @@ label {
   height: 100%;
   display: grid;
   place-items: center;
-  background: linear-gradient(135deg, #36241d, #7d5a45);
+  background: linear-gradient(135deg, var(--md-sys-color-primary), var(--md-sys-color-tertiary));
   color: #fff;
   font-weight: 700;
   font-size: 0.8rem;
@@ -661,7 +667,7 @@ label {
   height: 92px;
   border-radius: 50%;
   overflow: hidden;
-  border: 2px solid rgba(125, 90, 69, 0.25);
+  border: 2px solid var(--md-sys-color-outline-variant);
   flex-shrink: 0;
 }
 
@@ -690,7 +696,7 @@ label {
 }
 
 .avatar-upload-actions small {
-  color: var(--md-sys-color-on-surface-variant, #5b4b41);
+  color: var(--md-sys-color-on-surface-variant);
 }
 
 /* Suppression de compte */
@@ -779,8 +785,8 @@ md-outlined-button.danger {
 }
 
 .chip-primary {
-  background: var(--md-sys-color-primary-container, #f0e2d4);
-  color: var(--md-sys-color-on-primary-container, #2c2019);
+  background: var(--md-sys-color-primary-container);
+  color: var(--md-sys-color-on-primary-container);
 }
 
 .chip-live {
@@ -800,7 +806,7 @@ md-outlined-button.danger {
   justify-content: space-between;
   gap: 1rem;
   padding: 0.85rem 0.2rem;
-  border-bottom: 1px solid rgba(59, 42, 32, 0.08);
+  border-bottom: 1px solid var(--md-sys-color-outline-variant);
 }
 
 .switch-row:last-child {
@@ -819,7 +825,7 @@ md-outlined-button.danger {
 
 .switch-row-desc {
   font-size: 0.8rem;
-  color: var(--md-sys-color-on-surface-variant, #5b4b41);
+  color: var(--md-sys-color-on-surface-variant);
   max-width: 520px;
 }
 
@@ -844,12 +850,12 @@ md-outlined-button.danger {
 }
 
 .plan-summary-title strong {
-  color: var(--md-sys-color-primary, #7d5a45);
+  color: var(--md-sys-color-primary);
 }
 
 .plan-summary-sub {
   margin: 0;
-  color: var(--md-sys-color-on-surface-variant, #5b4b41);
+  color: var(--md-sys-color-on-surface-variant);
   font-size: 0.88rem;
 }
 
@@ -862,7 +868,7 @@ md-outlined-button.danger {
 
 .plan-summary-active span {
   font-size: 0.82rem;
-  color: var(--md-sys-color-on-surface-variant, #5b4b41);
+  color: var(--md-sys-color-on-surface-variant);
   max-width: 360px;
 }
 
@@ -882,7 +888,7 @@ md-outlined-button.danger {
 
 .plan-price-period {
   font-size: 0.88rem;
-  color: var(--md-sys-color-on-surface-variant, #5b4b41);
+  color: var(--md-sys-color-on-surface-variant);
 }
 
 .plan-badge {
@@ -890,8 +896,8 @@ md-outlined-button.danger {
   align-items: center;
   padding: 0.22rem 0.65rem;
   border-radius: 999px;
-  background: var(--md-sys-color-primary-container, #f0e2d4);
-  color: var(--md-sys-color-on-primary-container, #2c2019);
+  background: var(--md-sys-color-primary-container);
+  color: var(--md-sys-color-on-primary-container);
   font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -900,7 +906,7 @@ md-outlined-button.danger {
 
 .plan-summary-desc {
   margin: 0.4rem 0 0;
-  color: var(--md-sys-color-on-surface-variant, #5b4b41);
+  color: var(--md-sys-color-on-surface-variant);
   font-size: 0.85rem;
 }
 
@@ -916,7 +922,7 @@ md-outlined-button.danger {
   flex-direction: column;
   gap: 1.2rem;
   padding-left: 1.6rem;
-  border-left: 1px solid rgba(59, 42, 32, 0.1);
+  border-left: 1px solid var(--md-sys-color-outline-variant);
 }
 
 .plan-attention {
@@ -963,28 +969,28 @@ md-outlined-button.danger {
   justify-content: space-between;
   font-size: 0.82rem;
   font-weight: 600;
-  color: var(--md-sys-color-on-surface-variant, #5b4b41);
+  color: var(--md-sys-color-on-surface-variant);
 }
 
 .plan-progress-meta span:last-child {
-  color: var(--md-sys-color-on-surface, #241c18);
+  color: var(--md-sys-color-on-surface);
 }
 
 .plan-progress-track {
   height: 8px;
   border-radius: 999px;
-  background: var(--md-sys-color-surface-variant, rgba(125, 90, 69, 0.18));
+  background: var(--md-sys-color-surface-container-high);
   overflow: hidden;
 }
 
 .plan-progress-fill {
   height: 100%;
   border-radius: 999px;
-  background: linear-gradient(90deg, #7d5a45, #a97e5f);
+  background: linear-gradient(90deg, var(--md-sys-color-primary), var(--md-sys-color-tertiary));
 }
 
 .plan-progress small {
-  color: var(--md-sys-color-on-surface-variant, #5b4b41);
+  color: var(--md-sys-color-on-surface-variant);
 }
 
 /* Abonnement — « Moyens de paiement » */
@@ -1018,19 +1024,19 @@ md-outlined-button.danger {
   gap: 0.6rem;
   padding: 0.6rem 0.8rem;
   border-radius: 0.8rem;
-  border: 1px solid var(--md-sys-color-outline, rgba(59, 42, 32, 0.28));
+  border: 1px solid var(--md-sys-color-outline);
   cursor: pointer;
   font-size: 0.9rem;
   transition: border-color 0.15s ease, background 0.15s ease;
 }
 
 .radio-option.selected {
-  border-color: var(--md-sys-color-primary, #7d5a45);
-  background: rgba(125, 90, 69, 0.07);
+  border-color: var(--md-sys-color-primary);
+  background: color-mix(in srgb, var(--md-sys-color-primary) 7%, transparent);
 }
 
 .radio-option input {
-  accent-color: var(--md-sys-color-primary, #7d5a45);
+  accent-color: var(--md-sys-color-primary);
   width: 16px;
   height: 16px;
 }
@@ -1046,7 +1052,7 @@ md-outlined-button.danger {
   align-items: center;
   gap: 0.6rem;
   font-size: 0.88rem;
-  color: var(--md-sys-color-on-surface-variant, #5b4b41);
+  color: var(--md-sys-color-on-surface-variant);
 }
 
 .payment-form-actions {
@@ -1059,14 +1065,14 @@ md-outlined-button.danger {
   gap: 0.6rem;
   padding: 0.9rem 1rem;
   border-radius: 0.9rem;
-  background: var(--md-sys-color-surface-container-low, rgba(125, 90, 69, 0.06));
-  border: 1px dashed rgba(59, 42, 32, 0.18);
+  background: var(--md-sys-color-surface-container-low);
+  border: 1px dashed var(--md-sys-color-outline-variant);
 }
 
 .paypal-note p {
   margin: 0;
   font-size: 0.85rem;
-  color: var(--md-sys-color-on-surface-variant, #5b4b41);
+  color: var(--md-sys-color-on-surface-variant);
 }
 
 .my-cards {
@@ -1095,8 +1101,8 @@ md-outlined-button.danger {
   flex-wrap: wrap;
   padding: 1rem 1.1rem;
   border-radius: 1rem;
-  border: 1px solid rgba(59, 42, 32, 0.1);
-  background: var(--md-sys-color-surface, #fffdfa);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  background: var(--md-sys-color-surface);
 }
 
 .saved-card-main {
@@ -1114,7 +1120,7 @@ md-outlined-button.danger {
   place-items: center;
   flex-shrink: 0;
   background: #fff;
-  border: 1px solid rgba(59, 42, 32, 0.12);
+  border: 1px solid var(--md-sys-color-outline-variant);
 }
 
 .card-brand-svg {
@@ -1152,7 +1158,7 @@ md-outlined-button.danger {
 
 .saved-card-num {
   font-size: 0.82rem;
-  color: var(--md-sys-color-on-surface-variant, #5b4b41);
+  color: var(--md-sys-color-on-surface-variant);
   letter-spacing: 0.08em;
 }
 
@@ -1165,13 +1171,13 @@ md-outlined-button.danger {
 
 .saved-card-exp {
   font-size: 0.74rem;
-  color: var(--md-sys-color-on-surface-variant, #5b4b41);
+  color: var(--md-sys-color-on-surface-variant);
 }
 
 .saved-card--empty {
   justify-content: center;
   gap: 0.5rem;
-  color: var(--md-sys-color-on-surface-variant, #5b4b41);
+  color: var(--md-sys-color-on-surface-variant);
   font-size: 0.88rem;
 }
 
@@ -1199,7 +1205,7 @@ md-outlined-button.danger {
   flex-direction: column;
   gap: 0.2rem;
   font-size: 0.84rem;
-  color: var(--md-sys-color-on-surface-variant, #5b4b41);
+  color: var(--md-sys-color-on-surface-variant);
 }
 
 .twofa-subtitle {
@@ -1212,11 +1218,11 @@ md-outlined-button.danger {
   margin: 0 0 1.2rem;
   max-width: 560px;
   font-size: 0.88rem;
-  color: var(--md-sys-color-on-surface-variant, #5b4b41);
+  color: var(--md-sys-color-on-surface-variant);
 }
 
 .twofa-desc a {
-  color: var(--md-sys-color-primary, #7d5a45);
+  color: var(--md-sys-color-primary);
   font-weight: 600;
 }
 
@@ -1231,7 +1237,7 @@ md-outlined-button.danger {
   margin: 0;
   max-width: 560px;
   font-size: 0.88rem;
-  color: var(--md-sys-color-on-surface-variant, #5b4b41);
+  color: var(--md-sys-color-on-surface-variant);
 }
 
 .api-key-layout {
@@ -1260,14 +1266,14 @@ md-outlined-button.danger {
 
 .key-output span {
   font-size: 0.78rem;
-  color: var(--md-sys-color-on-surface-variant, #5b4b41);
+  color: var(--md-sys-color-on-surface-variant);
 }
 
 .key-output code {
   padding: 0.6rem 0.8rem;
   border-radius: 0.7rem;
-  background: #241c18;
-  color: #e9dccf;
+  background: var(--md-sys-color-surface-container-high);
+  color: var(--md-sys-color-on-surface);
   font-size: 0.8rem;
   overflow-x: auto;
   user-select: all;
@@ -1281,8 +1287,8 @@ md-outlined-button.danger {
   gap: 0.6rem;
   padding: 1.4rem;
   border-radius: 1.1rem;
-  background: linear-gradient(135deg, #36241d, #7d5a45);
-  color: #f7f1ea;
+  background: linear-gradient(135deg, var(--md-sys-color-primary), var(--md-sys-color-tertiary));
+  color: var(--md-sys-color-on-primary);
   text-align: center;
 }
 
@@ -1324,7 +1330,7 @@ md-outlined-button.danger {
   align-items: center;
   gap: 0.9rem;
   padding: 0.85rem 0.2rem;
-  border-bottom: 1px solid rgba(59, 42, 32, 0.08);
+  border-bottom: 1px solid var(--md-sys-color-outline-variant);
 }
 
 .conn-row:last-child {
@@ -1337,8 +1343,8 @@ md-outlined-button.danger {
   display: grid;
   place-items: center;
   border-radius: 0.9rem;
-  background: var(--md-sys-color-secondary-container, #f0e2d4);
-  color: var(--md-sys-color-on-secondary-container, #2c2019);
+  background: var(--md-sys-color-secondary-container);
+  color: var(--md-sys-color-on-secondary-container);
   flex-shrink: 0;
 }
 
@@ -1365,7 +1371,7 @@ md-outlined-button.danger {
 
 .brand-tile--notion {
   background: #ffffff;
-  border: 1px solid rgba(59, 42, 32, 0.14);
+  border: 1px solid var(--md-sys-color-outline-variant);
 }
 
 .brand-tile--notion svg {
@@ -1414,7 +1420,7 @@ md-outlined-button.danger {
 
 .conn-desc {
   font-size: 0.78rem;
-  color: var(--md-sys-color-on-surface-variant, #5b4b41);
+  color: var(--md-sys-color-on-surface-variant);
 }
 
 .settings-note {
@@ -1422,7 +1428,7 @@ md-outlined-button.danger {
   align-items: center;
   gap: 0.6rem;
   font-size: 0.82rem;
-  color: var(--md-sys-color-on-surface-variant, #5b4b41);
+  color: var(--md-sys-color-on-surface-variant);
 }
 
 .settings-note md-icon {
@@ -1441,7 +1447,7 @@ md-outlined-button.danger {
     padding-left: 0;
     padding-top: 1.2rem;
     border-left: none;
-    border-top: 1px solid rgba(59, 42, 32, 0.1);
+    border-top: 1px solid var(--md-sys-color-outline-variant);
   }
 }
 
@@ -1459,11 +1465,10 @@ md-outlined-button.danger {
   }
 
   .settings-tabs {
-    width: 100%;
-    border-radius: 1rem;
-    overflow-x: auto;
-    flex-wrap: nowrap;
+    width: fit-content;
+    max-width: 100%;
+    border-radius: 999px;
+    flex-wrap: wrap;
     justify-content: flex-start;
-    -webkit-overflow-scrolling: touch;
   }
 }

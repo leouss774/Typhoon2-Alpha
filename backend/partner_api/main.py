@@ -13,7 +13,7 @@ Lancement (depuis backend/, meme racine que l'API interne pour que
     uvicorn partner_api.main:app --reload --port 8001
 
 Authentification par cle API (header X-API-Key, une cle par partenaire) —
-voir partner_api/auth.py et PARTNER_API_KEYS dans backend/.env.
+voir partner_api/auth.py et PARTNER_API_KEYS dans le .env a la racine du projet.
 """
 
 from __future__ import annotations

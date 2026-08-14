@@ -134,7 +134,7 @@ export function BuildingFiche({
         <EnveloppeVitreeSection b={batiment} />
         <SystemesEnergieSection b={batiment} />
         <PerformancesSection b={batiment} />
-        <RisquesSection b={batiment} report={report} risques={risques} />
+        <RisquesSection b={batiment} risques={risques} />
     </div>
   );
 }
@@ -294,7 +294,7 @@ function EnveloppeOpaqueSection({ b }: { b: BdnbBatiment }) {
     >
       <div className="gr-card-grid gr-card-grid--icon">
         <IconDataCard
-          icon="wall"
+          icon="brick"
           label="Matériaux mur extérieur"
           value={b.mat_mur_txt ? capFirst(b.mat_mur_txt) : null}
           sub={b.materiaux_structure_mur_exterieur ? capFirst(b.materiaux_structure_mur_exterieur) : undefined}
@@ -305,7 +305,7 @@ function EnveloppeOpaqueSection({ b }: { b: BdnbBatiment }) {
           value={b.mat_toit_txt ? capFirst(b.mat_toit_txt) : null}
         />
         <IconDataCard
-          icon="wall"
+          icon="brick"
           label="Type d'isolation du mur extérieur"
           value={b.type_isolation_mur_exterieur ? capFirst(b.type_isolation_mur_exterieur) : null}
           tone={!b.type_isolation_mur_exterieur ? 'warn' : 'normal'}
@@ -656,22 +656,11 @@ function PerformancesSection({ b }: { b: BdnbBatiment }) {
 
 function RisquesSection({
   b,
-  report,
   risques,
 }: {
   b: BdnbBatiment;
-  report: RisqueReport;
   risques?: BatimentRisques | null;
 }) {
-  const aleas = report.aleas || [];
-  /* Les aléas Géorisques détaillés (report) concernent l'adresse diagnostiquée :
-     ils ne s'affichent que pour le bâtiment diagnostiqué, pas pour un bâtiment
-     voisin sélectionné au clic (story D2 — niveau spécifique via la table risques). */
-  const isDiagnosed =
-    !risques && !b.batiment_groupe_id
-      ? false
-      : b.batiment_groupe_id === report.bdnb?.batiment?.batiment_groupe_id;
-
   const riskRows: { label: string; value: string | null | undefined; icon: string }[] = [
     { label: 'Risque Argiles', value: risques?.alea_argile ?? b.alea_argile, icon: 'grass' },
     { label: 'Risque Radon', value: risques?.alea_radon ?? null, icon: 'science' },
@@ -741,34 +730,6 @@ function RisquesSection({
           )}
         </div>
       )}
-
-      {/* Aléas Géorisques détaillés — uniquement pour le bâtiment diagnostiqué */}
-      {isDiagnosed &&
-        (aleas.length > 0 ? (
-          <div className="gr-card-grid gr-card-grid--risk">
-            {aleas.slice(0, 8).map((alea) => {
-              const present = alea.present;
-              const tone = present === true ? 'warn' : present === false ? 'ok' : 'na';
-              return (
-                <div key={alea.code} className={`gr-risk-card gr-risk-card--${tone}`}>
-                  <md-icon>{getRiskIcon(alea.code)}</md-icon>
-                  <div className="gr-risk-card-body">
-                    <span className="gr-risk-card-label">{alea.libelle}</span>
-                    <span className="gr-risk-card-value">
-                      {present === true
-                        ? alea.niveau ? capFirst(alea.niveau.replace(/_/g, ' ')) : 'Présent'
-                        : present === false
-                          ? 'Non concerné'
-                          : NA}
-                    </span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        ) : (
-          <p className="gr-na">Aucune donnée de risque disponible pour cette adresse.</p>
-        ))}
 
       {/* Points d'attention */}
       <AttentionPoints b={b} />
@@ -928,22 +889,3 @@ function ArrayCard({
   );
 }
 
-/* Icônes risque par code aléa */
-function getRiskIcon(code: string): string {
-  const map: Record<string, string> = {
-    inondation: 'flood',
-    rga: 'grass',
-    sismicite: 'crisis_alert',
-    radon: 'science',
-    feu_foret: 'local_fire_department',
-    mouvement_terrain: 'landslide',
-    ppr: 'gpp_maybe',
-    ssp: 'factory',
-    cavite: 'landscape',
-    avalanche: 'terrain',
-    icpe: 'apartment',
-    canalisations: 'plumbing',
-    vent_cyclonique: 'cyclone',
-  };
-  return map[code] || 'warning';
-}

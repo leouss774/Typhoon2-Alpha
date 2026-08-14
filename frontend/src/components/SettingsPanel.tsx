@@ -38,11 +38,17 @@ const CURRENCIES = [
 ];
 
 /**
- * Panneau « Paramètres du compte » — intégré dans /zone (overlay sombre),
- * plus aucune route /settings dédiée.
+ * Panneau « Paramètres du compte » — onglets pilotés par la route courante :
+ * chaque onglet vit sur sa propre URL (/settings/<onglet>) ; cliquer sur un
+ * onglet navigue (onTabChange) au lieu de changer un état local.
  */
-export function SettingsPanel({ initialTab = 'account' }: { initialTab?: SettingsTabKey }) {
-  const [tab, setTab] = useState<SettingsTabKey>(initialTab);
+export function SettingsPanel({
+  tab,
+  onTabChange,
+}: {
+  tab: SettingsTabKey;
+  onTabChange: (key: SettingsTabKey) => void;
+}) {
   return (
     <div className="settings-page">
       <div className="settings-tabs" role="tablist" aria-label="Réglages du compte">
@@ -53,7 +59,7 @@ export function SettingsPanel({ initialTab = 'account' }: { initialTab?: Setting
             role="tab"
             aria-selected={tab === t.key}
             className={`settings-tab${tab === t.key ? ' active' : ''}`}
-            onClick={() => setTab(t.key)}
+            onClick={() => onTabChange(t.key)}
           >
             <md-icon>{t.icon}</md-icon>
             <span>{t.label}</span>

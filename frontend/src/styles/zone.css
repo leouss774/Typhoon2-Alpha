@@ -69,6 +69,11 @@
   --sidenav-w: 264px;
   --sidenav-w-collapsed: 72px;
 
+  /* Rangées interactives de la sidenav : rayon (pilule) et hauteur unifiés
+     en mode déplié comme en mode replié (rail) — même gabarit partout. */
+  --sidenav-item-radius: 999px;
+  --sidenav-item-h: 40px;
+
   /* Sidenav à gauche + colonne principale : grid pleine hauteur */
   display: grid;
   grid-template-columns: auto 1fr;
@@ -146,6 +151,31 @@
   width: var(--sidenav-w-collapsed);
 }
 
+/* ── Survol (desktop, replié) : dépliage temporaire « peek » ──
+   La sidenav n'est dépliée durablement que si elle est épinglée (toggle) ;
+   sinon elle se déplie tant que la souris reste dessus (classe .sidenav-peek
+   posée par ZoneSidenav) puis se replie au départ. Ces règles restaurent le
+   look « déplié » pendant le survol (sinon les styles .nav-collapsed gagnent). */
+@media (min-width: 901px) {
+  .zone-app.nav-collapsed .zone-sidenav.sidenav-peek {
+    width: var(--sidenav-w);
+  }
+  .zone-app.nav-collapsed .zone-sidenav.sidenav-peek .sidenav-header {
+    padding: 0 12px 0 16px;
+    justify-content: space-between;
+  }
+  .zone-app.nav-collapsed .zone-sidenav.sidenav-peek .sidenav-brand {
+    display: flex;
+  }
+  .zone-app.nav-collapsed .zone-sidenav.sidenav-peek .sidenav-footer-main {
+    justify-content: space-between;
+    padding: 0 12px;
+  }
+  .zone-app.nav-collapsed .zone-sidenav.sidenav-peek .sidenav-user {
+    display: flex;
+  }
+}
+
 .zone-main {
   grid-column: 2;
   grid-row: 1;
@@ -153,6 +183,64 @@
   flex-direction: column;
   min-width: 0;
   min-height: 0;
+}
+
+/* ============================================================================
+   PAGE « PARAMÈTRES DU COMPTE » (/settings) — corps de page
+   La page occupe toute la largeur de .zone-main ; en-tête titre + bouton sur
+   une ligne, onglets et cartes alignés sur la même colonne que le titre.
+============================================================================ */
+.account-settings-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  width: 100%;
+  padding: 28px 24px 64px;
+}
+
+.account-settings-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 28px;
+}
+
+.account-settings-title {
+  min-width: 0;
+}
+
+.account-settings-title h1 {
+  margin: 0 0 6px;
+  font-size: 1.6rem;
+  line-height: 1.25;
+  font-weight: 600;
+  color: var(--md-sys-color-on-surface);
+}
+
+.account-settings-title p {
+  margin: 0;
+  max-width: 600px;
+  font-size: 0.92rem;
+  line-height: 1.55;
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+.account-settings-header md-filled-button {
+  flex-shrink: 0;
+}
+
+/* Mobile : en-tête empilé (hamburger, titre, bouton), bouton à gauche */
+@media (max-width: 900px) {
+  .account-settings-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+  }
+  .account-settings-header md-filled-button {
+    align-self: flex-start;
+  }
 }
 
 .sidenav-header {
@@ -189,7 +277,11 @@
 /* Thème clair : la sidenav suit les jetons M3 clairs (surface-container-low
    = #f1f5f8, texte sombre) — pas de surcharge sombre. Le wordmark masqué
    reste teinté var(--accent), lisible sur fond clair comme sombre. */
-/* Replié (desktop) : seule l'icône d'expansion reste dans l'en-tête (centrée) */
+/* Replié (desktop) : le logo est masqué, seule l'icône d'expansion reste
+   dans l'en-tête (centrée). */
+.zone-app.nav-collapsed .sidenav-brand {
+  display: none;
+}
 @media (min-width: 901px) {
   .zone-app.nav-collapsed .sidenav-header {
     padding: 0 12px;
@@ -197,19 +289,42 @@
   }
 }
 
-.sidenav-collapse,
-.sidenav-settings,
-.sidenav-expand {
+.sidenav-toggle,
+.sidenav-settings {
   --md-icon-button-icon-size: 22px;
   --md-icon-button-icon-color: var(--md-sys-color-on-surface-variant);
   --md-icon-button-unselected-icon-color: var(--md-sys-color-on-surface-variant);
   flex-shrink: 0;
 }
-.sidenav-collapse:hover,
-.sidenav-settings:hover,
-.sidenav-expand:hover {
+.sidenav-toggle:hover,
+.sidenav-settings:hover {
   --md-icon-button-icon-color: var(--md-sys-color-primary);
   --md-icon-button-unselected-icon-color: var(--md-sys-color-primary);
+}
+/* Toggle à 3 états (desktop) :
+   1. Repliée (rail)      → menu (hamburger)
+   2. Survol « peek »     → menu_open creuse, léger rappel (clic = épingler)
+   3. Épinglée (dépliée)  → menu_open pleine (axe FILL) teintée accent. */
+.sidenav-toggle md-icon {
+  transition: transform 0.28s cubic-bezier(0.2, 0, 0, 1), color 0.2s ease;
+}
+.sidenav-toggle--peek md-icon {
+  animation: sidenav-pin-nudge 0.45s ease;
+}
+.sidenav-toggle--pinned md-icon {
+  font-variation-settings: 'FILL' 1;
+  color: var(--md-sys-color-primary);
+}
+@keyframes sidenav-pin-nudge {
+  0% {
+    transform: rotate(-14deg) scale(0.85);
+  }
+  50% {
+    transform: rotate(10deg) scale(1.12);
+  }
+  100% {
+    transform: rotate(0deg) scale(1);
+  }
 }
 
 /* ── Corps de la sidenav dépliée : liste M3 + historique « Récent » ── */
@@ -233,15 +348,21 @@
   --md-list-container-color: transparent;
   --md-list-item-label-text-size: 13px;
   --md-list-item-label-text-weight: 600;
-  --md-list-item-container-shape: 999px;
   --md-list-item-hover-state-layer-color: var(--md-sys-color-primary);
   --md-list-item-hover-state-layer-opacity: 0.1;
   --md-list-item-icon-color: var(--md-sys-color-on-surface-variant);
+  /* Hauteur alignée sur les autres rangées (rail replié = icônes 40px). */
+  --md-list-item-one-line-container-height: var(--sidenav-item-h);
+  --md-list-item-top-space: 0px;
+  --md-list-item-bottom-space: 0px;
 }
 .sidenav-nav md-list-item {
   cursor: pointer;
   margin-bottom: 2px;
-  padding: 2px 0;
+  /* La forme M3 (--md-list-item-container-shape) n'est pas lue par le
+     composant compilé : on applique la pilule directement sur le host —
+     .list-item et le ripple héritent de border-radius:inherit. */
+  border-radius: var(--sidenav-item-radius);
 }
 /* Item « Nouveau diagnostic » façon bouton (+ New chat) */
 .sidenav-nav md-list-item.sidenav-new {
@@ -271,7 +392,7 @@
   text-transform: uppercase;
   letter-spacing: 0.12em;
   color: var(--md-sys-color-on-surface-variant);
-  border-radius: 10px;
+  border-radius: var(--sidenav-item-radius);
   transition: background 0.15s, color 0.15s;
 }
 .sidenav-recent-header::-webkit-details-marker {
@@ -298,7 +419,8 @@
   position: relative;
   display: flex;
   align-items: center;
-  border-radius: 10px;
+  height: var(--sidenav-item-h);
+  border-radius: var(--sidenav-item-radius);
   transition: background 0.15s;
 }
 .sidenav-recent-item:hover {
@@ -397,35 +519,310 @@
 .sidenav-footer {
   flex-shrink: 0;
   display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  border-top: 1px solid var(--md-sys-color-outline-variant);
+  padding: 14px 0 10px;
+  gap: 16px;
+  /* Ancrage du menu utilisateur (dropdown au-dessus du pied) */
+  position: relative;
+}
+
+/* ── Menu utilisateur (clic sur l'onglet JM — dropdown navigable) ── */
+.sidenav-user-menu {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 12px;
+  right: 12px;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  padding: 6px;
+  border-radius: 16px;
+  background: var(--md-sys-color-surface-container-high);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  box-shadow:
+    0 6px 20px rgba(0, 0, 0, 0.4),
+    0 2px 6px rgba(0, 0, 0, 0.3);
+  animation: zone-menu-in 0.14s ease;
+}
+@keyframes zone-menu-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+/* En-tête : avatar + nom + rôle */
+.sidenav-user-menu-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px 10px;
+  border-bottom: 1px solid var(--md-sys-color-outline-variant);
+  margin-bottom: 4px;
+}
+.sidenav-user-menu-copy {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.25;
+}
+.sidenav-user-menu-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--md-sys-color-on-surface);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sidenav-user-menu-tier {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--md-sys-color-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* Items navigables */
+.sidenav-user-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-width: 0;
+  padding: 8px 12px;
+  border: none;
+  background: transparent;
+  border-radius: 999px;
+  color: var(--md-sys-color-on-surface-variant);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s, color 0.15s;
+}
+.sidenav-user-menu-item md-icon {
+  --md-icon-size: 18px;
+  color: var(--md-sys-color-on-surface-variant);
+  flex-shrink: 0;
+  transition: color 0.15s;
+}
+.sidenav-user-menu-item:hover {
+  background: var(--md-sys-color-surface-container);
+  color: var(--md-sys-color-on-surface);
+}
+.sidenav-user-menu-item:hover md-icon {
+  color: var(--md-sys-color-primary);
+}
+.sidenav-user-menu-divider {
+  height: 1px;
+  background: var(--md-sys-color-outline-variant);
+  margin: 4px 8px;
+}
+/* Déconnexion : danger */
+.sidenav-user-menu-item--danger {
+  color: var(--md-sys-color-error);
+}
+.sidenav-user-menu-item--danger md-icon {
+  color: var(--md-sys-color-error);
+}
+.sidenav-user-menu-item--danger:hover {
+  background: color-mix(in srgb, var(--md-sys-color-error-container) 45%, transparent);
+  color: var(--md-sys-color-error);
+}
+/* Rangée du haut : sélecteur thème (menu Clair / Sombre / Système) — bouton
+   large avec libellé quand la sidenav est dépliée, icône seule (centrée)
+   dans le rail replié. */
+.sidenav-footer-top {
+  display: flex;
   align-items: center;
   justify-content: center;
-  height: 60px;
-  border-top: 1px solid var(--md-sys-color-outline-variant);
 }
-.zone-app:not(.nav-collapsed) .sidenav-footer {
-  justify-content: space-between;
+.sidenav-theme {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
+  min-width: 0;
+}
+.sidenav-theme-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  width: 100%;
+  min-width: 0;
+  height: var(--sidenav-item-h);
+  padding: 0 14px;
+  border: none;
+  background: transparent;
+  border-radius: var(--sidenav-item-radius);
+  color: var(--md-sys-color-on-surface-variant);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s, color 0.15s;
+}
+.sidenav-theme-btn md-icon {
+  --md-icon-size: 22px;
+  color: var(--md-sys-color-on-surface-variant);
+  flex-shrink: 0;
+  transition: color 0.15s;
+}
+.sidenav-theme-btn:hover,
+.sidenav-theme-btn[aria-expanded='true'] {
+  background: var(--md-sys-color-surface-container-high);
+  color: var(--md-sys-color-on-surface);
+}
+.sidenav-theme-btn:hover md-icon,
+.sidenav-theme-btn[aria-expanded='true'] md-icon {
+  color: var(--md-sys-color-primary);
+}
+.sidenav-theme-label {
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Menu thème : Clair / Sombre / Système (même langue visuelle que le menu
+   utilisateur, ancré au-dessus du bouton) ── */
+.sidenav-theme-menu {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  min-width: 200px;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  padding: 6px;
+  border-radius: 16px;
+  background: var(--md-sys-color-surface-container-high);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  box-shadow:
+    0 6px 20px rgba(0, 0, 0, 0.4),
+    0 2px 6px rgba(0, 0, 0, 0.3);
+  animation: zone-menu-in 0.14s ease;
+}
+.sidenav-theme-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-width: 0;
+  padding: 8px 12px;
+  border: none;
+  background: transparent;
+  border-radius: 999px;
+  color: var(--md-sys-color-on-surface-variant);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s, color 0.15s;
+}
+.sidenav-theme-menu-item md-icon {
+  --md-icon-size: 18px;
+  color: var(--md-sys-color-on-surface-variant);
+  flex-shrink: 0;
+  transition: color 0.15s;
+}
+.sidenav-theme-menu-item:hover {
+  background: var(--md-sys-color-surface-container);
+  color: var(--md-sys-color-on-surface);
+}
+.sidenav-theme-menu-item:hover md-icon {
+  color: var(--md-sys-color-primary);
+}
+.sidenav-theme-menu-item.active {
+  color: var(--md-sys-color-primary);
+}
+.sidenav-theme-menu-item.active md-icon {
+  color: var(--md-sys-color-primary);
+}
+.sidenav-theme-menu-check {
+  margin-left: auto;
+  --md-icon-size: 16px !important;
+}
+
+/* Replié (rail 72px) : icône seule, centrée */
+.zone-app.nav-collapsed .sidenav-footer-top {
+  justify-content: center;
+}
+.zone-app.nav-collapsed .sidenav-theme {
+  justify-content: center;
+}
+.zone-app.nav-collapsed .sidenav-theme-btn {
+  width: var(--sidenav-item-h);
+  padding: 0;
+  justify-content: center;
+}
+.zone-app.nav-collapsed .sidenav-theme-label {
+  display: none;
+}
+/* Survol (peek) : on restaure le look déplié avec le libellé */
+.zone-app.nav-collapsed .zone-sidenav.sidenav-peek .sidenav-theme {
+  justify-content: flex-start;
+  width: 100%;
+}
+.zone-app.nav-collapsed .zone-sidenav.sidenav-peek .sidenav-theme-btn {
+  width: 100%;
+  padding: 0 14px;
+}
+.zone-app.nav-collapsed .zone-sidenav.sidenav-peek .sidenav-theme-label {
+  display: block;
+}
+/* Rangée du bas : utilisateur + engrenage (étalée en mode déplié, centrée en
+   rail). Le survol couvre TOUTE la rangée (avatar + nom + engrenage) d'une
+   seule pilule — on neutralise les survols individuels des deux boutons. */
+.sidenav-footer-main {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  height: var(--sidenav-item-h);
   padding: 0 12px;
+  border-radius: var(--sidenav-item-radius);
+  transition: background 0.15s ease;
+}
+.sidenav-footer-main:hover {
+  background: var(--md-sys-color-surface-container-high);
+}
+.zone-app:not(.nav-collapsed) .sidenav-footer-main {
+  justify-content: space-between;
 }
 
 /* ── Utilisateur du pied de sidenav (façon Gemini, thème sombre/clair) ── */
+/* L'engrenage garde son état hover neutre : le survol unifié vient de la
+   rangée .sidenav-footer-main (voir plus haut). */
+.sidenav-settings {
+  --md-icon-button-hover-state-layer-color: transparent;
+  --md-icon-button-pressed-state-layer-color: transparent;
+}
 .sidenav-user {
   display: flex;
   align-items: center;
   justify-content: flex-start;
   gap: 10px;
   min-width: 0;
+  height: var(--sidenav-item-h);
+  padding: 0 8px 0 5px;
   border: none;
   background: transparent;
   font: inherit;
   color: inherit;
   text-align: left;
   cursor: pointer;
-  border-radius: 999px;
-  padding: 5px 8px 5px 5px;
-  transition: background 0.15s ease;
-}
-.sidenav-user:hover {
-  background: var(--md-sys-color-surface-container-high);
+  border-radius: var(--sidenav-item-radius);
 }
 .sidenav-user-avatar {
   width: 34px;
@@ -584,6 +981,37 @@
 .topbar-search .input-wrap {
   flex: 1;
   min-width: 0;
+}
+
+/* Topbar rétractable (desktop) : toute la barre se replie — réduite à une
+   fine bande de même teinte que le zone-stepper (elle s'y fond) — et le champ
+   glisse derrière la césure. Le survol de la zone — ou le focus dans le champ
+   — redéploie toute la barre en douceur. */
+@media (min-width: 901px) {
+  .zone-topbar {
+    overflow: hidden;
+  }
+  .topbar-main {
+    transition:
+      height 0.32s cubic-bezier(0.2, 0, 0, 1),
+      padding-top 0.32s cubic-bezier(0.2, 0, 0, 1),
+      padding-bottom 0.32s cubic-bezier(0.2, 0, 0, 1);
+  }
+  .topbar-search {
+    will-change: transform, opacity;
+    transition:
+      transform 0.32s cubic-bezier(0.2, 0, 0, 1),
+      opacity 0.24s ease;
+  }
+  .zone-topbar:not(:hover):not(:focus-within) .topbar-main {
+    height: 32px;
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+  .zone-topbar:not(:hover):not(:focus-within) .topbar-search {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
 }
 
 .topbar-actions {
@@ -1126,8 +1554,13 @@
   flex-wrap: wrap;
 }
 .hero-hints span {
-  font-size: 10px;
-  font-family: var(--mono);
+  /* Typographie Material Web (M3) : label small — tokens de la type scale
+     (Roboto), à la place de la mono custom (Google Sans Code). */
+  font-family: var(--md-sys-typescale-label-small-font, 'Roboto', system-ui, sans-serif);
+  font-size: var(--md-sys-typescale-label-small-size, 0.6875rem);
+  font-weight: var(--md-sys-typescale-label-small-weight, 500);
+  line-height: var(--md-sys-typescale-label-small-line-height, 1rem);
+  letter-spacing: var(--md-sys-typescale-label-small-tracking, 0.03125rem);
   color: var(--md-sys-color-on-surface-variant);
   border: 1px solid var(--md-sys-color-outline-variant);
   border-radius: 999px;
@@ -2905,10 +3338,13 @@
   }
 }
 .addr-heading .meta {
-  font-family: var(--mono);
-  font-size: 9.5px;
+  /* Typographie M3 (label-small) au lieu du stack mono legacy */
+  font-family: var(--md-sys-typescale-label-small-font, 'Roboto', sans-serif);
+  font-size: var(--md-sys-typescale-label-small-size, 0.6875rem);
+  font-weight: var(--md-sys-typescale-label-small-weight, 500);
+  line-height: var(--md-sys-typescale-label-small-line-height, 1rem);
+  letter-spacing: var(--md-sys-typescale-label-small-tracking, 0.03125rem);
   color: var(--md-sys-color-on-surface-variant);
-  line-height: 1.5;
 }
 
 /* ── Score global ── */
@@ -3327,12 +3763,26 @@
   background: var(--md-sys-color-surface-container-high);
   color: var(--md-sys-color-on-surface);
   border: 1px solid var(--md-sys-color-outline-variant);
-  border-radius: 12px;
-  padding: 14px 16px;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6);
+  border-radius: 14px;
+  padding: 0;
+  overflow: hidden;
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.45);
   font-family: inherit;
   font-size: 11px;
-  min-width: 240px;
+}
+/* Indicateur d'adresse : largeur calée sur le contenu (compact) */
+.mb-demo-wrap .mb-risk-popup .mapboxgl-popup-content {
+  width: max-content;
+  min-width: 220px;
+  max-width: 300px;
+}
+/* La carte reste manipulable même sur l'indicateur (centré sur le marqueur) :
+   le survol/drag passe au travers, seul le bouton de fermeture reste cliquable. */
+.mb-demo-wrap .mb-risk-popup .mapboxgl-popup-content {
+  pointer-events: none;
+}
+.mb-demo-wrap .mb-risk-popup .mapboxgl-popup-close-button {
+  pointer-events: auto;
 }
 .mb-demo-wrap .mapboxgl-popup-anchor-top .mapboxgl-popup-tip {
   border-bottom-color: var(--md-sys-color-surface-container-high);
@@ -3348,10 +3798,10 @@
 }
 .mb-demo-wrap .mapboxgl-popup-close-button {
   position: absolute;
-  top: 8px;
-  right: 10px;
-  width: 20px;
-  height: 20px;
+  top: 10px;
+  right: 12px;
+  width: 22px;
+  height: 22px;
   line-height: 1;
   font-size: 16px;
   color: var(--md-sys-color-on-surface-variant);
@@ -3405,40 +3855,64 @@
   transform: translate(-50%, -50%);
   box-shadow: inset 0 0 2px rgba(0, 0, 0, 0.25);
 }
-.mb-demo-wrap .pop-title {
-  font-family: var(--serif);
-  font-size: 15px;
+/* ── Indicateur d'adresse (popup compact « mb-risk ») ──
+   En-tête adresse avec épingle d'ancrage + aléas présents en pastilles de
+   niveau colorées (dot avant le libellé absent : compact). */
+.mb-demo-wrap .mb-risk-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 42px 10px 14px;
+  border-bottom: 1px solid var(--md-sys-color-outline-variant);
+  background: color-mix(in srgb, var(--md-sys-color-surface-container-high) 78%, var(--accent, #4386b1) 10%);
+}
+.mb-demo-wrap .mb-risk-head md-icon {
+  --md-icon-size: 18px;
+  color: var(--accent, #4386b1);
+  flex-shrink: 0;
+}
+.mb-demo-wrap .mb-risk-addr {
+  min-width: 0;
+  max-width: 240px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 12.5px;
   font-weight: 600;
-  margin-bottom: 8px;
-  padding-right: 18px;
   color: var(--md-sys-color-on-surface);
 }
-.mb-demo-wrap .pop-row {
+.mb-demo-wrap .mb-risk-rows {
   display: flex;
-  justify-content: space-between;
-  font-size: 11px;
-  margin-bottom: 4px;
-  color: var(--md-sys-color-on-surface-variant);
-}
-.mb-demo-wrap .pop-row span:last-child {
-  color: var(--md-sys-color-on-surface);
-  font-weight: 600;
-}
-.mb-demo-wrap .pop-links {
-  display: flex;
+  flex-direction: column;
   gap: 6px;
-  margin-top: 10px;
+  padding: 10px 14px 12px;
 }
-.mb-demo-wrap .pop-links a {
+.mb-demo-wrap .mb-risk-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.mb-demo-wrap .mb-risk-row md-icon {
+  --md-icon-size: 16px;
+  color: var(--md-sys-color-on-surface-variant);
+  flex-shrink: 0;
+}
+.mb-demo-wrap .mb-risk-name {
   flex: 1;
-  text-align: center;
-  font-size: 10px;
-  font-weight: 600;
-  text-decoration: none;
-  padding: 5px;
-  border-radius: 6px;
-  background: var(--md-sys-color-surface-container);
-  color: var(--md-sys-color-primary);
+  min-width: 0;
+  font-size: 12px;
+  color: var(--md-sys-color-on-surface);
+}
+.mb-demo-wrap .mb-risk-pill {
+  flex-shrink: 0;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  padding: 3px 9px;
+  border-radius: 999px;
+  color: var(--risk-color, var(--md-sys-color-on-surface-variant));
+  background: color-mix(in srgb, var(--risk-color, #8a8984) 16%, transparent);
+  border: 1px solid color-mix(in srgb, var(--risk-color, #8a8984) 45%, transparent);
 }
 
 /* ── Contrôles OpenLayers (thème sombre) ── */
@@ -3615,21 +4089,6 @@
   font-size: 9px;
   color: var(--md-sys-color-on-surface-variant);
   margin-left: auto;
-}
-
-.wms-badge {
-  position: absolute;
-  bottom: 36px;
-  right: 12px;
-  z-index: 5;
-  font-family: var(--mono);
-  font-size: 8.5px;
-  color: var(--md-sys-color-primary);
-  background: var(--md-sys-color-surface-container-high);
-  border: 1px solid var(--md-sys-color-outline-variant);
-  border-radius: 6px;
-  padding: 3px 8px;
-  pointer-events: none;
 }
 
 /* ============================================================================
@@ -4769,4 +5228,102 @@
 }
 .mb-demo-wrap .mapboxgl-ctrl-attrib {
   font-size: 10px;
+}
+
+/* Mode « Bâtiments » (Cities Skylines-style) : bande d'onglets (haut-gauche,
+   sous la légende active aléas s'il y en a une — les deux ne coexistent
+   jamais en pratique, Layers mode et Bâtiments mode vivent sur des étapes
+   différentes) */
+.mb-risk-tabs {
+  position: absolute;
+  left: 10px;
+  top: 10px;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  max-width: calc(100% - 24px);
+}
+.mb-risk-tabs .map-3d-toggle.analyse {
+  position: static;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 34px;
+  padding: 0 12px;
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: 8px;
+  background: var(--md-sys-color-surface-container-high);
+  color: var(--md-sys-color-on-surface-variant);
+  box-shadow: none;
+}
+.mb-risk-tabs .map-3d-toggle.analyse.active {
+  background: var(--md-sys-color-primary);
+  color: var(--md-sys-color-on-primary);
+  border-color: var(--md-sys-color-primary);
+}
+
+/* Légende + compteur de couches (bas-gauche) */
+.mb-map-legend {
+  position: absolute;
+  left: 10px;
+  bottom: 10px;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 10px;
+  background: var(--md-sys-color-surface-container-high);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: 8px;
+  max-width: 200px;
+  pointer-events: none;
+}
+.mb-map-legend-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--serif);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--md-sys-color-on-surface);
+}
+.mb-map-legend-head md-icon {
+  --md-icon-size: 15px;
+  color: var(--md-sys-color-on-surface-variant);
+}
+.mb-map-legend-bands {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.mb-map-legend-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--md-sys-color-on-surface-variant);
+}
+.mb-map-legend-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex: none;
+}
+
+/* Tooltip survol/clic des couches de risque */
+.mb-demo-wrap .mb-hover-popup .mapboxgl-popup-content {
+  padding: 8px 10px;
+}
+.mb-demo-wrap .mb-hover-title {
+  font-family: var(--serif);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--md-sys-color-on-surface);
+  margin-bottom: 2px;
+}
+.mb-demo-wrap .mb-hover-level {
+  font-size: 11px;
+  font-weight: 600;
 }

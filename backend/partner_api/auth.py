@@ -37,7 +37,7 @@ _KEYS_BY_VALUE = _parse_keys(partner_settings.partner_api_keys)
 if not _KEYS_BY_VALUE:
     logger.warning(
         "partner_api.auth -- PARTNER_API_KEYS vide : toutes les requetes seront refusees (401/503). "
-        "Ajoutez PARTNER_API_KEYS=nom:cle dans backend/.env."
+        "Ajoutez PARTNER_API_KEYS=nom:cle dans le fichier .env a la racine du projet."
     )
 else:
     logger.info("partner_api.auth -- %d cle(s) partenaire chargee(s) : %s", len(_KEYS_BY_VALUE), sorted(_KEYS_BY_VALUE.values()))

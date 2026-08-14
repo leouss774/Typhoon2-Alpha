@@ -507,6 +507,7 @@ async def zone_buildings(
     east: float = Query(..., description="Est de la bbox (WGS84)"),
     north: float = Query(..., description="Nord de la bbox (WGS84)"),
     limit: int = Query(60, ge=0, le=10000, description="Nombre max de bâtiments retournés (paginé par pages de 10 ; 0 = tous, jusqu'à épuisement)"),
+    with_risks: bool = Query(False, description="Ajoute alea_argile/alea_radon/alea_sismique par bâtiment (1 requête groupée de plus) — réservé aux appels à petit rayon, mode carte « Bâtiments »"),
 ) -> dict:
     """Retourne la GeoJSON FeatureCollection des bâtiments BDNB (empreinte +
     hauteur moyenne, WGS84) intersectant la bounding box du viewport — pour la
@@ -519,7 +520,8 @@ async def zone_buildings(
     async with httpx.AsyncClient(timeout=30) as client:
         try:
             return await fetch_buildings_in_bbox(
-                client, west=west, south=south, east=east, north=north, limit=limit
+                client, west=west, south=south, east=east, north=north, limit=limit,
+                with_risks=with_risks,
             )
         except Exception as exc:
             logger.warning("  [zone/buildings] BDNB bbox indisponible -> %s: %s", type(exc).__name__, exc)

@@ -238,378 +238,17 @@
         transition: opacity .7s ease, visibility .7s ease;
       }
 
-      /* ═══ Préloader — carrousel des articles « Le climat dans la presse » ═══
-         Le préloader EST le carrousel d'articles (assurance & climat) : il
-         occupe TOUT l'écran (100dvh), image en fond (object-fit: cover), texte
-         superposé en bas à gauche, carte compteur « argent perdu » suspendue en
-         haut à droite, boutons de progression collés en bas. Entrée de la page :
-         bouton « Entrer sur le site » ou touche Échap (pas de minuterie). */
-      .preloader {
-        width: 100vw;
-        height: 100vh;
-        height: 100dvh;
-        overflow: hidden;
-        background-color: var(--black);
-      }
-      .blog-carousel-stage {
-        position: absolute;
-        inset: 0;
-        width: 100%;
-        height: 100%;
-        min-height: 0;
-        overflow: hidden;
-      }
-      .blog-slides {
-        position: absolute;
-        inset: 0;
-      }
-      .blog-slide {
-        position: absolute;
-        inset: 0;
-        display: none;
-        text-decoration: none;
-      }
-      .blog-slide.is-active {
-        display: block;
-        animation: blog-fade .7s ease-out both;
-      }
-      @keyframes blog-fade {
-        from { opacity: 0; }
-        to { opacity: 1; }
-      }
-      .blog-slide-img {
-        position: absolute;
-        inset: 0;
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        display: block;
-      }
-      /* Voile dégradé : lisibilité du texte sur n'importe quelle image. */
-      .blog-slide-shade {
-        position: absolute;
-        inset: 0;
-        background: linear-gradient(180deg, rgba(5, 8, 12, .5) 0%, rgba(5, 8, 12, .18) 45%, rgba(5, 8, 12, .88) 100%);
-      }
-      .blog-slide-body {
-        position: absolute;
-        left: clamp(1.5rem, 6vw, 5rem);
-        right: clamp(1.5rem, 6vw, 5rem);
-        bottom: clamp(7.5rem, 15vh, 9rem);
-        max-width: 47rem;
-        flex-flow: column;
-        align-items: flex-start;
-        gap: .8rem;
-        display: flex;
-      }
-      @keyframes blog-body-in {
-        from { opacity: 0; transform: translateY(18px); }
-        to { opacity: 1; transform: translateY(0); }
-      }
-      .blog-slide-title {
-        color: #ffffff;
-        font-size: clamp(1.7rem, 3.9vw, 3.1rem);
-        font-weight: 600;
-        line-height: 1.08;
-        letter-spacing: -.02em;
-        margin: 0;
-        text-shadow: 0 2px 20px rgba(0, 0, 0, .55);
-      }
-      .blog-slide-desc {
-        color: rgba(255, 255, 255, .88);
-        font-size: clamp(1rem, 1.5vw, 1.15rem);
-        line-height: 1.5;
-        max-width: 36rem;
-        margin: 0;
-        text-shadow: 0 1px 14px rgba(0, 0, 0, .6);
-      }
-      .blog-slide-src {
-        color: rgba(255, 255, 255, .72);
-        font-family: 'Google Sans', 'Neue Montreal', sans-serif;
-        font-size: .78rem;
-        font-weight: 500;
-        letter-spacing: .1em;
-        text-transform: uppercase;
-        margin-top: .35rem;
-      }
-      /* ── Chiffre clé « argent perdu » : plein écran, au centre, sans boîte ── */
-      .loss-counter {
-        position: absolute;
-        top: 47%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        z-index: 6;
-        width: min(94vw, 64rem);
-        display: flex;
-        flex-flow: column;
-        align-items: center;
-        gap: clamp(.7rem, 1.6vh, 1.1rem);
-        text-align: center;
-        pointer-events: none;
-      }
-      .loss-counter-title {
-        color: #ffffff;
-        font-family: 'Google Sans', 'Neue Montreal', sans-serif;
-        font-size: clamp(.78rem, 1.5vw, 1rem);
-        font-weight: 600;
-        letter-spacing: .3em;
-        text-transform: uppercase;
-        opacity: .92;
-        text-shadow: 0 2px 22px rgba(0, 0, 0, .7);
-      }
-      .loss-counter-value {
-        display: flex;
-        align-items: baseline;
-        justify-content: center;
-        gap: .5rem;
-        line-height: 1;
-        text-shadow: 0 12px 70px rgba(0, 0, 0, .55);
-      }
-      /* Odomètre : les chiffres défilent vers le bas (rouleau mécanique)
-         jusqu'à la cible — ici « 6 » Mds €. */
-      .loss-odometer {
-        display: inline-flex;
-        align-items: flex-start;
-        height: 1em;
-        overflow: visible;
-        line-height: 1;
-        vertical-align: baseline;
-        font-family: 'Google Sans', 'Neue Montreal', sans-serif;
-        font-weight: 600;
-        font-size: clamp(2.2rem, 12vw, 13rem);
-        letter-spacing: -.01em;
-        color: var(--orange, #4386B1);
-        font-variant-numeric: tabular-nums;
-        text-shadow: 0 0 44px var(--orange-tint, rgba(67, 134, 177, .5)), 0 14px 90px rgba(0, 0, 0, .5);
-      }
-      .loss-odometer-wheel {
-        display: inline-block;
-        height: 1em;
-        overflow: hidden;
-        text-align: center;
-        width: .6em;
-      }
-      .loss-odometer-strip {
-        display: flex;
-        flex-direction: column;
-        transform: translateY(0);
-        will-change: transform;
-      }
-      .loss-odometer-digit {
-        display: block;
-        height: 1em;
-        line-height: 1;
-        text-align: center;
-        font-variant-numeric: tabular-nums;
-      }
-      .loss-odometer-gap {
-        display: inline-block;
-        width: .35em;
-      }
-      .loss-counter-unit {
-        font-family: 'Neue Montreal', system-ui, sans-serif;
-        font-weight: 500;
-        font-size: clamp(1.5rem, 3.4vw, 2.7rem);
-        color: #ffffff;
-        letter-spacing: .02em;
-      }
-      .loss-counter-per {
-        font-family: 'Neue Montreal', system-ui, sans-serif;
-        font-weight: 300;
-        font-size: clamp(1rem, 2.2vw, 1.6rem);
-        color: rgba(255, 255, 255, .72);
-      }
-      /* Ligne « en direct » : dommages qui s'accumulent chaque seconde. */
-      .loss-per-second {
-        display: block;
-        color: var(--orange, #4386B1);
-        font-family: 'Google Sans', 'Neue Montreal', sans-serif;
-        font-size: clamp(.92rem, 1.8vw, 1.15rem);
-        font-weight: 600;
-        letter-spacing: .02em;
-        font-variant-numeric: tabular-nums;
-        text-shadow: 0 2px 20px rgba(0, 0, 0, .65);
-      }
-      .loss-counter-sub {
-        max-width: 34rem;
-        color: rgba(255, 255, 255, .85);
-        font-family: 'Google Sans', 'Neue Montreal', sans-serif;
-        font-size: clamp(.92rem, 1.7vw, 1.08rem);
-        line-height: 1.5;
-        margin: 0;
-        text-shadow: 0 2px 18px rgba(0, 0, 0, .7);
-      }
-      .loss-counter-src {
-        color: rgba(255, 255, 255, .55);
-        font-family: 'Neue Montreal', system-ui, sans-serif;
-        font-size: .74rem;
-        letter-spacing: .12em;
-        text-transform: uppercase;
-        margin-top: .2rem;
-        text-shadow: 0 1px 12px rgba(0, 0, 0, .7);
-      }
-      /* Déroulé relié au scroll (piloté par le script) : écran 1 → rouleau du
-         chiffre ; écran 2 → bloc d'impact ; écran 3 → le carrousel des
-         articles défile en place et l'autoplay démarre. */
-      .preloader .blog-slides { opacity: 0; }
-      .preloader .blog-btns { opacity: 0; }
-      .loss-counter-title, .loss-counter-unit, .loss-counter-per,
-      .loss-counter-sub, .loss-per-second, .loss-counter-src { opacity: 0; }
-      /* ── Barre des 7 sources : bandeau pleine largeur docké en bas ──
-         Étire la page de bord à bord : fond en dégradé qui s'estompe depuis
-         l'image, étiquettes centrées en capitales (comme les autres labels de
-         la landing), barre de progression en accent sous le tab actif. */
-      .blog-btns {
-        position: absolute;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        width: 100%;
-        padding: clamp(.7rem, 1.8vh, 1.15rem) clamp(1rem, 3vw, 3.5rem);
-        border-top: 1px solid rgba(255, 255, 255, .09);
-        background: linear-gradient(180deg, rgba(5, 8, 12, 0) 0%, rgba(5, 8, 12, .72) 50%, rgba(5, 8, 12, .94) 100%);
-        display: grid;
-        grid-template-columns: repeat(7, minmax(0, 1fr));
-        gap: clamp(.35rem, .9vw, .8rem);
-      }
-      .blog-btn {
-        position: relative;
-        border: 0;
-        border-radius: 12px;
-        background: transparent;
-        padding: .55rem .7rem .65rem;
-        text-align: center;
-        cursor: pointer;
-        font-family: 'Google Sans', 'Neue Montreal', sans-serif;
-        transition: background-color .25s ease;
-      }
-      .blog-btn:hover {
-        background: rgba(255, 255, 255, .06);
-      }
-      .blog-btn.is-active {
-        background: var(--orange-tint, rgba(67, 134, 177, .22));
-        box-shadow: inset 0 0 0 1px rgba(67, 134, 177, .38);
-      }
-      .blog-btn-title {
-        display: block;
-        color: rgba(255, 255, 255, .62);
-        font-size: .78rem;
-        font-weight: 600;
-        letter-spacing: .08em;
-        text-transform: uppercase;
-        line-height: 1.3;
-        margin-bottom: .6rem;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        transition: color .25s ease;
-      }
-      .blog-btn:hover .blog-btn-title,
-      .blog-btn.is-active .blog-btn-title {
-        color: #ffffff;
-      }
-      .blog-btn-bar {
-        display: block;
-        height: 3px;
-        border-radius: 2px;
-        background: rgba(255, 255, 255, .18);
-        overflow: hidden;
-      }
-      .blog-btn-fill {
-        display: block;
-        height: 100%;
-        width: 0%;
-        border-radius: 2px;
-        background: var(--orange, #4386B1);
-        box-shadow: 0 0 10px var(--orange-tint, rgba(67, 134, 177, .7));
-      }
-      /* ── Bouton « Entrer sur le site » : entrée manuelle, sans minuterie ── */
-      .preloader-enter {
-        position: absolute;
-        top: clamp(1.25rem, 4vw, 3rem);
-        left: clamp(1.25rem, 5vw, 4rem);
-        z-index: 8;
-        display: inline-flex;
-        align-items: center;
-        gap: .55rem;
-        padding: .7rem 1.1rem;
-        border-radius: 999px;
-        background: #151515b3;
-        border: 1px solid #ffffff1a;
-        -webkit-backdrop-filter: blur(30px);
-        backdrop-filter: blur(30px);
-        color: #ffffff;
-        font-family: 'Google Sans', 'Neue Montreal', sans-serif;
-        font-size: .78rem;
-        font-weight: 600;
-        letter-spacing: .1em;
-        text-transform: uppercase;
-        cursor: pointer;
-        transition: background-color .2s ease, border-color .2s ease;
-      }
-      .preloader-enter:hover {
-        background-color: #ffffff2b;
-        border-color: #ffffff38;
-      }
-      .preloader-enter svg {
-        width: .95rem;
-        height: .95rem;
-        pointer-events: none;
-      }
-      @media (max-width: 767px) {
-        .preloader-enter {
-          top: 1.25rem;
-          right: 1.25rem;
-          left: auto;
-          padding: .6rem .9rem;
-          font-size: .7rem;
-        }
-      }
-      /* Entre 600 et 900 px, les 10 rouleaux (6 000 000 000) sont resserrés
-         pour ne pas déborder de l'écran. */
-      @media (max-width: 900px) {
-        .loss-odometer { font-size: clamp(1.9rem, 10vw, 4rem); }
-      }
-      @media (max-width: 767px) {
-        .blog-btns {
-          grid-template-columns: repeat(7, minmax(88px, 1fr));
-          overflow-x: auto;
-          scrollbar-width: none;
-        }
-        .blog-btns::-webkit-scrollbar { display: none; }
-        .blog-btn { padding: .5rem .5rem .6rem; }
-        .blog-btn-title { font-size: .7rem; letter-spacing: .06em; }
-        .blog-slide-body { bottom: 9rem; left: 1.25rem; right: 1.25rem; }
-        .blog-slide-title { font-size: clamp(1.6rem, 7vw, 2.2rem); }
-        .loss-counter { top: 36%; gap: .6rem; }
-        .loss-counter-sub { max-width: 25rem; }
-        .preloader .loss-counter-src { display: none; }
-      }
-      @media (max-width: 600px) {
-        .blog-slide-body { bottom: 8.5rem; }
-        .loss-odometer { font-size: clamp(1.9rem, 9.5vw, 3.8rem); }
-        .loss-counter { gap: .5rem; }
-        .loss-counter-title { letter-spacing: .2em; }
-      }
-      /* Écrans peu hauts : le chiffre central et le texte de l'article doivent
-         cohabiter sans se chevaucher — on compacte et remonte le compteur. */
-      @media (max-height: 700px) {
-        .loss-counter { top: 39%; gap: .45rem; }
-        .loss-odometer { font-size: clamp(1.5rem, 6.5vh, 3.2rem); }
-        .loss-counter-title { font-size: .68rem; letter-spacing: .22em; }
-        .loss-counter-unit { font-size: 1.2rem; }
-        .loss-counter-per { font-size: .9rem; }
-        .loss-counter-sub { font-size: .78rem; line-height: 1.35; }
-        .loss-per-second { font-size: .76rem; }
-        .blog-slide-body { bottom: 7.5rem; }
-      }
-      @media (max-height: 600px) {
-        .preloader .loss-counter-sub,
-        .preloader .loss-counter-src { display: none; }
-      }
-      @media (prefers-reduced-motion: reduce) {
-        .blog-slide.is-active { animation: none; }
-      }
+      /* ═══ Préloader — compteur climat d'origine restauré ═══
+         Horloge « Vos concurrents » (05:00) + odomètre « Votre portefeuille
+         sans Typhoon » : le compteur défile (05:00 → 04:59 → 04:58 → 04:57),
+         puis l'écran glisse vers le haut et disparaît tout seul. La mise en
+         page (preloader-inner / preloader-grid / preloader-clock / clock-*)
+         et le .preloader de base viennent du CSS Webflow partagé.
+         La séquence IX2 « a-23 Preloader » ne se déclenche plus sur cette
+         page (PAGE_FINISH ne part jamais) : on la reproduit en JS pur — le
+         script anime les transform inline des colonnes (odomètre) puis la
+         sortie de l'écran, sans dépendre d'IX2 ni de transitions CSS. */
+
       html, body { margin: 0; padding: 0; } .hero-wrapper.v2 { isolation: isolate; } .hero-layer-video { position: absolute; inset: 0; z-index: 2; overflow: hidden; pointer-events: none; opacity: 0.6; background: #000; } .hero-layer-video iframe, .hero-layer-video video { width: 100%; height: 100%; border: 0; transform: scale(1.18); transform-origin: center; object-fit: cover; display: block; }       .hero-layer-1 { z-index: 0; }
       /* Hero : contenu centré verticalement (au lieu d'être collé en bas) pour
          que le titre, la ligne d'appui et le bouton restent dans le viewport. */
@@ -801,6 +440,28 @@
         background-color: rgba(244, 245, 247, .85);
         border-color: rgba(0, 0, 0, .08);
       }
+      /* Colonnes mobiles de l'horloge (navbar + préloader) : classes
+         renommées pour ne pas dépendre de l'interaction IX2 « a-32 » (le
+         « Timer » d'origine, piloté par le scroll) — le décompte de la navbar
+         est piloté en JS (mêmes valeurs), et celui du préloader reste
+         indépendant du défilement. */
+      .clock .clock-number-column-2,
+      .clock .clock-number-column-4 {
+        margin-right: .2rem;
+      }
+      .clock .navclock-m5,
+      .preloader .preload-m5 {
+        flex-flow: column;
+        justify-content: flex-start;
+        align-items: center;
+        display: flex;
+      }
+      @media (max-width: 767px) {
+        .clock .clock-number-column-2,
+        .clock .clock-number-column-4 {
+          margin-right: .1rem;
+        }
+      }
 
       html.theme-light .theme-toggle,
       html.theme-light .color-toggle {
@@ -922,300 +583,14 @@
   </head>
   <body data-w-id="661550636b9312315bbc1917" class="global-body">
     <script>!function(o,c){var n=c.documentElement,t=" w-mod-";n.className+=t+"js",("ontouchstart"in o||o.DocumentTouch&&c instanceof DocumentTouch)&&(n.className+=t+"touch")}(window,document);</script>
-<div data-w-id="1a765f11-e76b-dc77-f1f8-bbfc09335b89" class="preloader"><div class="blog-carousel-stage"><div class="blog-slides" data-blog-carousel><a class="blog-slide is-active" data-slide="seloger" href="https://edito.seloger.com/conseils-d-experts/assurance-habitation/assurer-bien-devenu-plus-difficile-article-18408.html" target="_blank" rel="noopener noreferrer" aria-label="Lire l'article SeLoger"><img class="blog-slide-img" src="https://edito.seloger.com/sites/default/files/styles/735x412/public/images/web/2024-04/GettyImages-1462663989%20%281%29.jpg?itok=rG0ZepGZ" alt="Maison assurée face aux catastrophes naturelles" loading="eager" referrerpolicy="no-referrer"/><div class="blog-slide-shade"></div><div class="blog-slide-body"><h3 class="blog-slide-title">Assurer son bien est-il devenu plus difficile&nbsp;?</h3><p class="blog-slide-desc">Face à l&rsquo;explosion du coût des sinistres liés aux catastrophes naturelles, certains assureurs seraient plus réticents à couvrir les biens les plus exposés au changement climatique.</p><span class="blog-slide-src">L&rsquo;immobilier par SeLoger</span></div></a><a class="blog-slide" data-slide="lesechos" href="https://solutions.lesechos.fr/ils-en-parlent/c/l-assurance-habitation-face-aux-risques-climatiques-croissants-enjeux-pour-les-assureurs/" target="_blank" rel="noopener noreferrer" aria-label="Lire l'article Les Échos Solutions"><img class="blog-slide-img" src="https://edito-img.annonces-legales.fr/2024/12/gettyimages-1497390729-1-67657ef271430221374275.jpg?w=430&amp;h=250&amp;q=90&amp;s=e37c165da09a92f21aba68fcdeb51549" alt="Assurance habitation face aux risques climatiques" loading="lazy" referrerpolicy="no-referrer"/><div class="blog-slide-shade"></div><div class="blog-slide-body"><h3 class="blog-slide-title">L&rsquo;assurance habitation face aux risques climatiques croissants</h3><p class="blog-slide-desc">Inondations, tempêtes, sécheresses, incendies&nbsp;: les événements extrêmes exposent les assureurs à des défis économiques et stratégiques majeurs.</p><span class="blog-slide-src">Les Échos Solutions</span></div></a><a class="blog-slide" data-slide="france24" href="https://www.france24.com/fr/%C3%A9missions/%C3%A9l%C3%A9ment-terre-le-reportage/20260327-bient%C3%B4t-une-maison-sur-deux-fissur%C3%A9e-%C3%A0-cause-du-changement-climatique" target="_blank" rel="noopener noreferrer" aria-label="Lire l'article France 24"><img class="blog-slide-img" src="https://images.unsplash.com/photo-1615729947596-a598e5de0ab3?q=80&amp;w=1920&amp;auto=format&amp;fit=crop" alt="Sécheresse et fissures des maisons" loading="lazy" referrerpolicy="no-referrer"/><div class="blog-slide-shade"></div><div class="blog-slide-body"><h3 class="blog-slide-title">Bientôt une maison sur deux fissurée à cause du changement climatique</h3><p class="blog-slide-desc">Plus d&rsquo;une maison sur deux est désormais menacée par des fissures liées aux épisodes climatiques, et 20&nbsp;millions de Français sont concernés.</p><span class="blog-slide-src">France 24 &ndash; Élément Terre</span></div></a><a class="blog-slide" data-slide="lexpress" href="https://www.lexpress.fr/economie/incendies-en-europe-la-facture-economique-du-rechauffement-climatique-senvole-XZBIEQ37B5H6HEQHL4XKFEI26U/" target="_blank" rel="noopener noreferrer" aria-label="Lire l'article L'Express"><img class="blog-slide-img" src="https://www.lexpress.fr/resizer/v2/3YMX52UKQNEE7IWRQVA3JYVGNQ.JPG?auth=9fab5a970fc5380875a819c06bf29857a49a85a516b197ef1fa7d8c94b367713&amp;width=1200&amp;height=630&amp;quality=85&amp;focal=2814%2C2268" alt="Incendies de forêt en Europe" loading="lazy" referrerpolicy="no-referrer"/><div class="blog-slide-shade"></div><div class="blog-slide-body"><h3 class="blog-slide-title">Incendies en Europe&nbsp;: la facture du réchauffement climatique s&rsquo;envole</h3><p class="blog-slide-desc">Au-delà de la reconstruction des forêts, les feux frappent l&rsquo;agriculture et le tourisme, tandis que la sécheresse alourdit encore le coût économique du dérèglement climatique.</p><span class="blog-slide-src">L&rsquo;Express</span></div></a><a class="blog-slide" data-slide="leparisien" href="https://www.leparisien.fr/environnement/climat/maisons-fissurees-stations-sans-neige-chaleur-mortelle-comment-le-changement-climatique-chamboule-deja-nos-vies-10-12-2025-GUM64RHCIFEB7HLDJFGIAB2SE4.php" target="_blank" rel="noopener noreferrer" aria-label="Lire l'article Le Parisien"><img class="blog-slide-img" src="https://images.unsplash.com/photo-1580587771525-78b9dba3b914?q=80&amp;w=1920&amp;auto=format&amp;fit=crop" alt="Maison individuelle face au changement climatique" loading="lazy" referrerpolicy="no-referrer"/><div class="blog-slide-shade"></div><div class="blog-slide-body"><h3 class="blog-slide-title">Maisons fissurées, stations sans neige, chaleur mortelle&hellip;</h3><p class="blog-slide-desc">Le dérèglement climatique chamboule déjà nos vies&nbsp;: bâtiments endommagés, tourisme menacé, canicules de plus en plus meurtrières.</p><span class="blog-slide-src">Le Parisien</span></div></a><a class="blog-slide" data-slide="franceinfo" href="https://www.franceinfo.fr/replay-jt/france-2/20-heures/apres-les-inondations-et-les-secheresses-12-millions-de-maisons-individuelles-concernees-par-des-fissures_7868216.html" target="_blank" rel="noopener noreferrer" aria-label="Lire l'article France Info"><img class="blog-slide-img" src="https://www.franceinfo.fr/pictures/DQXTIiEbLsPIubOjSNOXxvT5UKo/0x0:1920x1080/1500x843/2026/03/14/20h-maisons-fissurees-1-69b5c310a8534715440720.jpg" alt="Maisons fissurées après sécheresses et inondations" loading="lazy" referrerpolicy="no-referrer"/><div class="blog-slide-shade"></div><div class="blog-slide-body"><h3 class="blog-slide-title">12&nbsp;millions de maisons individuelles concernées par des fissures</h3><p class="blog-slide-desc">Après des épisodes d&rsquo;intenses sécheresses et des inondations à répétition, 12&nbsp;millions de maisons individuelles sont concernées par des fissures.</p><span class="blog-slide-src">France Info</span></div></a>
-        <a class="blog-slide" data-slide="francetransactions" href="https://www.francetransactions.com/actus/assurances/tarifs-2026-assurance-habitation.html" target="_blank" rel="noopener noreferrer" aria-label="Lire l'article FranceTransactions"><img class="blog-slide-img" src="https://www.francetransactions.com/IMG/arton107267.jpg" alt="Primes d'assurance habitation en hausse" loading="lazy" referrerpolicy="no-referrer"/><div class="blog-slide-shade"></div><div class="blog-slide-body"><h3 class="blog-slide-title">Assurance habitation&nbsp;: explosion des tarifs en 2026</h3><p class="blog-slide-desc">Mauvaise surprise&nbsp;! Les primes d&rsquo;assurance habitation sont en forte hausse, bien au-delà des 7&nbsp;% à 8&nbsp;% annoncés fin 2025.</p><span class="blog-slide-src">FranceTransactions &ndash; Guide Épargne</span></div></a></div><div class="loss-counter" data-loss-counter><span class="loss-counter-title">Le coût du changement climatique</span><div class="loss-counter-value"><span class="loss-odometer" data-odometer data-target="6000000000" aria-label="6 000 000 000 euros par an"></span><span class="loss-counter-unit">&euro;</span><span class="loss-counter-per">/ an</span></div><p class="loss-counter-sub">C&rsquo;est le coût annuel moyen des sinistres climatiques en France depuis 2020&nbsp;&mdash; un montant qui pourrait doubler d&rsquo;ici 2050.</p><span class="loss-per-second">≈ <span data-per-second-value>190,26</span>&nbsp;€ de dommages chaque seconde&nbsp;&mdash; <span data-live-total>0</span>&nbsp;€ depuis votre arrivée</span><span class="loss-counter-src">Source&nbsp;: France Assureurs</span></div><button type="button" class="preloader-enter" data-preloader-enter aria-label="Entrer sur le site" title="Entrer sur le site"><span>Entrer sur le site</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></button><div class="blog-btns" role="tablist" aria-label="Articles de presse"><button type="button" class="blog-btn is-active" data-slide-btn="seloger"><span class="blog-btn-title">SeLoger</span><span class="blog-btn-bar"><span class="blog-btn-fill" data-fill="seloger"></span></span></button><button type="button" class="blog-btn" data-slide-btn="lesechos"><span class="blog-btn-title">Les Échos</span><span class="blog-btn-bar"><span class="blog-btn-fill" data-fill="lesechos"></span></span></button><button type="button" class="blog-btn" data-slide-btn="france24"><span class="blog-btn-title">France 24</span><span class="blog-btn-bar"><span class="blog-btn-fill" data-fill="france24"></span></span></button><button type="button" class="blog-btn" data-slide-btn="lexpress"><span class="blog-btn-title">L&rsquo;Express</span><span class="blog-btn-bar"><span class="blog-btn-fill" data-fill="lexpress"></span></span></button><button type="button" class="blog-btn" data-slide-btn="leparisien"><span class="blog-btn-title">Le Parisien</span><span class="blog-btn-bar"><span class="blog-btn-fill" data-fill="leparisien"></span></span></button><button type="button" class="blog-btn" data-slide-btn="franceinfo"><span class="blog-btn-title">France Info</span><span class="blog-btn-bar"><span class="blog-btn-fill" data-fill="franceinfo"></span></span></button>
-        <button type="button" class="blog-btn" data-slide-btn="francetransactions"><span class="blog-btn-title">FranceTransactions</span><span class="blog-btn-bar"><span class="blog-btn-fill" data-fill="francetransactions"></span></span></button></div></div></div><script>
-/* Carrousel du préloader : 7 articles « Le climat dans la presse ».
-   Port vanilla du composant React « progressive-carousel » :
-   - une carte active avance seule (durée 6,5 s), barre de progression animée
-     sous chaque bouton ;
-   - cliquer un bouton accélère (400 ms) jusqu'à l'article demandé ;
-   - le carrousel boucle à l'infini, indépendamment de l'entrée dans la page. */
-(function () {
-  var carousel = document.querySelector('[data-blog-carousel]');
-  if (!carousel) return;
-  var stage = document.querySelector('.preloader .blog-carousel-stage');
-  var slides = [].slice.call(carousel.querySelectorAll('[data-slide]'));
-  var btns = stage ? [].slice.call(stage.querySelectorAll('[data-slide-btn]')) : [];
-  var fills = stage ? [].slice.call(stage.querySelectorAll('[data-fill]')) : [];
-  if (!slides.length) return;
-
-  var DURATION = 6500;   /* ms par carte */
-  var FAST = 400;        /* ms pour rejoindre la carte cliquée */
-  var active = slides[0].getAttribute('data-slide');
-  var progress = 0;
-  var fast = false;
-  var target = null;
-  var firstFrame = performance.now();
-  var frame = 0;
-
-  function setActive(value) {
-    active = value;
-    for (var i = 0; i < slides.length; i++) {
-      slides[i].classList.toggle('is-active', slides[i].getAttribute('data-slide') === value);
-    }
-    for (var j = 0; j < btns.length; j++) {
-      btns[j].classList.toggle('is-active', btns[j].getAttribute('data-slide-btn') === value);
-    }
-  }
-
-  function indexOfValue(value) {
-    for (var i = 0; i < slides.length; i++) {
-      if (slides[i].getAttribute('data-slide') === value) return i;
-    }
-    return -1;
-  }
-
-  function draw(now) {
-    var dur = fast ? FAST : DURATION;
-    var t = Math.min((now - firstFrame) / dur, 1);
-    progress = fast ? progress + (100 - progress) * t : t * 100;
-    for (var i = 0; i < fills.length; i++) {
-      fills[i].style.width = (fills[i].getAttribute('data-fill') === active ? progress : 0) + '%';
-    }
-    if (t < 1) {
-      frame = requestAnimationFrame(draw);
-      return;
-    }
-    if (fast) {
-      fast = false;
-      if (target) { setActive(target); target = null; }
-    } else {
-      var idx = indexOfValue(active);
-      var next = (idx + 1) % slides.length;
-      setActive(slides[next].getAttribute('data-slide'));
-    }
-    progress = 0;
-    firstFrame = performance.now();
-    frame = requestAnimationFrame(draw);
-  }
-
-  for (var b = 0; b < btns.length; b++) {
-    btns[b].addEventListener('click', function () {
-      var value = this.getAttribute('data-slide-btn');
-      if (value !== active) {
-        progress = Math.min(((performance.now() - firstFrame) / DURATION) * 100, 100);
-        target = value;
-        fast = true;
-        firstFrame = performance.now();
-      }
-    });
-  }
-
-  setActive(active);
-
-  /* L'autoplay ne démarre qu'au moment où le carrousel « défile » en place
-     (phase 3 du préloader : après le rouleau du chiffre et le bloc impact). */
-  window.__startBlogCarousel = function () {
-    if (window.__blogCarouselStarted) return;
-    window.__blogCarouselStarted = true;
-    firstFrame = performance.now();
-    frame = requestAnimationFrame(draw);
-  };
-})();    /* Compteur « argent perdu » : rouleau relié au scroll + ligne « en direct ».
-       - Le chiffre 6 000 000 000 € est un odomètre de 10 rouleaux : chaque
-         roue part d'un chiffre aléatoire et avance chiffre par chiffre vers
-         sa cible (1er → « 6 », les autres → « 0 »). Au fil du scroll on voit
-         des chiffres mélangés, puis 6 000 000 000 — pas de saut d'un
-         milliard à l'autre.
-       - Le déroulé du préloader est relié au scroll : écran 1 → rouleau ;
-         écran 2 → bloc d'impact ; écran 3 → le carrousel d'articles défile en
-         place et l'autoplay démarre. Le préloader se ferme au 3e écran.
-       - La ligne « en direct » : 6 Md€ / an ≈ 190,26 € de dommages par
-         seconde, qui s'accumulent depuis l'arrivée du visiteur. */
-    (function () {
-      var preloader = document.querySelector('.preloader');
-      var card = document.querySelector('[data-loss-counter]');
-      if (!preloader || !card) return;
-      var odometer = card.querySelector('[data-odometer]');
-      var liveTotal = card.querySelector('[data-live-total]');
-      var slides = preloader.querySelector('.blog-slides');
-      var btns = preloader.querySelector('.blog-btns');
-      var statEls = [].slice.call(card.querySelectorAll(
-        '.loss-counter-title, .loss-counter-unit, .loss-counter-per, ' +
-        '.loss-per-second, .loss-counter-sub, .loss-counter-src'));
-      var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      var PER_SECOND = 190.26;   /* 6 000 000 000 € / 31 536 000 s ≈ 190,26 €/s */
-      var wheels = [];
-      var startTime = null;
-
-      function fmt(n) { return Math.floor(n).toLocaleString('fr-FR'); }
-
-      /* Construit les rouleaux (0-9 + un « 0 » de report pour le tour complet). */
-      function buildWheels() {
-        if (!odometer) return;
-        var targets = String(odometer.getAttribute('data-target') || '0')
-          .replace(/[^0-9]/g, '').split('');
-        odometer.innerHTML = '';
-        for (var j = 0; j < targets.length; j++) {
-          if (j === 1 || j === 4 || j === 7) {   /* séparateurs « 6 000 000 000 » */
-            var gap = document.createElement('span');
-            gap.className = 'loss-odometer-gap';
-            gap.setAttribute('aria-hidden', 'true');
-            odometer.appendChild(gap);
-          }
-          var wheel = document.createElement('span');
-          wheel.className = 'loss-odometer-wheel';
-          var strip = document.createElement('span');
-          strip.className = 'loss-odometer-strip';
-          for (var k = 0; k <= 9; k++) {
-            var d = document.createElement('span');
-            d.className = 'loss-odometer-digit';
-            d.textContent = k;
-            strip.appendChild(d);
-          }
-          var z = document.createElement('span');
-          z.className = 'loss-odometer-digit';
-          z.textContent = '0';
-          strip.appendChild(z);
-          wheel.appendChild(strip);
-          odometer.appendChild(wheel);
-          var t = parseInt(targets[j], 10);
-          /* Chaque rouleau part d'un chiffre aléatoire (jamais sa cible) :
-             au début on voit des chiffres mélangés, puis chaque rouleau
-             avance chiffre par chiffre vers sa cible (1er → « 6 », les
-             autres → « 0 »). */
-          var start = (t + 1 + Math.floor(Math.random() * 9)) % 10;
-          var dist = (t - start + 10) % 10;
-          strip.style.transform = 'translateY(' + (-start) + 'em)';
-          wheels.push({ strip: strip, target: t, start: start, dist: dist });
-        }
-      }
-
-      function ease(t) { return 1 - Math.pow(1 - t, 3); }
-
-      function setWheels(p) {
-        /* Incrément chiffre par chiffre, indépendamment sur chaque rouleau :
-           chaque roue avance d'un cran entier à la fois (pas de saut de
-           100 000 000) — au fil du scroll le nombre montre des chiffres
-           mélangés (« 3 154 812 121 ») avant de se résoudre en
-           6 000 000 000. */
-        for (var i = 0; i < wheels.length; i++) {
-          var w = wheels[i];
-          var pos = reduce ? w.target
-            : Math.min(Math.round(w.start + w.dist * p), w.start + w.dist);
-          w.strip.style.transform = 'translateY(' + (-pos) + 'em)';
-        }
-      }
-
-      function tickLive() {
-        if (!liveTotal) return;
-        if (reduce) { liveTotal.textContent = fmt(PER_SECOND * 10); return; }
-        (function loop() {
-          liveTotal.textContent = fmt((performance.now() - startTime) / 1000 * PER_SECOND);
-          requestAnimationFrame(loop);
-        })();
-      }
-
-      /* Le déroulé est relié à la molette / au toucher / au clavier :
-         1 écran de scroll ≈ un rouleau complet (p1), le bloc d'impact apparaît
-         sur l'écran 2 (p2), le carrousel défile en place sur l'écran 3 (p3)
-         et y reste — on n'entre dans le site qu'avec « Entrer sur le site »
-         (ou Échap). La page derrière ne fait qu'un écran avant l'entrée, on
-         pilote donc une progression directement. */
-      var target = 0;   /* progression demandée (0 → 3) */
-      var cur = 0;      /* progression animée (lissage) */
-      var touchY = null;
-
-      function apply(cur) {
-        var p1 = Math.min(Math.max(cur, 0), 1);
-        var p2 = Math.min(Math.max(cur - 1, 0), 1);
-        var p3 = Math.min(Math.max(cur - 2, 0), 1);
-        var i;
-        if (reduce) {
-          setWheels(1);
-          for (i = 0; i < statEls.length; i++) {
-            statEls[i].style.opacity = 1;
-            statEls[i].style.transform = 'none';
-          }
-          slides.style.opacity = 1;
-          slides.style.transform = 'none';
-          btns.style.opacity = 1;
-          btns.style.transform = 'none';
-          card.style.opacity = 0;
-          if (window.__startBlogCarousel) window.__startBlogCarousel();
-        } else {
-          setWheels(p1);
-          var e2 = ease(p2);
-          for (i = 0; i < statEls.length; i++) {
-            statEls[i].style.opacity = e2;
-            statEls[i].style.transform = 'translateY(' + (10 * (1 - e2)) + 'px)';
-          }
-          /* Écran 3 : le bloc impact s'efface doucement pour laisser la
-             photo et le texte de l'article respirer (fini l'effet
-             « encombré »). On garde le centrage translate(-50%, -50%). */
-          card.style.opacity = 1 - p3;
-          card.style.transform = 'translate(-50%, calc(-50% + ' + (-16 * p3) + 'px))';
-          slides.style.opacity = p3;
-          slides.style.transform = 'translateY(' + (6 * (1 - p3)) + 'vh)';
-          btns.style.opacity = p3;
-          btns.style.transform = 'translateY(' + (12 * (1 - p3)) + 'px)';
-          if (p3 > 0.9 && window.__startBlogCarousel) window.__startBlogCarousel();
-        }
-      }
-
-      var lastFrame = 0;
-      function step() {
-        if (!visible()) return;
-        cur += (target - cur) * (reduce ? 1 : 0.16);
-        if (Math.abs(target - cur) < 0.001) cur = target;
-        apply(cur);
-        lastFrame = performance.now();
-        requestAnimationFrame(step);
-      }
-      /* Filet de sécurité : si requestAnimationFrame est ralenti (onglet en
-         arrière-plan), un minuteur reprend la main pour ne pas figer le
-         rouleau en pleine course. */
-      setInterval(function () {
-        if (!visible()) return;
-        if (performance.now() - lastFrame > 120) step();
-      }, 60);
-
-      function visible() { return !preloader.classList.contains('is-hidden'); }
-
-      preloader.addEventListener('wheel', function (e) {
-        if (!visible()) return;
-        target = Math.min(Math.max(target + e.deltaY / (window.innerHeight || 1), 0), 3);
-        e.preventDefault();
-      }, { passive: false });
-
-      preloader.addEventListener('touchstart', function (e) {
-        if (!visible()) return;
-        touchY = e.touches[0].clientY;
-      }, { passive: true });
-
-      preloader.addEventListener('touchmove', function (e) {
-        if (touchY === null || !visible()) return;
-        var dy = touchY - e.touches[0].clientY;
-        touchY = e.touches[0].clientY;
-        target = Math.min(Math.max(target + dy / (window.innerHeight || 1), 0), 3);
-        e.preventDefault();
-      }, { passive: false });
-
-      preloader.addEventListener('touchend', function () { touchY = null; }, { passive: true });
-
-      document.addEventListener('keydown', function (e) {
-        if (!visible()) return;
-        if (e.key === 'ArrowDown' || e.key === 'PageDown' || e.key === ' ' || e.key === 'ArrowRight') {
-          target = Math.min(target + 0.4, 3);
-          e.preventDefault();
-        } else if (e.key === 'ArrowUp' || e.key === 'PageUp' || e.key === 'ArrowLeft') {
-          target = Math.max(target - 0.4, 0);
-          e.preventDefault();
-        }
-      });
-
-      buildWheels();
-      apply(0);
-      requestAnimationFrame(step);
-
-      if (!reduce) {
-        startTime = performance.now();
-        tickLive();
-      }
-    })();
-</script>
-<div class="navbar landingpage"><div data-animation="default" data-collapse="medium" data-duration="400" data-easing="ease" data-easing2="ease" role="banner" class="webflow-native-navbar w-nav"><div class="navbar-outer"><div class="navbar-inner"><a href="/" aria-current="page" target="_top" class="navbar-logo-div visible-on-desktop w-nav-brand w--current"><img src="vetter-consulting/assets/img/typhoon-logo.svg" loading="eager" alt="Typhoon" class="logo"/></a><div class="nav-static-item"><div class="nav-arrow-div"><img src="vetter-consulting/assets/img/typhoon-logo.svg" loading="lazy" alt="Typhoon" class="nav-arrow"/></div><div class="nav-link-static">Menü</div></div><nav role="navigation" class="nav-menu-wrapper w-nav-menu"><ul role="list" class="nav-menu-right w-list-unstyled"><li class="nav-item"><a href="/" aria-current="page" target="_top" class="nav-link w--current">Home</a></li><li class="nav-item"><a href="/faq" target="_top" class="nav-link">FAQ</a></li><li class="nav-item"><a href="/contact" target="_top" class="nav-link">Contact</a></li><li class="nav-item"><a data-w-id="e8b68c38-7920-70a0-3c4d-94c7ad18ef1c" href="/zone" target="_top" class="primary-btn w-inline-block"><div class="btn-txt-container"><div class="btn-txt">Commen&ccedil;ons</div><div class="btn-txt">Commen&ccedil;ons</div></div></a></li><li class="mobile-margin-top-10"></li></ul></nav><div id="w-node-e8b68c38-7920-70a0-3c4d-94c7ad18ef24-ad18ef05" class="nav-area-left mobile"><div class="menu-button w-nav-button"><div data-is-ix2-target="1" class="hamburger-menu-dark" data-w-id="e8b68c38-7920-70a0-3c4d-94c7ad18ef26" data-animation-type="lottie" data-src="vetter-consulting/assets/img/66a20363e5bbc5dbaa1b59bb_656e40dffb81768885f3d9a9_menu_white.json" data-loop="0" data-direction="1" data-autoplay="0" data-renderer="svg" data-default-duration="2.3333333333333335" data-duration="0" data-loading="eager" data-ix2-initial-state="0"></div></div></div></div></div></div><button type="button" class="theme-toggle" data-theme-toggle aria-label="Basculer le mode clair / sombre" title="Mode clair / sombre"><svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg><svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></button><div class="color-control"><button type="button" class="color-toggle" data-accent-toggle title="Changer la couleur d'accent" aria-label="Changer la couleur d'accent" aria-expanded="false"><svg class="icon-palette" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22a10 10 0 1 1 10-10c0 1.7-1.3 3-3 3h-2a2 2 0 0 0-2 2c0 .6.2 1 .6 1.4.4.4.6.8.6 1.4 0 1.7-1.3 3-3 3z"/><circle cx="7.5" cy="11.5" r=".5" fill="currentColor"/><circle cx="11" cy="7.5" r=".5" fill="currentColor"/><circle cx="15.5" cy="7.5" r=".5" fill="currentColor"/></svg><span class="accent-dot"></span></button><div class="accent-panel" data-accent-panel role="dialog" aria-label="Couleur d'accent"><div class="accent-panel-title">Couleur d'accent</div><div class="accent-swatches"><button type="button" class="accent-swatch" data-accent-swatch="#4386B1" style="--swatch:#4386B1" aria-label="Bleu de marque" title="Bleu de marque"></button><button type="button" class="accent-swatch" data-accent-swatch="#7b2cbf" style="--swatch:#7b2cbf" aria-label="Violet" title="Violet"></button><button type="button" class="accent-swatch" data-accent-swatch="#e63946" style="--swatch:#e63946" aria-label="Rouge" title="Rouge"></button><button type="button" class="accent-swatch" data-accent-swatch="#f97316" style="--swatch:#f97316" aria-label="Orange" title="Orange"></button><button type="button" class="accent-swatch" data-accent-swatch="#22c55e" style="--swatch:#22c55e" aria-label="Vert" title="Vert"></button><button type="button" class="accent-swatch" data-accent-swatch="#06b6d4" style="--swatch:#06b6d4" aria-label="Cyan" title="Cyan"></button><button type="button" class="accent-swatch" data-accent-swatch="#ec4899" style="--swatch:#ec4899" aria-label="Rose" title="Rose"></button><button type="button" class="accent-swatch" data-accent-swatch="#eab308" style="--swatch:#eab308" aria-label="Jaune" title="Jaune"></button><button type="button" class="accent-swatch" data-accent-swatch="#64748b" style="--swatch:#64748b" aria-label="Ardoise" title="Ardoise"></button><button type="button" class="accent-swatch" data-accent-swatch="#10b981" style="--swatch:#10b981" aria-label="&Eacute;meraude" title="&Eacute;meraude"></button></div><button type="button" class="accent-reset" data-accent-reset aria-label="R&eacute;tablir le bleu d'origine" title="R&eacute;tablir le bleu d'origine"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg><span>R&eacute;tablir le bleu d'origine</span></button></div></div></div><section data-w-id="933bc9ea-8f0f-40e8-a12e-39b1718e2ca5" class="main-content"><div class="hero"><div class="hero-wrapper v2"><div class="hero-layer-video" aria-hidden="true"><video id="hero-video" class="hero-video" src="vetter-consulting/assets/videos/hero-typhoon-house.mp4" muted loop playsinline preload="auto" poster="vetter-consulting/assets/img/66a20363e5bbc5dbaa1b59ac_VC%20GmbH%20-%20Shooting%20-%20022024-272.webp" tabindex="-1"></video></div><script>
+<!-- data-w-id retiré du préloader et des colonnes d'horloges : l'interaction
+     IX2 « a-23 Preloader » (webflow.schunk…) cible ces éléments par data-w-id
+     et les anime en parallèle du driver JS — double écriture → compteur qui
+     clignote (04:59 ↔ 04:58). Sans data-w-id, l'action ne trouve aucune cible
+     (getAffectedElements → []) et ne touche plus les horloges ; le driver JS
+     reste l'unique auteur des transform. -->
+<div class="preloader"><div class="preloader-inner"><div class="preloader-grid _1st"><img src="vetter-consulting/assets/img/typhoon-wordmark.svg" loading="eager" alt="Typhoon" class="logo in-preloader"/><div class="global-headline-m is-left-aligned in-loader">Le climat ne pr&eacute;vient pas.<span class="is-white"> La pr&eacute;cision est cl&eacute;. </span>Chaque minute compte.<br/></div></div><div class="preloader-grid _2nd"><div class="preloader-clock"><div class="align-horizontally stretched is-vertically-aligned-oin-mobile"><div class="global-headline-s reduced">Vos concurrents</div><div class="grid-icon-div tm-0"><img src="vetter-consulting/assets/img/66a20363e5bbc5dbaa1b5980_user-tie-solid.svg" loading="lazy" alt="" class="icon"/></div></div><div class="clock-overflow-div"><div class="clock-txt">05:00</div></div></div><div class="preloader-clock"><div class="align-horizontally stretched is-vertically-aligned-oin-mobile"><div class="global-headline-s reduced">Votre portefeuille <span class="is-grey">sans Typhoon</span></div><div class="grid-icon-div tm-0"><img src="vetter-consulting/assets/img/66a20363e5bbc5dbaa1b597b_building-shield-solid.svg" loading="eager" alt="" class="icon"/></div></div><div class="clock-overflow-div"><div class="clock-number-column-1"><div class="clock-txt">0</div></div><div class="clock-number-column-2"><div class="clock-txt">5<br/></div><div class="clock-txt">4</div></div><div class="clock-number-column-3"><div class="clock-txt">:</div></div><div class="clock-number-column-4"><div class="clock-txt">0</div><div class="clock-txt">5</div></div><div class="preload-m5"><div class="clock-txt">0</div><div class="clock-txt">9</div><div class="clock-txt">8</div><div class="clock-txt">7</div></div></div></div></div></div></div><div class="navbar landingpage"><div data-animation="default" data-collapse="medium" data-duration="400" data-easing="ease" data-easing2="ease" role="banner" class="webflow-native-navbar w-nav"><div class="navbar-outer"><div class="navbar-inner"><a href="/" aria-current="page" target="_top" class="navbar-logo-div visible-on-desktop w-nav-brand w--current"><img src="vetter-consulting/assets/img/typhoon-logo.svg" loading="eager" alt="Typhoon" class="logo"/></a><div class="nav-static-item"><div class="nav-arrow-div"><img src="vetter-consulting/assets/img/typhoon-logo.svg" loading="lazy" alt="Typhoon" class="nav-arrow"/></div><div class="nav-link-static">Menü</div></div><nav role="navigation" class="nav-menu-wrapper w-nav-menu"><ul role="list" class="nav-menu-right w-list-unstyled"><li class="nav-item"><a href="/" aria-current="page" target="_top" class="nav-link w--current">Home</a></li><li class="nav-item"><a href="/faq" target="_top" class="nav-link">FAQ</a></li><li class="nav-item"><a href="/contact" target="_top" class="nav-link">Contact</a></li><li class="nav-item"><a data-w-id="e8b68c38-7920-70a0-3c4d-94c7ad18ef1c" href="/zone" target="_top" class="primary-btn w-inline-block"><div class="btn-txt-container"><div class="btn-txt">Commen&ccedil;ons</div><div class="btn-txt">Commen&ccedil;ons</div></div></a></li><li class="mobile-margin-top-10"></li></ul></nav><div id="w-node-e8b68c38-7920-70a0-3c4d-94c7ad18ef24-ad18ef05" class="nav-area-left mobile"><div class="menu-button w-nav-button"><div data-is-ix2-target="1" class="hamburger-menu-dark" data-w-id="e8b68c38-7920-70a0-3c4d-94c7ad18ef26" data-animation-type="lottie" data-src="vetter-consulting/assets/img/66a20363e5bbc5dbaa1b59bb_656e40dffb81768885f3d9a9_menu_white.json" data-loop="0" data-direction="1" data-autoplay="0" data-renderer="svg" data-default-duration="2.3333333333333335" data-duration="0" data-loading="eager" data-ix2-initial-state="0"></div></div></div></div></div></div><button type="button" class="theme-toggle" data-theme-toggle aria-label="Basculer le mode clair / sombre" title="Mode clair / sombre"><svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg><svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></button><div class="color-control"><button type="button" class="color-toggle" data-accent-toggle title="Changer la couleur d'accent" aria-label="Changer la couleur d'accent" aria-expanded="false"><svg class="icon-palette" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22a10 10 0 1 1 10-10c0 1.7-1.3 3-3 3h-2a2 2 0 0 0-2 2c0 .6.2 1 .6 1.4.4.4.6.8.6 1.4 0 1.7-1.3 3-3 3z"/><circle cx="7.5" cy="11.5" r=".5" fill="currentColor"/><circle cx="11" cy="7.5" r=".5" fill="currentColor"/><circle cx="15.5" cy="7.5" r=".5" fill="currentColor"/></svg><span class="accent-dot"></span></button><div class="accent-panel" data-accent-panel role="dialog" aria-label="Couleur d'accent"><div class="accent-panel-title">Couleur d'accent</div><div class="accent-swatches"><button type="button" class="accent-swatch" data-accent-swatch="#4386B1" style="--swatch:#4386B1" aria-label="Bleu de marque" title="Bleu de marque"></button><button type="button" class="accent-swatch" data-accent-swatch="#7b2cbf" style="--swatch:#7b2cbf" aria-label="Violet" title="Violet"></button><button type="button" class="accent-swatch" data-accent-swatch="#e63946" style="--swatch:#e63946" aria-label="Rouge" title="Rouge"></button><button type="button" class="accent-swatch" data-accent-swatch="#f97316" style="--swatch:#f97316" aria-label="Orange" title="Orange"></button><button type="button" class="accent-swatch" data-accent-swatch="#22c55e" style="--swatch:#22c55e" aria-label="Vert" title="Vert"></button><button type="button" class="accent-swatch" data-accent-swatch="#06b6d4" style="--swatch:#06b6d4" aria-label="Cyan" title="Cyan"></button><button type="button" class="accent-swatch" data-accent-swatch="#ec4899" style="--swatch:#ec4899" aria-label="Rose" title="Rose"></button><button type="button" class="accent-swatch" data-accent-swatch="#eab308" style="--swatch:#eab308" aria-label="Jaune" title="Jaune"></button><button type="button" class="accent-swatch" data-accent-swatch="#64748b" style="--swatch:#64748b" aria-label="Ardoise" title="Ardoise"></button><button type="button" class="accent-swatch" data-accent-swatch="#10b981" style="--swatch:#10b981" aria-label="&Eacute;meraude" title="&Eacute;meraude"></button></div><button type="button" class="accent-reset" data-accent-reset aria-label="R&eacute;tablir le bleu d'origine" title="R&eacute;tablir le bleu d'origine"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg><span>R&eacute;tablir le bleu d'origine</span></button></div></div><div class="clock"><div class="clock-overflow-div small"><div class="clock-number-column-1 small"><div class="clock-txt small">0</div></div><div class="clock-number-column-2"><div class="clock-txt small">4<br/></div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1<br/></div><div class="clock-txt small">0</div></div><div class="clock-number-column-3 small"><div class="clock-txt small">:</div></div><div class="clock-number-column-4"><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0<br/></div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div class="navclock-m5"><div class="_1min"><div class="_10sec"><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div></div><div class="_1min"><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div></div><div class="_1min"><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div></div><div class="_1min"><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div><div class="_10sec"><div class="clock-txt small">9</div><div class="clock-txt small">8</div><div class="clock-txt small">7</div><div class="clock-txt small">6</div><div class="clock-txt small">5</div><div class="clock-txt small">4</div><div class="clock-txt small">3</div><div class="clock-txt small">2</div><div class="clock-txt small">1</div><div class="clock-txt small">0</div></div></div></div></div></div></div>
+<section data-w-id="933bc9ea-8f0f-40e8-a12e-39b1718e2ca5" class="main-content"><div class="hero"><div class="hero-wrapper v2"><div class="hero-layer-video" aria-hidden="true"><video id="hero-video" class="hero-video" src="vetter-consulting/assets/videos/hero-typhoon-house.mp4" muted loop playsinline preload="auto" poster="vetter-consulting/assets/img/66a20363e5bbc5dbaa1b59ac_VC%20GmbH%20-%20Shooting%20-%20022024-272.webp" tabindex="-1"></video></div><script>
 /* Typhoon — hero background video. Native <video> replaces the Mux iframe.
    Autoplay per mux.com/docs/guides/autoplay: call play() (not the autoplay
    attribute) so we can detect a blocked autoplay and fall back to the
@@ -1966,43 +1341,164 @@ requestAnimationFrame(raf)
     })();
     </script>
     <script>
-    /* ── Préloader : entrée manuelle — le bouton « Comment anticiper cela ? »
-       révèle la page d'accueil au clic (plus de transition automatique ni de
-       minuterie IX2 : le préloader ne se masque plus jamais tout seul). ── */
-    (function () {
-      var preloader = document.querySelector('.preloader');
+    /* ── Préloader restauré : compteur climat d'origine ──
+   Le préloader d'origine (horloge « Vos concurrents » / odomètre
+   « Votre portefeuille sans Typhoon ») est de retour. La séquence IX2
+   « a-23 Preloader » (données de webflow.schunk…) ne se déclenche plus sur
+   cette page — l'événement PAGE_FINISH ne part jamais — on reproduit donc
+   le déroulé en CSS/JS pur : la classe .is-go lance l'odomètre (colonnes)
+   puis la sortie de l'écran ; à la fin on masque le préloader et on révèle
+   la page (.load-hide + hero, états initiaux IX2).
+   - Filet de sécurité : si les animations ne se lancent pas (réduction des
+     animations, erreur), on masque après 10 s pour ne jamais bloquer. */
+(function () {
+  var preloader = document.querySelector('.preloader');
+  if (!preloader) return;
 
-      /* Entrée : on cache le préloader et on révèle le contenu de la page
-         (.load-hide : témoignages, services, mission, timeline, footer —
-         masqué au chargement pour que seul le préloader soit visible ;
-         sans cette révélation, la page restait bloquée sur le hero). */
-      function enterSite() {
-        if (preloader) preloader.classList.add('is-hidden');
-        var hiddenContent = document.querySelector('.load-hide');
-        if (hiddenContent) {
-          hiddenContent.classList.remove('load-hide');
-          /* IX2 cache aussi ce bloc en inline (display:none) au
-             chargement — on l'efface pour révéler la page. */
-          hiddenContent.style.display = 'block';
+  var revealed = false;
+  function revealPage() {
+    if (revealed) return;
+    revealed = true;
+    preloader.classList.add('is-hidden');
+    /* Ré-assertion : si IX2 a réécrit le transform du préloader après la
+       glissade, on le renvoie hors de l'écran avant la disparition.
+       Écriture en !important : IX2 (séquence « a-23 ») peut écrire ce
+       style en inline normal — nos valeurs gagnent la cascade. */
+    preloader.style.setProperty('transform', 'translateY(-100vh)', 'important');
+    var hiddenContent = document.querySelector('.load-hide');
+    if (hiddenContent) {
+      hiddenContent.classList.remove('load-hide');
+      /* IX2 cache ce bloc en inline (display:none) au chargement — on
+         l'efface pour révéler la page. */
+      hiddenContent.style.setProperty('display', 'block', 'important');
+    }
+    /* Révèle le hero : les titres/sous-titre/bouton étaient figés en
+       opacity:0 par un état initial IX2 — cascade (transition). */
+    var hero = document.querySelector('.hero-layer-3');
+    if (hero) hero.classList.add('hero-reveal');
+  }
+
+  /* Si IX2 termine quand même sa séquence (display:none inline), on révèle. */
+  var everVisible = false;
+  function check() {
+    var cs = getComputedStyle(preloader);
+    if (!everVisible && cs.display !== 'none') everVisible = true;
+    if (everVisible &&
+        (preloader.classList.contains('is-hidden') || cs.display === 'none')) {
+      revealPage();
+    }
+  }
+  check();
+  var observer = new MutationObserver(check);
+  observer.observe(preloader, { attributes: true, attributeFilter: ['class', 'style'] });
+
+  /* Déroulé du compteur (odomètre) : 05:00 → 04:59 → 04:58 → 04:57, puis
+     l'écran glisse vers le haut et disparaît. Piloté en JS pur : un
+     minuteur ré-écrit les transform inline des colonnes (ré-asserté tous
+     les 80 ms pour rester insensible à IX2 qui peut réécrire ces styles),
+     et la sortie de l'écran est lissée en requestAnimationFrame. Aucune
+     dépendance à IX2 ni aux transitions/animation CSS. */
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduce) {
+    window.setTimeout(revealPage, 400);
+  } else {
+    window.setTimeout(function () {
+      if (revealed) return;
+      var c2 = preloader.querySelector('.clock-number-column-2');
+      var c4 = preloader.querySelector('.clock-number-column-4');
+      var c5 = preloader.querySelector('.preload-m5');
+      /* Écritures en !important : si IX2 déclenche quand même sa séquence
+         « a-23 » (odomètre) dans certains navigateurs, ses écritures inline
+         normales ne peuvent pas écraser nos valeurs — plus de clignotement. */
+      [c2, c4, c5, preloader].forEach(function (el) {
+        if (el) el.style.setProperty('transition', 'none', 'important');
+      });
+      var t0 = performance.now();
+      var finished = false;
+      var S1 = 700, S2 = 1700, S3 = 2700, END = 3800;
+
+      function rollStep(t) {
+        if (t >= S1) {
+          if (c2) c2.style.setProperty('transform', 'translateY(-50%)', 'important');
+          if (c4) c4.style.setProperty('transform', 'translateY(-50%)', 'important');
         }
-        /* Révèle le hero : les titres/sous-titre/bouton étaient figés en
-           opacity:0 par un état initial IX2 dont l'animation ne se
-           déclenche plus — on les fait apparaître en cascade. */
-        var hero = document.querySelector('.hero-layer-3');
-        if (hero) hero.classList.add('hero-reveal');
+        if (c5) c5.style.setProperty('transform', 'translateY(' + (t >= S3 ? -75 : t >= S2 ? -50 : t >= S1 ? -25 : 0) + '%)', 'important');
       }
 
-      /* Entrée clavier : Échap révèle aussi la page (comme le bouton). */
-      document.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape' && preloader && !preloader.classList.contains('is-hidden')) {
-          enterSite();
+      function tick() {
+        if (finished) return;
+        var t = performance.now() - t0;
+        rollStep(t);
+        if (t >= S3) {
+          /* sortie de l'écran (lissée en rAF) */
+          slideUp();
+          finished = true;
+          clearInterval(timer);
+          window.setTimeout(revealPage, 1000);
+          return;
         }
-      });
+      }
+      var timer = setInterval(tick, 80);
+      tick();
 
-      /* Entrée manuelle uniquement : le bouton « Entrer sur le site » (et la
-         touche Échap) révèle la page — plus de minuterie automatique. */
-      var enterBtn = document.querySelector('[data-preloader-enter]');
-      if (enterBtn) enterBtn.addEventListener('click', enterSite);
+      function slideUp() {
+        var start = null;
+        function frame(now) {
+          if (start === null) start = now;
+          var p = Math.min((now - start) / 750, 1);
+          var e = 1 - Math.pow(1 - p, 3);   /* easeOutCubic */
+          preloader.style.setProperty('transform', 'translateY(' + (-100 * e) + 'vh)', 'important');
+          if (p < 1) requestAnimationFrame(frame);
+        }
+        requestAnimationFrame(frame);
+      }
+    }, 500);
+  }
+
+  /* Filet de sécurité : la page ne reste jamais bloquée sur le préloader. */
+  window.setTimeout(revealPage, 10000);
+})();
+</script>
+    <script>
+    /* ── Horloge de la navbar : décompte lié au défilement ──
+       Restaure le comportement d'origine (le « Timer ») : 04:56 en haut de
+       page, 00:00 en bas — mêmes valeurs que l'interaction IX2 « a-32 »
+       (keyframes 5% → 97% : colonne 2 → -80 %, colonne 4 → -95,8 %,
+       colonne 5 → -99,155 %). Piloté en JS pur pour rester fiable (IX2 ne
+       déclenche plus ses interactions sur cette page). Ré-asserté à intervalle
+       régulier pour rester insensible à toute réécriture de style. */
+    (function () {
+      var clock = document.querySelector('.navbar.landingpage > .clock');
+      if (!clock) return;
+      var c2 = clock.querySelector('.clock-number-column-2');
+      var c4 = clock.querySelector('.clock-number-column-4');
+      var c5 = clock.querySelector('.navclock-m5');
+      if (!c2 || !c4 || !c5) return;
+      var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      var K_START = 5, K_END = 97;
+      var END = { c2: -80, c4: -95.8, c5: -99.155 };
+
+      function apply() {
+        var max = (document.documentElement.scrollHeight - window.innerHeight) || 1;
+        var p = Math.min(Math.max(window.scrollY / max, 0), 1);
+        var k = (p * 100 - K_START) / (K_END - K_START);
+        k = Math.min(Math.max(k, 0), 1);
+        /* !important : la séquence IX2 « a-23 » cible aussi ces colonnes —
+           nos valeurs doivent toujours gagner la cascade. */
+        c2.style.setProperty('transform', 'translateY(' + (END.c2 * k) + '%)', 'important');
+        c4.style.setProperty('transform', 'translateY(' + (END.c4 * k) + '%)', 'important');
+        c5.style.setProperty('transform', 'translateY(' + (END.c5 * k) + '%)', 'important');
+      }
+
+      if (reduce) {
+        apply();
+        return;
+      }
+      apply();
+      window.addEventListener('scroll', apply, { passive: true });
+      /* Filet de sécurité : ré-assertion périodique — certains environnements
+         ne dispatchent pas d'événements scroll (ou throttlent les timers). */
+      window.setInterval(apply, 500);
     })();
     </script>
   </body>

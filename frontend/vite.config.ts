@@ -95,6 +95,9 @@ function bimViewerPlugin(): Plugin {
 
 export default defineConfig({
   plugins: [react(), bimViewerPlugin()],
+  // Un seul .env à la racine du dépôt pour le front ET le back : Vite charge
+  // les variables (préfixe VITE_*) depuis ../.env (racine du projet).
+  envDir: '..',
   server: {
     port: 5173,
   },

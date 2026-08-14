@@ -1,17 +1,15 @@
 // =============================================================================
 //   TYPHOON — /account & /settings : page « Paramètres du compte »
 //   Page pleine intégrée à l'app (pas une modale) : la MÊME sidenav que /zone
-//   (composant partagé ZoneSidenav → nav, historique, pied utilisateur, menu
-//   réglages thème/accent) et le panneau SettingsPanel en corps de page.
+//   (composant partagé ZoneSidenav → nav, historique, pied utilisateur,
+//   engrenage « compte ») et le panneau SettingsPanel en corps de page.
 //   Le thème et l'accent sont synchronisés entre les deux pages via
 //   useTyphoonTheme (store localStorage partagé).
 // =============================================================================
 
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import type { CSSProperties } from 'react';
-import type { Menu } from '@material/web/menu/menu.js';
-import type { MdSwitch } from '@material/web/switch/switch.js';
 import { ZoneSidenav, useIsMobile } from '../components/ZoneSidenav';
 import { SettingsPanel, type SettingsTabKey } from '../components/SettingsPanel';
 import { useTyphoonTheme } from '../typhoon/useTyphoonTheme';
@@ -38,33 +36,12 @@ const TAB_BY_PATH: Record<string, SettingsTabKey> = {
 export function AccountSettings() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { theme, accent, toggleTheme, pickAccent, resetAccent } = useTyphoonTheme();
+  const { theme, accent, mode, setThemeMode } = useTyphoonTheme();
   const isMobile = useIsMobile();
 
   const [navCollapsed, setNavCollapsed] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [settingsOpen, setSettingsOpen] = useState(false);
-  const settingsMenuRef = useRef<Menu | null>(null);
-  const themeSwitchRef = useRef<MdSwitch | null>(null);
   const sidenavRef = useRef<HTMLElement | null>(null);
-
-  /* Même écouteurs que /zone : le menu réglages se referme tout seul et on
-     resynchronise l'état React ; md-switch émet `change`. */
-  useEffect(() => {
-    const menu = settingsMenuRef.current;
-    if (!menu) return;
-    const onClosed = () => setSettingsOpen(false);
-    menu.addEventListener('closed', onClosed);
-    return () => menu.removeEventListener('closed', onClosed);
-  }, []);
-
-  useEffect(() => {
-    const sw = themeSwitchRef.current;
-    if (!sw) return;
-    const onChange = () => toggleTheme();
-    sw.addEventListener('change', onChange);
-    return () => sw.removeEventListener('change', onChange);
-  }, [toggleTheme]);
 
   /* Historique « Récent » partagé (localStorage) — mêmes données que /zone. */
   const [conversations, setConversations] = useState<Conversation[]>(() => loadConversations());
@@ -80,7 +57,7 @@ export function AccountSettings() {
   };
 
   const tabKey = location.pathname.split('/').filter(Boolean).pop() ?? '';
-  const initialTab: SettingsTabKey = TAB_BY_PATH[tabKey] ?? 'account';
+  const activeTab: SettingsTabKey = TAB_BY_PATH[tabKey] ?? 'account';
 
   return (
     <main
@@ -96,20 +73,22 @@ export function AccountSettings() {
         mobile={isMobile}
         hidden={isMobile && !drawerOpen}
         theme={theme}
-        accent={accent}
-        settingsOpen={settingsOpen}
-        settingsMenuRef={settingsMenuRef}
-        themeSwitchRef={themeSwitchRef}
+        mode={mode}
+        onThemeModeChange={setThemeMode}
         onToggleCollapse={() =>
           isMobile ? setDrawerOpen(false) : setNavCollapsed((c) => !c)
         }
-        onPickAccent={pickAccent}
-        onResetAccent={resetAccent}
-        onOpenSettings={() => setSettingsOpen((o) => !o)}
         onOpenAccount={() => {
           setDrawerOpen(false);
-          setSettingsOpen(false);
           navigate('/settings/account');
+        }}
+        onNavigateSettings={(tab) => {
+          setDrawerOpen(false);
+          navigate(`/settings/${tab}`);
+        }}
+        onSignOut={() => {
+          setDrawerOpen(false);
+          navigate('/');
         }}
         onCloseDrawer={() => setDrawerOpen(false)}
         onNewDiagnostic={() => {
@@ -151,7 +130,7 @@ export function AccountSettings() {
             </md-filled-button>
           </header>
 
-          <SettingsPanel initialTab={initialTab} />
+          <SettingsPanel tab={activeTab} onTabChange={(key) => navigate(`/settings/${key}`)} />
         </div>
       </div>
 

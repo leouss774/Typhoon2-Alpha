@@ -82,22 +82,39 @@ export const WMS_BASE = 'https://mapsref.brgm.fr/wxs/georisques/risques';
 
 export const WMS_LAYER_MAP: Record<string, string> = {
   rga: 'ALEARG',
-  inondation: 'LIMITETRI_FXX',
-  sismicite: 'SIS_INTENSITE_MAXCOM',
+  inondation: 'LIMITETRI',
+  sismicite: 'risq_zonage_sismique',
   avalanche: 'PPRN_COMMUNE_AVALANCHE_APPROUV',
   cavite: 'CAVITE_LOCALISEE',
   feu_foret: 'PPRN_COMMUNE_FEU_APPROUV',
   icpe: 'INSTALLATIONS_CLASSEES_SIMPLIFIE',
   mouvement_terrain: 'MVT_LOCALISE',
-  radon: 'RADON',
+  radon: 'RADON_COMMUNE',
   canalisations: 'CANALISATIONS',
-  ppr: 'PPRN_COMMUNE_GASPAR',
+  ppr: 'PPRIZR_VS_GASPAR',
 };
 
 export const WFS_BASE = 'https://www.georisques.gouv.fr/services';
 
+// Noms de FeatureType vérifiés en direct sur le GetCapabilities du service
+// (2026-08-14) — les noms `ms:PPRN_PERIMETRE_*` évoqués initialement dans la
+// doc de conception existent bel et bien (contrairement à `ms:PPRN_COMMUNE_*`,
+// qui ne couvre que le contour communal, moins précis).
 export const WFS_LAYER_MAP: Record<string, string[]> = {
   ssp: ['ms:SSP_CLASSIF_SIS_GE'],
+  ppr: [
+    'ms:PPRN_PERIMETRE_INOND',
+    'ms:PPRN_PERIMETRE_SUBMAR',
+    'ms:PPRN_PERIMETRE_MVT',
+    'ms:PPRN_PERIMETRE_SEISME',
+    'ms:PPRN_PERIMETRE_AVALANCHE',
+    'ms:PPRN_PERIMETRE_FEU',
+    'ms:PPRT_PERIMETRE_RISQIND',
+    'ms:PPRM_PERIMETRE_MINIER',
+  ],
+  canalisations: ['ms:C_GAZ', 'ms:C_HYDROCARBURES', 'ms:C_PRODUITS_CHIM'],
+  // icpe : pas de couche vecteur fiable avec statut Seveso (ms:ETABLISSEMENTS_POLLUEURS
+  // n'expose ni statut ni rayon) — reste en raster WMS (cf. WMS_LAYER_MAP).
 };
 
 // ---------------------------------------------------------------------------
